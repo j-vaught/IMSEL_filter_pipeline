@@ -1,0 +1,419 @@
+[
+  {
+    "method": "Prewitt",
+    "params": {
+      "ksize": 5
+    },
+    "ods": 0.7877507414612368
+  },
+  {
+    "method": "Sobel",
+    "params": {
+      "ksize": 7
+    },
+    "ods": 0.7761212650489676
+  },
+  {
+    "method": "GaussianDeriv",
+    "params": {
+      "sigma": 1.5
+    },
+    "ods": 0.7718002439929984
+  },
+  {
+    "method": "GaussianDeriv",
+    "params": {
+      "sigma": 1.0
+    },
+    "ods": 0.7694423032853482
+  },
+  {
+    "method": "Sobel",
+    "params": {
+      "ksize": 5
+    },
+    "ods": 0.7653938224345388
+  },
+  {
+    "method": "Sobel",
+    "params": {
+      "ksize": 9
+    },
+    "ods": 0.7587816834785174
+  },
+  {
+    "method": "Kirsch",
+    "params": {},
+    "ods": 0.7587378025598784
+  },
+  {
+    "method": "Prewitt",
+    "params": {
+      "ksize": 3
+    },
+    "ods": 0.7554702395621214
+  },
+  {
+    "method": "Prewitt",
+    "params": {
+      "ksize": 7
+    },
+    "ods": 0.7507766533301953
+  },
+  {
+    "method": "Frei-Chen",
+    "params": {},
+    "ods": 0.7505621565522839
+  },
+  {
+    "method": "Robinson",
+    "params": {},
+    "ods": 0.7483774275081606
+  },
+  {
+    "method": "Sobel",
+    "params": {
+      "ksize": 3
+    },
+    "ods": 0.7436782214729744
+  },
+  {
+    "method": "GaussianDeriv",
+    "params": {
+      "sigma": 2.0
+    },
+    "ods": 0.7434148551804728
+  },
+  {
+    "method": "Scharr",
+    "params": {},
+    "ods": 0.7332747074342149
+  },
+  {
+    "method": "Sobel",
+    "params": {
+      "ksize": 11
+    },
+    "ods": 0.7251410011631224
+  },
+  {
+    "method": "Roberts",
+    "params": {},
+    "ods": 0.7227332457293036
+  },
+  {
+    "method": "GaussianDeriv",
+    "params": {
+      "sigma": 0.5
+    },
+    "ods": 0.718556088392598
+  },
+  {
+    "method": "Prewitt",
+    "params": {
+      "ksize": 9
+    },
+    "ods": 0.6841942030720345
+  },
+  {
+    "method": "LoG",
+    "params": {
+      "sigma": 2.0
+    },
+    "ods": 0.669415400502669
+  },
+  {
+    "method": "GaussianDeriv",
+    "params": {
+      "sigma": 3.0
+    },
+    "ods": 0.6620074963846178
+  },
+  {
+    "method": "Steerable2nd",
+    "params": {
+      "sigma": 2.0
+    },
+    "ods": 0.6616383736659089
+  },
+  {
+    "method": "LoG",
+    "params": {
+      "sigma": 1.5
+    },
+    "ods": 0.6540619259602495
+  },
+  {
+    "method": "Steerable2nd",
+    "params": {
+      "sigma": 1.0
+    },
+    "ods": 0.6523741313792573
+  },
+  {
+    "method": "Sobel",
+    "params": {
+      "ksize": 15
+    },
+    "ods": 0.6474740391999733
+  },
+  {
+    "method": "DoG",
+    "params": {
+      "sigma1": 1.0
+    },
+    "ods": 0.6437442653034474
+  },
+  {
+    "method": "DoG",
+    "params": {
+      "sigma1": 2.0
+    },
+    "ods": 0.6328323295170227
+  },
+  {
+    "method": "LoG",
+    "params": {
+      "sigma": 1.0
+    },
+    "ods": 0.627567683914016
+  },
+  {
+    "method": "Prewitt",
+    "params": {
+      "ksize": 11
+    },
+    "ods": 0.6119949634407652
+  },
+  {
+    "method": "GaussianDeriv",
+    "params": {
+      "sigma": 4.0
+    },
+    "ods": 0.5935339291082506
+  },
+  {
+    "method": "LoG",
+    "params": {
+      "sigma": 3.0
+    },
+    "ods": 0.5894514216460914
+  },
+  {
+    "method": "Steerable2nd",
+    "params": {
+      "sigma": 3.0
+    },
+    "ods": 0.5622982609396007
+  },
+  {
+    "method": "Sobel",
+    "params": {
+      "ksize": 21
+    },
+    "ods": 0.5615902332133353
+  },
+  {
+    "method": "DoG",
+    "params": {
+      "sigma1": 0.5
+    },
+    "ods": 0.5508724886339579
+  },
+  {
+    "method": "LoG",
+    "params": {
+      "sigma": 0.5
+    },
+    "ods": 0.5476668091683384
+  },
+  {
+    "method": "Prewitt",
+    "params": {
+      "ksize": 15
+    },
+    "ods": 0.5202126204164985
+  },
+  {
+    "method": "DoG",
+    "params": {
+      "sigma1": 3.0
+    },
+    "ods": 0.5182780297604839
+  },
+  {
+    "method": "GaussianDeriv",
+    "params": {
+      "sigma": 6.0
+    },
+    "ods": 0.510953351608444
+  },
+  {
+    "method": "LoG",
+    "params": {
+      "sigma": 4.0
+    },
+    "ods": 0.506641356745011
+  },
+  {
+    "method": "Sobel",
+    "params": {
+      "ksize": 31
+    },
+    "ods": 0.4946408775582625
+  },
+  {
+    "method": "Steerable2nd",
+    "params": {
+      "sigma": 4.0
+    },
+    "ods": 0.48495815620822597
+  },
+  {
+    "method": "Prewitt",
+    "params": {
+      "ksize": 21
+    },
+    "ods": 0.47324909048352476
+  },
+  {
+    "method": "GaussianDeriv",
+    "params": {
+      "sigma": 8.0
+    },
+    "ods": 0.47043456650271936
+  },
+  {
+    "method": "Sobel",
+    "params": {
+      "ksize": 41
+    },
+    "ods": 0.45893122009402315
+  },
+  {
+    "method": "DoG",
+    "params": {
+      "sigma1": 4.0
+    },
+    "ods": 0.45023534670909043
+  },
+  {
+    "method": "Prewitt",
+    "params": {
+      "ksize": 31
+    },
+    "ods": 0.4286488421826768
+  },
+  {
+    "method": "Sobel",
+    "params": {
+      "ksize": 51
+    },
+    "ods": 0.42752648078123007
+  },
+  {
+    "method": "LoG",
+    "params": {
+      "sigma": 6.0
+    },
+    "ods": 0.4270805830774148
+  },
+  {
+    "method": "GaussianDeriv",
+    "params": {
+      "sigma": 12.0
+    },
+    "ods": 0.41839978572182257
+  },
+  {
+    "method": "Steerable2nd",
+    "params": {
+      "sigma": 6.0
+    },
+    "ods": 0.4158116023332549
+  },
+  {
+    "method": "Prewitt",
+    "params": {
+      "ksize": 41
+    },
+    "ods": 0.39725667562959394
+  },
+  {
+    "method": "GaussianDeriv",
+    "params": {
+      "sigma": 16.0
+    },
+    "ods": 0.3933578659515875
+  },
+  {
+    "method": "DoG",
+    "params": {
+      "sigma1": 6.0
+    },
+    "ods": 0.3926021851465356
+  },
+  {
+    "method": "LoG",
+    "params": {
+      "sigma": 8.0
+    },
+    "ods": 0.39046968251939396
+  },
+  {
+    "method": "Steerable2nd",
+    "params": {
+      "sigma": 8.0
+    },
+    "ods": 0.3845832803155617
+  },
+  {
+    "method": "GaussianDeriv",
+    "params": {
+      "sigma": 20.0
+    },
+    "ods": 0.37120485740185144
+  },
+  {
+    "method": "DoG",
+    "params": {
+      "sigma1": 8.0
+    },
+    "ods": 0.3657171978551831
+  },
+  {
+    "method": "LoG",
+    "params": {
+      "sigma": 12.0
+    },
+    "ods": 0.35891873656462314
+  },
+  {
+    "method": "Steerable2nd",
+    "params": {
+      "sigma": 12.0
+    },
+    "ods": 0.34739797192666966
+  },
+  {
+    "method": "DoG",
+    "params": {
+      "sigma1": 12.0
+    },
+    "ods": 0.33619026094817545
+  },
+  {
+    "method": "LoG",
+    "params": {
+      "sigma": 16.0
+    },
+    "ods": 0.3334206508139483
+  },
+  {
+    "method": "Steerable2nd",
+    "params": {
+      "sigma": 16.0
+    },
+    "ods": 0.3289934146631606
+  }
+]

@@ -15,3 +15,8 @@ __all__ = [
     "canny_edges",
     "compute_edges_at_threshold",
 ]
+
+# GPU-accelerated classical methods (lazy import — requires torch)
+def run_all_classical(image, device="cuda"):
+    from edgecritic.baselines.classical_gpu import run_all_classical as _run
+    return _run(image, device=device)

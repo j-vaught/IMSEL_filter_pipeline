@@ -1,0 +1,226 @@
+{
+  "image": "RGB_042",
+  "shape": [
+    720,
+    1280
+  ],
+  "model": "DexiNed",
+  "conditions": [
+    {
+      "noise_type": "clean",
+      "snr": "inf",
+      "ods": 0.9479427772161364,
+      "time_s": 0.52
+    },
+    {
+      "noise_type": "gaussian",
+      "snr": "0.3",
+      "ods": 0.36388336995565845,
+      "time_s": 0.51
+    },
+    {
+      "noise_type": "salt_pepper",
+      "snr": "0.3",
+      "ods": 0.3593123418315891,
+      "time_s": 0.51
+    },
+    {
+      "noise_type": "poisson",
+      "snr": "0.3",
+      "ods": 0.35930594511258857,
+      "time_s": 0.51
+    },
+    {
+      "noise_type": "speckle",
+      "snr": "0.3",
+      "ods": 0.3595867749432369,
+      "time_s": 0.51
+    },
+    {
+      "noise_type": "uniform",
+      "snr": "0.3",
+      "ods": 0.36233515700274493,
+      "time_s": 0.5
+    },
+    {
+      "noise_type": "gaussian",
+      "snr": "0.5",
+      "ods": 0.36157022655061427,
+      "time_s": 0.5
+    },
+    {
+      "noise_type": "salt_pepper",
+      "snr": "0.5",
+      "ods": 0.3593096369335516,
+      "time_s": 0.49
+    },
+    {
+      "noise_type": "poisson",
+      "snr": "0.5",
+      "ods": 0.35930594511258857,
+      "time_s": 0.53
+    },
+    {
+      "noise_type": "speckle",
+      "snr": "0.5",
+      "ods": 0.35965616127681943,
+      "time_s": 0.49
+    },
+    {
+      "noise_type": "uniform",
+      "snr": "0.5",
+      "ods": 0.35934276026668566,
+      "time_s": 0.51
+    },
+    {
+      "noise_type": "gaussian",
+      "snr": "1.0",
+      "ods": 0.35931513580493085,
+      "time_s": 0.51
+    },
+    {
+      "noise_type": "salt_pepper",
+      "snr": "1.0",
+      "ods": 0.35930594511258857,
+      "time_s": 0.51
+    },
+    {
+      "noise_type": "poisson",
+      "snr": "1.0",
+      "ods": 0.35943128029642274,
+      "time_s": 0.51
+    },
+    {
+      "noise_type": "speckle",
+      "snr": "1.0",
+      "ods": 0.35988518824804916,
+      "time_s": 0.5
+    },
+    {
+      "noise_type": "uniform",
+      "snr": "1.0",
+      "ods": 0.35931439363569145,
+      "time_s": 0.51
+    },
+    {
+      "noise_type": "gaussian",
+      "snr": "1.5",
+      "ods": 0.3593122382702333,
+      "time_s": 0.49
+    },
+    {
+      "noise_type": "salt_pepper",
+      "snr": "1.5",
+      "ods": 0.3593100605926813,
+      "time_s": 0.77
+    },
+    {
+      "noise_type": "poisson",
+      "snr": "1.5",
+      "ods": 0.359354569778503,
+      "time_s": 0.49
+    },
+    {
+      "noise_type": "speckle",
+      "snr": "1.5",
+      "ods": 0.3599971406104797,
+      "time_s": 0.5
+    },
+    {
+      "noise_type": "uniform",
+      "snr": "1.5",
+      "ods": 0.3593279303788003,
+      "time_s": 0.51
+    },
+    {
+      "noise_type": "gaussian",
+      "snr": "2.0",
+      "ods": 0.35931448722344167,
+      "time_s": 0.55
+    },
+    {
+      "noise_type": "salt_pepper",
+      "snr": "2.0",
+      "ods": 0.3593239351355201,
+      "time_s": 0.52
+    },
+    {
+      "noise_type": "poisson",
+      "snr": "2.0",
+      "ods": 0.35930594511258857,
+      "time_s": 0.52
+    },
+    {
+      "noise_type": "speckle",
+      "snr": "2.0",
+      "ods": 0.36021110880443263,
+      "time_s": 0.51
+    },
+    {
+      "noise_type": "uniform",
+      "snr": "2.0",
+      "ods": 0.3593081839383312,
+      "time_s": 0.51
+    },
+    {
+      "noise_type": "gaussian",
+      "snr": "3.0",
+      "ods": 0.35930594511258857,
+      "time_s": 0.5
+    },
+    {
+      "noise_type": "salt_pepper",
+      "snr": "3.0",
+      "ods": 0.38276483662647226,
+      "time_s": 0.51
+    },
+    {
+      "noise_type": "poisson",
+      "snr": "3.0",
+      "ods": 0.3593352410223172,
+      "time_s": 0.51
+    },
+    {
+      "noise_type": "speckle",
+      "snr": "3.0",
+      "ods": 0.3822649378910146,
+      "time_s": 0.5
+    },
+    {
+      "noise_type": "uniform",
+      "snr": "3.0",
+      "ods": 0.49678958303053095,
+      "time_s": 0.51
+    },
+    {
+      "noise_type": "gaussian",
+      "snr": "4.0",
+      "ods": 0.36188749018515237,
+      "time_s": 0.65
+    },
+    {
+      "noise_type": "salt_pepper",
+      "snr": "4.0",
+      "ods": 0.43155000289010176,
+      "time_s": 0.49
+    },
+    {
+      "noise_type": "poisson",
+      "snr": "4.0",
+      "ods": 0.490543402193967,
+      "time_s": 0.5
+    },
+    {
+      "noise_type": "speckle",
+      "snr": "4.0",
+      "ods": 0.544946608097925,
+      "time_s": 1.05
+    },
+    {
+      "noise_type": "uniform",
+      "snr": "4.0",
+      "ods": 0.681942455409452,
+      "time_s": 0.51
+    }
+  ]
+}
