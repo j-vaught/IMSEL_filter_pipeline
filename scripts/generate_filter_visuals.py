@@ -212,14 +212,12 @@ def figure2():
 
     def _draw_flow(ax, boxes, complexity, panel_label):
         ax.set_xlim(-0.5, len(boxes) + 0.5)
-        ax.set_ylim(-1.2, 2.0)
+        ax.set_ylim(-1.0, 1.8)
         ax.set_aspect("auto")
         ax.set_xticks([])
         ax.set_yticks([])
         for spine in ax.spines.values():
             spine.set_visible(False)
-        ax.text(0.0, 1.75, panel_label,
-                fontsize=11, fontweight="bold", va="center", color="#000000")
         box_w, box_h = 0.85, 0.7
         y_center = 0.5
         colors_cycle = ["#ECECEC", "#C7C7C7"]  # 10% Black, 30% Black
@@ -237,22 +235,24 @@ def figure2():
                 ax.annotate("", xy=(x + box_w / 2 + 0.15, y_center),
                            xytext=(x + box_w / 2 + 0.01, y_center),
                            arrowprops=dict(arrowstyle="->", color="#363636", lw=1.2))
-        ax.text(len(boxes) / 2 + 0.5, -0.65, complexity,
-                ha="center", va="center", fontsize=9, style="italic", color="#5C5C5C")
+        # Caption below: panel label + complexity
+        ax.text(len(boxes) / 2 + 0.5, -0.55,
+                f"({panel_label})  {complexity}",
+                ha="center", va="center", fontsize=9, color="#363636")
 
     _draw_flow(axes[0],
                ["For each\n$\\theta$", "For each\nvirtual pt $j$",
                 "Gather\n$N_p$ nbrs", "Matmul\nwith $P_\\theta$",
                 "Weight\n$w_j$", "Sum\nover $j$", "$|R_\\theta|$",
                 "max\nover $\\theta$"],
-               "Complexity:  $\\mathcal{O}(N_s \\times L \\times N_p)$  per pixel", "A")
+               "$\\mathrm{O}(N_s \\times L \\times N_p)$ per pixel", "A")
 
     _draw_flow(axes[1],
                ["Precompute\nstencils\n(one-time)", "For each\n$\\theta$",
                 "Single gather\n$N'$ unique\npositions",
                 "Dot product\nwith $\\alpha_\\theta$", "$|R_\\theta|$",
                 "max\nover $\\theta$"],
-               "Complexity:  $\\mathcal{O}(N_s \\times N')$  per pixel", "B")
+               "$\\mathrm{O}(N_s \\times N')$ per pixel", "B")
 
     fig.tight_layout(h_pad=1.0)
     _save(fig, "fig2_computation_flow")
