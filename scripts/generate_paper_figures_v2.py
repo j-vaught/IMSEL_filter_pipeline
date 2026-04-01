@@ -155,29 +155,8 @@ def figure1a():
                                 facecolor="#73000A", edgecolor="#570008",
                                 linewidth=1.2, zorder=5))
 
-    # Arrows from a few neighbors toward center with labels
-    arrow_sources = [(-2, 1), (2, 0), (1, -1), (-1, -2)]
-    label_offsets = [(-1.2, 0.6), (1.2, 0.6), (1.2, -0.6), (-1.2, -0.6)]
-    for i, ((sx, sy), (lox, loy)) in enumerate(zip(arrow_sources, label_offsets)):
-        if (sx, sy) not in neighbors:
-            continue
-        # Arrow from neighbor toward center, stopping short
-        dx_n = -sx / np.sqrt(sx**2 + sy**2)
-        dy_n = -sy / np.sqrt(sx**2 + sy**2)
-        ax.annotate(
-            "", xy=(sx + dx_n * 0.6, sy + dy_n * 0.6),
-            xytext=(sx, sy),
-            arrowprops=dict(arrowstyle="->,head_width=0.15,head_length=0.12",
-                            color="#363636", lw=1.3),
-            zorder=6,
-        )
-        # Label offset from the source pixel (no textbox)
-        ax.text(sx + lox, sy + loy,
-                f"$f(x_{{{i+1}}}, y_{{{i+1}}})$", fontsize=8.5, color="#363636",
-                ha="center", va="center", zorder=7)
-
     # Local coordinate axes (rotated ~30 deg)
-    axis_len = 3.5
+    axis_len = 5.5
     cos_a, sin_a = np.cos(theta_axis), np.sin(theta_axis)
     # x-axis (normal direction) - Horseshoe green
     ax.annotate("", xy=(axis_len * cos_a, axis_len * sin_a), xytext=(0, 0),
