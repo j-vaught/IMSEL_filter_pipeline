@@ -66,80 +66,96 @@ This is the foundation of everything. Before we worry about lines or stencils, w
 
 == Setting Up Local Coordinates
 
-Pick a target pixel at position $(X_0, Y_0)$ in the image. Pick a candidate edge direction $theta_k$ (one of our 18 angles, for example). We set up a local coordinate system centered on our pixel, rotated so that $x$ points along the normal to the edge (the direction we want the derivative in) and $y$ points along the edge itself.
+Pick a target pixel at position $(X_0, Y_0)$ in the image, where $X_0$ is its column (horizontal position) and $Y_0$ is its row (vertical position). Pick a candidate edge direction $theta_k$, which is just an angle measured in radians. If we are testing $N_s = 18$ directions, then $theta_k$ would be one of 18 evenly spaced angles around the circle (0°, 20°, 40°, ..., 340°). The subscript $k$ is just an index that says "which angle are we currently testing" ($k = 0, 1, 2, dots, 17$).
 
-For any neighbor pixel at $(X_i, Y_i)$, its local coordinates are:
+We set up a local coordinate system centered on our pixel, rotated so that $x$ points along the normal to the edge (the direction we want the derivative in) and $y$ points along the edge itself.
+
+For any neighbor pixel at $(X_i, Y_i)$, where $i$ is just an index labeling which neighbor we are talking about ($i = 1, 2, dots, N_p$), its local coordinates are:
 
 $ x_i &= (X_i - X_0) cos theta_k + (Y_i - Y_0) sin theta_k \
   y_i &= -(X_i - X_0) sin theta_k + (Y_i - Y_0) cos theta_k $ <eq:rotate>
 
-This is just a coordinate rotation. We are re-expressing each neighbor's position relative to our target pixel, in a coordinate system aligned with the candidate edge direction.
+Here $x_i$ is the position of neighbor $i$ in the rotated coordinate system along the normal direction, and $y_i$ is its position along the tangent direction. The terms $(X_i - X_0)$ and $(Y_i - Y_0)$ are just "how far is this neighbor from the target pixel in the original image coordinates." The $cos theta_k$ and $sin theta_k$ terms rotate those offsets into the edge-aligned frame.
 
-To give a concrete example, suppose our target pixel is at $(50, 50)$ and we are testing $theta_k = 0degree$ (a vertical edge). Then the rotation is trivial: $x_i = X_i - 50$ and $y_i = Y_i - 50$. For $theta_k = 45degree$, the axes are rotated 45 degrees, so the $x$ and $y$ coordinates become mixtures of the horizontal and vertical offsets.
+This is just a standard 2D rotation matrix applied to each neighbor's offset. We are re-expressing each neighbor's position relative to our target pixel, in a coordinate system aligned with the candidate edge direction.
+
+To give a concrete example, suppose our target pixel is at $(50, 50)$ and we are testing $theta_k = 0degree$ (a vertical edge). Then $cos 0 = 1$ and $sin 0 = 0$, so the rotation is trivial: $x_i = X_i - 50$ and $y_i = Y_i - 50$. For $theta_k = 45degree$, the axes are rotated 45 degrees, so the $x$ and $y$ coordinates become mixtures of the horizontal and vertical offsets.
 
 == Fitting a Polynomial Surface
 
-Now we model the image brightness near our target pixel as a polynomial in these local coordinates. Using a Taylor expansion of order $d$ (we typically use $d = 4$):
+Now we model the image brightness near our target pixel as a polynomial in these local coordinates. Using a Taylor expansion of order $d$ (we typically use $d = 4$). Here $d$ is the polynomial degree, a design choice we make. Higher $d$ means the polynomial can represent more complex shapes, but also means more unknowns to solve for. The function $f$ is the image brightness: $f(x_i, y_i)$ means "the brightness at the position $(x_i, y_i)$."
 
 $ f(x_i, y_i) approx underbrace(f^0, "constant") + underbrace(f_x^0 x_i, "linear in " x) + underbrace(f_y^0 y_i, "linear in " y) + underbrace((f_(x x)^0) / 2 x_i^2, "quadratic") + dots.c $ <eq:taylor>
 
-There are $M = (d+1)(d+2) / 2$ unknown coefficients in this expansion. For $d = 4$, that is $M = 15$ unknowns.
+Here is what every symbol means.
 
-What are these unknowns? They are the partial derivatives of the image at our target pixel: the value $f^0$, the first derivatives $f_x^0$ and $f_y^0$, the second derivatives $f_(x x)^0$, $f_(y y)^0$, $f_(x y)^0$, and so on up to fourth order. The one we care about most is $f_x^0$, the derivative in the normal direction, because that is our edge strength.
+$f^0$ is the brightness value right at the target pixel (the constant term). $f_x^0$ is the first partial derivative of brightness with respect to $x$ at the target pixel, i.e. how fast the brightness changes in the $x$-direction. This is the number we ultimately want because it tells us the edge strength. $f_y^0$ is the same thing but in the $y$-direction (along the edge, which we care less about). $f_(x x)^0$ is the second derivative with respect to $x$ (how the rate of change itself is changing), and so on for all the higher-order terms. The superscript $0$ on all of these just means "evaluated at the origin of our local coordinate system," i.e. at the target pixel.
+
+There are $M = (d+1)(d+2) / 2$ unknown coefficients in this expansion. This formula comes from counting how many distinct monomial terms exist in a 2D polynomial of degree $d$. For $d = 4$, that is $M = (5 times 6) / 2 = 15$ unknowns. For $d = 2$, it would be $M = (3 times 4) / 2 = 6$ unknowns.
+
+The key point is that all of these unknowns ($f^0$, $f_x^0$, $f_y^0$, $f_(x x)^0$, ...) are what we are trying to solve for. We know $f(x_i, y_i)$ at each neighbor (we read it from the image), and we know $(x_i, y_i)$ (we computed it from the rotation). The unknowns are the derivatives. Once we solve for them, we grab $f_x^0$ and that is our edge strength at this pixel in this direction.
 
 == Gathering Neighbors
 
-We select $N_p$ neighbor pixels around our target. These are chosen as the $N_p$ closest integer-coordinate pixels, forming an approximately circular patch. For $N_p = 100$, this circle has a radius of about 6 pixels.
+We select $N_p$ neighbor pixels around our target. $N_p$ stands for "number of points" and is a design parameter we choose. These neighbors are chosen as the $N_p$ closest integer-coordinate pixels to the target, forming an approximately circular patch. For $N_p = 100$, this circle has a radius of about 6 pixels.
 
-Each neighbor gives us one equation: we know its local coordinates $(x_i, y_i)$ from @eq:rotate, and we know its brightness $f(X_i, Y_i)$ from the image. Plugging into @eq:taylor gives us one equation relating the 15 unknowns to one known brightness value.
+Each neighbor gives us one equation. For neighbor $i$, we know two things: its local coordinates $(x_i, y_i)$ (computed from @eq:rotate) and its brightness value $f(X_i, Y_i)$ (read directly from the image). We plug $(x_i, y_i)$ and $f(X_i, Y_i)$ into @eq:taylor. That gives us one equation where the left side is a known number (the brightness we read from the image) and the right side is an expression involving the 15 unknown derivatives multiplied by known coordinate values. One neighbor, one equation.
 
-With $N_p = 100$ equations and 15 unknowns, we have a heavily overdetermined system. This is good because it means the solution averages out noise.
+With $N_p = 100$ neighbors, we get 100 equations. With $M = 15$ unknowns, we have far more equations than unknowns. This is called an overdetermined system. There is no single solution that satisfies all 100 equations exactly (because of noise in the image), but we can find the "best fit" solution that comes closest to satisfying all of them. This best fit naturally averages out the noise, and the more equations we have relative to unknowns, the better the averaging.
 
 == The Linear System
 
-Stack all $N_p$ equations into a matrix equation:
+We can write all $N_p$ equations at once as a single matrix equation:
 
 $ bold(A)_(theta_k) bold(z) = bold(b) $ <eq:system>
 
-Here is what each piece is.
+This is the compact way of writing "100 equations with 15 unknowns." Here is what each piece is.
 
-$bold(A)_(theta_k)$ is an $N_p times M$ matrix (e.g., $100 times 15$). Each row corresponds to one neighbor pixel. The entries in that row are the monomial terms evaluated at that neighbor's local coordinates. For example, for a 2nd-order fit ($d=2$, $M=6$), row $i$ would be $[1, x_i, y_i, x_i^2 / 2, y_i^2 / 2, x_i y_i]$. For $d=4$ there are 15 such terms.
+$bold(A)_(theta_k)$ is the design matrix, with dimensions $N_p times M$ (e.g., $100 times 15$). The subscript $theta_k$ reminds us that this matrix depends on which angle we are testing, because the local coordinates $(x_i, y_i)$ change when we rotate. Each row of $bold(A)$ corresponds to one neighbor pixel $i$. The entries in that row are the monomial basis terms (the $1, x_i, y_i, x_i^2/2, dots$ from @eq:taylor) evaluated at that neighbor's local coordinates. For example, for a 2nd-order fit ($d=2$, $M=6$), row $i$ would be $[1, x_i, y_i, x_i^2 / 2, y_i^2 / 2, x_i y_i]$. For $d=4$ there are 15 such entries per row.
 
-$bold(z)$ is the $M times 1$ vector of unknowns: $[f^0, f_x^0, f_y^0, f_(x x)^0 / 2, dots]$.
+$bold(z)$ is the vector of unknowns, with dimensions $M times 1$ (e.g., $15 times 1$). It contains all the derivative coefficients we are solving for: $bold(z) = [f^0, f_x^0, f_y^0, f_(x x)^0 / 2, dots]^top$. These are the same unknowns from @eq:taylor. Once we solve for $bold(z)$, we will grab its second entry ($f_x^0$) as our edge strength.
 
-$bold(b)$ is the $N_p times 1$ vector of observed brightness values: $[f(X_1, Y_1), f(X_2, Y_2), dots, f(X_(N_p), Y_(N_p))]$.
+$bold(b)$ is the data vector, with dimensions $N_p times 1$ (e.g., $100 times 1$). It contains the actual brightness values we read from the image at each neighbor location: $bold(b) = [f(X_1, Y_1), f(X_2, Y_2), dots, f(X_(N_p), Y_(N_p))]^top$. This is the only part that changes from pixel to pixel; $bold(A)$ is the same for every pixel at a given angle $theta_k$.
+
+The equation $bold(A) bold(z) = bold(b)$ says: "if the polynomial model were perfect, then multiplying the design matrix by the unknown derivatives would reproduce the observed brightness values exactly." In practice it will not be exact because of noise, so we find the best approximation.
 
 == Solving It: The Pseudoinverse
 
-Since we have more equations than unknowns, there is no exact solution. We find the least-squares best fit:
+Since we have more equations than unknowns ($N_p > M$), there is no exact solution. We find the least-squares best fit, meaning the $bold(z)$ that minimizes the total squared error across all 100 equations:
 
 $ hat(bold(z)) = (bold(A)_(theta_k)^top bold(A)_(theta_k))^(-1) bold(A)_(theta_k)^top bold(b) $ <eq:lstsq>
 
-We define the pseudoinverse matrix:
+Here $hat(bold(z))$ is the estimated (best-fit) version of $bold(z)$, the hat symbol $hat(dot.c)$ is standard notation for "estimated." The expression $bold(A)_(theta_k)^top$ is the transpose of $bold(A)$ (rows and columns swapped), and $(dot.c)^(-1)$ means matrix inverse. This formula is the standard least-squares solution from linear algebra; it is the value of $bold(z)$ that minimizes $||bold(A) bold(z) - bold(b)||^2$.
+
+We can split this formula into two pieces. Define the pseudoinverse matrix:
 
 $ bold(P)_(theta_k) = (bold(A)_(theta_k)^top bold(A)_(theta_k))^(-1) bold(A)_(theta_k)^top $ <eq:pinv>
 
-This is an $M times N_p$ matrix. It transforms a vector of $N_p$ brightness values into the $M$ fitted coefficients. So $hat(bold(z)) = bold(P)_(theta_k) bold(b)$.
+$bold(P)_(theta_k)$ is called the Moore-Penrose pseudoinverse of $bold(A)_(theta_k)$. It is an $M times N_p$ matrix (e.g., $15 times 100$). The critical property of $bold(P)$ is that it transforms a vector of $N_p$ brightness values directly into the $M$ fitted derivative coefficients. In other words, the solution is simply $hat(bold(z)) = bold(P)_(theta_k) bold(b)$: one matrix-vector multiply and we have all 15 derivatives.
+
+The reason we give $bold(P)$ a name is that it depends only on the geometry (the neighbor positions and the angle $theta_k$), not on the image. So we can compute $bold(P)_(theta_k)$ once ahead of time and reuse it for every pixel.
 
 == Extracting the Derivative We Want
 
-We only need $hat(f)_x^0$, the normal derivative, which is the second entry of $hat(bold(z))$ (index 1 if we start counting from 0). That means:
+We do not actually need all 15 derivatives. We only need $hat(f)_x^0$, the normal derivative (edge strength). This is the second entry of $hat(bold(z))$ (index 1 if we start counting from 0, because index 0 is the constant $f^0$). Since $hat(bold(z)) = bold(P)_(theta_k) bold(b)$, the second entry of $hat(bold(z))$ is just the dot product of row 1 of $bold(P)$ with $bold(b)$:
 
 $ hat(f)_x^((k)) = bold(p)_"fx"^((k)) dot bold(b) $ <eq:fx>
 
-where $bold(p)_"fx"^((k))$ is row 1 of $bold(P)_(theta_k)$, a vector of $N_p$ numbers.
+Here $hat(f)_x^((k))$ is the estimated normal derivative at angle $theta_k$. The superscript $(k)$ reminds us which angle we are testing. The vector $bold(p)_"fx"^((k))$ is row 1 of the pseudoinverse matrix $bold(P)_(theta_k)$. It has $N_p$ entries (one per neighbor pixel). The subscript "fx" stands for "$f_x$-extraction," meaning this is the row of $bold(P)$ that extracts the $f_x$ derivative. The vector $bold(b)$ is the same brightness vector from before (the brightness values at all $N_p$ neighbors).
 
-This is a key insight. The estimated derivative is just a dot product between a fixed weight vector $bold(p)_"fx"^((k))$ and the raw pixel brightness values $bold(b)$. No matter how fancy the polynomial fitting sounds, in the end it is just "multiply each neighbor's brightness by a weight and add up."
+This is the key insight of the entire derivation. The estimated derivative at one pixel in one direction is just a dot product: take each neighbor's brightness, multiply it by a fixed weight from $bold(p)_"fx"^((k))$, and add them all up. No matter how fancy the polynomial fitting sounds, in the end it is just "multiply each neighbor's brightness by a weight and sum."
 
-The weights $bold(p)_"fx"^((k))$ depend on the geometry (where the neighbors are and what angle we are testing) but not on the image. They can be computed once in advance.
+The weights $bold(p)_"fx"^((k))$ depend on the geometry (where the neighbors are and what angle $theta_k$ we are testing) but not on the image. They can be computed once in advance and reused for every pixel in the image.
 
 == Picking the Best Direction
 
-We repeat this for all $N_s$ candidate angles $theta_k = k dot 2 pi / N_s$ and pick the direction with the strongest response:
+We repeat this for all $N_s$ candidate angles and pick the direction with the strongest response. The angles are evenly spaced: $theta_k = k dot 2 pi / N_s$ for $k = 0, 1, dots, N_s - 1$. Here $N_s$ is the number of orientations we test (a design choice; we use $N_s = 18$, giving angles every 20°).
 
 $ k^* = arg max_k |hat(f)_x^((k))| $ <eq:maxorient>
 
-The gradient magnitude is $|hat(f)_x^((k^*))|$ and the edge angle is $theta_(k^*)$. This completes the point filter.
+Here $k^*$ is the index of the winning orientation, the one whose absolute derivative response $|hat(f)_x^((k))|$ is largest. The operator $arg max_k$ means "find the value of $k$ that maximizes the expression." The absolute value $|dot.c|$ is needed because an edge could produce a positive or negative derivative depending on which side is brighter; we care about the magnitude, not the sign.
+
+The gradient magnitude (edge strength) at this pixel is $|hat(f)_x^((k^*))|$, and the edge angle is $theta_(k^*)$. This completes the point filter.
 
 
 // =====================================================================
@@ -150,27 +166,33 @@ The point filter works, but it only looks at one circular patch around the targe
 
 == Virtual Evaluation Points
 
-Instead of fitting the polynomial only at $(X_0, Y_0)$, we also fit it at $(2m+1)$ virtual positions spaced along the edge direction:
+Instead of fitting the polynomial only at the target pixel $(X_0, Y_0)$, we also fit it at $(2m+1)$ virtual positions spaced along the edge direction. Here $m$ is the half-width of the line, a design parameter we choose. The term $(2m+1)$ counts the total number of positions: $m$ on each side of center, plus the center itself.
 
 $ (X_j, Y_j) = (X_0 + j cos theta_k, Y_0 + j sin theta_k), quad j in {-m, dots, 0, dots, m} $ <eq:vpoints>
 
-For $m = 7$, this gives 15 positions (from $j = -7$ to $j = 7$). At each one, we run the entire point filter: gather $N_p$ neighbors, build the matrix, solve, extract $hat(f)_x^((j,k))$.
+Here $(X_j, Y_j)$ is the position of the $j$-th virtual evaluation point. The index $j$ runs from $-m$ to $+m$ and labels each virtual position along the line. When $j = 0$, we are at the original target pixel. When $j = 1$, we have moved one step in the direction $theta_k$. When $j = -1$, we have moved one step in the opposite direction. The $cos theta_k$ and $sin theta_k$ terms convert the step along the angle $theta_k$ into horizontal and vertical pixel offsets.
+
+For $m = 7$, this gives $2(7) + 1 = 15$ positions (from $j = -7$ to $j = 7$). At each one, we run the entire point filter from Step 2: gather $N_p$ neighbors around $(X_j, Y_j)$, build the design matrix, solve via pseudoinverse, extract $hat(f)_x^((j,k))$. The notation $hat(f)_x^((j,k))$ now has two superscripts: $j$ tells us which virtual position, and $k$ tells us which angle.
 
 Think of it this way. We are sliding a circular patch along the candidate edge direction and measuring the edge strength at each position. If there really is an edge running in that direction, all 15 patches should see it, and the combined evidence is much stronger than any single patch.
 
 == Combining the Estimates
 
-We combine the 15 derivative estimates using a Gaussian-weighted average:
+We combine the $(2m+1)$ derivative estimates using a Gaussian-weighted average:
 
 $ R_k = sum_(j=-m)^m w_j dot hat(f)_x^((j,k)) $ <eq:lineresponse>
 
-where the weights are:
+Here $R_k$ is the line filter response for orientation $k$, a single number that summarizes how strong the edge evidence is in direction $theta_k$ when we consider all the virtual positions together. The summation $sum_(j=-m)^m$ means "add up for every virtual position $j$ from $-m$ to $m$." Each term in the sum is the Gaussian weight $w_j$ times the derivative estimate $hat(f)_x^((j,k))$ at virtual position $j$.
+
+The weights $w_j$ are defined as:
 
 $ w_j = exp(-j^2 / (2 sigma^2)), quad sigma = m / 2 $
 
+Here $w_j$ is the Gaussian weight for virtual position $j$. It is just a bell-curve value: the $exp$ function (exponential, $e$ raised to a power) produces a number between 0 and 1. When $j = 0$ (center position), $w_0 = exp(0) = 1$ (maximum weight). As $|j|$ increases (positions farther from center), $w_j$ decreases toward zero. The parameter $sigma$ controls how fast the weights decay; we set $sigma = m/2$, which means positions beyond about $m/2$ steps from center contribute very little.
+
 The Gaussian weighting means positions near the center (small $|j|$) count more than positions far away (large $|j|$). This is sensible: the target pixel is at $j=0$, and positions farther away are less relevant.
 
-For $m = 7$, the weights look like this: $w_0 = 1.0$ (center), $w_(plus.minus 1) approx 0.92$, $w_(plus.minus 3) approx 0.57$, $w_(plus.minus 7) approx 0.007$ (almost zero at the ends).
+For $m = 7$ ($sigma = 3.5$), the weights look like this: $w_0 = 1.0$ (center), $w_(plus.minus 1) approx 0.96$, $w_(plus.minus 3) approx 0.68$, $w_(plus.minus 7) approx 0.05$ (small but nonzero at the ends).
 
 == Why This Is Expensive
 
@@ -190,25 +212,33 @@ Here is where the magic happens. We are going to show that the entire line filte
 
 == Expanding the Line Response
 
-Let us write out what $R_k$ actually computes, in full detail. From @eq:lineresponse and @eq:fx:
+Let us write out what $R_k$ actually computes, in full detail. We start with the line response from @eq:lineresponse:
 
 $ R_k = sum_(j=-m)^m w_j dot hat(f)_x^((j,k)) $ <eq:expand1>
 
-Substituting the definition of $hat(f)_x^((j,k))$:
+This says: "for each virtual position $j$, take the derivative estimate $hat(f)_x^((j,k))$, multiply it by the Gaussian weight $w_j$, and add them all up."
+
+Now we substitute what $hat(f)_x^((j,k))$ actually is. From @eq:fx, we know that the derivative estimate at any single position is a dot product of the pseudoinverse row with the brightness values. At virtual position $j$:
 
 $ R_k = sum_(j=-m)^m w_j dot (bold(p)_"fx"^((k)) dot bold(b)_j) $ <eq:expand2>
 
-where $bold(b)_j$ is the vector of brightness values gathered around virtual position $j$. Now expand the dot product:
+Here $bold(b)_j$ is the vector of $N_p$ brightness values gathered around virtual position $j$ (not around the original target pixel, but around the shifted position $(X_j, Y_j)$). The weight vector $bold(p)_"fx"^((k))$ is the same for every virtual position because the neighbor pattern and the polynomial model are the same; only the center of the patch moves.
+
+Now we expand the dot product $bold(p)_"fx"^((k)) dot bold(b)_j$ into its individual terms:
 
 $ R_k = sum_(j=-m)^m w_j sum_(i=1)^(N_p) p_i^((k)) dot f(X_j + Delta x_i, Y_j + Delta y_i) $ <eq:expand3>
 
-where $p_i^((k))$ is the $i$-th entry of $bold(p)_"fx"^((k))$ and $(Delta x_i, Delta y_i)$ are the offsets of the $i$-th neighbor relative to the center of its patch.
+Here $p_i^((k))$ is the $i$-th entry of $bold(p)_"fx"^((k))$, i.e., the pseudoinverse weight for the $i$-th neighbor. The term $(Delta x_i, Delta y_i)$ is the offset of neighbor $i$ relative to the center of its patch (these are the same offsets for every virtual position, because we always use the same circular neighbor pattern). The function $f(X_j + Delta x_i, Y_j + Delta y_i)$ is just "read the brightness from the image at the pixel located at the virtual position plus the neighbor offset."
 
-Now substitute the definition of $(X_j, Y_j)$ from @eq:vpoints:
+The inner sum $sum_(i=1)^(N_p)$ loops over all $N_p$ neighbors. The outer sum $sum_(j=-m)^m$ loops over all $(2m+1)$ virtual positions. Together, they produce $(2m+1) times N_p$ terms.
+
+Now substitute the definition of $(X_j, Y_j)$ from @eq:vpoints, which is $(X_0 + j cos theta_k, Y_0 + j sin theta_k)$:
 
 $ R_k = sum_(j=-m)^m sum_(i=1)^(N_p) underbrace(w_j dot p_i^((k)), "a single number") dot f(underbrace(X_0 + j cos theta_k + Delta x_i, "x-coordinate of pixel"), underbrace(Y_0 + j sin theta_k + Delta y_i, "y-coordinate of pixel")) $ <eq:expanded_full>
 
-Let us pause and stare at this equation. It says: $R_k$ is a sum of $(2m+1) times N_p$ terms. Each term is a single number ($w_j dot p_i^((k))$, which we can precompute) multiplied by a single pixel value (read from the image at a specific location).
+Let us pause and stare at this equation. It says: $R_k$ is a sum of $(2m+1) times N_p$ terms. Each term has two parts. Part one is $w_j dot p_i^((k))$, which is a product of two known numbers: the Gaussian weight at position $j$ and the pseudoinverse weight for neighbor $i$. Both of these are determined by the filter geometry and can be computed before we ever look at the image. Part two is $f(dots)$, which is a single pixel brightness value read from the image at a specific location.
+
+So each term is just "a precomputable number times a pixel value." And $R_k$ is the sum of all such terms.
 
 That is it. The entire line filter, the polynomial fitting, the pseudoinverse, the Gaussian weighting, all of it, reduces to "multiply some pixels by some precomputed numbers and add up." This is the algebraic collapse.
 
@@ -246,9 +276,11 @@ We group all $(j, i)$ pairs that map to the same integer pixel position and sum 
 
 $ alpha_(k, ell) = sum_({(j, i) : "round"(j cos theta_k + Delta x_i, j sin theta_k + Delta y_i) = "position" ell}) w_j dot p_i^((k)) $ <eq:dedup>
 
+Here $alpha_(k, ell)$ is the fused weight for orientation $k$ at unique pixel position $ell$. The subscript $ell$ is a new index that labels unique pixel positions in the fused stencil ($ell = 1, 2, dots, N'_k$). For each unique position $ell$, we find all the $(j, i)$ pairs from the raw stencil that land on that same pixel (after rounding to integer coordinates), and we add up their individual weights $w_j dot p_i^((k))$. The "round" operation reflects the fact that the computed offsets $j cos theta_k + Delta x_i$ may not be exact integers, so we snap them to the nearest pixel.
+
 After deduplication, the stencil shrinks dramatically. For $m = 7$, $N_p = 100$: from 1500 raw entries down to about 264 unique pixel positions. That is an 82% reduction.
 
-The fused stencil for orientation $k$ is then just two arrays, one giving the offsets $( tilde(delta)_ell^x, tilde(delta)_ell^y)$ and one giving the corresponding weight $alpha_(k,ell)$, for $ell = 1, dots, N'_k$ where $N'_k$ is the number of unique positions.
+The fused stencil for orientation $k$ is then just two arrays. The first array stores the pixel offsets $( tilde(delta)_ell^x, tilde(delta)_ell^y)$, which say "how far from the target pixel is stencil position $ell$, in the $x$ and $y$ directions." The tilde ($tilde(dot.c)$) distinguishes these from the raw offsets; these are the deduplicated, unique positions. The second array stores the corresponding fused weights $alpha_(k,ell)$. Together, these two arrays completely define the filter for orientation $k$. There are $N'_k$ entries, where $N'_k$ is the number of unique positions (e.g., 264 instead of 1500).
 
 == The Final Formula
 
@@ -256,13 +288,15 @@ After deduplication, the line filter response is:
 
 $ R_k = sum_(ell=1)^(N'_k) alpha_(k, ell) dot f(X_0 + tilde(delta)_ell^x, Y_0 + tilde(delta)_ell^y) $ <eq:fused>
 
+This says: "for each of the $N'_k$ unique stencil positions, read the pixel brightness at that position ($f$ evaluated at the target pixel plus the offset), multiply by its fused weight $alpha_(k,ell)$, and sum everything up." That is the entire filter. One loop, one multiply-add per stencil position, done.
+
 Or in vector notation:
 
 $ R_k = bold(alpha)_k^top bold(g)_k $ <eq:dotprod>
 
-where $bold(alpha)_k in RR^(N'_k)$ is the precomputed weight vector and $bold(g)_k in RR^(N'_k)$ is the vector of pixel values gathered from the image at the stencil positions.
+Here $bold(alpha)_k in RR^(N'_k)$ is the precomputed weight vector (all $N'_k$ fused weights stacked into a column), and $bold(g)_k in RR^(N'_k)$ is the gathered intensity vector (the brightness values read from the image at the $N'_k$ stencil positions). The notation $bold(alpha)_k^top$ means the transpose of $bold(alpha)_k$ (turning a column into a row so the dot product works). The notation $RR^(N'_k)$ just means "a vector of $N'_k$ real numbers."
 
-This is mathematically identical to @eq:expanded_full. The same pixels, the same total weights, the same answer. We have just reorganized the computation.
+This is mathematically identical to @eq:expanded_full. The same pixels participate. The same total weights are applied. The same answer comes out. We have just reorganized the computation to avoid redundant work.
 
 
 // =====================================================================
