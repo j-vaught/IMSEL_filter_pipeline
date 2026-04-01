@@ -439,7 +439,7 @@ def figure4():
     ax2.set_ylabel("Peak VRAM (MB)")
     ax2.set_xticks(x)
     ax2.set_xticklabels(configs)
-    ax2.legend(frameon=False, loc="upper left", fontsize=7)
+
     ax2.spines["top"].set_visible(False)
     ax2.spines["right"].set_visible(False)
     for bars in [b1, b2, b3]:
@@ -449,12 +449,11 @@ def figure4():
                      f"{int(h)}", ha="center", va="bottom", fontsize=6,
                      rotation=45)
 
-    ax1.text(-0.08, 1.08, "A", transform=ax1.transAxes,
-             fontsize=13, fontweight="bold", va="bottom")
-    ax2.text(-0.08, 1.08, "B", transform=ax2.transAxes,
-             fontsize=13, fontweight="bold", va="bottom")
-
     fig.tight_layout(w_pad=2.5)
+    ax1.set_xlabel("(A) Speedup vs Original LF", fontsize=10, fontweight="bold",
+                    labelpad=8)
+    ax2.set_xlabel("(B) Peak VRAM (MB)", fontsize=10, fontweight="bold",
+                    labelpad=8)
     _save(fig, "fig4_speedup_vram")
 
 
