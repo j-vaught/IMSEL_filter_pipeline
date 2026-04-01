@@ -99,33 +99,26 @@
 \end{frame}
 
 \begin{frame}{CPU vs. GPU Performance}
-  \begin{columns}[T]
-    \begin{column}{0.48\textwidth}
-      \textbf{CPU (per-pixel loop)}
-      \begin{itemize}
-        \item Triple-nested loop: pixels $\times$ orientations $\times$ \texttt{lstsq}
-        \item Each pixel solves $N_s$ independent least-squares systems via \texttt{np.linalg.lstsq}
-        \item A $481 \times 321$ image at $N_s\!=\!18$: $\sim$2.8M least-squares solves
-        \item Estimated: hours per image
-      \end{itemize}
-    \end{column}
-    \begin{column}{0.48\textwidth}
-      \textbf{GPU (batched matmul)}
-      \begin{itemize}
-        \item Pseudoinverses precomputed once
-        \item All pixels gathered in a single tensor op
-        \item One batched matmul per orientation
-        \item BSDS500 image: \textbf{0.009 s}
-        \item BIPED image: \textbf{0.036 s}
-      \end{itemize}
-    \end{column}
-  \end{columns}
+  Benchmarked CPU rate: \textbf{1,365 $\mu$s/pixel} ($N_p\!=\!15$, $N_s\!=\!18$, $d\!=\!4$, 32$\times$32 crop).
+
+  \vspace{0.3em}
+  \centering
+  \begin{tabular}{lrrr}
+    \toprule
+    \textbf{Image} & \textbf{CPU (est.)} & \textbf{GPU} & \textbf{Speedup} \\
+    \midrule
+    BSDS500 ($481 \times 321$) & 3.5 min  & 0.009 s & $23{,}000\times$ \\
+    BIPED ($1280 \times 720$)  & 21 min   & 0.036 s & $35{,}000\times$ \\
+    \bottomrule
+  \end{tabular}
 
   \vspace{0.5em}
+  \flushleft
   \begin{itemize}
-    \item Estimated \textbf{$\sim$1000$\times$ speedup} over CPU on full-resolution images
+    \item CPU: triple-nested loop --- each pixel solves $N_s$ independent \texttt{np.linalg.lstsq} calls
+    \item GPU: precomputed pseudoinverses + single batched matmul per orientation
     \item GPU--CPU numerical agreement: relative error $< 10^{-6}$
-    \item Full 453,420-configuration ablation completed in \textbf{12.4 hours} (RTX 6000 Ada, 48 GB)
+    \item Full ablation (453,420 configs): \textbf{12.4 hours} on GPU vs. $\sim$\textbf{18 years} on CPU
   \end{itemize}
 \end{frame}
 
