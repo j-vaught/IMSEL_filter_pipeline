@@ -27,10 +27,7 @@ Between classical simplicity and deep learning complexity sits a less-explored c
 
 In a companion report @vaught2026report1, we conducted an exhaustive parameter ablation of WVF and LF across four datasets (UDED, BIPED v1, BIPED v2, and BSDS500), finding that the originally published parameters ($N_p = 250$, $N_s = 18$, $d = 4$) are substantially suboptimal. Smaller support ($N_p = 25$--$100$) and lower polynomial order ($d = 2$) consistently yield higher ODS scores. In this report, we take those optimally-tuned configurations and benchmark them against both classical and learned edge detectors, examining accuracy, computational cost, and the practical trade-offs between these three categories of methods.
 
-Our contributions are:
-+ A comprehensive evaluation of 54 classical edge detection configurations on the BIPED v1 dataset using a consistent ODS evaluation protocol.
-+ A comparison of optimally-tuned WVF and LF against both classical and deep learning baselines, demonstrating that WVF outperforms all classical methods tested.
-+ A computational cost analysis showing WVF is 3.3$times$ faster than the fastest deep learning model and 422$times$ faster than diffusion-based approaches.
+Our contributions are as follows. We conduct a comprehensive evaluation of 54 classical edge detection configurations on the BIPED v1 dataset using a consistent ODS evaluation protocol. We then compare optimally-tuned WVF and LF against both classical and deep learning baselines, demonstrating that WVF outperforms all classical methods tested. Finally, we provide a computational cost analysis showing WVF is 3.3$times$ faster than the fastest deep learning model and 422$times$ faster than diffusion-based approaches.
 
 
 // ============================================================
@@ -296,24 +293,13 @@ Furthermore, WVF's behavior can be predicted from its parameters. As shown in Re
 
 == Limitations
 
-Several limitations qualify our findings:
+Several limitations qualify our findings. The scope of our classical comparison spans only BIPED v1. While we have WVF and LF results on all four datasets, extending the classical baseline evaluation to UDED, BIPED v2, and BSDS500 is needed to confirm generality. Additionally, full-dataset ODS evaluation for the five deep learning models is pending. The single-image DiffusionEdge result (0.904) provides an upper bound but not a dataset-wide comparison. The critical comparison---WVF vs. lightweight DL models (pidinet, TEED) at the dataset level---awaits these results.
 
-*Dataset scope for classical comparison.* The 54 classical methods were evaluated only on BIPED v1. While we have WVF and LF results on all four datasets, extending the classical baseline evaluation to UDED, BIPED v2, and BSDS500 is needed to confirm generality.
-
-*Incomplete DL results.* Full-dataset ODS evaluation for the five deep learning models is pending. The single-image DiffusionEdge result (0.904) provides an upper bound but not a dataset-wide comparison. The critical comparison---WVF vs. lightweight DL models (pidinet, TEED) at the dataset level---awaits these results.
-
-*Single evaluation metric.* We rely primarily on ODS F-measure, which finds a single optimal threshold. The OIS (Optimal Image Scale) F-measure, which allows per-image threshold selection, would provide additional insight. OIS values from the ablation study (e.g., WVF OIS\u{00a0}=\u{00a0}0.816 on BIPED v1) show consistent trends but are not the focus of this report.
-
-*Clean data only.* All comparisons in this report are on clean (noise-free) data. A companion report (Report~3) will examine noise robustness, where the relative rankings may shift substantially.
+We rely primarily on ODS F-measure, which finds a single optimal threshold. The OIS (Optimal Image Scale) F-measure, which allows per-image threshold selection, would provide additional insight. OIS values from the ablation study (e.g., WVF OIS\u{00a0}=\u{00a0}0.816 on BIPED v1) show consistent trends but are not the focus of this report. Finally, all comparisons in this report are on clean (noise-free) data. A companion report (Report~3) will examine noise robustness, where the relative rankings may shift substantially.
 
 == Future Work
 
-Several extensions are planned:
-
-+ *Full-dataset DL evaluation.* Completing ODS evaluation for all 5 DL models on all 4 datasets will enable definitive accuracy comparisons and refine the Pareto analysis.
-+ *Classical baselines on all datasets.* Extending the 54-method classical comparison to UDED, BIPED v2, and BSDS500.
-+ *Noise robustness benchmarking.* Report~3 will evaluate all methods under controlled noise conditions, testing whether WVF's extended support provides inherent noise robustness that might narrow the gap with DL models or even provide an advantage at low signal-to-noise ratios.
-+ *Edge map quality beyond ODS.* Qualitative analysis of edge map characteristics---edge continuity, localization precision, false positive patterns---across method categories.
+Several extensions are planned. We will complete full-dataset ODS evaluation for all 5 DL models on all 4 datasets to enable definitive accuracy comparisons and refine the Pareto analysis. We also plan to extend the 54-method classical comparison to UDED, BIPED v2, and BSDS500. Report~3 will conduct noise robustness benchmarking by evaluating all methods under controlled noise conditions, testing whether WVF's extended support provides inherent noise robustness that might narrow the gap with DL models or even provide an advantage at low signal-to-noise ratios. Finally, we will perform qualitative analysis of edge map characteristics---edge continuity, localization precision, false positive patterns---across method categories to assess edge map quality beyond ODS.
 
 
 // ============================================================
