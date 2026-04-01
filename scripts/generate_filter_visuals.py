@@ -210,9 +210,9 @@ def figure2():
 
     fig, axes = plt.subplots(2, 1, figsize=(9.5, 5.5))
 
-    def _draw_flow(ax, boxes, complexity, panel_label):
+    def _draw_flow(ax, boxes, caption, complexity, panel_label):
         ax.set_xlim(-0.5, len(boxes) + 0.5)
-        ax.set_ylim(-1.0, 1.8)
+        ax.set_ylim(-1.4, 1.5)
         ax.set_aspect("auto")
         ax.set_xticks([])
         ax.set_yticks([])
@@ -220,6 +220,7 @@ def figure2():
             spine.set_visible(False)
         box_w, box_h = 0.85, 0.7
         y_center = 0.5
+        x_mid = len(boxes) / 2.0
         colors_cycle = ["#ECECEC", "#C7C7C7"]  # 10% Black, 30% Black
         for i, txt in enumerate(boxes):
             x = i + 0.5
@@ -235,9 +236,9 @@ def figure2():
                 ax.annotate("", xy=(x + box_w / 2 + 0.15, y_center),
                            xytext=(x + box_w / 2 + 0.01, y_center),
                            arrowprops=dict(arrowstyle="->", color="#363636", lw=1.2))
-        # Caption below: panel label + complexity
-        ax.text(len(boxes) / 2 + 0.5, -0.55,
-                f"({panel_label})  {complexity}",
+        # Caption below: (label) description. Complexity: ...
+        ax.text(x_mid, -0.45,
+                f"({panel_label}) {caption}. Complexity: {complexity}",
                 ha="center", va="center", fontsize=9, color="#363636")
 
     _draw_flow(axes[0],
@@ -245,6 +246,7 @@ def figure2():
                 "Gather\n$N_p$ nbrs", "Matmul\nwith $P_\\theta$",
                 "Weight\n$w_j$", "Sum\nover $j$", "$|R_\\theta|$",
                 "max\nover $\\theta$"],
+               "Naive Line Filter compute process",
                "$\\mathrm{O}(N_s \\times L \\times N_p)$ per pixel", "A")
 
     _draw_flow(axes[1],
@@ -252,6 +254,7 @@ def figure2():
                 "Single gather\n$N'$ unique\npositions",
                 "Dot product\nwith $\\alpha_\\theta$", "$|R_\\theta|$",
                 "max\nover $\\theta$"],
+               "Anisotropic Stencil Filter compute process",
                "$\\mathrm{O}(N_s \\times N')$ per pixel", "B")
 
     fig.tight_layout(h_pad=1.0)
