@@ -365,7 +365,7 @@ def figure3():
         rad = np.radians(ang)
         ax.plot([-length * np.cos(rad), length * np.cos(rad)],
                 [-length * np.sin(rad), length * np.sin(rad)],
-                "--", color="#bdc3c7", linewidth=0.8, zorder=1)
+                "--", color="#CED318", linewidth=0.8, zorder=1)
 
         # Draw normal direction arrow (perpendicular to line)
         norm_ang = rad + np.pi / 2
