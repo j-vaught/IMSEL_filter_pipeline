@@ -347,8 +347,18 @@ def figure3():
                                  alpha=0.9, zorder=3)
             ax.add_patch(rect)
 
+        # Virtual point markers (small dark green dots)
+        m_val = 7
+        rad = np.radians(ang)
+        for j in range(-m_val, m_val + 1):
+            vx = int(round(j * np.cos(rad)))
+            vy = int(round(j * np.sin(rad)))
+            ax.add_patch(plt.Circle((vx, vy), 0.18, facecolor="#65780B",
+                                    edgecolor="white", linewidth=0.4,
+                                    zorder=6))
+
         # Center marker
-        ax.plot(0, 0, "+", color="black", ms=10, mew=2, zorder=5)
+        ax.plot(0, 0, "+", color="black", ms=10, mew=2, zorder=7)
 
         # Draw the line direction (tangent)
         length = grid_half - 1
