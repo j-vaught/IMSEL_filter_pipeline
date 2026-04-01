@@ -210,7 +210,7 @@ def figure2():
 
     fig, axes = plt.subplots(2, 1, figsize=(9.5, 5.5))
 
-    def _draw_flow(ax, boxes, title, complexity, panel_label):
+    def _draw_flow(ax, boxes, complexity, panel_label):
         ax.set_xlim(-0.5, len(boxes) + 0.5)
         ax.set_ylim(-1.2, 2.0)
         ax.set_aspect("auto")
@@ -218,35 +218,33 @@ def figure2():
         ax.set_yticks([])
         for spine in ax.spines.values():
             spine.set_visible(False)
-        ax.text(0.0, 1.75, f"{panel_label}  {title}",
-                fontsize=11, fontweight="bold", va="center")
+        ax.text(0.0, 1.75, panel_label,
+                fontsize=11, fontweight="bold", va="center", color="#000000")
         box_w, box_h = 0.85, 0.7
         y_center = 0.5
-        colors_cycle = ["#ecf0f1", "#d5dbdb"]
+        colors_cycle = ["#ECECEC", "#C7C7C7"]  # 10% Black, 30% Black
         for i, txt in enumerate(boxes):
             x = i + 0.5
-            rect = FancyBboxPatch(
+            rect = plt.Rectangle(
                 (x - box_w / 2, y_center - box_h / 2), box_w, box_h,
-                boxstyle="round,pad=0.08",
                 facecolor=colors_cycle[i % 2],
-                edgecolor="#2c3e50", linewidth=1.0,
+                edgecolor="#363636", linewidth=1.0,
             )
             ax.add_patch(rect)
             ax.text(x, y_center, txt, ha="center", va="center",
-                    fontsize=7, fontfamily="serif")
+                    fontsize=7, fontfamily="serif", color="#000000")
             if i < len(boxes) - 1:
                 ax.annotate("", xy=(x + box_w / 2 + 0.15, y_center),
                            xytext=(x + box_w / 2 + 0.01, y_center),
-                           arrowprops=dict(arrowstyle="->", color="#2c3e50", lw=1.2))
+                           arrowprops=dict(arrowstyle="->", color="#363636", lw=1.2))
         ax.text(len(boxes) / 2 + 0.5, -0.65, complexity,
-                ha="center", va="center", fontsize=9, style="italic", color="#7f8c8d")
+                ha="center", va="center", fontsize=9, style="italic", color="#5C5C5C")
 
     _draw_flow(axes[0],
                ["For each\n$\\theta$", "For each\nvirtual pt $j$",
                 "Gather\n$N_p$ nbrs", "Matmul\nwith $P_\\theta$",
                 "Weight\n$w_j$", "Sum\nover $j$", "$|R_\\theta|$",
                 "max\nover $\\theta$"],
-               "Naive Line Filter",
                "Complexity:  $\\mathcal{O}(N_s \\times L \\times N_p)$  per pixel", "A")
 
     _draw_flow(axes[1],
@@ -254,7 +252,6 @@ def figure2():
                 "Single gather\n$N'$ unique\npositions",
                 "Dot product\nwith $\\alpha_\\theta$", "$|R_\\theta|$",
                 "max\nover $\\theta$"],
-               "Anisotropic Stencil Filter",
                "Complexity:  $\\mathcal{O}(N_s \\times N')$  per pixel", "B")
 
     fig.tight_layout(h_pad=1.0)
