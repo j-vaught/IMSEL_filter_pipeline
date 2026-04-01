@@ -312,7 +312,15 @@ def figure3():
         all_w.extend(s.values())
     vmax = max(abs(min(all_w)), abs(max(all_w)))
 
-    cmap = plt.cm.RdBu_r  # Red = positive (bright side), Blue = negative (dark side)
+    # Custom diverging colormap: Congaree (negative) → 30% Black (zero) → Garnet (positive)
+    from matplotlib.colors import LinearSegmentedColormap
+    cmap = LinearSegmentedColormap.from_list("uofsc_div", [
+        "#1F414D",   # Congaree (strong negative)
+        "#466A9F",   # Atlantic (mild negative)
+        "#C7C7C7",   # 30% Black (zero — visible neutral)
+        "#CC2E40",   # Rose (mild positive)
+        "#73000A",   # Garnet (strong positive)
+    ])
     grid_half = 12
 
     for idx, (ang, stencil) in enumerate(zip(angles_deg, stencils)):
@@ -370,7 +378,7 @@ def figure3():
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(-vmax, vmax))
     sm.set_array([])
     cb = fig.colorbar(sm, cax=cbar_ax)
-    cb.set_label("Fused weight $\\alpha$  (red = +, blue = $-$)", fontsize=10)
+    cb.set_label("Fused weight $\\alpha$", fontsize=10)
 
     _save(fig, "fig3_stencil_orientations")
 
