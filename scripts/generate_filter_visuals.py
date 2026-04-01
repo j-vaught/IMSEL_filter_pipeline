@@ -450,10 +450,8 @@ def figure4():
                      rotation=45)
 
     fig.tight_layout(w_pad=2.5)
-    ax1.set_xlabel("(A) Speedup vs Original LF", fontsize=10, fontweight="bold",
-                    labelpad=8)
-    ax2.set_xlabel("(B) Peak VRAM (MB)", fontsize=10, fontweight="bold",
-                    labelpad=8)
+    ax1.set_xlabel("(A) Speedup vs Original LF", fontsize=10, labelpad=8)
+    ax2.set_xlabel("(B) Peak VRAM (MB)", fontsize=10, labelpad=8)
     _save(fig, "fig4_speedup_vram")
 
 
