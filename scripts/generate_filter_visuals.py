@@ -208,11 +208,11 @@ def figure1():
 def figure2():
     print("Figure 2: Computation Flow Comparison")
 
-    fig, axes = plt.subplots(2, 1, figsize=(9.5, 5.5))
+    fig, axes = plt.subplots(2, 1, figsize=(9.5, 3.8))
 
     def _draw_flow(ax, boxes, caption, complexity, panel_label):
         ax.set_xlim(-0.5, len(boxes) + 0.5)
-        ax.set_ylim(-1.4, 1.5)
+        ax.set_ylim(-0.8, 1.5)
         ax.set_aspect("auto")
         ax.set_xticks([])
         ax.set_yticks([])
@@ -237,7 +237,7 @@ def figure2():
                            xytext=(x + box_w / 2 + 0.01, y_center),
                            arrowprops=dict(arrowstyle="->", color="#363636", lw=1.2))
         # Caption below: (label) description. Complexity: ...
-        ax.text(x_mid, -0.45,
+        ax.text(x_mid, -0.25,
                 f"({panel_label}) {caption}. Complexity: {complexity}",
                 ha="center", va="center", fontsize=9, color="#363636")
 
@@ -257,7 +257,7 @@ def figure2():
                "Anisotropic Stencil Filter compute process",
                "$\\mathrm{O}(N_s \\times N')$ per pixel", "B")
 
-    fig.tight_layout(h_pad=1.0)
+    fig.tight_layout(h_pad=0.3)
     _save(fig, "fig2_computation_flow")
 
 
