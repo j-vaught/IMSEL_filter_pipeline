@@ -131,6 +131,42 @@ def rotate_coordinates(coords, theta):
     return coords @ R.T
 
 
+def get_square_neighbors(np_count, radius=None):
+    """Get pixel positions within a square neighborhood.
+
+    Selects the ``np_count`` closest integer-coordinate pixels to the
+    origin within a square grid, excluding the origin itself.
+
+    Parameters
+    ----------
+    np_count : int
+        Number of neighbor pixels (Np).
+    radius : int, optional
+        If given, use this half-width. Otherwise, auto-compute from np_count.
+
+    Returns
+    -------
+    coords : ndarray, shape (Np, 2)
+        Integer (x, y) coordinates relative to origin.
+    """
+    if radius is None:
+        # (2r+1)^2 - 1 >= np_count  =>  r >= (sqrt(np_count+1) - 1) / 2
+        radius = int(np.ceil((np.sqrt(np_count + 1) - 1) / 2))
+
+    candidates = []
+    for dx in range(-radius, radius + 1):
+        for dy in range(-radius, radius + 1):
+            if dx == 0 and dy == 0:
+                continue
+            dist = np.sqrt(dx**2 + dy**2)
+            candidates.append((dx, dy, dist))
+
+    candidates.sort(key=lambda c: c[2])
+    selected = candidates[:np_count]
+    coords = np.array([(c[0], c[1]) for c in selected], dtype=np.float64)
+    return coords
+
+
 def compute_wvf_pseudoinverse(coords, order=4):
     """Compute the pseudo-inverse A* = (A^T A)^{-1} A^T.
 
