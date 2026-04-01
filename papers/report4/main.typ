@@ -243,7 +243,7 @@ This finding suggests that DL models trained with noise augmentation might push 
 
 == The BSDS500 Outlier
 
-The most consequential finding of this statistical analysis is the near-zero Spearman correlation between BSDS500 and the other three datasets ($rho = 0.03$--$0.17$). This means that a filter configuration's ranking on BSDS500 is essentially uninformative about its ranking on UDED, BIPED v1, or BIPED v2. The practical implication is that benchmark results on BSDS500---which dominate the edge detection literature---should not be extrapolated to other imaging domains without validation. Conversely, results on application-specific datasets (e.g., underwater, outdoor) may not predict BSDS500 performance.
+The most consequential finding of this statistical analysis is the near-zero Spearman correlation between BSDS500 and the other three datasets ($rho = 0.03$--$0.17$). This means that a filter configuration's ranking on BSDS500 is essentially uninformative about its ranking on UDED, BIPED v1, or BIPED v2. The practical implication is that benchmark results on BSDS500---which dominate the edge detection literature---should not be extrapolated to other imaging domains without validation. Conversely, results on application-specific datasets (e.g., maritime, outdoor) may not predict BSDS500 performance.
 
 The root cause appears to be BSDS500's unique combination of small image size, diverse content, and multi-annotator ground truth. These properties make BSDS500 a difficult but also somewhat idiosyncratic benchmark. The high concordance among UDED, BIPED v1, and BIPED v2 ($rho > 0.96$) suggests that edge detection performance is quite transferable across "typical" high-resolution imagery, but BSDS500 breaks this pattern.
 
