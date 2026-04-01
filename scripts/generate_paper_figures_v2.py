@@ -141,21 +141,21 @@ def figure1a():
     # Dashed circle showing neighborhood boundary
     max_r = max(np.sqrt(dx**2 + dy**2) for dx, dy in neighbors)
     circle = plt.Circle((0, 0), max_r + 0.15, fill=False, linestyle="--",
-                         edgecolor="#7f8c8d", linewidth=1.0, zorder=2)
+                         edgecolor="#676156", linewidth=1.0, zorder=2)
     ax.add_patch(circle)
 
-    # Neighbor pixels as blue circles
+    # Neighbor pixels as Atlantic blue squares
     for dx, dy in neighbors:
-        ax.plot(dx, dy, "o", color="#3498db", ms=8, zorder=4,
-                markeredgecolor="#2980b9", markeredgewidth=0.5)
+        ax.add_patch(plt.Rectangle((dx - 0.35, dy - 0.35), 0.7, 0.7,
+                                    facecolor="#466A9F", edgecolor="#1F414D",
+                                    linewidth=0.5, zorder=4))
 
-    # Center pixel as red square
+    # Center pixel as Garnet square
     ax.add_patch(plt.Rectangle((-0.4, -0.4), 0.8, 0.8,
-                                facecolor="#e74c3c", edgecolor="#c0392b",
+                                facecolor="#73000A", edgecolor="#570008",
                                 linewidth=1.2, zorder=5))
 
     # Arrows from a few neighbors toward center with labels
-    # Use well-spaced actual neighbors from Np=15
     arrow_sources = [(-2, 1), (2, 0), (1, -1), (-1, -2)]
     label_offsets = [(-1.2, 0.6), (1.2, 0.6), (1.2, -0.6), (-1.2, -0.6)]
     for i, ((sx, sy), (lox, loy)) in enumerate(zip(arrow_sources, label_offsets)):
@@ -168,35 +168,31 @@ def figure1a():
             "", xy=(sx + dx_n * 0.6, sy + dy_n * 0.6),
             xytext=(sx, sy),
             arrowprops=dict(arrowstyle="->,head_width=0.15,head_length=0.12",
-                            color="#2c3e50", lw=1.3),
+                            color="#363636", lw=1.3),
             zorder=6,
         )
-        # Label offset from the source pixel
+        # Label offset from the source pixel (no textbox)
         ax.text(sx + lox, sy + loy,
-                f"$f(x_{{{i+1}}}, y_{{{i+1}}})$", fontsize=8.5, color="#2c3e50",
-                ha="center", va="center", zorder=7,
-                bbox=dict(boxstyle="round,pad=0.1", facecolor="white",
-                          edgecolor="none", alpha=0.7))
+                f"$f(x_{{{i+1}}}, y_{{{i+1}}})$", fontsize=8.5, color="#363636",
+                ha="center", va="center", zorder=7)
 
     # Local coordinate axes (rotated ~30 deg)
     axis_len = 3.5
     cos_a, sin_a = np.cos(theta_axis), np.sin(theta_axis)
-    # x-axis (normal direction) - green
+    # x-axis (normal direction) - Horseshoe green
     ax.annotate("", xy=(axis_len * cos_a, axis_len * sin_a), xytext=(0, 0),
                 arrowprops=dict(arrowstyle="->,head_width=0.25,head_length=0.2",
-                                color="#27ae60", lw=2.0), zorder=8)
+                                color="#65780B", lw=2.0), zorder=8)
     ax.text(axis_len * cos_a + 0.3, axis_len * sin_a + 0.3,
-            "normal ($\\hat{x}$)", fontsize=9, color="#27ae60",
+            "normal ($\\hat{x}$)", fontsize=9, color="#65780B",
             fontweight="bold", zorder=8)
-    # y-axis (tangent direction) - green
+    # y-axis (tangent direction) - Horseshoe green
     ax.annotate("", xy=(-axis_len * sin_a, axis_len * cos_a), xytext=(0, 0),
                 arrowprops=dict(arrowstyle="->,head_width=0.25,head_length=0.2",
-                                color="#27ae60", lw=2.0), zorder=8)
+                                color="#65780B", lw=2.0), zorder=8)
     ax.text(-axis_len * sin_a - 0.3, axis_len * cos_a + 0.4,
-            "tangent ($\\hat{y}$)", fontsize=9, color="#27ae60",
+            "tangent ($\\hat{y}$)", fontsize=9, color="#65780B",
             fontweight="bold", ha="right", zorder=8)
-
-    ax.set_title("Point Filter: Polynomial Fit over Circular Neighborhood", pad=12)
     fig.tight_layout()
     _save(fig, "fig1a_point_filter")
 
