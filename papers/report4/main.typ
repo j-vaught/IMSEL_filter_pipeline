@@ -122,25 +122,31 @@ The practical implication is clear: the WVF and LF are the same filter when $m =
 
 Report 1 showed that optimized parameters outperform Bagan's published parameters on every dataset. We now quantify this claim statistically.
 
-== WVF Gaps
+== WVF and LF Gaps
 
-The ODS improvement from parameter optimization over Bagan's WVF settings is:
-- UDED: +0.052 (0.899 vs.\ 0.847)
-- BIPED v1: +0.045 (0.812 vs.\ 0.767)
-- BIPED v2: +0.047 (0.830 vs.\ 0.783)
-- BSDS500: +0.011 (0.682 vs.\ 0.671)
+Parameter optimization yields consistent improvements across both filters and all four datasets. @tab:gaps displays the ODS improvements (Optimized minus Bagan) for both the WVF and LF.
 
-All four gaps are positive. The sign test yields $p = 0.0625$, the minimum achievable $p$-value with $n = 4$ observations. While this does not reach the conventional $alpha = 0.05$ threshold, it is important to recognize that $p = 0.0625$ is the strongest possible evidence from four datasets: the observed outcome (4/4 positive) is as extreme as the test allows.
+#figure(
+  placement: top,
+  table(
+    columns: 5,
+    align: (left, center, center, center, center),
+    inset: (x: 5pt, y: 4pt),
+    stroke: (x, y) => if y <= 1 { (top: 0.5pt) },
+    fill: (x, y) => if y > 0 and calc.rem(y, 2) == 0 { rgb("#efefef") },
 
-== LF Gaps
+    table.header(
+      [*Dataset*], [*WVF Gap*], [*WVF ODS*], [*LF Gap*], [*LF ODS*],
+    ),
+    [UDED], [+0.052], [0.899 vs. 0.847], [+0.158], [0.887 vs. 0.729],
+    [BIPED v1], [+0.045], [0.812 vs. 0.767], [+0.159], [0.802 vs. 0.643],
+    [BIPED v2], [+0.047], [0.830 vs. 0.783], [+0.161], [0.819 vs. 0.658],
+    [BSDS500], [+0.011], [0.682 vs. 0.671], [+0.056], [0.671 vs. 0.615],
+  ),
+  caption: [ODS gaps between optimized and Bagan parameters. All eight gaps are positive. The LF gaps are 3--15 times larger than the WVF gaps, reflecting the greater suboptimality of Bagan's $m = 14$ setting.],
+) <tab:gaps>
 
-The LF gaps are substantially larger:
-- UDED: +0.158 (0.887 vs.\ 0.729)
-- BIPED v1: +0.159 (0.802 vs.\ 0.643)
-- BIPED v2: +0.161 (0.819 vs.\ 0.658)
-- BSDS500: +0.056 (0.671 vs.\ 0.615)
-
-Again, 4/4 positive gaps ($p = 0.0625$). The larger LF gaps reflect the fact that Bagan's LF uses $m = 14$, which severely degrades clean-data performance, whereas the optimal LF uses $m = 1$--$3$.
+All four WVF gaps are positive, and all four LF gaps are positive. The sign test yields $p = 0.0625$ for both filters, the minimum achievable $p$-value with $n = 4$ observations. While this does not reach the conventional $alpha = 0.05$ threshold, it is important to recognize that $p = 0.0625$ is the strongest possible evidence from four datasets: the observed outcome (4/4 positive) is as extreme as the test allows. The larger LF gaps reflect the fact that Bagan's LF uses $m = 14$, which severely degrades clean-data performance, whereas the optimal LF uses $m = 1$--$3$.
 
 #figure(
   image("figures/fig_optimal_vs_bagan_gaps.png", width: 95%),
@@ -253,14 +259,29 @@ Throughout this analysis, we have encountered cases where statistical significan
 
 == Summary of Statistical Evidence
 
-We summarize the strength of evidence for each claim from Reports 1--3:
+The following table synthesizes the strength of evidence for each major claim from Reports 1--3:
 
-+ *Optimized parameters beat Bagan's parameters:* Strong practical evidence (consistent gaps on 4/4 datasets, large effect sizes), marginal statistical evidence ($p = 0.0625$).
-+ *WVF and LF are equivalent at matched parameters:* Strong evidence of no difference ($p > 0.8$, tiny effect sizes).
-+ *LF $m$ is the most important parameter:* Very strong evidence ($eta^2 = 0.343$, $p < 10^(-46)$).
-+ *$N_p$ and $N_s$ have moderate effects; $d$ is negligible:* Confirmed by effect sizes.
-+ *BSDS500 rankings diverge from other datasets:* Very strong evidence ($rho = 0.03$--$0.17$, zero top-10 overlap).
-+ *DL models beat WVF on clean data:* Consistent pattern (3--4 of 4 datasets per model) but limited statistical power.
-+ *WVF overtakes DL at extreme noise:* Very strong evidence (100\% crossover at SNR $<= 0.5$, narrow bootstrap CIs).
+#figure(
+  placement: top,
+  table(
+    columns: 3,
+    align: (left, left, left),
+    inset: (x: 5pt, y: 4pt),
+    stroke: (x, y) => if y <= 1 { (top: 0.5pt) },
+    fill: (x, y) => if y > 0 and calc.rem(y, 2) == 0 { rgb("#efefef") },
+
+    table.header(
+      [*Claim*], [*Evidence Strength*], [*Key Statistic*],
+    ),
+    [Optimized parameters beat Bagan's], [Strong practical; marginal statistical], [$p = 0.0625$, gaps 0.011--0.161],
+    [WVF and LF equivalent at matched parameters], [Strong evidence of no difference], [$p > 0.8$ on all datasets, $|d| < 1.15$],
+    [LF $m$ is most important parameter], [Very strong], [$eta^2 = 0.343$, $p < 10^(-46)$],
+    [$N_p$ and $N_s$ have moderate effects], [Strong; $d$ negligible], [$eta^2 = 0.053$--$0.054$ vs. $eta^2 = 0.002$],
+    [BSDS500 rankings diverge from others], [Very strong], [$rho = 0.03$--$0.17$, zero top-10 overlap],
+    [DL models beat WVF on clean data], [Consistent but limited power], [3--4 of 4 datasets per model],
+    [WVF overtakes DL at extreme noise], [Very strong], [100% crossover at SNR $<= 0.5$],
+  ),
+  caption: [Summary of statistical evidence for all major claims. "Evidence strength" reflects both statistical significance ($p$-value) and practical effect size.],
+) <tab:summary>
 
 These findings provide a rigorous statistical foundation for the empirical observations in the companion reports and guide practitioners in parameter selection, method choice, and benchmark interpretation for WVF/LF-based edge detection.

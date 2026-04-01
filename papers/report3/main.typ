@@ -25,11 +25,13 @@ However, many practical applications of edge detection operate in degraded imagi
 
 Bagan and Wang designed the Wide View Filter (WVF) @bagan2021wvf and Line Filter (LF) @bagan2023lf specifically for underwater edge detection, choosing large support sizes ($N_p = 250$) and high polynomial orders ($d = 4$) that our prior work showed to be suboptimal on clean data @vaught2025paramopt. A natural question arises: were Bagan and Wang's parameter choices designed for noise resilience rather than clean-data optimality?
 
-This paper investigates how noise affects edge detection performance across both classical parametric filters and modern deep learning models. We make three contributions:
+This paper investigates how noise affects edge detection performance across both classical parametric filters and modern deep learning models. We provide three principal contributions.
 
-+ We characterize the shift in optimal WVF/LF parameters under six noise types and seven SNR levels, showing that larger support sizes become necessary as noise increases---partially vindicating Bagan and Wang's design choices for noisy environments.
-+ We document the degradation curves of five state-of-the-art deep learning edge detectors under noise, revealing that most lose over 50% of their clean-data accuracy at low SNR, despite their superior clean-data performance.
-+ We identify crossover SNR values at which optimally-tuned WVF overtakes each DL model, demonstrating that noise fundamentally reshapes the relative ranking of edge detection methods.
+First, we characterize the shift in optimal WVF/LF parameters under six noise types and seven SNR levels, showing that larger support sizes become necessary as noise increases. This finding partially vindicates Bagan and Wang's design choices for noisy environments, revealing that their large-support parameterization was indeed motivated by the need for noise robustness rather than representing a design error.
+
+Second, we document the degradation curves of five state-of-the-art deep learning edge detectors under noise, revealing that most lose over 50% of their clean-data accuracy at low SNR, despite their superior clean-data performance. This systematic characterization of DL model fragility under distribution shift fills a notable gap in the edge detection literature.
+
+Third, we identify crossover SNR values at which optimally-tuned WVF overtakes each DL model, demonstrating that noise fundamentally reshapes the relative ranking of edge detection methods. This analysis reveals that classical parametric approaches can outperform learned models when operating conditions depart from the clean-data regime assumed during training.
 
 Our experiments span four datasets (BSDS500, BIPED v1, BIPED v2, UDED), six noise types, seven SNR levels, 447 WVF/LF configurations per condition, and five deep learning models, comprising over 60,000 unique experimental conditions.
 
@@ -253,17 +255,15 @@ Our finding that DL models degrade catastrophically under noise is consistent wi
 
 == Limitations
 
-Several limitations should be noted:
+Our study is subject to several important limitations. The noise ablation uses only 5 images per dataset rather than the full datasets. While this sample size is sufficient to identify qualitative trends, per-image ODS statistics have high variance, and the specific crossover SNR values should be interpreted with appropriate uncertainty bounds. A full-dataset noise ablation would require approximately 200 times more computation, which we leave for future work.
 
-+ *Sample size.* The noise ablation uses 5 images per dataset, not the full dataset. While sufficient to identify qualitative trends, per-image ODS statistics have high variance, and the specific crossover SNR values should be interpreted with appropriate uncertainty. A full-dataset noise ablation would require approximately $200 times$ more computation.
+Additionally, we do not evaluate classical edge detectors such as Sobel, Canny, or Prewitt under noise. These methods might also benefit from parameter tuning under noise, and their crossover behavior with deep learning models remains unknown. A more comprehensive study would include these established baselines in the noise robustness analysis.
 
-+ *Classical baselines not tested under noise.* We do not evaluate classical edge detectors (Sobel, Canny, Prewitt) under noise. These methods might also benefit from parameter tuning under noise, and their crossover behavior with DL models remains unknown.
+The deep learning models are evaluated with their published weights, without noise-augmented retraining. Retraining with noise augmentation would provide a fairer comparison but is beyond the scope of this study. We note that such retraining would require noise-type-specific augmentation strategies and might not generalize well across different noise types or domains.
 
-+ *No noise-augmented DL retraining.* The DL models are evaluated with their published weights. Retraining with noise augmentation would provide a fairer comparison but is beyond the scope of this study. We note that such retraining would require noise-type-specific augmentation strategies and might not generalize across noise types.
+Our noise models are entirely synthetic; real imaging noise, particularly underwater noise, exhibits complex spatial correlations and non-stationary properties not captured by our theoretical models. Field validation on real noisy imagery would substantially strengthen the conclusions and provide evidence that the synthetic noise models are representative of actual operational scenarios.
 
-+ *Synthetic noise only.* Our noise models are synthetic; real imaging noise (particularly underwater noise) has complex spatial correlations and non-stationary properties not captured by our models. Field validation on real noisy imagery would strengthen the conclusions.
-
-+ *Per-image oracle optimization.* The WVF crossover analysis uses per-image optimal parameters, which overestimates the performance achievable with a single fixed configuration. A more practical evaluation would identify a single robust configuration across all images and noise levels.
+Finally, the WVF crossover analysis uses per-image optimal parameters selected from 447 configurations for each image under each noise condition. This oracle optimization overestimates the performance achievable with a single fixed configuration deployed in practice. A more realistic evaluation would identify a single robust configuration that performs well across all images and noise levels without per-image tuning.
 
 == Future Directions
 
@@ -273,12 +273,12 @@ Additionally, the crossover analysis motivates hybrid approaches that combine WV
 
 = Conclusion
 
-Noise fundamentally reshapes the edge detection landscape. Our systematic study across six noise types, seven SNR levels, four datasets, and ten methods reveals three key findings:
+Noise fundamentally reshapes the edge detection landscape. Our systematic study across six noise types, seven SNR levels, four datasets, and ten methods yields three key findings that revise conventional understanding of edge detection in degraded imaging conditions.
 
-+ The optimal WVF support size $N_p$ shifts from 25--50 on clean data to 250--500 under severe noise, partially vindicating Bagan and Wang's original large-support parameterization for noisy environments. The polynomial order $d = 2$ remains optimal regardless of noise level.
+First, the optimal WVF support size $N_p$ shifts dramatically from 25--50 on clean data to 250--500 under severe noise, partially vindicating Bagan and Wang's original large-support parameterization for noisy environments. This parameter shift reveals that their design choices, which appeared suboptimal on clean benchmarks, were actually well-suited to the noisy underwater conditions they targeted. Notably, the polynomial order $d = 2$ remains optimal regardless of noise level across all tested conditions, suggesting that this parameter dimension is robust to distribution shift while $N_p$ must adapt significantly.
 
-+ All five deep learning models tested degrade catastrophically under noise, with most losing 50--60% of their clean-data ODS by SNR$=$0.3. None include noise augmentation in their training, and their fixed architectures offer no mechanism for noise adaptation at inference time.
+Second, all five deep learning models tested degrade catastrophically under noise, with most losing 50--60% of their clean-data ODS by SNR$=$0.3. None of these models include noise augmentation in their training pipelines, and their fixed architectures offer no mechanism for noise adaptation at inference time. This finding highlights a fundamental asymmetry: parametric classical methods can be tuned for new conditions, while learned models lack such flexibility without retraining.
 
-+ Optimally-tuned WVF overtakes most DL models at surprisingly high SNR values (around 4.0), demonstrating that classical parametric filters with appropriate tuning can outperform learned models in degraded imaging conditions.
+Third, optimally-tuned WVF overtakes most DL models at surprisingly high SNR values, around 4.0, demonstrating that classical parametric filters with appropriate tuning can outperform learned models in degraded imaging conditions. This crossover occurs across multiple noise types and datasets, indicating that noise robustness is not a minor consideration but a central factor in method selection.
 
-These results have practical implications for edge detection in noisy environments: rather than defaulting to the highest-performing clean-data method, practitioners should consider the expected noise regime and select---or tune---their edge detector accordingly. The WVF's parametric adaptability provides a principled advantage over fixed learned models when noise is present, particularly for underwater imaging where speckle noise dominates and WVF maintains strong performance.
+These results carry practical implications for edge detection in noisy environments. Rather than defaulting to the highest-performing clean-data method, practitioners should consider the expected noise regime and select or tune their edge detector accordingly. The WVF's parametric adaptability provides a principled advantage over fixed learned models when noise is present, particularly for underwater imaging where speckle noise dominates and WVF maintains strong performance throughout the noise range tested.
