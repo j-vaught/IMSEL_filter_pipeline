@@ -98,29 +98,34 @@
   Memory-safe batching splits pixels into configurable chunks for large images or limited VRAM.
 \end{frame}
 
-\begin{frame}{GPU Timing Results}
-  Hardware: NVIDIA RTX 6000 Ada (48 GB VRAM). Image: $720 \times 1280$ pixels.
+\begin{frame}{CPU vs. GPU Performance}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{CPU (per-pixel loop)}
+      \begin{itemize}
+        \item Triple-nested loop: pixels $\times$ orientations $\times$ \texttt{lstsq}
+        \item Each pixel solves $N_s$ independent least-squares systems via \texttt{np.linalg.lstsq}
+        \item A $481 \times 321$ image at $N_s\!=\!18$: $\sim$2.8M least-squares solves
+        \item Estimated: hours per image
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{GPU (batched matmul)}
+      \begin{itemize}
+        \item Pseudoinverses precomputed once
+        \item All pixels gathered in a single tensor op
+        \item One batched matmul per orientation
+        \item BSDS500 image: \textbf{0.009 s}
+        \item BIPED image: \textbf{0.036 s}
+      \end{itemize}
+    \end{column}
+  \end{columns}
 
-  \vspace{0.3em}
-  \begin{table}
-    \centering
-    \begin{tabular}{llrl}
-      \toprule
-      \textbf{Configuration} & \textbf{Parameters} & \textbf{Time} & \textbf{Ops/pixel} \\
-      \midrule
-      Optimized WVF & $N_p\!=\!25,\; N_s\!=\!4,\; d\!=\!2$ & 0.036 s & 600 \\
-      Bagan WVF     & $N_p\!=\!250,\; N_s\!=\!18,\; d\!=\!4$ & $\sim$4 s & 67,500 \\
-      \midrule
-      \multicolumn{3}{l}{\textbf{Computational reduction}} & $\mathbf{112\times}$ \\
-      \bottomrule
-    \end{tabular}
-  \end{table}
-
-  \vspace{0.3em}
+  \vspace{0.5em}
   \begin{itemize}
-    \item Optimized WVF achieves \textbf{real-time} processing at 28 fps ($720 \times 1280$)
-    \item GPU vs CPU speedup: $\sim$1000$\times$ on full-resolution images
+    \item Estimated \textbf{$\sim$1000$\times$ speedup} over CPU on full-resolution images
     \item GPU--CPU numerical agreement: relative error $< 10^{-6}$
+    \item Full 453,420-configuration ablation completed in \textbf{12.4 hours} (RTX 6000 Ada, 48 GB)
   \end{itemize}
 \end{frame}
 
