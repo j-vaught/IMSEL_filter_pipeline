@@ -19,7 +19,7 @@ with open(DATA) as f:
 
 # ---------- style constants ----------
 COLORS = ["black", "#444444", "#888888", "#BBBBBB"]
-HATCH_PATTERNS = ["/", "\\", "|", "x"]
+HATCH_PATTERNS = ["", "", "", ""]
 MARKERS = ["o", "s", "D", "^"]
 LINESTYLES = ["-", "--", ":", "-."]
 
@@ -83,9 +83,9 @@ def fig_optimal_vs_bagan_gaps():
     w = 0.35
     fig, ax = plt.subplots(figsize=(3.5, 2.5))
     bars1 = ax.bar(x - w / 2, wvf_gaps, w, color="#888888", edgecolor="black",
-                   hatch="/", linewidth=0.5, label="WVF gap")
+                   linewidth=0.5, label="WVF gap")
     bars2 = ax.bar(x + w / 2, lf_gaps, w, color="#CCCCCC", edgecolor="black",
-                   hatch="\\\\", linewidth=0.5, label="LF gap")
+                   linewidth=0.5, label="LF gap")
 
     ax.set_ylabel("ODS gap (best $-$ Bagan)")
     ax.set_xticks(x)

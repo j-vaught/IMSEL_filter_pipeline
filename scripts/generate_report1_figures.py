@@ -74,12 +74,12 @@ DS_STYLE = {
     "UDED":     {"ls": "-.", "marker": "^"},
 }
 
-# Filter hatching for bar charts
+# Filter hatching for bar charts (disabled — use solid gray fills only)
 FILTER_HATCH = {
-    "best_wvf":  "/",
-    "best_lf":   "\\",
-    "bagan_wvf": "|",
-    "bagan_lf":  "x",
+    "best_wvf":  "",
+    "best_lf":   "",
+    "bagan_wvf": "",
+    "bagan_lf":  "",
 }
 
 MARKER_SIZE = 4.0
@@ -310,7 +310,7 @@ def fig_postprocessing():
 
     nms_grays   = [GRAY_PALETTE["black"], GRAY_PALETTE["med_gray"],
                    GRAY_PALETTE["light_gray"]]
-    nms_hatches = ["/", "\\", "+"]
+    nms_hatches = ["", "", ""]
 
     # Build lookup
     pp_data = {}
