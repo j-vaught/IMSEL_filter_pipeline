@@ -43,9 +43,9 @@ OUT_DIR = os.path.join(
 os.makedirs(OUT_DIR, exist_ok=True)
 
 # ── Style constants ───────────────────────────────────────────────────────────
-COLOR_ORIGINAL = "#2c3e50"
-COLOR_CONV2D = "#e74c3c"
-COLOR_TRITON = "#27ae60"
+COLOR_ORIGINAL = "#1F414D"   # Congaree
+COLOR_CONV2D = "#73000A"     # Garnet
+COLOR_TRITON = "#466A9F"     # Atlantic
 
 plt.rcParams.update({
     "font.family": "serif",
@@ -208,7 +208,7 @@ def figure1():
 def figure2():
     print("Figure 2: Computation Flow Comparison")
 
-    fig, axes = plt.subplots(2, 1, figsize=(9.5, 3.8))
+    fig, axes = plt.subplots(2, 1, figsize=(9.5, 2.8))
 
     def _draw_flow(ax, boxes, caption, complexity, panel_label):
         ax.set_xlim(-0.5, len(boxes) + 0.5)
@@ -257,7 +257,7 @@ def figure2():
                "Anisotropic Stencil Filter compute process",
                "$\\mathrm{O}(N_s \\times N')$ per pixel", "B")
 
-    fig.tight_layout(h_pad=0.3)
+    fig.tight_layout(h_pad=0.0)
     _save(fig, "fig2_computation_flow")
 
 
@@ -399,19 +399,22 @@ def figure3():
 def figure4():
     print("Figure 4: Speedup and VRAM Comparison")
     configs = ["$m$=1", "$m$=2", "$m$=7", "$m$=14"]
+    speedup_original = [1.0, 1.0, 1.0, 1.0]
     speedup_conv2d = [6.55, 10.24, 13.84, 15.02]
     speedup_triton = [7.99, 13.68, 18.43, 24.29]
     vram_original = [5452, 6225, 6223, 6222]
     vram_conv2d = [157, 158, 158, 289]
     vram_triton = [20, 20, 20, 20]
     x = np.arange(len(configs))
-    bar_w = 0.30
+    bar_w = 0.25
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 3.8))
 
-    b1 = ax1.bar(x - bar_w / 2, speedup_conv2d, bar_w,
+    b0 = ax1.bar(x - bar_w, speedup_original, bar_w,
+                 color=COLOR_ORIGINAL, label="Original LF", zorder=3)
+    b1 = ax1.bar(x, speedup_conv2d, bar_w,
                  color=COLOR_CONV2D, label="Conv2d", zorder=3)
-    b2 = ax1.bar(x + bar_w / 2, speedup_triton, bar_w,
+    b2 = ax1.bar(x + bar_w, speedup_triton, bar_w,
                  color=COLOR_TRITON, label="Triton", zorder=3)
     ax1.set_ylabel("Speedup vs Original LF")
     ax1.set_xticks(x)
@@ -420,14 +423,13 @@ def figure4():
     ax1.legend(frameon=False, loc="upper left")
     ax1.spines["top"].set_visible(False)
     ax1.spines["right"].set_visible(False)
-    ax1.set_title("Speedup vs Original LF", pad=10)
-    for bars in [b1, b2]:
+    for bars in [b0, b1, b2]:
         for bar in bars:
             h = bar.get_height()
             ax1.text(bar.get_x() + bar.get_width() / 2, h + 0.3,
                      f"{h:.1f}x", ha="center", va="bottom", fontsize=7)
 
-    bar_w2 = 0.22
+    bar_w2 = 0.25
     b1 = ax2.bar(x - bar_w2, vram_original, bar_w2,
                  color=COLOR_ORIGINAL, label="Original LF", zorder=3)
     b2 = ax2.bar(x, vram_conv2d, bar_w2,
@@ -440,7 +442,6 @@ def figure4():
     ax2.legend(frameon=False, loc="upper left", fontsize=7)
     ax2.spines["top"].set_visible(False)
     ax2.spines["right"].set_visible(False)
-    ax2.set_title("Peak VRAM (MB)", pad=10)
     for bars in [b1, b2, b3]:
         for bar in bars:
             h = bar.get_height()
