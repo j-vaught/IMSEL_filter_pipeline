@@ -66,6 +66,65 @@
 \end{frame}
 
 % ============================================================
+\sectionsubtitle{Ground-up reimplementation with GPU acceleration}
+\section{Implementation}
+
+\begin{frame}{Reimplementation}
+  Both the WVF and LF were \textbf{reimplemented from scratch} based on the original papers by Bagan and Wang. No source code was available --- the entire codebase was built from the mathematical formulations alone.
+
+  \vspace{0.5em}
+  The implementation includes:
+  \begin{itemize}
+    \item CPU reference implementations for per-pixel WVF and LF (correctness validation)
+    \item GPU-accelerated backends via PyTorch CUDA for both WVF and LF
+    \item Shared mathematical core: Taylor design matrix construction, circular neighbor selection, coordinate rotation, pseudoinverse computation
+    \item 11 classical baseline families (54 configurations) also GPU-accelerated via batched \texttt{conv2d}
+    \item Full ODS/OIS evaluation pipeline with vectorized threshold sweeps
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{GPU Acceleration Strategy}
+  The key insight: the per-pixel polynomial fit is embarrassingly parallel.
+
+  \vspace{0.3em}
+  \begin{enumerate}
+    \item \textbf{Precompute pseudoinverses}: for each orientation $\theta_k$, compute $P_{\theta} = (A^\top A)^{-1} A^\top$ once. Stack all $N_s$ pseudoinverses into a single tensor of shape $(N_s, M, N_p)$.
+    \item \textbf{Vectorized gather}: collect all $N_p$ neighbor intensities for every interior pixel simultaneously into a $(N_{\text{pixels}}, N_p)$ tensor $F$.
+    \item \textbf{Batched matmul}: compute the normal derivative at all pixels in one operation per orientation: $\text{response} = |P_{\theta}[1,:] \cdot F^\top|$.
+    \item \textbf{Orientation max}: take the element-wise maximum across orientations.
+  \end{enumerate}
+
+  \vspace{0.3em}
+  Memory-safe batching splits pixels into configurable chunks for large images or limited VRAM.
+\end{frame}
+
+\begin{frame}{GPU Timing Results}
+  Hardware: NVIDIA RTX 6000 Ada (48 GB VRAM). Image: $720 \times 1280$ pixels.
+
+  \vspace{0.3em}
+  \begin{table}
+    \centering
+    \begin{tabular}{llrl}
+      \toprule
+      \textbf{Configuration} & \textbf{Parameters} & \textbf{Time} & \textbf{Ops/pixel} \\
+      \midrule
+      Optimized WVF & $N_p\!=\!25,\; N_s\!=\!4,\; d\!=\!2$ & 0.036 s & 600 \\
+      Bagan WVF     & $N_p\!=\!250,\; N_s\!=\!18,\; d\!=\!4$ & $\sim$4 s & 67,500 \\
+      \midrule
+      \multicolumn{3}{l}{\textbf{Computational reduction}} & $\mathbf{112\times}$ \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \vspace{0.3em}
+  \begin{itemize}
+    \item Optimized WVF achieves \textbf{real-time} processing at 28 fps ($720 \times 1280$)
+    \item GPU vs CPU speedup: $\sim$1000$\times$ on full-resolution images
+    \item GPU--CPU numerical agreement: relative error $< 10^{-6}$
+  \end{itemize}
+\end{frame}
+
+% ============================================================
 \sectionsubtitle{WVF and LF formulations}
 \section{Methods}
 
