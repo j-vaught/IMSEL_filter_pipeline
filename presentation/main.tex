@@ -12,7 +12,7 @@
 \usepackage{hyperref}
 
 % --- Presentation Metadata ---
-\title[WVF/LF Edge Detection]{A Comprehensive Evaluation of Wide View and Line Filters for Edge Detection}
+\title[WVF/LF Edge Detection]{Wide View and Line Filters}
 \subtitle{Parameter Optimization, Benchmarking, and Noise Robustness}
 \author[J.C. Vaught]{J.C. Vaught\texorpdfstring{\\}{, }University of South Carolina}
 \institute[UofSC]{}
@@ -38,7 +38,7 @@
 \sectionsubtitle{The edge detection problem and motivation}
 \section{Introduction}
 
-\begin{frame}{The Edge Detection Landscape}
+\begin{frame}{Edge Detection Today}
   Edge detection has evolved through three generations of methods.
 
   \begin{enumerate}
@@ -135,7 +135,7 @@
 \sectionsubtitle{Published parameters are substantially suboptimal}
 \section{Parameter Ablation}
 
-\begin{frame}{WVF: Support Size Dominates Performance}
+\begin{frame}{Support Size Dominates}
   \begin{columns}[T]
     \begin{column}{0.45\textwidth}
       Key findings from single-image ablation:
@@ -154,7 +154,7 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{Orientation Count Saturates Early}
+\begin{frame}{Orientation Saturation}
   \begin{columns}[T]
     \begin{column}{0.45\textwidth}
       $N_s$ has minimal effect beyond 4--6 orientations.
@@ -188,7 +188,7 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{Full-Dataset Results: Optimized vs. Published}
+\begin{frame}{Optimized vs. Published}
   \begin{table}
     \centering
     \caption{ODS improvement from parameter optimization across all datasets.}
@@ -209,7 +209,7 @@
   Computational savings: $112\times$ reduction over published settings.
 \end{frame}
 
-\begin{frame}{Cross-Dataset Comparison: Optimized vs. Published}
+\begin{frame}{Cross-Dataset Comparison}
   \begin{columns}[T]
     \begin{column}{0.38\textwidth}
       The optimized parameters consistently outperform Bagan's published settings on every dataset.
@@ -226,7 +226,7 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{Optimal Parameter Configurations by Dataset}
+\begin{frame}{Optimal Configurations}
   \begin{table}
     \centering
     \caption{Best-found parameters for each dataset and filter type.}
@@ -250,7 +250,7 @@
   WVF consistently selects $d = 2$ and $N_s = 4$. BSDS500 prefers larger $N_p$ (100 vs. 25), likely due to lower image resolution.
 \end{frame}
 
-\begin{frame}{LF Line Half-Width $m$: Shorter Is Better on Clean Data}
+\begin{frame}{LF Half-Width $m$}
   \begin{columns}[T]
     \begin{column}{0.40\textwidth}
       On all datasets, the best ODS occurs at $m = 1$--$3$.
@@ -270,7 +270,7 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{Post-Processing Effects: NMS Hurts}
+\begin{frame}{NMS Hurts Performance}
   \begin{columns}[T]
     \begin{column}{0.38\textwidth}
       NMS \textit{reduces} ODS in all cases.
@@ -293,7 +293,7 @@
 \sectionsubtitle{WVF vs. classical operators and deep learning}
 \section{Benchmarking}
 
-\begin{frame}{WVF Outperforms All 54 Classical Operators}
+\begin{frame}{WVF vs. Classical Operators}
   \begin{columns}[T]
     \begin{column}{0.35\textwidth}
       On BIPED v1:
@@ -329,7 +329,7 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{Classical Top 15 Ranking on BIPED v1}
+\begin{frame}{Classical Top 15}
   \centering
   \begin{tabular}{llr}
     \toprule
@@ -351,7 +351,7 @@
   \end{tabular}
 \end{frame}
 
-\begin{frame}{Deep Learning Comparison on Clean Data}
+\begin{frame}{DL on Clean Data}
   \begin{columns}[T]
     \begin{column}{0.38\textwidth}
       On clean data, DL models generally outperform WVF.
@@ -375,7 +375,7 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{Computational Cost: WVF Is the Fastest Method}
+\begin{frame}{Computational Cost}
   \begin{columns}[T]
     \begin{column}{0.38\textwidth}
       \begin{tabular}{lrl}
@@ -404,7 +404,7 @@
 \sectionsubtitle{WVF adapts; deep learning collapses}
 \section{Noise Robustness}
 
-\begin{frame}{Optimal $N_p$ Shifts Dramatically Under Noise}
+\begin{frame}{$N_p$ Shifts Under Noise}
   \begin{columns}[T]
     \begin{column}{0.38\textwidth}
       Under severe Gaussian noise (SNR = 0.3):
@@ -423,7 +423,7 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{Noise-Type-Specific WVF Degradation}
+\begin{frame}{WVF Noise Degradation}
   \begin{columns}[T]
     \begin{column}{0.38\textwidth}
       Degradation profiles vary by noise type:
@@ -443,7 +443,7 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{Cross-Dataset Noise Consistency}
+\begin{frame}{Noise Consistency}
   \begin{columns}[T]
     \begin{column}{0.38\textwidth}
       The relative ordering of noise types is consistent across all four datasets.
@@ -463,7 +463,7 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{Deep Learning Models Collapse Under Noise}
+\begin{frame}{DL Collapse Under Noise}
   \begin{columns}[T]
     \begin{column}{0.38\textwidth}
       All 5 DL models degrade severely:
@@ -484,7 +484,7 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{WVF Overtakes DL at Surprisingly Mild Noise}
+\begin{frame}{WVF Overtakes DL}
   \begin{columns}[T]
     \begin{column}{0.38\textwidth}
       Crossover analysis:
@@ -524,7 +524,7 @@
 \sectionsubtitle{Nonparametric tests confirm all major claims}
 \section{Statistical Validation}
 
-\begin{frame}{Cross-Dataset Ranking Consistency}
+\begin{frame}{Ranking Consistency}
   \begin{columns}[T]
     \begin{column}{0.38\textwidth}
       Kendall's $W = 0.647$ (moderate concordance).
@@ -544,7 +544,7 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{ODS Gaps: Optimized vs. Bagan Parameters}
+\begin{frame}{ODS Gaps}
   \begin{columns}[T]
     \begin{column}{0.38\textwidth}
       All eight gaps (4 datasets $\times$ 2 filters) are positive.
@@ -564,7 +564,7 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{WVF vs. LF: Statistically Indistinguishable}
+\begin{frame}{WVF vs. LF Significance}
   \begin{table}
     \centering
     \caption{Wilcoxon signed-rank test: WVF vs. LF at matched parameters.}
@@ -584,7 +584,7 @@
   No significant difference on any dataset ($p > 0.8$ everywhere). The median ODS difference is less than 0.004 on every dataset. At matched parameters, WVF and LF produce essentially identical edge maps.
 \end{frame}
 
-\begin{frame}{Parameter Sensitivity Analysis}
+\begin{frame}{Parameter Sensitivity}
   \begin{columns}[T]
     \begin{column}{0.38\textwidth}
       Kruskal--Wallis analysis reveals parameter priority:
@@ -613,14 +613,14 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{Median ODS by Parameter Level}
+\begin{frame}{Median ODS by Parameter}
   \centering
   \includegraphics[width=0.75\textwidth, height=0.65\textheight, keepaspectratio]{figures/fig_median_ods_by_param.png}
 
   $N_p$: inverted-U peaking near 80--100. $N_s$: saturates at 3--4. $d$: minimal effect. LF $m$: monotonic decline beyond $m = 2$.
 \end{frame}
 
-\begin{frame}{Crossover Heatmap: WVF vs. DL by Noise Type}
+\begin{frame}{Crossover Heatmap}
   \begin{columns}[T]
     \begin{column}{0.38\textwidth}
       Median crossover SNR for each noise type $\times$ DL model combination.
@@ -640,7 +640,7 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{Summary of Statistical Evidence}
+\begin{frame}{Evidence Summary}
   \begin{table}
     \centering
     \caption{Evidence strength for each major claim.}
@@ -664,7 +664,7 @@
 \sectionsubtitle{Reconciling findings and looking forward}
 \section{Discussion}
 
-\begin{frame}{Reconciling Bagan's Parameters}
+\begin{frame}{Reconciling Bagan}
   Bagan and Wang's parameter choices are simultaneously suboptimal and well-motivated.
 
   \vspace{0.5em}
@@ -692,7 +692,7 @@
   The one universally suboptimal choice: $d = 4$. Higher-order polynomials overfit noise fluctuations at every SNR level.
 \end{frame}
 
-\begin{frame}{The BSDS500 Outlier Problem}
+\begin{frame}{BSDS500 Outlier}
   The near-zero Spearman correlation between BSDS500 and other datasets is consequential.
 
   \vspace{0.5em}
@@ -706,7 +706,7 @@
   \textbf{Implication}: Benchmark results on BSDS500, which dominate the edge detection literature, should not be extrapolated to other imaging domains without validation. Practitioners should tune on domain-representative data.
 \end{frame}
 
-\begin{frame}{WVF's Unique Position in the Landscape}
+\begin{frame}{WVF's Niche}
   \begin{columns}[T]
     \begin{column}{0.48\textwidth}
       \textbf{Against classical operators}
@@ -747,7 +747,7 @@
 \sectionsubtitle{}
 \section{Conclusion}
 
-\begin{frame}{Six Definitive Findings}
+\begin{frame}{Key Findings}
   \begin{enumerate}
     \item \textbf{Published parameters are suboptimal}: $N_p = 25$--$100$, $d = 2$, $N_s = 4$ improves ODS by 0.01--0.16 with $112\times$ computational savings
     \item \textbf{WVF beats all 54 classical operators} by +2.4 ODS points
@@ -758,7 +758,7 @@
   \end{enumerate}
 \end{frame}
 
-\begin{frame}{Practical Recommendations}
+\begin{frame}{Recommendations}
   \begin{columns}[T]
     \begin{column}{0.48\textwidth}
       \textbf{Clean imagery}
@@ -784,7 +784,7 @@
   Edge detection method selection is fundamentally \textbf{condition-dependent}. WVF's principal strength is \textit{parametric adaptability} across the full spectrum of operating conditions.
 \end{frame}
 
-\begin{frame}{Choosing Between WVF and Deep Learning}
+\begin{frame}{WVF vs. DL: Decision Guide}
   \begin{table}
     \centering
     \caption{Decision guide: WVF vs. deep learning for edge detection.}
