@@ -303,7 +303,7 @@ def figure3():
 
     stencils = []
     for ang in angles_deg:
-        s = compute_stencil(np.radians(ang), m=7, n_neighbors=15)
+        s = compute_stencil(np.radians(ang), m=7, n_neighbors=20)
         stencils.append(s)
 
     # Global weight range for consistent colormap
@@ -325,19 +325,19 @@ def figure3():
         for spine in ax.spines.values():
             spine.set_visible(False)
 
-        # Faint grid
-        for i in range(-grid_half, grid_half + 1):
-            ax.axhline(i, color="#f0f0f0", linewidth=0.15, zorder=0)
-            ax.axvline(i, color="#f0f0f0", linewidth=0.15, zorder=0)
+        # Draw pixel grid cells
+        _draw_pixel_grid(ax, grid_half)
 
-        # Draw stencil as filled circles with color = weight sign/magnitude
+        # Draw stencil as uniform filled squares centered in grid cells
+        cell_size = 0.8
         for (px, py), weight in stencil.items():
             norm_w = weight / vmax  # in [-1, 1]
             color = cmap(0.5 + 0.5 * norm_w)  # map to colormap
-            size = 0.35 * (0.3 + 0.7 * abs(norm_w))  # scale radius by magnitude
-            circle = plt.Circle((px, py), size, facecolor=color,
-                               edgecolor="none", alpha=0.9, zorder=3)
-            ax.add_patch(circle)
+            rect = plt.Rectangle((px - cell_size / 2, py - cell_size / 2),
+                                 cell_size, cell_size,
+                                 facecolor=color, edgecolor="none",
+                                 alpha=0.9, zorder=3)
+            ax.add_patch(rect)
 
         # Center marker
         ax.plot(0, 0, "+", color="black", ms=10, mew=2, zorder=5)
