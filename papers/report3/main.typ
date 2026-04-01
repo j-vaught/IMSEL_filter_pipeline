@@ -143,9 +143,9 @@ However, at very low SNR with large $N_p$, we observe a slight preference for hi
   placement: top,
 ) <fig:noise_type_comparison>
 
-@fig:noise_type_comparison demonstrates that these noise-type rankings are consistent across datasets. On UDED (underwater images), speckle noise at SNR$=$0.3 yields ODS$=$0.845, compared to 0.975 on clean data. On BIPED v1, speckle at SNR$=$0.3 yields ODS$=$0.488, compared to 0.896 clean. The relative ordering is preserved: speckle $>$ Poisson $approx$ salt-and-pepper $>$ uniform $approx$ Gaussian.
+@fig:noise_type_comparison demonstrates that these noise-type rankings are consistent across datasets. On UDED, speckle noise at SNR$=$0.3 yields ODS$=$0.845, compared to 0.975 on clean data. On BIPED v1, speckle at SNR$=$0.3 yields ODS$=$0.488, compared to 0.896 clean. The relative ordering is preserved: speckle $>$ Poisson $approx$ salt-and-pepper $>$ uniform $approx$ Gaussian.
 
-The cross-dataset analysis also reveals that the parameter shift magnitude depends on the dataset. UDED images, which contain high-contrast underwater structures, require a more modest $N_p$ increase (to approximately 243 under Gaussian noise at SNR$=$0.3), while BIPED images with fine-textured edges require $N_p approx 500$ under the same conditions. This suggests that the optimal noise-adapted support size depends on the spatial frequency content of the edges being detected.
+The cross-dataset analysis also reveals that the parameter shift magnitude depends on the dataset. UDED images, which contain high-contrast structures, require a more modest $N_p$ increase (to approximately 243 under Gaussian noise at SNR$=$0.3), while BIPED images with fine-textured edges require $N_p approx 500$ under the same conditions. This suggests that the optimal noise-adapted support size depends on the spatial frequency content of the edges being detected.
 
 = WVF vs. LF Under Noise <sec:wvf_vs_lf>
 
@@ -245,7 +245,7 @@ Under noisy conditions resembling underwater imaging (particularly speckle noise
 
 The parameter shift finding thus reconciles the apparent contradiction between our clean-data parameter optimization and Bagan's design choices. Bagan and Wang were likely optimizing (implicitly or explicitly) for noisy underwater conditions, where larger support sizes are genuinely beneficial. However, their choice of $d = 4$ remains suboptimal even under noise---$d = 2$ outperforms $d = 4$ at all SNR levels tested, suggesting that this particular parameter choice reflects a design error rather than noise-motivated reasoning.
 
-On UDED (the underwater-specific dataset), the WVF shows particularly strong noise resilience. Clean-data ODS is 0.975, dropping only to 0.845 under speckle noise at SNR$=$0.3 (13% loss) and to 0.682 under Gaussian noise at SNR$=$0.3 (30% loss). These are substantially smaller degradations than observed on natural-image datasets (BSDS500: 23% and 37% drops, respectively), suggesting that the high-contrast, structure-rich nature of underwater edge targets provides inherent resilience.
+On UDED, the WVF shows particularly strong noise resilience. Clean-data ODS is 0.975, dropping only to 0.845 under speckle noise at SNR$=$0.3 (13% loss) and to 0.682 under Gaussian noise at SNR$=$0.3 (30% loss). These are substantially smaller degradations than observed on BSDS500 (23% and 37% drops, respectively), suggesting that the high-contrast, structure-rich nature of UDED's edge targets provides inherent resilience.
 
 == Comparison with Prior Robustness Studies
 

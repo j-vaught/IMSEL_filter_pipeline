@@ -58,7 +58,7 @@ For noise-crossover SNR estimates, we construct 95\% bootstrap confidence interv
 
 == Design Rationale: $n = 4$ Datasets
 
-The choice of four datasets balances breadth against practical constraints. UDED provides the domain most closely aligned with Bagan and Wang's original application (underwater scenes). BIPED v1 and v2 @poma2020biped @soria2023bipedv2 offer high-resolution outdoor imagery with careful annotations in two annotation generations. BSDS500 @arbelaez2011bsds500 is the most widely used edge detection benchmark and thus essential for community comparability. Together, the four datasets span 330 images across underwater, outdoor, and mixed-content domains. The limitation of $n = 4$ is explicitly accounted for in all between-dataset tests, where we report exact $p$-values rather than relying on asymptotic approximations.
+The choice of four datasets balances breadth against practical constraints. UDED provides a multi-source aggregation of edge detection images from 15 datasets. BIPED v1 and v2 @poma2020biped @soria2023bipedv2 offer high-resolution outdoor imagery with careful annotations in two annotation generations. BSDS500 @arbelaez2011bsds500 is the most widely used edge detection benchmark and thus essential for community comparability. Together, the four datasets span 330 images across multi-source, outdoor, and mixed-content domains. The limitation of $n = 4$ is explicitly accounted for in all between-dataset tests, where we report exact $p$-values rather than relying on asymptotic approximations.
 
 
 = Cross-Dataset Ranking Consistency <sec:ranking>
@@ -69,7 +69,7 @@ Kendall's $W = 0.647$ ($chi^2 = 3{,}120.0$, $p < 10^(-10)$, $n = 1{,}206$ config
 
 == Pairwise Spearman Correlations
 
-@fig:spearman reveals the structure behind the aggregate concordance. The three non-BSDS datasets---UDED, BIPED v1, and BIPED v2---form a tight cluster with pairwise Spearman $rho$ between 0.96 and 0.99 ($p < 10^(-10)$ for all). These correlations are remarkably high: essentially, if a configuration ranks well on any one of these three datasets, it ranks well on all three. The rank-order of 1,206 configurations is nearly identical across underwater and high-resolution outdoor scenes.
+@fig:spearman reveals the structure behind the aggregate concordance. The three non-BSDS datasets---UDED, BIPED v1, and BIPED v2---form a tight cluster with pairwise Spearman $rho$ between 0.96 and 0.99 ($p < 10^(-10)$ for all). These correlations are remarkably high: essentially, if a configuration ranks well on any one of these three datasets, it ranks well on all three. The rank-order of 1,206 configurations is nearly identical across the multi-source UDED and high-resolution outdoor scenes.
 
 BSDS500 is the clear outlier. Its pairwise $rho$ with the other datasets ranges from 0.03 (with UDED, $p = 0.258$) to 0.17 (with BIPED v1, $p < 10^(-8)$). The correlation with UDED is not statistically significant, meaning that BSDS500 configuration rankings are essentially unrelated to UDED rankings. The correlation with BIPED v2 ($rho = 0.052$, $p = 0.073$) also fails to reach significance at $alpha = 0.05$.
 
