@@ -1,0 +1,19 @@
+TODO: Edge Map Gallery Figure (fig_edge_map_gallery.png)
+======================================================
+
+This figure will show side-by-side edge maps from representative methods:
+
+  Row layout (one example image, full-width figure):
+    [Input] [Sobel k=5] [Prewitt k=5] [Canny] [WVF best] [LF best]
+    [DexiNed] [TEED] [pidinet] [NBED] [DiffusionEdge] [Ground Truth]
+
+  Requirements:
+    - Select 1-2 representative images from BIPED test set
+    - Run each detector on the same image(s)
+    - Save edge maps as individual PNGs
+    - Assemble into a tiled gallery figure
+
+  Blocked on:
+    - Need to run classical detectors on specific images (not just ODS)
+    - DL model inference on same images
+    - WVF/LF inference with best configs from ablation
