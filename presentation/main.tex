@@ -176,14 +176,14 @@
     \begin{column}{0.35\textwidth}
       The dominant variation is along $N_p$.
 
-      \vspace{0.5em}
+      \vspace{0.3em}
       The optimal region forms a horizontal band at $N_p \approx 25$--$50$, largely invariant to $N_s$.
 
-      \vspace{0.5em}
-      This confirms: \textbf{support size is the critical parameter}.
+      \vspace{0.3em}
+      \textbf{Support size is the critical parameter}.
     \end{column}
     \begin{column}{0.62\textwidth}
-      \includegraphics[width=\textwidth]{figures/fig_wvf_heatmap_np_ns.png}
+      \includegraphics[width=\textwidth, height=0.7\textheight, keepaspectratio]{figures/fig_wvf_heatmap_np_ns.png}
     \end{column}
   \end{columns}
 \end{frame}
@@ -209,6 +209,47 @@
   Computational savings: $112\times$ reduction over published settings.
 \end{frame}
 
+\begin{frame}{Cross-Dataset Comparison: Optimized vs. Published}
+  \begin{columns}[T]
+    \begin{column}{0.38\textwidth}
+      The optimized parameters consistently outperform Bagan's published settings on every dataset.
+
+      \vspace{0.5em}
+      The WVF gains range from +0.011 (BSDS500) to +0.052 (UDED).
+
+      \vspace{0.5em}
+      The LF gains are 3--15$\times$ larger, ranging from +0.056 to +0.161, reflecting the greater suboptimality of $m = 14$.
+    \end{column}
+    \begin{column}{0.59\textwidth}
+      \includegraphics[width=\textwidth]{figures/fig_cross_dataset_best.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Optimal Parameter Configurations by Dataset}
+  \begin{table}
+    \centering
+    \caption{Best-found parameters for each dataset and filter type.}
+    \begin{tabular}{llcccc}
+      \toprule
+      \textbf{Dataset} & \textbf{Filter} & $N_p$ & $N_s$ & $d$ & \textbf{ODS} \\
+      \midrule
+      UDED     & WVF & 25  & 4  & 2 & 0.899 \\
+      UDED     & LF  & 25  & 36 & 4 & 0.887 \\
+      BIPED v1 & WVF & 25  & 4  & 2 & 0.812 \\
+      BIPED v1 & LF  & 100 & 18 & 4 & 0.802 \\
+      BIPED v2 & WVF & 25  & 4  & 2 & 0.830 \\
+      BIPED v2 & LF  & 100 & 18 & 4 & 0.819 \\
+      BSDS500  & WVF & 100 & 4  & 2 & 0.682 \\
+      BSDS500  & LF  & 250 & 18 & 4 & 0.671 \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \vspace{0.3em}
+  WVF consistently selects $d = 2$ and $N_s = 4$. BSDS500 prefers larger $N_p$ (100 vs. 25), likely due to lower image resolution.
+\end{frame}
+
 \begin{frame}{LF Line Half-Width $m$: Shorter Is Better on Clean Data}
   \begin{columns}[T]
     \begin{column}{0.40\textwidth}
@@ -225,6 +266,25 @@
     \end{column}
     \begin{column}{0.57\textwidth}
       \includegraphics[width=\textwidth]{figures/fig_lf_ods_vs_m.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Post-Processing Effects: NMS Hurts}
+  \begin{columns}[T]
+    \begin{column}{0.38\textwidth}
+      NMS \textit{reduces} ODS in all cases.
+
+      \vspace{0.3em}
+      Best WVF without NMS: 0.844.
+      With 4-dir NMS: 0.754.
+      With 8-dir NMS: 0.760.
+
+      \vspace{0.3em}
+      Raw gradient maps contain soft, multi-pixel responses that match ground truth within $r = 3$ pixel tolerance. NMS thins these and shifts positions away from annotations.
+    \end{column}
+    \begin{column}{0.59\textwidth}
+      \includegraphics[width=\textwidth]{figures/fig_postprocessing.png}
     \end{column}
   \end{columns}
 \end{frame}
@@ -264,7 +324,53 @@
       WVF's polynomial fitting performs a form of \textit{adaptive scale selection}, explaining its advantage.
     \end{column}
     \begin{column}{0.62\textwidth}
-      \includegraphics[width=\textwidth]{figures/fig_classical_scale_trend.png}
+      \includegraphics[width=\textwidth, height=0.7\textheight, keepaspectratio]{figures/fig_classical_scale_trend.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Classical Top 15 Ranking on BIPED v1}
+  \centering
+  \begin{tabular}{llr}
+    \toprule
+    \textbf{Method} & \textbf{Parameters} & \textbf{ODS} \\
+    \midrule
+    \textbf{WVF (optimized)} & $N_p=25, N_s=4, d=2$ & \textbf{0.812} \\
+    \textbf{LF (optimized)}  & $N_p=100, N_s=18, m=1$ & \textbf{0.802} \\
+    \midrule
+    Prewitt     & $k = 5$       & 0.788 \\
+    Sobel       & $k = 7$       & 0.776 \\
+    GaussianDeriv & $\sigma = 1.5$ & 0.772 \\
+    GaussianDeriv & $\sigma = 1.0$ & 0.769 \\
+    Sobel       & $k = 5$       & 0.765 \\
+    Kirsch      & --            & 0.759 \\
+    Prewitt     & $k = 3$       & 0.755 \\
+    Frei-Chen   & --            & 0.751 \\
+    Robinson    & --            & 0.748 \\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{Deep Learning Comparison on Clean Data}
+  \begin{columns}[T]
+    \begin{column}{0.38\textwidth}
+      On clean data, DL models generally outperform WVF.
+
+      \vspace{0.3em}
+      Per-image ODS on BSDS500 (5-image):
+      \begin{itemize}
+        \item PiDiNet: 0.876
+        \item DiffusionEdge: 0.795
+        \item NBED: 0.795
+        \item DexiNed: 0.737
+        \item TEED: 0.669
+      \end{itemize}
+
+      \vspace{0.3em}
+      Per-image WVF (oracle): 0.907. Full-dataset WVF: 0.682.
+    \end{column}
+    \begin{column}{0.59\textwidth}
+      \includegraphics[width=\textwidth]{figures/fig_wvf_vs_dl_table.png}
     \end{column}
   \end{columns}
 \end{frame}
@@ -272,26 +378,24 @@
 \begin{frame}{Computational Cost: WVF Is the Fastest Method}
   \begin{columns}[T]
     \begin{column}{0.38\textwidth}
-      \begin{table}
-        \centering
-        \begin{tabular}{lrl}
-          \toprule
-          \textbf{Method} & \textbf{Time} & \textbf{Rel.} \\
-          \midrule
-          WVF           & 0.036s & $1.0\times$ \\
-          PiDiNet       & 0.119s & $3.3\times$ \\
-          DexiNed       & 0.226s & $6.3\times$ \\
-          NBED          & 0.253s & $7.1\times$ \\
-          TEED          & 0.538s & $15.1\times$ \\
-          DiffusionEdge & 15.22s & $427\times$ \\
-          \bottomrule
-        \end{tabular}
-      \end{table}
+      \begin{tabular}{lrl}
+        \toprule
+        \textbf{Method} & \textbf{Time} & \textbf{Rel.} \\
+        \midrule
+        WVF           & 0.036s & $1.0\times$ \\
+        PiDiNet       & 0.119s & $3.3\times$ \\
+        DexiNed       & 0.226s & $6.3\times$ \\
+        NBED          & 0.253s & $7.1\times$ \\
+        TEED          & 0.538s & $15\times$ \\
+        DiffusionEdge & 15.22s & $427\times$ \\
+        \bottomrule
+      \end{tabular}
 
-      WVF achieves real-time processing at 30+ fps.
+      \vspace{0.3em}
+      WVF: real-time at 30+ fps.
     \end{column}
     \begin{column}{0.59\textwidth}
-      \includegraphics[width=\textwidth]{figures/fig_compute_cost.png}
+      \includegraphics[width=\textwidth, height=0.7\textheight, keepaspectratio]{figures/fig_compute_cost.png}
     \end{column}
   \end{columns}
 \end{frame}
@@ -339,6 +443,26 @@
   \end{columns}
 \end{frame}
 
+\begin{frame}{Cross-Dataset Noise Consistency}
+  \begin{columns}[T]
+    \begin{column}{0.38\textwidth}
+      The relative ordering of noise types is consistent across all four datasets.
+
+      \vspace{0.5em}
+      Ranking (least to most destructive):
+
+      \vspace{0.3em}
+      Speckle $>$ Poisson $\approx$ Salt-and-pepper $>$ Uniform $\approx$ Gaussian
+
+      \vspace{0.5em}
+      The parameter shift magnitude is dataset-dependent: UDED (high-contrast underwater) requires a more modest $N_p$ increase than BIPED (fine-textured edges).
+    \end{column}
+    \begin{column}{0.59\textwidth}
+      \includegraphics[width=\textwidth]{figures/fig_noise_type_comparison.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
 \begin{frame}{Deep Learning Models Collapse Under Noise}
   \begin{columns}[T]
     \begin{column}{0.38\textwidth}
@@ -355,7 +479,7 @@
       None include noise augmentation in training.
     \end{column}
     \begin{column}{0.59\textwidth}
-      \includegraphics[width=\textwidth]{figures/fig_dl_degradation.png}
+      \includegraphics[width=\textwidth, height=0.7\textheight, keepaspectratio]{figures/fig_dl_degradation.png}
     \end{column}
   \end{columns}
 \end{frame}
@@ -374,7 +498,7 @@
       At SNR = 0.3: WVF beats \textit{every} DL model on \textit{every} test image (100\% crossover).
     \end{column}
     \begin{column}{0.59\textwidth}
-      \includegraphics[width=\textwidth]{figures/fig_crossover_by_noise_type.png}
+      \includegraphics[width=\textwidth, height=0.7\textheight, keepaspectratio]{figures/fig_crossover_by_noise_type.png}
     \end{column}
   \end{columns}
 \end{frame}
@@ -415,9 +539,49 @@
       Top-10 configurations on BSDS500 share \textit{zero overlap} with other datasets.
     \end{column}
     \begin{column}{0.59\textwidth}
-      \includegraphics[width=\textwidth]{figures/fig_spearman_heatmap.png}
+      \includegraphics[width=\textwidth, height=0.7\textheight, keepaspectratio]{figures/fig_spearman_heatmap.png}
     \end{column}
   \end{columns}
+\end{frame}
+
+\begin{frame}{ODS Gaps: Optimized vs. Bagan Parameters}
+  \begin{columns}[T]
+    \begin{column}{0.38\textwidth}
+      All eight gaps (4 datasets $\times$ 2 filters) are positive.
+
+      \vspace{0.5em}
+      Sign test: $p = 0.0625$ for both filters (minimum achievable with $n = 4$).
+
+      \vspace{0.5em}
+      The LF gaps are 3--15$\times$ larger than WVF gaps, reflecting $m = 14$ as the primary source of suboptimality.
+
+      \vspace{0.5em}
+      Even the smallest gap (+0.011 on BSDS500) is practically meaningful across 200 images.
+    \end{column}
+    \begin{column}{0.59\textwidth}
+      \includegraphics[width=\textwidth]{figures/fig_optimal_vs_bagan_gaps.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{WVF vs. LF: Statistically Indistinguishable}
+  \begin{table}
+    \centering
+    \caption{Wilcoxon signed-rank test: WVF vs. LF at matched parameters.}
+    \begin{tabular}{lcccc}
+      \toprule
+      \textbf{Dataset} & \textbf{Median diff} & \textbf{Cohen's $d$} & $T$ & $p$ \\
+      \midrule
+      UDED     & +0.0003  & $-0.46$ & 45 & 0.805 \\
+      BIPED v1 & $-0.0009$ & $-0.77$ & 21 & 0.989 \\
+      BIPED v2 & $-0.0003$ & $-0.64$ & 33 & 0.940 \\
+      BSDS500  & $-0.0034$ & $-1.15$ & 6  & 1.000 \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \vspace{0.3em}
+  No significant difference on any dataset ($p > 0.8$ everywhere). The median ODS difference is less than 0.004 on every dataset. At matched parameters, WVF and LF produce essentially identical edge maps.
 \end{frame}
 
 \begin{frame}{Parameter Sensitivity Analysis}
@@ -447,6 +611,136 @@
       \includegraphics[width=\textwidth]{figures/fig_parameter_sensitivity.png}
     \end{column}
   \end{columns}
+\end{frame}
+
+\begin{frame}{Median ODS by Parameter Level}
+  \centering
+  \includegraphics[width=0.75\textwidth, height=0.65\textheight, keepaspectratio]{figures/fig_median_ods_by_param.png}
+
+  $N_p$: inverted-U peaking near 80--100. $N_s$: saturates at 3--4. $d$: minimal effect. LF $m$: monotonic decline beyond $m = 2$.
+\end{frame}
+
+\begin{frame}{Crossover Heatmap: WVF vs. DL by Noise Type}
+  \begin{columns}[T]
+    \begin{column}{0.38\textwidth}
+      Median crossover SNR for each noise type $\times$ DL model combination.
+
+      \vspace{0.5em}
+      23 of 25 combinations show crossover at SNR = 0.3 (the most extreme level tested).
+
+      \vspace{0.5em}
+      100\% of image pairs show WVF overtaking DL at SNR $\leq$ 0.5.
+
+      \vspace{0.5em}
+      Bootstrap 95\% CIs are narrow: $[0.30, 0.30]$ for most combinations.
+    \end{column}
+    \begin{column}{0.59\textwidth}
+      \includegraphics[width=\textwidth]{figures/fig_crossover_heatmap.png}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Summary of Statistical Evidence}
+  \begin{table}
+    \centering
+    \caption{Evidence strength for each major claim.}
+    \begin{tabular}{lll}
+      \toprule
+      \textbf{Claim} & \textbf{Strength} & \textbf{Key Statistic} \\
+      \midrule
+      Optimized $>$ Bagan    & Strong practical    & $p = 0.0625$, gaps 0.01--0.16 \\
+      WVF $=$ LF (matched)   & Strong null         & $p > 0.8$, $|\Delta| < 0.004$ \\
+      $m$ most influential   & Very strong         & $\eta^2 = 0.343$ \\
+      $N_p$, $N_s$ moderate  & Strong              & $\eta^2 \approx 0.05$ \\
+      BSDS500 diverges       & Very strong         & $\rho = 0.03$--$0.17$ \\
+      DL $>$ WVF (clean)     & Consistent          & 3--4 of 4 datasets \\
+      WVF $>$ DL (noise)     & Very strong         & 100\% crossover at SNR $\leq 0.5$ \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+\end{frame}
+
+% ============================================================
+\sectionsubtitle{Reconciling findings and looking forward}
+\section{Discussion}
+
+\begin{frame}{Reconciling Bagan's Parameters}
+  Bagan and Wang's parameter choices are simultaneously suboptimal and well-motivated.
+
+  \vspace{0.5em}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{On clean data}
+      \begin{itemize}
+        \item $N_p$: 250 $\to$ 25--100 (substantial gain)
+        \item $d$: 4 $\to$ 2 (universal improvement)
+        \item $N_s$: 18 $\to$ 4 (no loss, $4.5\times$ speedup)
+        \item $m$: 14 $\to$ 1--3 (most damaging choice)
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Under noise}
+      \begin{itemize}
+        \item $N_p = 250$ is near-optimal at SNR = 0.3 under speckle noise
+        \item Physical mechanism: larger neighborhoods average more noise samples
+        \item Bias--variance trade-off shifts in favor of larger support under noise
+      \end{itemize}
+    \end{column}
+  \end{columns}
+
+  \vspace{0.5em}
+  The one universally suboptimal choice: $d = 4$. Higher-order polynomials overfit noise fluctuations at every SNR level.
+\end{frame}
+
+\begin{frame}{The BSDS500 Outlier Problem}
+  The near-zero Spearman correlation between BSDS500 and other datasets is consequential.
+
+  \vspace{0.5em}
+  \begin{itemize}
+    \item Root cause: small image size ($481 \times 321$ vs. $1280 \times 720$), diverse content, multi-annotator ground truth with varying criteria
+    \item WVF's circular neighborhood at $N_p = 100$ spans a proportionally larger fraction of BSDS500 images
+    \item Top-10 configurations share \textit{zero overlap} across BSDS500 and other datasets
+  \end{itemize}
+
+  \vspace{0.5em}
+  \textbf{Implication}: Benchmark results on BSDS500, which dominate the edge detection literature, should not be extrapolated to other imaging domains without validation. Practitioners should tune on domain-representative data.
+\end{frame}
+
+\begin{frame}{WVF's Unique Position in the Landscape}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Against classical operators}
+      \begin{itemize}
+        \item Unambiguous: outperforms all 54 configs
+        \item 2.4 ODS points over best classical (Prewitt-5)
+        \item Polynomial fitting provides adaptive scale selection
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Against deep learning}
+      \begin{itemize}
+        \item Condition-dependent comparison
+        \item DL wins on clean data (learned semantics)
+        \item WVF wins under noise (parametric adaptability)
+        \item $3.3\times$--$427\times$ faster, training-free, fully interpretable
+      \end{itemize}
+    \end{column}
+  \end{columns}
+
+  \vspace{0.5em}
+  WVF occupies a practical niche: highest accuracy of any training-free method, real-time capable, and robust to degraded conditions.
+\end{frame}
+
+\begin{frame}{Limitations}
+  \begin{itemize}
+    \item Noise ablation uses only 5 images per dataset (qualitative trends robust, specific crossover SNR values have uncertainty)
+    \item WVF crossover uses per-image oracle parameter selection, overestimating deployable performance
+    \item DL models evaluated with published weights only (no noise-augmented retraining)
+    \item Classical baseline comparison covers only BIPED v1
+    \item All noise models are synthetic --- real underwater noise has complex spatial correlations
+    \item $n = 4$ dataset design limits statistical power (minimum sign-test $p = 0.0625$)
+    \item LF ablation fixed $d = 4$; exploring $d = 2$ for LF is important future work
+  \end{itemize}
 \end{frame}
 
 % ============================================================
@@ -488,6 +782,39 @@
 
   \vspace{1em}
   Edge detection method selection is fundamentally \textbf{condition-dependent}. WVF's principal strength is \textit{parametric adaptability} across the full spectrum of operating conditions.
+\end{frame}
+
+\begin{frame}{Choosing Between WVF and Deep Learning}
+  \begin{table}
+    \centering
+    \caption{Decision guide: WVF vs. deep learning for edge detection.}
+    \begin{tabular}{lcc}
+      \toprule
+      \textbf{Criterion} & \textbf{WVF} & \textbf{DL Models} \\
+      \midrule
+      Clean-data accuracy      & Good       & Best \\
+      Noisy-data accuracy      & Best       & Poor \\
+      Computational speed      & Real-time  & $3$--$427\times$ slower \\
+      Training data required   & None       & Large annotated sets \\
+      Interpretability         & Full       & Opaque \\
+      Parameter adaptability   & Runtime    & Requires retraining \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \vspace{0.3em}
+  For safety-critical applications (medical, autonomous navigation, industrial inspection), WVF's complete interpretability is a significant advantage.
+\end{frame}
+
+\begin{frame}{Future Directions}
+  \begin{enumerate}
+    \item \textbf{Full-dataset noise ablation}: extend to all 330 images across all noise conditions ($\sim$2,500 GPU-hours)
+    \item \textbf{Adaptive WVF}: automatic $N_p$ adjustment based on estimated noise level via lookup table
+    \item \textbf{LF with $d = 2$}: WVF results strongly suggest this would improve LF performance
+    \item \textbf{Noise-augmented DL retraining}: fairer comparison under noise conditions
+    \item \textbf{Real-world validation}: field testing on actual underwater, medical, and industrial imagery
+    \item \textbf{Additional benchmarks}: a fifth dataset would lower minimum sign-test $p$ to 0.03125
+  \end{enumerate}
 \end{frame}
 
 % ------ Thank You / Q&A ------
