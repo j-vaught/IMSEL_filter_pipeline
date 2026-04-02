@@ -1,0 +1,561 @@
+% ============================================================
+% ASF vs Naive LF — Computational Complexity Comparison
+% University of South Carolina Beamer Theme
+% Compile with XeLaTeX:  xelatex presentation.tex
+% ============================================================
+
+\documentclass[10pt, aspectratio=169]{beamer}
+
+\usetheme{uofsc}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}
+\usepackage{listings}
+
+% Code listing style
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{UofSCGarnet}\bfseries,
+  commentstyle=\color{UofSCGray50}\itshape,
+  stringstyle=\color{UofSCCongaree},
+  backgroundcolor=\color{UofSCGray10},
+  frame=single,
+  rulecolor=\color{UofSCGray30},
+  numbers=none,
+  breaklines=true,
+  columns=fullflexible,
+  xleftmargin=0.5em,
+  xrightmargin=0.5em,
+}
+
+% --- Presentation Metadata ---
+\title[ASF vs Line Filter]{Anisotropic Stencil Filter\\Computational Complexity Analysis}
+\subtitle{Naive Line Filter vs.\ Fused Stencil Formulation}
+\author[Bagan, Vaught, Wang]{Luke Bagan, J.C. Vaught, Yi Wang\texorpdfstring{\\}{, }Department of Mechanical Engineering\texorpdfstring{\\}{, }University of South Carolina}
+\institute[UofSC]{}
+\date{}
+
+% ============================================================
+\begin{document}
+
+% ------ Title Slide ------
+{
+  \setbeamertemplate{footline}{}
+  \begin{frame}[plain]
+    \titlepage
+  \end{frame}
+}
+
+% ------ Outline ------
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+% ============================================================
+\sectionsubtitle{Polynomial fitting for gradient estimation}
+\section{Background}
+
+\begin{frame}{Local Polynomial Gradient Estimation}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      Model local intensity with a 2D Taylor expansion of order~$d$:
+      \begin{equation*}
+        f(x_i, y_i) \approx f^0 + f_x x_i + f_y y_i + \tfrac{f_{xx}}{2} x_i^2 + \cdots
+      \end{equation*}
+      $M = \tfrac{(d{+}1)(d{+}2)}{2}$ unknowns \quad ($d{=}4 \to M{=}15$)
+
+      \vspace{0.4em}
+      \begin{itemize}
+        \item Gather $N_p$ circular neighbors $\;\to\;$ system $\mathbf{A}\mathbf{z} = \mathbf{b}$
+        \item Solve via pseudoinverse: $\;\hat{\mathbf{z}} = \mathbf{A}^+ \mathbf{b}$
+        \item Normal derivative $=$ row~1 of $\mathbf{A}^+$ $\cdot$ intensities
+      \end{itemize}
+
+      \vspace{0.4em}
+      \begin{block}{Key Property}
+        $\mathbf{A}^+$ depends only on geometry and $\theta$
+        $\;\to\;$ \textbf{precompute once}, reuse per pixel.
+      \end{block}
+    \end{column}
+    \begin{column}{0.43\textwidth}
+      \centering
+      \vspace{-0.3em}
+      \includegraphics[width=\textwidth]{fig3_stencil_orientations.png}
+
+      \vspace{0.3em}
+      {\scriptsize Fused stencil weights at 6 orientations.\\
+      Red = positive, blue = negative weight.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Neighborhood Strategies: Point, Line, and Fused}
+  \begin{center}
+    \includegraphics[width=0.95\textwidth]{fig1_neighborhood_comparison.png}
+  \end{center}
+
+  \vspace{0.3em}
+  \begin{columns}[T]
+    \begin{column}{0.32\textwidth}
+      \centering
+      \textbf{(A) Point Filter}\\
+      {\small $N_p{=}15$ circular neighbors\\around one pixel}
+    \end{column}
+    \begin{column}{0.32\textwidth}
+      \centering
+      \textbf{(B) Line Filter}\\
+      {\small $(2m{+}1)$ virtual points,\\heavily overlapping}
+    \end{column}
+    \begin{column}{0.32\textwidth}
+      \centering
+      \textbf{(C) Fused Stencil}\\
+      {\small Deduplicated --- 37 unique\\of 75 total positions}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Line Extension for Robustness}
+  Evaluate the point filter at $(2m{+}1)$ virtual positions along each candidate edge direction:
+  \begin{equation*}
+    R_k = \sum_{j=-m}^{m} w_j \cdot \hat{f}_x^{(j,k)},
+    \qquad w_j = \exp\!\bigl(-\tfrac{j^2}{2\sigma^2}\bigr),\quad \sigma = m/2
+  \end{equation*}
+
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \textbf{Benefits:}
+      \begin{itemize}
+        \item Wider spatial context $\;\to\;$ noise robustness
+        \item Coherence along the edge tangent $\;\to\;$ bridges gaps
+      \end{itemize}
+
+      \vspace{0.5em}
+      \textbf{Problem:}
+      \begin{itemize}
+        \item $(2m{+}1)$ independent gather-matmul ops per orientation per pixel
+        \item Massive memory: $L \times N_p$ intermediate values
+        \item Many pixels are read multiple times (overlap)
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \centering
+      \vspace{0.5em}
+      \includegraphics[width=0.85\textwidth]{fig1_neighborhood_comparison.png}
+
+      \vspace{0.3em}
+      {\scriptsize Panel B shows 5 overlapping\\neighborhoods along the line}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ============================================================
+\sectionsubtitle{Per-pixel operation count for the naive approach}
+\section{Naive Line Filter Cost}
+
+\begin{frame}[fragile]{Naive Line Filter: Pseudocode}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \begin{lstlisting}[language=Python, escapeinside={(*}{*)}]
+for (*$\theta$*) in orientations:  # (*$N_s$*) = 18
+  for j = -m to m:        # L = 15
+    for i = 1 to (*$N_p$*):     # (*$N_p$*) = 100
+      READ pixel(j, i)    # 1 mem read
+      MUL by (*$p_i^{(k)}$*)     # 1 multiply
+    SUM (*$N_p$*) values         # 99 adds
+  MUL by Gaussian (*$w_j$*)    # 15 muls
+  SUM over line           # 14 adds
+  ABS((*$R_\theta$*))
+pick max over (*$\theta$*)
+      \end{lstlisting}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \textbf{Per orientation} ($m{=}7,\ N_p{=}100$):
+      \begin{itemize}
+        \item Memory reads: $15 \times 100 = \mathbf{1{,}500}$
+        \item Multiplies: $15 \times 100 + 15 = \mathbf{1{,}515}$
+        \item Additions: $15 \times 99 + 14 = \mathbf{1{,}499}$
+      \end{itemize}
+
+      \vspace{0.6em}
+      \textbf{Per pixel} (18 orientations):
+      \begin{itemize}
+        \item Reads: \textbf{27,000}
+        \item Multiplies: \textbf{27,270}
+        \item Additions: \textbf{26,982}
+        \item[\color{UofSCGarnet}$\blacksquare$] \textbf{Total: $\sim$81,252 ops}
+      \end{itemize}
+    \end{column}
+  \end{columns}
+
+  \vspace{0.3em}
+  \begin{alertblock}{Complexity}
+    $\mathcal{O}\!\bigl(N_s \times (2m{+}1) \times N_p\bigr)$ per pixel $\;=\; \mathcal{O}(N_s \cdot L \cdot N_p)$
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}{Naive LF: Computation Flow}
+  \begin{center}
+    \includegraphics[width=0.92\textwidth]{fig2_computation_flow.png}
+  \end{center}
+
+  \vspace{0.3em}
+  \begin{itemize}
+    \item \textbf{Top:} Naive LF requires nested loops --- 8 sequential stages per pixel
+    \item \textbf{Bottom:} Fused ASF collapses to 6 stages, with the inner 5 replaced by one gather + dot product
+    \item Memory: naive allocates \textbf{6.2~GB} of intermediates vs.\ \textbf{20~MB} for ASF
+  \end{itemize}
+\end{frame}
+
+% ============================================================
+\sectionsubtitle{Collapsing the pipeline into a single dot product}
+\section{Fused Stencil Formulation}
+
+\begin{frame}{Algebraic Collapse}
+  The line-extended response is a \textbf{linear operation} on pixel intensities:
+  \begin{equation*}
+    R_k = \underbrace{\sum_{j=-m}^{m} w_j \sum_{i=1}^{N_p} p_i^{(k)} \cdot f(\text{pixel}_{j,i})}_{\text{Naive: }(2m{+}1) \times N_p\text{ reads}}
+    \;=\; \underbrace{\sum_{\ell=1}^{N'_k} \alpha_{k,\ell} \cdot f(\text{pixel}_\ell)}_{\text{Fused: }N'_k\text{ reads}}
+  \end{equation*}
+
+  \vspace{0.3em}
+  \begin{itemize}
+    \item Many $(j, i)$ pairs map to the \textbf{same integer pixel} after rounding
+    \item Sum their weights $\;\to\;$ single precomputed $\alpha_{k,\ell}$ per unique position
+    \item The entire multi-step pipeline collapses:
+  \end{itemize}
+
+  \vspace{0.3em}
+  \begin{center}
+    {\small
+    \color{UofSCRose}Rotate $\to$ Build $\mathbf{A}$ $\to$ $\mathbf{A}^+$ $\to$ Gather $\to$ MatMul $\to$ Weight $\to$ Sum}\\[0.4em]
+    $\Downarrow$\\[0.4em]
+    {\color{UofSCHorseshoe}\textbf{Single Gather\; + \;Dot Product}\; with precomputed $\boldsymbol{\alpha}_k$}
+  \end{center}
+
+  \vspace{0.3em}
+  \begin{exampleblock}{Result}
+    $R_k = \boldsymbol{\alpha}_k^\top \mathbf{g}_k$ \quad---\quad
+    \textbf{zero runtime matrix operations}.
+  \end{exampleblock}
+\end{frame}
+
+\begin{frame}{Stencil Shapes Across Orientations}
+  \begin{center}
+    \includegraphics[width=0.78\textwidth]{fig3_stencil_orientations.png}
+  \end{center}
+
+  \vspace{0.3em}
+  \begin{itemize}
+    \item Each dot is one unique pixel in the fused stencil ($m{=}7$, $N_p{=}15$, $d{=}4$)
+    \item Color encodes the fused weight $\alpha$ (red = positive, blue = negative)
+    \item Dipole pattern rotates with $\theta$; stencil elongates along the candidate edge
+    \item Arrow shows the normal derivative direction $f_x$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Stencil Deduplication}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      Neighboring virtual positions share most of their circular neighborhoods:
+
+      \begin{table}
+        \centering
+        \caption{Deduplication ($N_p{=}100$, $d{=}4$).}
+        \begin{tabular}{ccccc}
+          \toprule
+          $m$ & Raw & Unique & Reduct.\ & Speedup \\
+          \midrule
+          1  & 300   & 128 & 57\% & 2.3$\times$ \\
+          2  & 500   & 152 & 70\% & 3.3$\times$ \\
+          7  & 1,500 & 264 & 82\% & 5.7$\times$ \\
+          14 & 2,900 & 431 & 85\% & 6.7$\times$ \\
+          \bottomrule
+        \end{tabular}
+      \end{table}
+
+      \begin{itemize}
+        \item Ratio \textbf{improves as $m$ increases}
+        \item Primary source of computational savings
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.43\textwidth}
+      \centering
+      \vspace{0.5em}
+      \includegraphics[width=\textwidth]{fig1_neighborhood_comparison.png}
+
+      \vspace{0.5em}
+      {\small Panel C: 37 unique of 75 total\\positions at $m{=}2$, $N_p{=}15$.\\
+      \textbf{51\% overlap eliminated.}}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ============================================================
+\sectionsubtitle{Per-pixel cost after stencil fusion}
+\section{ASF Operation Count}
+
+\begin{frame}[fragile]{Fused ASF: Pseudocode}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \begin{lstlisting}[language=Python, escapeinside={(*}{*)}]
+# ONE-TIME precompute:
+#   (*$\boldsymbol{\alpha}_k$*) for each orientation
+
+for (*$\theta$*) in orientations:   # (*$N_s$*) = 18
+  for i = 1 to (*$N'$*):         # (*$N'$*) (*$\approx$*) 264
+    READ pixel at offset[i] # 1 read
+    MUL by (*$\alpha$*)[i]        # 1 multiply
+  SUM (*$N'$*) values             # 263 adds
+  ABS((*$R_\theta$*))
+pick max over (*$\theta$*)
+      \end{lstlisting}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \textbf{Per orientation} ($m{=}7,\ N_p{=}100$):
+      \begin{itemize}
+        \item Memory reads: \textbf{264}
+        \item Multiplies: \textbf{264}
+        \item Additions: \textbf{263}
+      \end{itemize}
+
+      \vspace{0.6em}
+      \textbf{Per pixel} (18 orientations):
+      \begin{itemize}
+        \item Reads: \textbf{4,752}
+        \item Multiplies: \textbf{4,752}
+        \item Additions: \textbf{4,734}
+        \item[\color{UofSCHorseshoe}$\blacksquare$] \textbf{Total: $\sim$14,238 ops}
+      \end{itemize}
+    \end{column}
+  \end{columns}
+
+  \vspace{0.3em}
+  \begin{block}{Complexity}
+    $\mathcal{O}\!\bigl(N_s \times N'\bigr)$ per pixel \qquad where $N' \approx 0.18 \times (2m{+}1) \times N_p$
+  \end{block}
+\end{frame}
+
+% ============================================================
+\sectionsubtitle{Naive LF vs.\ Fused ASF head-to-head}
+\section{Direct Comparison}
+
+\begin{frame}{Per-Pixel Operation Comparison}
+  \begin{table}
+    \centering
+    \caption{Per-pixel cost at $m{=}7$, $N_p{=}100$, $N_s{=}18$, $d{=}4$.}
+    \begin{tabular}{lccc}
+      \toprule
+      \textbf{Metric} & \textbf{Naive LF} & \textbf{Fused ASF} & \textbf{Reduction} \\
+      \midrule
+      Memory reads / orientation   & 1,500        & 264          & 5.7$\times$ \\
+      Multiplies / orientation     & 1,515        & 264          & 5.7$\times$ \\
+      Additions / orientation      & 1,499        & 263          & 5.7$\times$ \\
+      \midrule
+      \textbf{Total ops / pixel}   & \textbf{81,252} & \textbf{14,238} & \textbf{5.7$\times$} \\
+      Runtime matrix ops / pixel   & 18 matmuls   & 0            & $\infty$ \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \vspace{0.3em}
+  \begin{itemize}
+    \item \textbf{5.7$\times$} arithmetic reduction from deduplication alone at $m{=}7$
+    \item Additional gains on GPU from eliminating runtime matrix operations
+    \item At $m{=}14$: $6.7\times$ arithmetic $\;\to\;$ \textbf{$24\times$ wall-clock speedup}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{GPU Memory Comparison}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{alertblock}{Naive Line Filter}
+        \begin{itemize}
+          \item Intermediate: $B \times L \times N_p \times 24$ bytes
+          \item Scales with $m$ and $N_p$
+          \item Peak VRAM: \textbf{6,223~MB}
+          \item Cannot fit large $m$ on consumer GPUs
+        \end{itemize}
+      \end{alertblock}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{exampleblock}{Fused ASF (Triton)}
+        \begin{itemize}
+          \item No intermediate tensors
+          \item Image + output + stencil weights only
+          \item Peak VRAM: \textbf{20~MB}
+          \item Constant regardless of $m$
+        \end{itemize}
+      \end{exampleblock}
+    \end{column}
+  \end{columns}
+
+  \vspace{0.8em}
+  \begin{center}
+    \fcolorbox{UofSCGarnet}{UofSCSandstorm}{%
+      \parbox{0.7\textwidth}{\centering\large
+        \textbf{311$\times$ VRAM reduction}\quad---\quad 6,223~MB $\;\to\;$ 20~MB
+      }%
+    }
+  \end{center}
+\end{frame}
+
+% ============================================================
+\sectionsubtitle{Wall-clock performance on NVIDIA A100}
+\section{Benchmarks}
+
+\begin{frame}{Speedup and VRAM}
+  \begin{center}
+    \includegraphics[width=0.88\textwidth]{fig4_speedup_vram.png}
+  \end{center}
+
+  \vspace{0.2em}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{itemize}
+        \item Speedup \textbf{scales with $m$} due to\\improved deduplication ratio
+        \item \textbf{24.3$\times$} at $m{=}14$
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{itemize}
+        \item Triton VRAM: constant \textbf{20~MB}
+        \item Original LF: $>$\textbf{6~GB}
+        \item \textbf{311$\times$} reduction
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Wall-Clock Benchmarks}
+  BIPED v1 ($1280 \times 720$), $N_p{=}100$, $N_s{=}18$, $d{=}4$ --- NVIDIA A100-SXM4-40GB:
+
+  \begin{table}
+    \centering
+    \begin{tabular}{ccccc}
+      \toprule
+      \textbf{$m$} & \textbf{Naive LF (s)} & \textbf{Conv2d (s)} & \textbf{Triton ASF (s)} & \textbf{Speedup} \\
+      \midrule
+      1  & 0.58 & 0.089 & 0.072 & 8.0$\times$ \\
+      2  & 1.91 & 0.187 & 0.140 & 13.7$\times$ \\
+      7  & 2.43 & 0.176 & 0.132 & \textbf{18.4$\times$} \\
+      14 & 8.88 & 0.591 & 0.366 & \textbf{24.3$\times$} \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \vspace{0.3em}
+  \begin{itemize}
+    \item Additional speedup beyond dedup ratio from eliminating runtime matrix ops
+    \item Triton kernel: \textbf{132~ms} per 720p image at $m{=}7$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Visual Results: Naive LF vs ASF are Identical}
+  \begin{center}
+    \includegraphics[width=0.85\textwidth]{BSDS500_100007_m7-Np100.png}
+  \end{center}
+
+  \vspace{0.2em}
+  {\small BSDS500 (polar bear), $m{=}7$, $N_p{=}100$.
+  Gradient maps and thresholded edges are \textbf{visually identical} ---
+  the fused stencil is a \emph{mathematically exact} reformulation, not an approximation.}
+\end{frame}
+
+\begin{frame}{Visual Results: BIPED v1}
+  \begin{center}
+    \includegraphics[width=0.85\textwidth]{BIPED_RGB_008_m7-Np100.png}
+  \end{center}
+
+  \vspace{0.2em}
+  {\small BIPED v1 (1280$\times$720). Both methods capture identical edge structure ---
+  vehicle outlines, wheel spokes, sign text --- while ASF runs
+  \textbf{18.4$\times$ faster} and uses \textbf{311$\times$ less VRAM}.}
+\end{frame}
+
+\begin{frame}{Where Do the Savings Come From?}
+  \begin{columns}[T]
+    \begin{column}{0.31\textwidth}
+      \begin{block}{1.\ Deduplication}
+        \begin{itemize}
+          \item Overlapping neighborhoods share pixels
+          \item 82\% reduction at $m{=}7$
+          \item $1{,}500 \to 264$ reads
+          \item Improves with $m$
+        \end{itemize}
+        \vspace{0.3em}
+        $\to$ \textbf{5.7$\times$} fewer memory accesses
+      \end{block}
+    \end{column}
+    \begin{column}{0.31\textwidth}
+      \begin{block}{2.\ Precomputed Weights}
+        \begin{itemize}
+          \item Pseudoinverse, rotation, Gaussian all fused into $\boldsymbol{\alpha}_k$
+          \item \textbf{Zero} runtime matrix ops
+          \item Eliminates $\mathcal{O}(N_p {\times} M)$ matmul/orient.
+        \end{itemize}
+        \vspace{0.3em}
+        $\to$ Removes entire matmul stage
+      \end{block}
+    \end{column}
+    \begin{column}{0.31\textwidth}
+      \begin{block}{3.\ GPU Kernel Design}
+        \begin{itemize}
+          \item Single gather + dot per orientation
+          \item Vectorized across 128-px blocks
+          \item Coalesced row reads
+        \end{itemize}
+        \vspace{0.3em}
+        $\to$ Constant \textbf{20~MB} VRAM, fits any GPU
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ============================================================
+\sectionsubtitle{}
+\section{Summary}
+
+\begin{frame}{Summary}
+  \textbf{The naive line filter is memory-bound and redundant:}
+  \begin{itemize}
+    \item $\mathcal{O}(N_s \times L \times N_p)$ per pixel, most pixel reads duplicated
+    \item $\sim$81,000 total ops/pixel at $m{=}7$, $N_p{=}100$, $N_s{=}18$
+    \item 6.2~GB VRAM for a single 720p image
+  \end{itemize}
+
+  \vspace{0.6em}
+  \textbf{The fused stencil eliminates all redundancy:}
+  \begin{itemize}
+    \item $\mathcal{O}(N_s \times N')$ per pixel, $N' \approx 0.18 \times L \times N_p$
+    \item $\sim$14,000 total ops/pixel --- \textbf{5.7$\times$ arithmetic reduction}
+    \item \textbf{Zero runtime matrix operations}
+  \end{itemize}
+
+  \vspace{0.6em}
+  \textbf{GPU results exceed the theoretical arithmetic speedup:}
+  \begin{itemize}
+    \item \textbf{18.4$\times$} wall-clock at $m{=}7$, \textbf{24$\times$} at $m{=}14$
+    \item \textbf{311$\times$} VRAM reduction (6.2~GB $\to$ 20~MB)
+    \item Enables deployment on \emph{any} GPU, including embedded
+  \end{itemize}
+\end{frame}
+
+% ------ Thank You / Q&A ------
+{
+  \setbeamertemplate{footline}{}
+  \begin{frame}[plain]
+    \begin{tikzpicture}[remember picture, overlay]
+      \fill[UofSCGarnet] (current page.south west) rectangle (current page.north east);
+      \fill[UofSCDarkGarnet] (current page.south west) rectangle ([yshift=0.8cm]current page.south east);
+      \draw[white, line width=0.5pt] ([yshift=0.8cm]current page.south west) -- ([yshift=0.8cm]current page.south east);
+    \end{tikzpicture}
+    \vfill
+    \centering
+    {\fontsize{50}{55}\selectfont\impactfont\color{UofSCWhite} THANK YOU!}\\[1em]
+    {\Large\color{UofSCWhite} Questions \& Discussion}\\[0.5em]
+    {\normalsize\color{UofSCGray30} vaught@email.sc.edu}
+    \vfill
+  \end{frame}
+}
+
+\end{document}
