@@ -8,6 +8,7 @@
 #let rose = rgb("#CC2E40")
 #let horseshoe = rgb("#65780B")
 #let black90 = rgb("#363636")
+#let black70 = rgb("#5C5C5C")
 #let black50 = rgb("#A2A2A2")
 #let black30 = rgb("#C7C7C7")
 #let black10 = rgb("#ECECEC")
@@ -183,12 +184,13 @@
   for i in range(n) {
     let x = i * step
     let h = all-heights.at(i)
-    let clr = if i >= win-start and i <= win-end { garnet } else { black50 }
+    let clr = if i >= win-start and i <= win-end { garnet.lighten(60%) } else { black50.lighten(60%) }
+    let stroke-clr = if i >= win-start and i <= win-end { black70 } else { black50 }
     rect(
       (x, 0),
       (x + bar-w, h),
       fill: clr,
-      stroke: 0.4pt + black90,
+      stroke: 0.4pt + stroke-clr,
     )
   }
 
