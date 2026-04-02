@@ -28,6 +28,10 @@
 %   Serif   -> Tinos
 % ============================================================
 
+% Set \uofscfontpath before loading this theme to override the font directory.
+% Default: fonts/ (relative to the compiling directory).
+\providecommand{\uofscfontpath}{fonts/}
+
 % UofSC Berlingske fonts are bundled as woff files from sc.edu.
 % System-installed versions are preferred if available; otherwise
 % the bundled woff files are used; final fallback is the open-source set.
@@ -36,13 +40,13 @@
 }{
   \setsansfont{BerlingskeSans-Md}[
     BoldFeatures = {FakeBold=1.5},
-    Path      = fonts/,
+    Path      = \uofscfontpath,
     Extension = .otf
   ]
 }
 
 \newfontfamily\impactfont{Impact}[
-  Path      = fonts/,
+  Path      = \uofscfontpath,
   Extension = .ttf
 ]
 
@@ -50,7 +54,7 @@
   BoldFont       = Tinos-Bold,
   ItalicFont     = Tinos-Italic,
   BoldItalicFont = Tinos-BoldItalic,
-  Path           = fonts/,
+  Path           = \uofscfontpath,
   Extension      = .ttf
 ]
 
