@@ -17,9 +17,9 @@ _BSDS500_ @arbelaez2011bsds500 provides 200 test images at $481 times 321$ pixel
 
 _BIPED v1_ @poma2020biped provides 50 test images at $1280 times 720$ pixels depicting outdoor urban scenes with high-resolution edge annotations from a single annotator. The edges are predominantly photometric, arising from sharp intensity transitions at object boundaries, structural lines, and text. This dataset is more favorable to gradient-based methods than BSDS500.
 
-_UDED_ @soria2023bipedv2 consists of 30 images sampled from 15 diverse source datasets (BIPED, BSDS500, Cityscapes, ADE20K, NYUD, DIV2K, WIRE-FRAME, CID, MDBD, THANGKA, PASCAL-Context, SET14, URBAN10, and others), selected via intensity interquartile range to maximize visual diversity, with images capped at $720 times 720$ pixels. It was designed specifically as a cross-domain generalization benchmark for edge detection, testing whether a method's performance transfers across imaging conditions without domain-specific tuning.
+_UDED_ @soria2023teed consists of 30 images sampled from 15 diverse source datasets (BIPED, BSDS500, Cityscapes, ADE20K, NYUD, DIV2K, WIRE-FRAME, CID, MDBD, THANGKA, PASCAL-Context, SET14, URBAN10, and others), selected via intensity interquartile range to maximize visual diversity, with images capped at $720 times 720$ pixels. It was designed specifically as a cross-domain generalization benchmark for edge detection, testing whether a method's performance transfers across imaging conditions without domain-specific tuning.
 
-_BIPED v2_ @soria2023bipedv2 provides 50 test images at the same resolution as BIPED v1 but with revised annotations and additional scenes. We use it for cross-validation of BIPED v1 findings; results are reported in supplementary material where they differ.
+_BIPED v2_ @soria2023teed provides 50 test images at the same resolution as BIPED v1 but with revised annotations and additional scenes. We use it for cross-validation of BIPED v1 findings; results are reported in supplementary material where they differ.
 
 These four datasets were chosen because they collectively assess generalization across imaging domains. BSDS500 is included despite its semantic bias because of its status as the community standard. BIPED provides high-resolution photometric ground truth. UDED tests cross-domain transfer by sampling from 15 diverse sources. Notably, BSDS500 is a strong outlier in inter-dataset agreement. Spearman rank correlations between BSDS500 rankings and those of the other three datasets are $rho = 0.03$--$0.17$, while correlations among BIPED v1, BIPED v2, and UDED are $rho = 0.55$--$0.78$. This confirms that performance on BSDS500 measures a qualitatively different capability (semantic boundary recognition) than the other benchmarks.
 
@@ -37,7 +37,7 @@ The comparison pool comprises 54 classical filter configurations, 5 deep learnin
 
 _Classical filters (54 configurations)._ Sobel at kernel sizes $3 times 3$, $5 times 5$, $7 times 7$, $9 times 9$, and $11 times 11$. Prewitt at $3 times 3$ and $5 times 5$. Scharr at $3 times 3$ (the optimized Sobel variant). Roberts Cross at $2 times 2$. Kirsch compass operator at $3 times 3$ with 8 orientations. Gaussian derivatives at $sigma in {0.5, 1.0, 1.5, 2.0}$ for both first and second order. Laplacian of Gaussian at $sigma in {1.0, 1.5, 2.0}$. Difference of Gaussians at multiple $sigma$ pairs. Steerable filters at first and second order using the Freeman and Adelson basis. Frei-Chen at $3 times 3$ with subspace decomposition. Marr-Hildreth at $sigma in {1.0, 1.5, 2.0}$. Each configuration is evaluated at its best parameter setting per dataset, and the best classical result per dataset is reported for comparison.
 
-_Deep learning models (5)._ DexiNed @poma2020biped, pre-trained on BIPED with no ImageNet initialization. TEED @soria2023bipedv2, a lightweight encoder-decoder pre-trained on BIPED v2. PIDINet, using pixel difference convolutions pre-trained on BSDS500. NBED, a neural-network-based detector pre-trained on BSDS500. DiffusionEdge, a diffusion model pre-trained on BSDS500. All models are evaluated using their published pre-trained weights with no fine-tuning or domain adaptation, representing the standard download-and-run deployment scenario.
+_Deep learning models (5)._ DexiNed @poma2020biped, pre-trained on BIPED with no ImageNet initialization. TEED @soria2023teed, a lightweight encoder-decoder pre-trained on BIPED v2. PIDINet, using pixel difference convolutions pre-trained on BSDS500. NBED, a neural-network-based detector pre-trained on BSDS500. DiffusionEdge, a diffusion model pre-trained on BSDS500. All models are evaluated using their published pre-trained weights with no fine-tuning or domain adaptation, representing the standard download-and-run deployment scenario.
 
 _Proposed methods (3 variants)._ ASF-poly (fused polynomial stencil) with $N_p = 25$, $N_s = 4$, $d = 2$, $m = 0$ for clean data and $N_p = 100$, $N_s = 8$, $d = 2$, $m = 7$ for noisy conditions. ASF-rect (rectangular Gaussian kernel) with $sigma_u = 2.0$, $sigma_v = 1.2$, $N_s = 36$ for clean data. ASF-ellip (elliptical Gaussian kernel) with $sigma_u = 2.0$, $sigma_v = 1.2$, $N_s = 36$ for clean data. Parameters for each variant were selected from the ablation study in Section 7.
 
@@ -180,43 +180,63 @@ The runtime results reveal that the ASF occupies a previously empty region of th
 This subsection presents qualitative comparisons that complement the quantitative metrics above. All edge maps are produced from raw gradient magnitude outputs without non-maximum suppression, thresholded at each method's ODS-optimal threshold for the corresponding dataset.
 
 #figure(
-  rect(width: 100%, height: 4cm, stroke: black50,
-    align(center + horizon)[_Placeholder: BSDS500 clean-data comparison._ \ Four columns $times$ 2--3 rows. \ (A) Input image, (B) ASF-poly gradient magnitude, \ (C) ASF-rect gradient magnitude, (D) DexiNed edge map.]
-  ),
-  caption: [Clean-data visual comparison on BSDS500. ASF-poly and ASF-rect produce nearly identical gradient magnitude maps, confirming mathematical equivalence across formulations. The deep learning model (DexiNed) produces thinner, more semantically selective edges that suppress texture boundaries preserved by the ASF.],
-) <fig:visual-bsds>
+  image("../figures/visual_bsds500_100007.png", width: 100%),
+  caption: [Clean-data visual comparison on BSDS500 (image 100007). Top row: input image, naive LF gradient magnitude, ASF gradient magnitude (identical output, confirming mathematical equivalence). Bottom row: ground truth, LF edges, ASF edges.],
+  placement: top,
+) <fig:visual-bsds-1>
 
 #figure(
-  rect(width: 100%, height: 4cm, stroke: black50,
-    align(center + horizon)[_Placeholder: BIPED v1 clean-data comparison._ \ Four columns $times$ 2 rows. \ (A) Input, (B) ASF-poly, (C) ASF-rect, (D) DexiNed.]
-  ),
-  caption: [Clean-data visual comparison on BIPED v1. The ASF captures fine structural details such as sign text, wheel spokes, and window frames that small-kernel classical operators miss. On this photometric-edge dataset, the visual gap between ASF and DexiNed is smaller than on BSDS500.],
-) <fig:visual-biped>
+  image("../figures/visual_bsds500_100039.png", width: 100%),
+  caption: [Clean-data visual comparison on BSDS500 (image 100039). The ASF captures both strong object boundaries and fine internal texture edges.],
+  placement: top,
+) <fig:visual-bsds-2>
 
 #figure(
-  rect(width: 100%, height: 4cm, stroke: black50,
-    align(center + horizon)[_Placeholder: UDED cross-domain comparison._ \ Four columns $times$ 2 rows. \ (A) Input, (B) ASF-poly, (C) ASF-rect, (D) DexiNed.]
-  ),
-  caption: [Clean-data visual comparison on UDED, a cross-domain generalization benchmark sampling from 15 source datasets. The ASF generalizes across diverse imaging domains without domain-specific training, approaching DexiNed's supervised performance.],
-) <fig:visual-uded>
+  image("../figures/visual_biped_008.png", width: 100%),
+  caption: [Clean-data visual comparison on BIPED v1 (image 008, 1280$times$720). The ASF captures fine structural details including vehicle outlines, wheel spokes, and sign text that small-kernel classical operators miss.],
+  placement: top,
+) <fig:visual-biped-1>
 
 #figure(
-  rect(width: 100%, height: 4cm, stroke: black50,
-    align(center + horizon)[_Placeholder: Geometric kernel demonstrations._ \ Row 1: rectangular kernel (input, gradient magnitude, orientation map). \ Row 2: elliptical kernel on same image. \ Orientation encoded as hue, $|R|$ as brightness.]
-  ),
-  caption: [Rectangular vs. elliptical kernel edge detection on a natural image. Both kernel variants produce visually similar gradient magnitude maps. The elliptical kernel produces a slightly smoother orientation field, consistent with its continuous angular weighting function.],
-) <fig:kernel-demos>
+  image("../figures/visual_biped_010.png", width: 100%),
+  caption: [Clean-data visual comparison on BIPED v1 (image 010). On this photometric-edge dataset, the ASF produces gradient maps visually competitive with deep learning outputs.],
+  placement: top,
+) <fig:visual-biped-2>
 
 #figure(
-  rect(width: 100%, height: 5cm, stroke: black50,
-    align(center + horizon)[_Placeholder: Noise robustness visual comparison._ \ One image at four SNR levels (clean, 10 dB, 5 dB, 1 dB). \ Columns: ASF-poly (noise-optimized), ASF-rect (scaled $sigma$), DexiNed, Sobel. \ At high SNR all methods perform similarly; \ at low SNR the DL and classical outputs degrade while the ASF maintains structure.]
-  ),
-  caption: [Noise robustness comparison at four SNR levels. At $"SNR" = 10$ dB, all methods produce usable edge maps. At $"SNR" = 1$ dB, both Sobel and DexiNed produce noise-dominated outputs, while the ASF with noise-adapted parameters ($N_p = 250$, $m = 7$) maintains coherent edge structure at the cost of reduced spatial resolution.],
-) <fig:noise-visual>
+  image("../figures/visual_uded_01.png", width: 100%),
+  caption: [Clean-data visual comparison on UDED (image 01). The ASF generalizes across diverse imaging domains without domain-specific training, detecting boundaries and internal structure.],
+  placement: top,
+) <fig:visual-uded-1>
 
 #figure(
-  rect(width: 100%, height: 5cm, stroke: black50,
-    align(center + horizon)[_Placeholder: Accuracy-speed Pareto plot (CeTZ)._ \ X-axis: per-image runtime in ms (log scale). \ Y-axis: ODS F-score on BIPED v1. \ Classical methods: lower-left. DL models: upper-right. \ ASF variants: upper-left, filling the gap. \ Pareto frontier drawn. Brand colors: garnet (ASF), atlantic (DL), 70% black (classical).]
-  ),
-  caption: [Accuracy vs. runtime Pareto plot on BIPED v1. Classical methods cluster at low runtime but low accuracy; deep learning models achieve high accuracy at higher computational cost (DiffusionEdge extends far off the right edge at $approx 15$ s). The ASF variants occupy the previously empty region between these clusters, offering accuracy competitive with lightweight neural networks at classical-method runtimes.],
+  image("../figures/visual_uded_02.png", width: 100%),
+  caption: [Clean-data visual comparison on UDED (image 02). On this cross-domain benchmark, the ASF approaches DexiNed's supervised performance without any training data.],
+  placement: top,
+) <fig:visual-uded-2>
+
+#figure(
+  image("../figures/visual_kernel_demo_p5.png", width: 100%),
+  caption: [Rectangular Gaussian kernel edge detection. Left: grayscale input. Center: gradient magnitude $|R_(k^*)|$. Right: orientation map ($theta_(k^*)$ encoded as hue, $|R_(k^*)|$ as brightness). Parameters: $sigma_u = 2.0$, $sigma_v = 1.2$, $N_s = 36$.],
+  placement: top,
+) <fig:kernel-demo-rect>
+
+#figure(
+  image("../figures/visual_kernel_demo_p6.png", width: 100%),
+  caption: [Elliptical Gaussian kernel edge detection on the same image. The gradient magnitude map is visually nearly identical to the rectangular variant. The orientation field is slightly smoother, consistent with the elliptical kernel's continuous angular weighting.],
+  placement: top,
+) <fig:kernel-demo-ellip>
+
+// NOTE: Noise comparison figure requires generating edge maps at multiple SNR levels.
+// This will be produced from the noise ablation experimental pipeline.
+// #figure(
+//   image("../figures/visual_noise_comparison.png", width: 100%),
+//   caption: [Noise robustness comparison at four SNR levels...],
+//   placement: top,
+// ) <fig:noise-visual>
+
+#figure(
+  image("../figures/fig_pareto.pdf", width: 90%),
+  caption: [Accuracy vs. runtime Pareto plot on BIPED v1. Classical methods (gray) cluster at low runtime but low accuracy. Deep learning models (blue) achieve high accuracy at higher computational cost. The ASF variants (garnet) occupy the previously empty region, offering accuracy competitive with lightweight neural networks at classical-method runtimes.],
+  placement: top,
 ) <fig:pareto>

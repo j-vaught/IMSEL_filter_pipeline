@@ -10,7 +10,7 @@ The line-extended anisotropic steerable filter described in the previous section
 
 == Algebraic Collapse <sec:collapse>
 
-Recall from @eq:lineresponse that the line-extended response at orientation $theta_k$ is a Gaussian-weighted sum of normal-derivative estimates along the candidate edge direction.
+Recall from @eq:line-response that the line-extended response at orientation $theta_k$ is a Gaussian-weighted sum of normal-derivative estimates along the candidate edge direction.
 
 $ R_k = sum_(j=-m)^(m) w_j dot hat(f)_x^((j,k)) $ <eq:rk-recall>
 
@@ -39,7 +39,7 @@ $ R_k = bold(alpha)_k^top bold(g)_k $ <eq:gather-dot>
 The weight vector $bold(alpha)_k in RR^(N'_k)$ depends only on the filter parameters ($m$, $N_p$, $d$, $theta_k$) and can be precomputed once. The intensity vector $bold(g)_k in RR^(N'_k)$ is assembled at runtime by reading the image at the $N'_k$ stencil offsets. No coordinate rotations, no design matrices, and no pseudoinverse products appear at evaluation time.
 
 #figure(
-  image("../figures/fig_sec4_weight_maps_placeholder.png", width: 95%),
+  image("../figures/fig_sec4_weight_maps.pdf", width: 95%),
   caption: [Fused weight maps $alpha_(k,ell)$ for six representative orientations ($m = 7$, $N_p = 100$, $d = 4$). Red indicates positive weights and blue indicates negative weights, with intensity proportional to magnitude. The dipole pattern (positive on one side of the edge normal, negative on the other) rotates with $theta_k$, and the stencil elongates along the candidate edge tangent.],
 ) <fig:weight-maps>
 
@@ -92,7 +92,7 @@ $ eta = (sum_(ell=1)^(N'_k) |alpha_(k,ell)|) / (sum_(j=-m)^(m) |w_j| sum_(i=1)^(
 The numerator is the total absolute weight in the fused stencil, and the denominator is the total absolute weight before any cancellation occurs (i.e., the sum of absolute contributions across all raw entries). A value $eta = 1$ would indicate no cancellation, while $eta < 1$ indicates that a fraction $1 - eta$ of the raw weight magnitude has been lost to sign cancellation during deduplication. Empirically, $eta approx 0.72$ for $m = 7$ and $N_p = 20$ at order $d = 4$, meaning approximately 28% of the aggregate pseudoinverse weight magnitude is destroyed by cancellation. For larger neighborhoods ($N_p = 100$), the efficiency drops further because the increased overlap multiplies the number of canceling pairs.
 
 #figure(
-  image("../figures/fig_sec4_cancellation_placeholder.png", width: 85%),
+  image("../figures/fig_sec4_cancellation.pdf", width: 85%),
   caption: [Weight cancellation illustration for orientation $theta_0 = 0$ with $m = 7$ and $N_p = 100$. Left: histogram of fused weight magnitudes $|alpha_(k,ell)|$, showing a concentration near zero. Right: weight efficiency $eta$ as a function of line-extension length $m$ for several neighborhood sizes $N_p$. Efficiency decreases monotonically with both $m$ and $N_p$.],
 ) <fig:cancellation>
 
@@ -108,7 +108,7 @@ Second, the cancellation produces an irregular frequency response. The fused ste
 Third, the algebraic origin of the weights makes the filter's properties opaque to theoretical analysis. The fused weights $alpha_(k,ell)$ are the end product of a chain of operations (neighbor selection, monomial basis construction, pseudoinverse computation, Gaussian weighting, rounding, and summation) that obscures the relationship between the filter parameters and the resulting spatial-frequency characteristics. Unlike a Gaussian derivative kernel, whose bandwidth, zero-crossings, and moment properties follow directly from its analytic definition, the polynomial stencil's properties can only be determined numerically for each parameter configuration.
 
 #figure(
-  image("../figures/fig_sec4_efficiency_comparison_placeholder.png", width: 90%),
+  image("../figures/fig_sec4_efficiency.pdf", width: 90%),
   caption: [Comparison of weight distributions for the polynomial-derived fused stencil (left) and a matched elliptical Gaussian derivative kernel (right) at the same effective support size. The polynomial weights exhibit a broad spread of magnitudes with many near-zero entries, while the Gaussian derivative weights decay smoothly from the center with no cancellation artifacts.],
 ) <fig:efficiency-comparison>
 

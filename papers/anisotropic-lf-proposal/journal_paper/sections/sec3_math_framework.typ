@@ -34,7 +34,7 @@ $ M = ((d+1)(d+2)) / 2 $ <eq:num-coeffs>
 
 For common polynomial orders, $M$ takes the values 3 ($d = 1$), 6 ($d = 2$), 10 ($d = 3$), and 15 ($d = 4$). Collecting these unknowns into a coefficient vector $bold(z) in RR^M$, the approximation at pixel $i$ becomes the inner product of $bold(z)$ with a monomial basis vector evaluated at $(x_i, y_i)$.
 
-This local polynomial model has a direct connection to the classical Savitzky--Golay filter @savitzky1964smoothing. In the one-dimensional case, fitting a polynomial of degree $d$ to a uniformly-spaced window and evaluating the $n$-th derivative at the center is precisely the Savitzky--Golay procedure. The present formulation generalizes this to two dimensions, non-uniform (integer-grid) sampling, and orientation-dependent coordinate systems. The "Savitzky--Golay" designation in the filter name reflects this lineage.
+This local polynomial model has a direct connection to the classical Savitzky--Golay filter @savitzkygolay1964. In the one-dimensional case, fitting a polynomial of degree $d$ to a uniformly-spaced window and evaluating the $n$-th derivative at the center is precisely the Savitzky--Golay procedure. The present formulation generalizes this to two dimensions, non-uniform (integer-grid) sampling, and orientation-dependent coordinate systems. The "Savitzky--Golay" designation in the filter name reflects this lineage.
 
 
 == Least-Squares Gradient Estimation <sec:ls-gradient>
@@ -68,7 +68,7 @@ The gradient estimate at orientation $theta_k$ thus reduces to a single inner pr
 
 == Orientation Sweep and Maximum-Response Selection <sec:orient-sweep>
 
-Classical gradient-based edge detectors such as the Sobel operator and the Canny detector @canny1986computational estimate the gradient by computing partial derivatives along two fixed axes ($x$ and $y$) and then combining them. The gradient magnitude is obtained as $G = sqrt(G_x^2 + G_y^2)$ and the orientation as $theta = arctan(G_y, G_x)$. This two-direction approach implicitly assumes that the gradient can be accurately decomposed into two orthogonal components, which is reasonable for smooth intensity fields but introduces angular quantization error when the edge orientation does not align with one of the two axes.
+Classical gradient-based edge detectors such as the Sobel operator and the Canny detector @canny1986edge estimate the gradient by computing partial derivatives along two fixed axes ($x$ and $y$) and then combining them. The gradient magnitude is obtained as $G = sqrt(G_x^2 + G_y^2)$ and the orientation as $theta = arctan(G_y, G_x)$. This two-direction approach implicitly assumes that the gradient can be accurately decomposed into two orthogonal components, which is reasonable for smooth intensity fields but introduces angular quantization error when the edge orientation does not align with one of the two axes.
 
 The ASF takes a fundamentally different approach. Rather than fixing two filter directions and computing the gradient as a derived quantity, it evaluates the normal derivative _directly_ at each of $N_s$ candidate orientations uniformly distributed over the half-circle
 
