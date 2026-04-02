@@ -112,8 +112,11 @@ def fig_classical_ranking():
     # Grayscale bars with hatching for distinction
     bars = ax.barh(y_pos, ods_vals, height=0.7, color=GRAY_LIGHT,
                    edgecolor=GRAY_BLACK, linewidth=0.5, zorder=3)
+    # Use graduated gray fills instead of hatching
+    n_bars = len(bars)
     for i, bar in enumerate(bars):
-        bar.set_hatch(CLASSICAL_HATCHES[i % len(CLASSICAL_HATCHES)])
+        shade = 0.45 + 0.45 * (i / max(n_bars - 1, 1))
+        bar.set_facecolor(str(shade))
 
     # WVF reference line: solid black, thick (1.5pt)
     ax.axvline(best_wvf_ods, color=GRAY_BLACK, linestyle="solid", linewidth=1.5,

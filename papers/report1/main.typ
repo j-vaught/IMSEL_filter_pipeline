@@ -3,7 +3,7 @@
 #show: ieee.with(
   title: [Parameter Optimality of the Wide View and Line Filters for Edge Detection],
   abstract: [
-    The Wide View Filter (WVF) and Line Filter (LF) are training-free edge detectors based on local polynomial fitting that were recently proposed as alternatives to classical gradient operators. Their authors recommend specific parameter settings---support size $N_p = 250$, orientation count $N_s = 18$, and polynomial order $d = 4$---derived from underwater imaging applications. We conduct a systematic ablation study spanning 1,206 WVF and 168 LF configurations across four diverse edge detection benchmarks totaling 330 images. Our results demonstrate that the published parameters are substantially suboptimal on clean imagery: reducing the support size to $N_p = 25$--$100$ and lowering the polynomial order to $d = 2$ consistently improves the Optimal Dataset Scale (ODS) F-score by 0.01--0.05 for the WVF and 0.06--0.16 for the LF. Furthermore, orientation count saturates at $N_s = 4$--$6$, far below the recommended 18. These findings suggest that the published parameters were tuned for noise-dominated conditions and are unnecessarily conservative for standard computer vision benchmarks.
+    The Wide View Filter (WVF) and Line Filter (LF) are training-free edge detectors based on local polynomial fitting that were recently proposed as alternatives to classical gradient operators. Their authors recommend specific parameter settings---support size $N_p = 250$, orientation count $N_s = 18$, and polynomial order $d = 4$---derived from maritime imaging applications. We conduct a systematic ablation study spanning 1,206 WVF and 168 LF configurations across four diverse edge detection benchmarks totaling 330 images. Our results demonstrate that the published parameters are substantially suboptimal on clean imagery: reducing the support size to $N_p = 25$--$100$ and lowering the polynomial order to $d = 2$ consistently improves the Optimal Dataset Scale (ODS) F-score by 0.01--0.05 for the WVF and 0.06--0.16 for the LF. Furthermore, orientation count saturates at $N_s = 4$--$6$, far below the recommended 18. These findings suggest that the published parameters were tuned for noise-dominated conditions and are unnecessarily conservative for standard computer vision benchmarks.
   ],
   authors: (
     (
@@ -23,15 +23,11 @@ Edge detection is a foundational operation in computer vision, serving as a prer
 
 Bagan and Wang proposed the Wide View Filter (WVF) @bagan2021wvf and its extension, the Line Filter (LF) @bagan2023lf, as training-free edge detectors that exploit local polynomial fitting over configurable neighborhoods. Unlike fixed-kernel operators, the WVF and LF adapt their spatial support and angular resolution through explicit parameters: the number of neighborhood pixels $N_p$, the number of sampled orientations $N_s$, and the polynomial order $d$. The LF further introduces a line half-width $m$ that extends the fitting along the estimated edge direction. The original publications recommend $N_p = 250$, $N_s = 18$, and $d = 4$ for the WVF, with the LF additionally using $m = 14$ and Gaussian weighting bandwidth $sigma = m\/2$.
 
-These parameter choices were developed in the context of underwater image processing, where significant noise, low contrast, and color distortion are prevalent. A natural question arises: are these parameters also optimal for standard, clean-imagery benchmarks commonly used in the edge detection literature? If not, what parameters _are_ optimal, and by how much do they improve performance?
+These parameter choices were developed in the context of maritime image processing, where significant noise, low contrast, and color distortion are prevalent. A natural question arises: are these parameters also optimal for standard, clean-imagery benchmarks commonly used in the edge detection literature? If not, what parameters _are_ optimal, and by how much do they improve performance?
 
-In this paper, we address these questions through a comprehensive ablation study. We evaluate 1,206 WVF configurations and 168 LF configurations across four diverse datasets: UDED (30 images), BIPED v1 (50 images) @poma2020biped, BIPED v2 (50 images) @soria2023bipedv2, and BSDS500 (200 images) @arbelaez2011bsds500. Our principal findings are:
+In this paper, we address these questions through a comprehensive ablation study. We evaluate 1,206 WVF configurations and 168 LF configurations across four diverse datasets: UDED (30 images), BIPED v1 (50 images) @poma2020biped, BIPED v2 (50 images) @soria2023bipedv2, and BSDS500 (200 images) @arbelaez2011bsds500. Our principal findings are as follows.
 
-+ *Smaller support is better on clean data.* The optimal $N_p$ lies in the range 25--100, depending on the dataset, yielding ODS improvements of 0.01--0.05 over $N_p = 250$ for the WVF and 0.06--0.16 for the LF.
-+ *Lower polynomial order suffices.* Quadratic fitting ($d = 2$) consistently outperforms the quartic model ($d = 4$) recommended by Bagan and Wang.
-+ *Orientation count saturates early.* Performance plateaus at $N_s = 4$--$6$; the recommended $N_s = 18$ provides no additional benefit while increasing computation.
-+ *The LF's line extension does not help on clean data.* The WVF alone matches or exceeds the LF across all four datasets.
-+ *Non-maximum suppression degrades performance.* Applying standard NMS post-processing to the raw gradient magnitude maps reduces ODS by 0.06--0.09.
+First, smaller support is better on clean data. The optimal $N_p$ lies in the range 25--100, depending on the dataset, yielding ODS improvements of 0.01--0.05 over $N_p = 250$ for the WVF and 0.06--0.16 for the LF. Second, lower polynomial order suffices for gradient estimation. Quadratic fitting ($d = 2$) consistently outperforms the quartic model ($d = 4$) recommended by Bagan and Wang. Third, orientation count saturates early. Performance plateaus at $N_s = 4$--$6$; the recommended $N_s = 18$ provides no additional benefit while increasing computation. Fourth, the LF's line extension does not help on clean data. The WVF alone matches or exceeds the LF across all four datasets. Finally, non-maximum suppression degrades performance. Applying standard NMS post-processing to the raw gradient magnitude maps reduces ODS by 0.06--0.09.
 
 These results have practical implications for practitioners seeking to deploy WVF/LF-based edge detection: using smaller, computationally cheaper configurations yields both faster execution and higher accuracy on clean imagery.
 
@@ -109,17 +105,27 @@ We also report the Optimal Image Scale (OIS), which allows a per-image optimal t
 
 == Datasets
 
-We evaluate on four edge detection benchmarks spanning a range of image content, resolution, and annotation style:
+We evaluate on four edge detection benchmarks spanning a range of image content, resolution, and annotation style. The evaluation corpus comprises 330 images with diverse content including natural scenes, urban environments, animals, and maritime imagery. @tab:datasets provides a summary of the datasets used in this study.
 
-+ *UDED* (30 images): An underwater edge detection dataset with annotated edges in marine scenes. Despite its aquatic content, the images are relatively clean compared to the in-situ conditions motivating Bagan and Wang's original parameter choices.
+#figure(
+  placement: top,
+  table(
+    columns: 5,
+    align: (left, center, center, left, left),
+    inset: (x: 5pt, y: 4pt),
+    stroke: (x, y) => if y <= 1 { (top: 0.5pt) },
+    fill: (x, y) => if y > 0 and calc.rem(y, 2) == 0 { rgb("#efefef") },
 
-+ *BIPED v1* (50 images) @poma2020biped: The Barcelona Images for Perceptual Edge Detection dataset, containing high-resolution outdoor scenes with carefully annotated edges. Images are 1280$times$720 pixels.
-
-+ *BIPED v2* (50 images) @soria2023bipedv2: An updated version of BIPED with refined annotations and additional scenes. Same resolution as v1.
-
-+ *BSDS500* (200 images) @arbelaez2011bsds500: The Berkeley Segmentation Dataset, the most widely used edge detection benchmark. Contains 200 test images at 481$times$321 pixels, each annotated by multiple human subjects. We use the standard test split.
-
-The total evaluation corpus comprises 330 images with diverse content including natural scenes, urban environments, animals, and underwater imagery.
+    table.header(
+      [*Dataset*], [*Images*], [*Resolution*], [*Description*], [*Ref.*],
+    ),
+    [UDED], [30], [variable], [Unified Dataset for Edge Detection; aggregates images from 15 sources including BIPED, BSDS, and others.], [@soria2023bipedv2],
+    [BIPED v1], [50], [1280 $times$ 720], [Barcelona Images for Perceptual Edge Detection dataset containing high-resolution outdoor scenes with carefully annotated edges.], [@poma2020biped],
+    [BIPED v2], [50], [1280 $times$ 720], [Updated version of BIPED with refined annotations and additional scenes. Maintains the same resolution as v1.], [@soria2023bipedv2],
+    [BSDS500], [200], [481 $times$ 321], [Berkeley Segmentation Dataset, the most widely used edge detection benchmark. Contains 200 test images, each annotated by multiple human subjects. Standard test split is used.], [@arbelaez2011bsds500],
+  ),
+  caption: [Summary of the four edge detection datasets used in the evaluation. Total corpus comprises 330 images.],
+) <tab:datasets>
 
 == Parameter Grid
 
@@ -296,17 +302,13 @@ Our comprehensive ablation study demonstrates that the parameter settings publis
 
 == Why Are the Published Parameters Suboptimal?
 
-The most likely explanation is that Bagan and Wang optimized their parameters for underwater imagery, where noise levels are substantially higher than in standard benchmarks. In noisy conditions, a larger support size $N_p$ provides more observations for the least-squares fit, improving the signal-to-noise ratio of the gradient estimate at the cost of spatial resolution. Similarly, a higher polynomial order $d = 4$ may be needed to capture intensity variations in the larger neighborhood without attributing them to the gradient. The line extension of the LF ($m = 14$) provides additional noise suppression through averaging. On clean data, these noise-mitigation mechanisms become liabilities: the large support blurs edges, the high polynomial order overfits to local texture, and the line extension averages across distinct structures. We investigate this noise-robustness hypothesis in a companion study.
+The most likely explanation is that Bagan and Wang optimized their parameters for maritime imagery, where noise levels are substantially higher than in standard benchmarks. In noisy conditions, a larger support size $N_p$ provides more observations for the least-squares fit, improving the signal-to-noise ratio of the gradient estimate at the cost of spatial resolution. Similarly, a higher polynomial order $d = 4$ may be needed to capture intensity variations in the larger neighborhood without attributing them to the gradient. The line extension of the LF ($m = 14$) provides additional noise suppression through averaging. On clean data, these noise-mitigation mechanisms become liabilities: the large support blurs edges, the high polynomial order overfits to local texture, and the line extension averages across distinct structures. We investigate this noise-robustness hypothesis in a companion study.
 
 == Practical Recommendations
 
-Based on our findings, we offer the following recommendations for practitioners deploying WVF-based edge detection on clean imagery:
+Based on our findings, we offer the following recommendations for practitioners deploying WVF-based edge detection on clean imagery.
 
-+ Use the WVF rather than the LF. The line extension adds computational cost without improving accuracy on clean data.
-+ Set $N_p = 25$--$50$ for high-resolution images (e.g., 1280$times$720) and $N_p = 50$--$100$ for lower-resolution images (e.g., 481$times$321). The optimal support size appears to scale with image resolution.
-+ Set $d = 2$. Quadratic fitting provides sufficient expressiveness for gradient estimation while maintaining good conditioning of the least-squares system.
-+ Set $N_s = 4$--$6$. Finer angular sampling provides negligible benefit while increasing computation linearly.
-+ Do not apply NMS post-processing if using the ODS evaluation protocol with a match radius of $r >= 3$ pixels. The raw gradient magnitude map achieves higher ODS than the NMS-thinned version.
+Practitioners should use the WVF rather than the LF, as the line extension adds computational cost without improving accuracy on clean data. For the support size parameter, set $N_p = 25$--$50$ for high-resolution images (e.g., 1280 $times$ 720) and $N_p = 50$--$100$ for lower-resolution images (e.g., 481 $times$ 321). The optimal support size appears to scale with image resolution. The polynomial order should be set to $d = 2$, as quadratic fitting provides sufficient expressiveness for gradient estimation while maintaining good conditioning of the least-squares system. For orientation count, use $N_s = 4$--$6$; finer angular sampling provides negligible benefit while increasing computation linearly. Finally, do not apply non-maximum suppression post-processing if using the ODS evaluation protocol with a match radius of $r >= 3$ pixels. The raw gradient magnitude map achieves higher ODS than the NMS-thinned version.
 
 == Computational Savings
 
@@ -314,6 +316,6 @@ The recommended parameters ($N_p = 25$, $N_s = 4$, $d = 2$) offer substantial co
 
 == Limitations and Future Work
 
-Several limitations of this study should be noted. First, we evaluated only the ODS and OIS metrics with a fixed match radius of $r = 3$ pixels. Different match radii or alternative metrics (e.g., average precision) might favor different parameter settings. Second, our LF ablation fixed $d = 4$; exploring $d = 2$ for the LF could reveal further improvements. Third, we did not evaluate performance on genuinely noisy imagery, where the published parameters may indeed be optimal. This is the subject of a companion study on noise robustness.
+Several limitations of this study should be noted and addressed in future work. This study evaluated only the ODS and OIS metrics with a fixed match radius of $r = 3$ pixels; different match radii or alternative metrics such as average precision might favor different parameter settings. The LF ablation fixed $d = 4$ for computational tractability; exploring $d = 2$ for the LF could reveal further improvements. Furthermore, we did not evaluate performance on genuinely noisy imagery, where the published parameters may indeed be optimal. This gap is the subject of a companion study on noise robustness.
 
 The broader implication of this work is that filter parameters should not be treated as universal constants. The WVF and LF are flexible operators with a rich parameter space, and the optimal configuration depends on the operating conditions---image quality, resolution, and the downstream task. Our ablation framework, implemented as a GPU-accelerated open-source tool, enables practitioners to efficiently tune these parameters for their specific application.

@@ -1,0 +1,288 @@
+% beamerthemeuofsc.sty
+% University of South Carolina Beamer Theme
+% Uses official UofSC brand colors from sc.edu
+% Prefers licensed Berlingske fonts when locally installed and
+% otherwise falls back to bundled redistributable fonts.
+% Requires XeLaTeX or LuaLaTeX for fontspec.
+% 16:9 aspect ratio recommended.
+
+\mode<presentation>
+
+\RequirePackage{tikz}
+\RequirePackage{graphicx}
+\RequirePackage{ifthen}
+\RequirePackage{fontspec}
+\RequirePackage{textcase}
+
+% ============================================================
+% Font Setup  (XeLaTeX / LuaLaTeX)
+% ============================================================
+% Official UofSC brand fonts:
+%   Display -> Berlingske Sans Extra-Condensed Extra-Bold
+%   Sans    -> Berlingske Sans
+%   Serif   -> Berlingske Serif
+%
+% Public repository fallbacks:
+%   Display -> Oswald Bold
+%   Sans    -> Arimo
+%   Serif   -> Tinos
+% ============================================================
+
+% UofSC Berlingske fonts are bundled as woff files from sc.edu.
+% System-installed versions are preferred if available; otherwise
+% the bundled woff files are used; final fallback is the open-source set.
+\IfFontExistsTF{Berlingske Sans}{
+  \setsansfont{Berlingske Sans}
+}{
+  \setsansfont{BerlingskeSans-Md}[
+    BoldFeatures = {FakeBold=1.5},
+    Path      = fonts/,
+    Extension = .otf
+  ]
+}
+
+\newfontfamily\impactfont{Impact}[
+  Path      = fonts/,
+  Extension = .ttf
+]
+
+\newfontfamily\georgiafont{Tinos-Regular}[
+  BoldFont       = Tinos-Bold,
+  ItalicFont     = Tinos-Italic,
+  BoldItalicFont = Tinos-BoldItalic,
+  Path           = fonts/,
+  Extension      = .ttf
+]
+
+% Convenience: use \formal{text} for Georgia-style text in body
+\newcommand{\formal}[1]{{\georgiafont #1}}
+
+% ============================================================
+% UofSC Official Brand Colors
+% ============================================================
+
+% Primary
+\definecolor{UofSCGarnet}{HTML}{73000A}
+\definecolor{UofSCBlack}{HTML}{000000}
+\definecolor{UofSCWhite}{HTML}{FFFFFF}
+
+% Neutral
+\definecolor{UofSCGray90}{HTML}{363636}
+\definecolor{UofSCGray70}{HTML}{5C5C5C}
+\definecolor{UofSCGray50}{HTML}{A2A2A2}
+\definecolor{UofSCGray30}{HTML}{C7C7C7}
+\definecolor{UofSCGray10}{HTML}{ECECEC}
+\definecolor{UofSCWarmGrey}{HTML}{676156}
+\definecolor{UofSCSandstorm}{HTML}{FFF2E3}
+
+% Accent
+\definecolor{UofSCRose}{HTML}{CC2E40}
+\definecolor{UofSCAtlantic}{HTML}{466A9F}
+\definecolor{UofSCCongaree}{HTML}{1F414D}
+\definecolor{UofSCHorseshoe}{HTML}{65780B}
+\definecolor{UofSCGrass}{HTML}{CED318}
+\definecolor{UofSCHoneycomb}{HTML}{A49137}
+
+% Special Use
+\definecolor{UofSCDarkGarnet}{HTML}{570008}
+\definecolor{UofSCAzalea}{HTML}{844247}
+
+% ============================================================
+% Inner Theme
+% ============================================================
+\useinnertheme{default}
+
+% Top-align all frame content by default
+\beamer@centeredfalse
+
+% Shrink frames by default so content auto-scales to fit.
+% Use \begin{frame}[noshrink]{Title} to disable on a specific slide.
+\define@key{beamerframe}{noshrink}[true]{%
+  \beamer@shrinkfalse%
+}
+\pretocmd{\beamer@@@@frame}{%
+  \beamer@shrinktrue%
+  \def\beamer@shrinkpercentage{50}%
+}{}{}
+
+% Enumerate: plain numbers (no square box)
+\setbeamertemplate{enumerate items}[default]
+\setbeamertemplate{enumerate subitem}[default]
+\setbeamertemplate{enumerate subsubitem}[default]
+
+% Itemize: keep filled squares for bullet points
+\setbeamertemplate{itemize item}[square]
+\setbeamertemplate{itemize subitem}[square]
+\setbeamertemplate{itemize subsubitem}[square]
+
+% Table of Contents: numbered, larger, with good spacing
+\setbeamertemplate{section in toc}{%
+  {\color{UofSCGarnet}\bfseries\fontsize{16}{22}\selectfont%
+    \inserttocsectionnumber.\hspace{0.5em}\inserttocsection\par}%
+}
+\setbeamertemplate{subsection in toc}{%
+  \hspace{1.5em}{\color{UofSCGray70}\fontsize{13}{18}\selectfont%
+    \inserttocsubsection\par}%
+}
+
+% ============================================================
+% Color Settings
+% ============================================================
+
+\setbeamercolor{structure}{fg=UofSCGarnet}
+
+\setbeamercolor{title}{fg=UofSCWhite}
+\setbeamercolor{subtitle}{fg=UofSCGray10}
+\setbeamercolor{author}{fg=UofSCWhite}
+\setbeamercolor{institute}{fg=UofSCGray30}
+\setbeamercolor{date}{fg=UofSCGray30}
+
+\setbeamercolor{frametitle}{fg=UofSCWhite, bg=UofSCGarnet}
+\setbeamercolor{framesubtitle}{fg=UofSCGray10}
+
+\setbeamercolor{normal text}{fg=UofSCGray90, bg=UofSCWhite}
+
+\setbeamercolor{block title}{fg=UofSCWhite, bg=UofSCGarnet}
+\setbeamercolor{block body}{fg=UofSCGray90, bg=UofSCGray10}
+\setbeamercolor{block title alerted}{fg=UofSCWhite, bg=UofSCRose}
+\setbeamercolor{block body alerted}{fg=UofSCGray90, bg=UofSCGray10}
+\setbeamercolor{block title example}{fg=UofSCWhite, bg=UofSCCongaree}
+\setbeamercolor{block body example}{fg=UofSCGray90, bg=UofSCGray10}
+
+\setbeamercolor{item}{fg=UofSCGarnet}
+\setbeamercolor{subitem}{fg=UofSCDarkGarnet}
+\setbeamercolor{subsubitem}{fg=UofSCGray70}
+
+\setbeamercolor{section in toc}{fg=UofSCGarnet}
+\setbeamercolor{subsection in toc}{fg=UofSCGray70}
+\setbeamercolor{section number projected}{bg=UofSCGarnet, fg=UofSCWhite}
+
+\setbeamercolor{footline}{fg=UofSCWhite, bg=UofSCGarnet}
+\setbeamercolor{page number in foot}{fg=UofSCWhite}
+
+\setbeamercolor{caption name}{fg=UofSCGarnet}
+
+\setbeamertemplate{navigation symbols}{}
+
+% ============================================================
+% Font Sizes (families are set via fontspec above)
+% ============================================================
+\setbeamerfont{title}{size=\fontsize{34}{38}\selectfont}
+\setbeamerfont{subtitle}{size=\fontsize{22}{26}\selectfont}
+\setbeamerfont{author}{size=\normalsize}
+\setbeamerfont{institute}{size=\small}
+\setbeamerfont{date}{size=\small}
+\setbeamerfont{frametitle}{size=\fontsize{28}{32}\selectfont}
+\setbeamerfont{framesubtitle}{size=\small}
+\setbeamerfont{block title}{size=\normalsize, series=\bfseries}
+\setbeamerfont{footline}{size=\tiny}
+
+% ============================================================
+% Title Page
+% ============================================================
+% Centered layout. Title in Arimo (Arial). No institute or date.
+% A blank 3-line text area sits below the subtitle for the author
+% name or anything else — just edit \author{} in main.tex.
+% ============================================================
+\setbeamertemplate{title page}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \fill[UofSCGarnet] (current page.south west) rectangle (current page.north east);
+    \fill[UofSCDarkGarnet] (current page.south west) rectangle ([yshift=0.8cm]current page.south east);
+    \draw[UofSCWhite, line width=0.5pt] ([yshift=0.8cm]current page.south west) -- ([yshift=0.8cm]current page.south east);
+  \end{tikzpicture}%
+  \vfill
+  \ifx\inserttitlegraphic\empty\else
+    \begin{center}
+      \inserttitlegraphic\par
+      \vskip0.5cm
+    \end{center}
+  \fi
+  % Title: Oswald Bold (Impact), ALL CAPS, centered
+  \begin{beamercolorbox}[wd=\paperwidth, center]{title}
+    {\usebeamerfont{title}\impactfont\MakeTextUppercase{\inserttitle}\par}%
+    \ifx\insertsubtitle\empty\else
+      \vskip0.4cm
+      {\usebeamerfont{subtitle}\usebeamercolor[fg]{subtitle}\textbf{\insertsubtitle}\par}%
+    \fi
+  \end{beamercolorbox}%
+  \vskip0.3cm%
+  % Text block (~3 lines tall, centered) — holds author/notes
+  % The block has a minimum height of 3 lines so layout stays
+  % consistent even if you use fewer lines in \author{}.
+  \begin{beamercolorbox}[wd=\paperwidth, center]{author}
+    \parbox[c][3\baselineskip][c]{0.8\paperwidth}{\centering%
+      \usebeamerfont{author}\insertauthor%
+    }\par
+  \end{beamercolorbox}%
+  \vfill
+}
+
+% ============================================================
+% Frame Title: Oswald Bold, ALL CAPS
+% ============================================================
+% To skip uppercase on a specific slide, wrap the title text:
+%   \begin{frame}{\texorpdfstring{\nouppercase{Mixed Case}}{Mixed Case}}
+% ============================================================
+\setbeamertemplate{frametitle}{%
+  \nointerlineskip%
+  \begin{beamercolorbox}[wd=\paperwidth, ht=1.5cm, dp=0.35cm, leftskip=0.5cm, rightskip=0.5cm]{frametitle}%
+    {\usebeamerfont{frametitle}\impactfont\MakeTextUppercase{\insertframetitle}}%
+    \ifx\insertframesubtitle\empty\else
+      \\{\usebeamerfont{framesubtitle}\usebeamercolor[fg]{framesubtitle}\insertframesubtitle}%
+    \fi
+  \end{beamercolorbox}%
+  \nointerlineskip%
+  \begin{beamercolorbox}[wd=\paperwidth, ht=2pt]{}
+    \begin{tikzpicture}
+      \fill[UofSCDarkGarnet] (0,0) rectangle (\paperwidth, 2pt);
+    \end{tikzpicture}
+  \end{beamercolorbox}%
+}
+
+% ============================================================
+% Footline
+% ============================================================
+\setbeamertemplate{footline}{%
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=0.33\paperwidth, ht=2.5ex, dp=1.5ex, leftskip=0.5cm]{footline}%
+      \usebeamerfont{footline}\insertshortauthor%
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=0.34\paperwidth, ht=2.5ex, dp=1.5ex, center]{footline}%
+      \usebeamerfont{footline}\insertshorttitle%
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=0.33\paperwidth, ht=2.5ex, dp=1.5ex, rightskip=0.5cm, right]{footline}%
+      \usebeamerfont{footline}\insertframenumber{} / \inserttotalframenumber%
+    \end{beamercolorbox}%
+  }%
+}
+
+% ============================================================
+% Section Divider: Centered, with optional subtitle
+% ============================================================
+% \sectionsubtitle{text}  — set before \section{} to add subtitle
+% \sectionsubtitle{}      — clear it for next section
+% ============================================================
+\newcommand{\@sectionsubtitle}{}
+\newcommand{\sectionsubtitle}[1]{\renewcommand{\@sectionsubtitle}{#1}}
+
+\AtBeginSection[]{%
+  \begin{frame}[plain, noshrink]
+    \begin{tikzpicture}[remember picture, overlay]
+      \fill[UofSCGarnet] (current page.south west) rectangle (current page.north east);
+      \fill[UofSCDarkGarnet] (current page.south west) rectangle ([yshift=0.8cm]current page.south east);
+      \draw[UofSCWhite, line width=0.5pt] ([yshift=0.8cm]current page.south west) -- ([yshift=0.8cm]current page.south east);
+    \end{tikzpicture}
+    \vfill
+    \centering
+    {\usebeamerfont{title}\color{UofSCWhite}\impactfont\MakeTextUppercase{\insertsectionhead}\par}
+    \ifx\@sectionsubtitle\empty\else
+      \vskip0.4cm
+      {\usebeamerfont{subtitle}\color{UofSCWhite}\@sectionsubtitle\par}
+    \fi
+    \vfill
+  \end{frame}
+  \renewcommand{\@sectionsubtitle}{}%
+}
+
+\mode<all>

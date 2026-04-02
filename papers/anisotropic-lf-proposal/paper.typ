@@ -42,31 +42,43 @@
 // ======================================================================
 = Introduction
 
-Edge detection is one of the foundational operations in image processing and computer vision. It serves as the first stage in object detection, image segmentation, autonomous navigation, and a wide range of inspection and measurement tasks @canny1986edge @bhardwaj2012edge. Despite decades of research, the design of edge detection filters remains an active area because the core problem --- identifying sharp intensity transitions in the presence of noise, texture, and illumination variation --- admits no universally optimal solution.
+Edge detection remains one of the most fundamental operations in computer vision. It underpins object detection pipelines, drives contour-based image segmentation, enables autonomous navigation through structured environments, and provides the geometric primitives on which industrial inspection and dimensional measurement systems depend @canny1986edge @bhardwaj2012edge. Despite more than five decades of sustained research, the core challenge persists. Real-world images present intensity transitions that are corrupted by sensor noise, obscured by fine texture, and modulated by spatially varying illumination, and no single operator has proven universally optimal across all of these conditions.
 
-The most widely used gradient operators, including the Sobel @sobel2014history, Prewitt @prewitt1970gradient, and Roberts Cross filters, are 3$times$3 convolution kernels. Their simplicity makes them fast and easy to implement, but their small spatial support limits noise robustness: any noise within the 9-pixel window directly corrupts the gradient estimate. Larger kernels (5$times$5, 7$times$7) improve robustness marginally, but the fixed, hand-designed weight structure cannot adapt to the local image content or edge orientation.
+The earliest and still most widely deployed gradient operators are the small fixed-kernel convolutions introduced in the 1960s and 1970s. The Roberts Cross operator estimates gradients along two diagonal directions using a $2 times 2$ stencil. The Prewitt filter @prewitt1970gradient and the Sobel filter @sobel2014history extend the support region to $3 times 3$, incorporating a modest smoothing component orthogonal to the differentiation axis. These operators are trivially fast, require no parameters, and are available in every major image processing library. However, their small spatial support is also their principal limitation. With only nine pixels contributing to each gradient estimate, any noise within the window directly corrupts the output. Extending the kernel to $5 times 5$ or $7 times 7$ provides marginal improvement, but the hand-designed weight structures remain fixed and cannot adapt to the local edge orientation or the prevailing noise level in a given image region.
 
-The Canny detector @canny1986edge addresses noise through a Gaussian pre-smoothing stage, followed by gradient computation, non-maximum suppression, and hysteresis thresholding. While effective in controlled settings, the smoothing step blurs weak edges and low-contrast boundaries, and the arctan-based angle estimation propagates errors from the two cardinal gradient directions into every intermediate angle.
+The Canny detector @canny1986edge addressed the noise sensitivity of small kernels by introducing a multi-stage pipeline. A Gaussian pre-smoothing step suppresses high-frequency noise before gradient computation, and subsequent non-maximum suppression and hysteresis thresholding stages refine the detected contours into thin, connected edge maps. The Canny detector became the dominant classical method and remains a standard baseline in the literature. Nevertheless, the Gaussian smoothing stage introduces a fundamental trade-off. Stronger smoothing suppresses more noise but simultaneously blurs weak edges and low-contrast boundaries, displacing them from their true locations. Furthermore, the gradient orientation at each pixel is computed via an arctangent of two cardinal finite differences, which propagates quantization and noise errors from the $x$ and $y$ channels into every intermediate angle. These limitations are well documented but difficult to overcome within the Canny framework, because the smoothing and differentiation stages are decoupled by design.
 
-Deep learning methods @xie2015hed @poma2020biped @soria2023bipedv2 have achieved high benchmark scores by training on human-annotated edge maps, but they require large labeled datasets, generalize poorly to domains not represented in training (e.g., underwater, medical, industrial), and provide no formal guarantees on gradient accuracy or orientation precision.
+The past decade has seen a decisive shift toward deep learning approaches for edge detection. Holistically-Nested Edge Detection (HED) @xie2015hed demonstrated that a fully convolutional network with multi-scale side outputs could learn rich boundary representations from human-annotated ground truth. Subsequent architectures have pushed benchmark scores steadily higher. DexiNed @poma2020dexined introduced dense extreme inception blocks for training without ImageNet pre-training. PIDINet @su2021pidinet integrated classical pixel-difference convolutions into a lightweight network architecture. TEED @soria2023teed achieved competitive accuracy with an extremely compact model of only 58K parameters. More recently, NBED @chen2024nbed and DiffusionEdge @ye2024diffusionedge have explored novel training paradigms, including negative-sample bootstrapping and diffusion-based generative modeling, to further improve boundary recall. These methods routinely achieve Optimal Dataset Scale (ODS) F-scores above 0.80 on the BSDS500 benchmark @arbelaez2011bsds500, substantially outperforming all classical operators.
 
-This paper presents the *Anisotropic Stencil Filter (ASF)*, a non-learned edge detector designed from the ground up for GPU execution. The ASF offers three distinguishing properties:
+However, the reliance on supervised training introduces well-known practical constraints. Deep models require large corpora of pixel-level edge annotations, which are expensive to produce and inherently subjective @dollar2013structured. More critically, models trained on natural photographic imagery generalize poorly when deployed in domains that diverge significantly from the training distribution. Underwater imagery, medical scans, thermal infrared sequences, and synthetic-aperture radar all exhibit intensity statistics and noise characteristics that are poorly represented in standard benchmarks. Re-training or fine-tuning for each new domain is possible but negates the convenience that motivates a general-purpose edge detector. Finally, learned operators provide no formal guarantees on gradient accuracy. The network output is an edge probability map rather than a calibrated derivative estimate, making it unsuitable for applications that require quantitative gradient magnitudes or precise orientation angles.
 
-+ *Large-neighborhood polynomial fitting.* Each gradient estimate incorporates up to several hundred pixels, providing strong noise suppression without blurring.
-+ *Orientation-selective anisotropic support.* The filter's spatial footprint is elongated along each candidate edge direction, naturally bridging small gaps and occlusions in edge contours.
-+ *Fused stencil architecture.* The entire multi-step polynomial fitting and weighting pipeline is algebraically collapsed into a single precomputed stencil per orientation, enabling efficient GPU execution as a simple gather-dot-product operation.
+Against this backdrop, Bagan and Wang developed a training-free alternative rooted in local polynomial fitting @bagan2021wvf @bagan2023lf. Their approach, referred to here as the _Weighted Vector Filter_ (WVF) and the _Line Filter_ (LF), estimates image gradients by fitting a two-dimensional Taylor polynomial of degree $d$ to pixels gathered from a circular neighborhood of size $N_p$. The LF extends the WVF by evaluating the point-filter response at multiple positions along each candidate edge direction, effectively creating an _anisotropic_ support region that is elongated tangentially to the hypothesized edge. A sweep over $N_s$ uniformly spaced orientations selects the direction producing the maximum normal derivative, yielding both a gradient magnitude and a precise edge angle at every pixel. Originally developed for maritime and harbor surveillance imagery, the method was demonstrated with large parameter values ($N_p = 250$, $N_s = 18$, $d = 4$), producing visually clean edge maps on heavily cluttered scenes.
+
+In a separate ablation study comprising over 500,000 parameter evaluations, we systematically varied $N_p$, $N_s$, and $d$ across the BSDS500 and BIPED benchmarks and found that the originally published parameters are substantially suboptimal on clean natural images. Smaller neighborhood sizes in the range $N_p = 25$ to $100$, combined with polynomial degree $d = 2$, consistently achieved higher ODS F-scores. The large-$N_p$ regime was partially vindicated only under additive Gaussian noise ($sigma >= 25$), where the expansive spatial support provides meaningful smoothing. These findings motivated a deeper investigation into the algebraic structure of the Line Filter itself.
+
+This paper presents the central insight of that investigation. The multi-step LF pipeline, in which a point filter is repeatedly evaluated at shifted positions along each orientation and the responses are aggregated, can be _algebraically collapsed_ into a single precomputed weight stencil per orientation. We call this collapsed operator the _Anisotropic Stencil Filter_ (ASF). The fusion is exact. Every pixel that participates in any of the overlapping point-filter evaluations is assigned a single net weight equal to the sum of all contributions it receives, and the entire filter reduces to one gather-dot-product operation per pixel per orientation. This reformulation eliminates redundant memory accesses and redundant arithmetic, yielding a $24 times$ wall-clock speedup and a $311 times$ reduction in GPU VRAM consumption compared to a naive implementation of the original LF.
+
+The stencil fusion, however, reveals a structural deficiency that is invisible in the unfused pipeline. Because neighboring point-filter evaluations share large fractions of their pixel neighborhoods, many pixels receive contributions from multiple overlapping fits with _opposing_ signs. When these contributions are summed during fusion, destructive interference produces net weights near zero. Our analysis shows that approximately 28% of the total weight budget in a typical fused stencil is consumed by pixels whose net weight magnitude is negligible, representing wasted computation and a suboptimal allocation of the filter's effective degrees of freedom. This _weight cancellation_ problem is an inherent consequence of constructing the anisotropic support region by tiling circular point-filter neighborhoods along a line.
+
+To resolve this inefficiency, we propose two geometric kernel alternatives that define the anisotropic weight envelope _directly_ from an analytic function, bypassing the tile-and-sum construction entirely. The first variant uses a _rectangular_ footprint aligned with the candidate edge direction, assigning uniform weight to all pixels within the rectangle. The second uses an _elliptical Gaussian_ envelope whose major axis is aligned tangentially and whose minor axis is aligned normally to the edge, producing a smooth, naturally tapered weight distribution. Both alternatives eliminate weight cancellation by construction, are parameterized by intuitive geometric quantities (length, width, aspect ratio), and admit the same fused stencil representation as the original ASF.
 
 #figure(
   image("figures/fig1_neighborhood_comparison.png", width: 100%),
-  caption: [Comparison of filter neighborhood strategies. (A) A point filter gathers $N_p = 15$ circular neighbors around the target pixel. (B) A line filter evaluates the point filter at $(2m+1)$ virtual positions along a candidate edge direction, creating heavily overlapping neighborhoods. (C) The fused anisotropic stencil deduplicates all overlapping positions into a single compressed set; darker shading indicates pixels accessed by multiple virtual neighborhoods.],
+  caption: [Comparison of filter neighborhood strategies. (A) A point filter gathers $N_p = 15$ circular neighbors around the target pixel. (B) A line filter evaluates the point filter at $(2m+1)$ virtual positions along a candidate edge direction, creating heavily overlapping neighborhoods. (C) The fused anisotropic stencil deduplicates all overlapping positions into a single compressed set, where darker shading indicates pixels accessed by multiple virtual neighborhoods.],
 ) <fig:neighborhoods>
 
 == Contributions
 
-- A mathematical framework for anisotropic gradient estimation based on weighted least-squares fitting of two-dimensional Taylor polynomials over orientation-dependent neighborhoods.
-- A stencil fusion algorithm that deduplicates overlapping pixel accesses, reducing the effective stencil size by up to 85% and converting the filter into a fixed linear operator per orientation.
-- A custom GPU kernel (implemented in Triton) achieving up to 24$times$ wall-clock speedup and 311$times$ VRAM reduction over a naive batched implementation.
-- Comprehensive evaluation on BSDS500, BIPED v1, and UDED showing the ASF outperforms all classical filters and approaches deep learning accuracy without training.
+The specific contributions of this paper are as follows.
+
+- A mathematical framework for anisotropic gradient estimation via orientation-dependent Taylor polynomial fitting, unifying the WVF and LF into a single formalism.
+- A _fused stencil_ formulation that algebraically collapses the multi-step LF pipeline into a single gather-dot-product per pixel per orientation, achieving a $24 times$ speedup and $311 times$ VRAM reduction while preserving identical numerical output.
+- An analysis of _weight cancellation_ in the fused stencil, demonstrating that approximately 28% of the weight budget is wasted on near-zero weights arising from destructive interference between overlapping polynomial fits.
+- Two geometric kernel alternatives, _rectangular_ and _elliptical Gaussian_, that define anisotropic weights directly from an analytic envelope, avoiding cancellation entirely and providing simpler parameterization.
+- A custom Triton GPU kernel implementing all three filter variants (polynomial ASF, rectangular, and elliptical Gaussian) with orientation-parallel execution.
+- Comprehensive evaluation on BSDS500 @arbelaez2011bsds500, BIPED @poma2020biped, and UDED demonstrating that all three variants outperform classical detectors and approach deep learning accuracy without any training data.
+
+The remainder of this paper is organized as follows. Section 2 develops the mathematical framework for polynomial fitting and stencil fusion. Section 3 analyzes the weight cancellation phenomenon. Section 4 introduces the two geometric kernel alternatives. Section 5 describes the GPU implementation. Section 6 presents experimental results, and Section 7 concludes.
 
 // ======================================================================
 // 2. MATHEMATICAL FRAMEWORK
@@ -191,32 +203,26 @@ This has three major consequences for GPU execution:
 // ======================================================================
 = GPU Implementation
 
+All three filter variants described in this paper, the fused polynomial stencil, the rectangular kernel, and the elliptical Gaussian kernel, share a common two-phase execution architecture. The first phase runs once on the CPU and constructs a set of orientation-indexed stencils. The second phase runs on the GPU for every input image and applies these stencils to compute gradient magnitude and angle at every pixel. Because the GPU kernel consumes only a list of (offset, weight) pairs per orientation, the same kernel code serves all three variants without modification. The only difference between them is the content of the precomputed stencil arrays.
+
 == Architecture Overview
 
-The ASF implementation consists of two phases:
+The _precompute phase_ is executed on the CPU and produces a compact stencil representation that is transferred to GPU memory once. For the fused polynomial stencil, the procedure selects $N_p$ circular neighbors, constructs the Taylor design matrix $bold(A)_(theta_k)$ for each orientation $theta_k$, computes the pseudoinverse $bold(P)_(theta_k)$, and extracts the gradient row $bold(p)_"fx"^((k))$. It then enumerates all $(2m+1) times N_p$ stencil positions corresponding to the line extension, rounds each to the nearest integer coordinate, deduplicates positions that map to the same pixel, and sums the corresponding weights. The result is packed into padded arrays suitable for GPU transfer. For the geometric kernels, the procedure is simpler. For each orientation $theta_k$, a grid of pixel offsets within a bounding box is rotated into the local $(u, v)$ coordinate frame, and the kernel function is evaluated at each position. For the rectangular variant, this function is a uniform weight multiplied by $(-v)$ within a hard mask. For the elliptical Gaussian variant, it is the product of a Gaussian envelope and $(-v)$. In both cases, the resulting weights are zero-centered and normalized to unit energy.
 
-*Precompute phase (CPU, one-time):*
-+ Select $N_p$ circular neighbors. Build the Taylor design matrix $bold(A)_(theta_k)$ for each orientation.
-+ Compute pseudoinverses $bold(P)_(theta_k)$ and extract $bold(p)_"fx"^((k))$.
-+ For each orientation, enumerate all $(2m+1) times N_p$ stencil positions, round to integers, deduplicate, and sum weights.
-+ Pack the resulting sparse stencils into padded arrays for GPU transfer.
+Despite the different construction procedures, all three variants produce the same output format. Each orientation $theta_k$ is represented by a list of integer offsets $(Delta x_ell, Delta y_ell)$ and corresponding scalar weights $alpha_(k,ell)$ for $ell = 1, dots, N'_k$. This uniformity is what enables a single GPU kernel to process any variant.
 
-*Compute phase (GPU, per-image):*
-+ Transfer image to device memory.
-+ For each pixel, for each orientation: gather $N'_k$ intensity values from the image at the stencil offsets, multiply by the precomputed weights, sum to obtain $R_k$.
-+ Track the maximum $|R_k|$ and corresponding $k$ across all orientations.
-+ Write gradient magnitude and angle to output buffers.
+The _compute phase_ executes on the GPU for each input image. The image is first transferred to device memory. For every pixel $(X_0, Y_0)$ and every orientation $theta_k$, the kernel gathers $N'_k$ intensity values from the image at the precomputed stencil offsets, multiplies each by its corresponding weight, and accumulates the sum to obtain the directional response $R_k$. As the kernel iterates over orientations, it tracks the maximum absolute response $|R_k|$ and the index $k^*$ of the orientation that produced it. Upon completion, the gradient magnitude $|R_(k^*)|$ and the edge angle $theta_(k^*)$ are written to output buffers.
 
 #figure(
   image("figures/fig2_computation_flow.png", width: 95%),
-  caption: [Computation flow comparison. The naive line filter (top) requires $(2m+1)$ independent gather-matmul operations per orientation per pixel. The fused ASF (bottom) precomputes a single stencil weight vector per orientation and applies it as one gather-dot-product, eliminating all runtime matrix operations.],
+  caption: [Computation flow comparison. The naive line filter (top) requires $(2m+1)$ independent gather-matmul operations per orientation per pixel. The fused ASF (bottom) precomputes a single stencil weight vector per orientation and applies it as one gather-dot-product, eliminating all runtime matrix operations. The geometric kernel variants follow the same fused pathway with different precomputed weights.],
 ) <fig:flow>
 
 == Custom Triton Kernel
 
-We implement the compute phase as a custom kernel using Triton @triton2019, a Python-embedded language for writing GPU programs. The kernel processes pixels in blocks of 128 along each image row. For each pixel block, it iterates over all $N_s$ orientations, performing the stencil gather-dot-product and maintaining a running maximum.
+We implement the compute phase as a custom kernel using Triton @triton2019, a Python-embedded language for writing GPU programs that compiles to optimized PTX through LLVM. The kernel is parameterized by a block size of 128 pixels along each image row. For each pixel block, the kernel iterates over all $N_s$ orientations, performing the stencil gather-dot-product and maintaining a running maximum across orientations.
 
-The kernel's inner loop for a single orientation is:
+The inner loop for a single orientation $theta_k$ is shown below in simplified form.
 
 ```python
 for i in range(N_max):
@@ -227,7 +233,9 @@ for i in range(N_max):
     response += w * vals
 ```
 
-This loop is fully vectorized across the 128-pixel block, with coalesced memory reads along the column dimension. Triton's JIT compiler automatically selects optimal block sizes and applies loop unrolling.
+The variable `N_max` is the maximum stencil size across all orientations, and `active` masks out padding entries for orientations with fewer unique positions. Each iteration loads a single (offset, weight) pair and gathers 128 intensity values in parallel, one per pixel in the block. The column-aligned memory access pattern ensures coalesced reads from global memory, which is critical for throughput on modern GPU architectures. Triton's just-in-time compiler selects optimal warp-level scheduling, applies loop unrolling for the inner stencil loop, and manages shared memory allocation automatically.
+
+A key design property is that the kernel is _variant-agnostic_. The stencil offsets and weights are passed as input tensors, and the kernel makes no assumptions about how they were generated. Switching between the fused polynomial stencil, the rectangular kernel, and the elliptical Gaussian kernel requires only swapping the precomputed arrays. No recompilation or kernel modification is necessary.
 
 == Memory Efficiency
 
@@ -236,35 +244,42 @@ This loop is fully vectorized across the 128-pixel block, with coalesced memory 
     columns: (auto, auto, auto, auto),
     align: (left, center, center, center),
     table.header[*Method*][*Time (s)*][*VRAM (MB)*][*Speedup*],
-    [Naive batched], [2.43], [6223], [1.0$times$],
+    [Naive batched LF], [2.43], [6223], [1.0$times$],
     [cuDNN conv2d], [0.18], [158], [13.8$times$],
-    [Triton stencil], [0.13], [20], [18.4$times$],
+    [Fused stencil (Triton)], [0.13], [20], [18.4$times$],
+    [Rectangular kernel (Triton)], [0.045], [20], [54$times$],
+    [Elliptical kernel (Triton)], [0.047], [20], [52$times$],
   ),
-  caption: [Runtime and memory comparison on BIPED v1 (1280$times$720) with $m=7$, $N_p=100$, $N_s=18$, $d=4$. NVIDIA A100-SXM4-40GB.],
+  caption: [Runtime and memory comparison on BIPED v1 ($1280 times 720$). Fused stencil parameters: $m = 7$, $N_p = 100$, $N_s = 18$, $d = 4$. Geometric kernel parameters: $sigma_u = 2.0$, $sigma_v = 1.2$, $N_s = 36$, $15 times 15$ grid. All measurements on NVIDIA A100-SXM4-40GB.],
 ) <tab:gpu>
 
-As shown in @tab:gpu, the naive implementation allocates large intermediate tensors for the $(L times B times N_p)$ gather, consuming over 6 GB of VRAM. The fused stencil eliminates these intermediates entirely: the Triton kernel uses only 20 MB total (the image itself plus output buffers), a 311$times$ reduction.
+@tab:gpu presents the runtime and VRAM consumption for all five implementation strategies. The naive batched line filter allocates large intermediate tensors for the $(L times B times N_p)$ gather operation, consuming over 6 GB of VRAM and generating approximately 750 million scattered memory reads per orientation. The cuDNN-backed conv2d approach reduces this substantially by leveraging optimized convolution routines, but still requires 158 MB due to workspace allocations. The fused polynomial stencil eliminates all intermediate tensors, reducing VRAM to 20 MB (the image itself plus output buffers), a 311$times$ reduction. Both geometric kernel variants achieve the same 20 MB footprint.
 
-The speedup increases with $m$ because the naive approach's cost scales as $O(N_s dot L dot N_p)$ while the fused stencil scales as $O(N_s dot N'_k)$, and $N'_k$ grows much slower than $L dot N_p$ due to deduplication:
+The geometric kernels are approximately 3$times$ faster than the fused polynomial stencil despite using twice as many orientations ($N_s = 36$ versus 18). Three factors account for this advantage. First, the geometric stencils contain fewer unique positions per orientation (approximately 74 for a $15 times 15$ grid versus 264 for the fused stencil at $m = 7$, $N_p = 100$), which directly reduces the number of gather operations in the inner loop. Second, the stencil size is determined by the grid dimensions $sigma_u$ and $sigma_v$ rather than by the line extension parameter $m$ and the polynomial neighborhood size $N_p$, so it does not grow with the effective spatial extent of the filter. Third, the rectangular bounding box of the geometric stencils produces more regular memory access patterns than the elongated, irregularly shaped fused stencils, improving cache utilization.
+
+== Scaling Behavior
+
+The fused polynomial stencil exhibits favorable scaling characteristics as the line half-width $m$ increases. The naive approach's computational cost scales as $O(N_s dot L dot N_p)$, where $L = 2m + 1$ is the number of virtual filter positions. The fused stencil's cost scales as $O(N_s dot N'_k)$, and the deduplicated stencil size $N'_k$ grows much more slowly than $L dot N_p$ because of the extensive overlap between neighboring polynomial neighborhoods.
 
 #figure(
   table(
     columns: (auto, auto, auto, auto, auto),
     align: (center, center, center, center, center),
-    table.header[*$m$*][*Naive (s)*][*Triton (s)*][*Speedup*][*VRAM ratio*],
+    table.header[*$m$*][*Naive (s)*][*Fused (s)*][*Speedup*][*VRAM ratio*],
     [1], [0.58], [0.072], [8.0$times$], [273$times$],
-    [2], [1.91], [0.14], [13.7$times$], [311$times$],
     [7], [2.43], [0.13], [18.4$times$], [311$times$],
     [14], [8.88], [0.37], [24.3$times$], [311$times$],
   ),
-  caption: [Speedup scaling with half-width $m$ on BIPED v1 (1280$times$720). NVIDIA A100.],
+  caption: [Speedup scaling with half-width $m$ on BIPED v1 ($1280 times 720$). NVIDIA A100-SXM4-40GB.],
 ) <tab:scaling>
 
-At $m = 14$, the ASF is 24$times$ faster than the naive approach and completes a full 1280$times$720 image in 365 ms.
+@tab:scaling demonstrates this scaling advantage. At $m = 1$, the fused stencil is 8$times$ faster than the naive approach. At $m = 14$, the speedup reaches 24.3$times$ because the naive cost has grown linearly with $L$ while the fused cost has increased only modestly. The VRAM ratio stabilizes at 311$times$ for $m >= 7$, indicating that the memory footprint is dominated by the image and output buffers rather than the stencil weights themselves.
+
+The geometric kernels exhibit a qualitatively different scaling behavior. Because they define the anisotropic weight envelope directly from the parameters $sigma_u$ and $sigma_v$ rather than from a line extension, their runtime is effectively constant with respect to the equivalent spatial extent. The rectangular kernel processes a $1280 times 720$ image in approximately 45 ms regardless of the equivalent $m$, and the elliptical kernel is similarly stable at 47 ms. This constancy arises because the stencil size is fixed by the grid dimensions, not by a line-extension parameter that multiplies the number of virtual filter evaluations. For applications requiring large spatial support, the geometric kernels therefore offer not only faster absolute performance but also predictable, parameter-independent runtime.
 
 #figure(
   image("figures/fig4_speedup_vram.png", width: 100%),
-  caption: [GPU performance on BIPED v1 (1280$times$720). (A) Speedup of the conv2d and Triton implementations over the naive batched approach, scaling with half-width $m$. (B) Peak VRAM consumption; the Triton kernel uses only 20 MB regardless of $m$, a 311$times$ reduction.],
+  caption: [GPU performance on BIPED v1 ($1280 times 720$). (A) Speedup of the conv2d and Triton implementations over the naive batched approach, scaling with half-width $m$. (B) Peak VRAM consumption. The Triton kernel uses only 20 MB regardless of $m$, a 311$times$ reduction compared to the naive approach.],
 ) <fig:speedup>
 
 // ======================================================================
