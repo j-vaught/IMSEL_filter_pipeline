@@ -9,7 +9,7 @@ The idea of fitting a low-degree polynomial to data within a sliding window and 
 
 #figure(
   image("../figures/fig_sec02_savitzky_golay_1d.pdf", width: 80%),
-  caption: [One-dimensional Savitzky--Golay filtering. A polynomial of degree $d$ is fitted to a sliding window of $2m+1$ samples (highlighted), and the derivative at the center point is extracted from the fitted coefficients.],
+  caption: [One-dimensional Savitzky--Golay filtering. A polynomial of degree $d$ is fitted to a sliding window of $2m+1$ samples (highlighted), and the derivative at the center point is extracted from the fitted coefficients. This example uses degree $d = 3$ and half-width $m = 3$ (window size 7).],
   placement: top,
 ) <fig:sg-1d>
 
