@@ -32,16 +32,11 @@ With this context, the WVF @bagan2021wvf can be understood as a 2D Savitzky--Gol
 Each of these choices, circular support, coordinate rotation, and orientation sweeping, has independent precedent in the literature. The LF @bagan2023lf extends the WVF by averaging polynomial derivative estimates computed at _virtual expansion points_ distributed along a line perpendicular to the candidate edge direction, effectively replacing the single disk-shaped support with a rectangular strip sampled at multiple centers. This construction is a specific instance of line-averaged local polynomial regression, a technique that appears in the signal processing literature under various names.
 
 #figure(
-  image("../figures/fig_sec02_wvf_rotated_neighborhood.pdf", width: 100%),
-  caption: [The Wide View Filter as a rotated 2D Savitzky--Golay derivative filter. A circular neighborhood of $N_p$ pixels surrounds the target pixel. Local coordinates $(x', y')$ are rotated to align $x'$ with the candidate edge normal at angle $theta$. The normal derivative $hat(f)_(x')$ is extracted via least-squares polynomial fitting.],
+  image("../figures/fig_sec02_wvf_three_orientations.pdf", width: 100%),
+  caption: [The WVF and LF as oriented 2D Savitzky--Golay filters. (a) The Wide View Filter selects a circular neighborhood of $N_p$ pixels around the target pixel, rotates local coordinates $(x', y')$ to align with a candidate edge orientation, and extracts the normal derivative $partial f \/ partial x'$ via polynomial fitting. (b) The Line Filter places $(2m+1)$ virtual evaluation points along the tangent direction $y'$, each centered on the nearest pixel. (c) At each virtual point, a full circular neighborhood is gathered and a polynomial fit applied. The derivative estimates are combined via Gaussian-weighted averaging. This example uses $m = 4$ (9 virtual points).],
   placement: top,
-) <fig:wvf>
-
-#figure(
-  image("../figures/fig_sec02_lf_line_averaged.pdf", width: 100%),
-  caption: [The Line Filter as line-averaged Savitzky--Golay. The polynomial fit is evaluated at $(2m+1)$ virtual positions along the edge tangent, each with its own circular neighborhood. The neighborhoods overlap heavily. A Gaussian weight profile $w_j$ combines the derivative estimates into a single response $R_k$.],
-  placement: top,
-) <fig:lf>
+  scope: "parent",
+) <fig:wvf-lf>
 
 == Orientation-Selective Filtering <sec:related:oriented>
 

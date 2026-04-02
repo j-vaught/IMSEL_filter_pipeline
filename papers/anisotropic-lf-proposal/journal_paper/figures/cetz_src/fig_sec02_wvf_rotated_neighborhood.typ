@@ -6,6 +6,7 @@
 #let garnet = rgb("#73000A")
 #let atlantic = rgb("#466A9F")
 #let rose = rgb("#CC2E40")
+#let horseshoe = rgb("#65780B")
 #let black90 = rgb("#363636")
 #let black50 = rgb("#A2A2A2")
 #let black30 = rgb("#C7C7C7")
@@ -77,11 +78,11 @@
   // Center dot (white with dark border for visibility)
   circle((cx, cy), radius: 0.07, fill: white, stroke: 0.6pt + black90)
 
-  // Normal direction: 120 deg from horizontal
-  let normal-angle = 120.0 * calc.pi / 180.0
+  // Normal direction: perpendicular to edge (edge at -50°, normal at -50° + 90° = 40°)
+  let normal-angle = 45.0 * calc.pi / 180.0
   let tangent-angle = normal-angle + calc.pi / 2
 
-  // Draw rotated coordinate axes (Atlantic, thinner, shorter)
+  // Draw rotated coordinate axes (horseshoe green)
   let axis-len = 1.3
 
   // x'-axis (along edge normal)
@@ -90,8 +91,8 @@
   line(
     (cx - nx * 0.35, cy - ny * 0.35),
     (cx + nx, cy + ny),
-    stroke: 1.5pt + atlantic,
-    mark: (end: "stealth", fill: atlantic, size: 0.16),
+    stroke: 1.5pt + horseshoe,
+    mark: (end: "stealth", fill: horseshoe, size: 0.16),
   )
 
   // y'-axis (along edge tangent)
@@ -100,20 +101,18 @@
   line(
     (cx - tax * 0.35, cy - tay * 0.35),
     (cx + tax, cy + tay),
-    stroke: 1.5pt + atlantic,
-    mark: (end: "stealth", fill: atlantic, size: 0.16),
+    stroke: 1.5pt + rose,
+    mark: (end: "stealth", fill: rose, size: 0.16),
   )
 
-  // Axis labels -- placed at arrow tips with offsets to avoid overlap
-  // x' label: tip is upper-left area
+  // Axis labels
   content(
     (cx + nx * 1.1 + 0.2, cy + ny * 1.1),
-    text(fill: atlantic, size: 7.5pt)[$x'$],
+    text(fill: horseshoe, size: 7.5pt)[$x'$],
   )
-  // y' label: tip is lower-left area
   content(
     (cx + tax * 1.1 - 0.05, cy + tay * 1.1 - 0.2),
-    text(fill: atlantic, size: 7.5pt)[$y'$],
+    text(fill: rose, size: 7.5pt)[$y'$],
   )
 
   // Bold normal derivative arrow in Rose -- SEPARATE from the axis
@@ -128,26 +127,15 @@
   line(
     (cx + offx, cy + offy),
     (cx + ndx + offx, cy + ndy + offy),
-    stroke: 2.8pt + rose,
-    mark: (end: "stealth", fill: rose, size: 0.28),
+    stroke: 2.8pt + black90,
+    mark: (end: "stealth", fill: black90, size: 0.28),
   )
 
-  // df/dx' label -- placed away from x' label
+  // df/dx' label
   content(
     (cx + ndx + offx - 0.1, cy + ndy + offy + 0.3),
-    text(fill: rose, size: 8.5pt, weight: "bold")[$partial f \/ partial x'$],
+    text(fill: black90, size: 8.5pt, weight: "bold")[$partial f \/ partial x'$],
   )
 
-  // Annotations
-  let grid-w = grid-n * cell
-  content(
-    (grid-w / 2, -0.5),
-    text(fill: black90, size: 8pt, style: "italic")[circular support, rotated coordinates],
-  )
-
-  // Title
-  content(
-    (grid-w / 2, -1.15),
-    text(fill: black90, size: 11pt, weight: "bold")[WVF (Bagan & Wang, 2021)],
-  )
+  // (title and annotation removed — goes in caption)
 })
