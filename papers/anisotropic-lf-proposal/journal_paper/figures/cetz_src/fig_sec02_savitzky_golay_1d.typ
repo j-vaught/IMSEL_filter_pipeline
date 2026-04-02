@@ -184,7 +184,7 @@
   for i in range(n) {
     let x = i * step
     let h = all-heights.at(i)
-    let clr = if i >= win-start and i <= win-end { garnet.lighten(60%) } else { black50.lighten(60%) }
+    let clr = if i >= win-start and i <= win-end { garnet.lighten(55%) } else { black50.lighten(60%) }
     let stroke-clr = if i >= win-start and i <= win-end { black70 } else { black50 }
     rect(
       (x, 0),
