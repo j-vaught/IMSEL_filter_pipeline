@@ -1,0 +1,8 @@
+Arimo font files
+Copyright 2020 The Arimo Project Authors (https://github.com/googlefonts/arimo)
+
+Tinos font files
+Digitized data copyright (c) 2010-2012 Google Corporation.
+
+Oswald font files
+Copyright 2016 The Oswald Project Authors (https://github.com/googlefonts/OswaldFont)
