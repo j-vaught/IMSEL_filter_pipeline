@@ -179,64 +179,71 @@ The runtime results reveal that the ASF occupies a previously empty region of th
 
 This subsection presents qualitative comparisons that complement the quantitative metrics above. All edge maps are produced from raw gradient magnitude outputs without non-maximum suppression, thresholded at each method's ODS-optimal threshold for the corresponding dataset.
 
+=== BSDS500
+
+On the BSDS500 benchmark, the ASF produces gradient maps that faithfully reproduce the structure visible in the input images. @fig:visual-bsds-1 shows a representative example where the naive Line Filter and the fused ASF produce identical gradient magnitude maps, visually confirming the mathematical equivalence established in Section 4. Both capture strong object boundaries as well as fine interior texture.
+
 #figure(
   image("../figures/visual_bsds500_100007.png", width: 100%),
   caption: [Clean-data visual comparison on BSDS500 (image 100007). Top row: input image, naive LF gradient magnitude, ASF gradient magnitude (identical output, confirming mathematical equivalence). Bottom row: ground truth, LF edges, ASF edges.],
-  placement: top,
 ) <fig:visual-bsds-1>
+
+A second BSDS500 example is shown in @fig:visual-bsds-2. The ASF responds to both strong contour edges and weaker internal boundaries. On this dataset, deep learning models produce thinner, more semantically focused edge maps because they learn to suppress texture responses, an advantage that is reflected in the ODS gap discussed in Section 8.4.
 
 #figure(
   image("../figures/visual_bsds500_100039.png", width: 100%),
   caption: [Clean-data visual comparison on BSDS500 (image 100039). The ASF captures both strong object boundaries and fine internal texture edges.],
-  placement: top,
 ) <fig:visual-bsds-2>
+
+=== BIPED v1
+
+On the higher-resolution BIPED v1 dataset ($1280 times 720$ pixels), the ASF's large-neighborhood gradient estimation captures fine structural details that small-kernel operators miss. @fig:visual-biped-1 illustrates this on a complex urban scene, where the ASF resolves vehicle outlines, wheel spokes, and sign text.
 
 #figure(
   image("../figures/visual_biped_008.png", width: 100%),
-  caption: [Clean-data visual comparison on BIPED v1 (image 008, 1280$times$720). The ASF captures fine structural details including vehicle outlines, wheel spokes, and sign text that small-kernel classical operators miss.],
-  placement: top,
+  caption: [Clean-data visual comparison on BIPED v1 (image 008, $1280 times 720$). The ASF captures fine structural details including vehicle outlines, wheel spokes, and sign text that small-kernel classical operators miss.],
 ) <fig:visual-biped-1>
+
+@fig:visual-biped-2 shows a second BIPED example. On this photometric-edge dataset, where ground truth annotations correspond to actual intensity transitions, the ASF produces gradient maps that are visually competitive with deep learning outputs.
 
 #figure(
   image("../figures/visual_biped_010.png", width: 100%),
   caption: [Clean-data visual comparison on BIPED v1 (image 010). On this photometric-edge dataset, the ASF produces gradient maps visually competitive with deep learning outputs.],
-  placement: top,
 ) <fig:visual-biped-2>
+
+=== UDED
+
+The UDED benchmark draws images from 15 diverse source datasets, testing cross-domain generalization. @fig:visual-uded-1 and @fig:visual-uded-2 demonstrate that the ASF generalizes across these varied imaging conditions without any domain-specific training. The filter detects boundaries and internal structure across natural scenes, urban imagery, and other domains represented in the UDED sampling.
 
 #figure(
   image("../figures/visual_uded_01.png", width: 100%),
   caption: [Clean-data visual comparison on UDED (image 01). The ASF generalizes across diverse imaging domains without domain-specific training, detecting boundaries and internal structure.],
-  placement: top,
 ) <fig:visual-uded-1>
 
 #figure(
   image("../figures/visual_uded_02.png", width: 100%),
   caption: [Clean-data visual comparison on UDED (image 02). On this cross-domain benchmark, the ASF approaches DexiNed's supervised performance without any training data.],
-  placement: top,
 ) <fig:visual-uded-2>
 
+=== Geometric Kernel Demonstrations
+
+@fig:kernel-demo-rect and @fig:kernel-demo-ellip show edge detection results from the rectangular and elliptical Gaussian kernel variants applied to the same grayscale photograph. Each figure presents the input, gradient magnitude, and an orientation map where hue encodes the detected edge angle $theta_(k^*)$ and brightness encodes the response magnitude $|R_(k^*)|$. The two kernel variants produce nearly indistinguishable gradient magnitude maps, consistent with their 0.3% ODS agreement. The elliptical kernel's orientation field is marginally smoother, reflecting the continuous boundary of its support region.
+
 #figure(
-  image("../figures/visual_kernel_demo_p5.png", width: 100%),
+  image("../figures/fig_sec08_rect_kernel_demo.png", width: 100%),
   caption: [Rectangular Gaussian kernel edge detection. Left: grayscale input. Center: gradient magnitude $|R_(k^*)|$. Right: orientation map ($theta_(k^*)$ encoded as hue, $|R_(k^*)|$ as brightness). Parameters: $sigma_u = 2.0$, $sigma_v = 1.2$, $N_s = 36$.],
-  placement: top,
 ) <fig:kernel-demo-rect>
 
 #figure(
-  image("../figures/visual_kernel_demo_p6.png", width: 100%),
+  image("../figures/fig_sec08_ellip_kernel_demo.png", width: 100%),
   caption: [Elliptical Gaussian kernel edge detection on the same image. The gradient magnitude map is visually nearly identical to the rectangular variant. The orientation field is slightly smoother, consistent with the elliptical kernel's continuous angular weighting.],
-  placement: top,
 ) <fig:kernel-demo-ellip>
 
-// NOTE: Noise comparison figure requires generating edge maps at multiple SNR levels.
-// This will be produced from the noise ablation experimental pipeline.
-// #figure(
-//   image("../figures/visual_noise_comparison.png", width: 100%),
-//   caption: [Noise robustness comparison at four SNR levels...],
-//   placement: top,
-// ) <fig:noise-visual>
+=== Accuracy-Speed Tradeoff
+
+@fig:pareto summarizes the accuracy-speed landscape across all evaluated methods. Classical operators cluster in the lower-left quadrant (fast but low accuracy). Deep learning models occupy the upper portion (high accuracy, moderate to high cost). The ASF variants fill the previously empty gap, achieving accuracy between the best classical methods and the weakest deep learning models at runtimes comparable to lightweight neural networks. The Pareto frontier passes through the ASF point-filter configuration, indicating that no other tested method achieves the same accuracy at lower computational cost.
 
 #figure(
-  image("../figures/fig_pareto.pdf", width: 90%),
+  image("../figures/fig_sec08_accuracy_speed_pareto.pdf", width: 90%),
   caption: [Accuracy vs. runtime Pareto plot on BIPED v1. Classical methods (gray) cluster at low runtime but low accuracy. Deep learning models (blue) achieve high accuracy at higher computational cost. The ASF variants (garnet) occupy the previously empty region, offering accuracy competitive with lightweight neural networks at classical-method runtimes.],
-  placement: top,
 ) <fig:pareto>

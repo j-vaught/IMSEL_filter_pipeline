@@ -11,7 +11,7 @@ The precompute phase differs substantially across variants. For the fused polyno
 Despite these different construction procedures, all three variants produce the same output format. Each orientation $theta_k$ is represented by a list of integer offsets $(Delta x_ell, Delta y_ell)$ and corresponding scalar weights $alpha_(k,ell)$ for $ell = 1, dots, N'_k$. This format uniformity is the key architectural property. It enables a single, variant-agnostic GPU kernel to process any stencil without knowledge of its origin.
 
 #figure(
-  image("../figures/fig_gpu_architecture.pdf", width: 95%),
+  image("../figures/fig_sec06_precompute_compute_flow.pdf", width: 95%),
   caption: [Two-phase architecture overview. The precompute phase (left) runs on the CPU and differs per variant, but all three produce the same output format of (offset, weight) pairs per orientation. The compute phase (right) consumes these stencil arrays through a single variant-agnostic Triton kernel.],
 ) <fig:gpu-arch>
 
@@ -91,7 +91,7 @@ The geometric kernels are approximately 3$times$ faster than the fused polynomia
 @tab:gpu-scaling demonstrates the scaling advantage of the fused stencil approach. The naive implementation's computational cost scales as $O(N_s dot L dot N_p)$, where $L = 2m + 1$ is the number of virtual filter positions along the line. The fused stencil's cost scales as $O(N_s dot N'_k)$, and the deduplicated stencil size $N'_k$ grows much more slowly than $L dot N_p$ because neighboring polynomial neighborhoods overlap extensively. At $m = 1$, the fused stencil is 8$times$ faster than the naive approach. At $m = 14$, the speedup reaches 24.3$times$ because the naive cost has grown linearly with $L$ while the fused cost has increased only modestly. The VRAM ratio stabilizes at 311$times$ for $m >= 7$, indicating that the memory footprint is dominated by the image and output buffers rather than the stencil weights.
 
 #figure(
-  image("../figures/fig_speedup_scaling.pdf", width: 95%),
+  image("../figures/fig_sec06_runtime_vs_halfwidth.pdf", width: 95%),
   caption: [GPU scaling behavior on BIPED v1 ($1280 times 720$). Left: speedup of the fused Triton kernel over the naive batched approach as a function of half-width $m$. The increasing speedup reflects the sublinear growth of deduplicated stencil size relative to the linear growth of the naive approach. Right: peak VRAM consumption showing the 311$times$ reduction achieved by the Triton kernel. The geometric kernels (not shown) maintain constant runtime regardless of equivalent spatial extent.],
 ) <fig:scaling-plot>
 

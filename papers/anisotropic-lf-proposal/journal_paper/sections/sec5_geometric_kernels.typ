@@ -40,7 +40,7 @@ $ K_R (u, v) = (hat(K)_R (u, v) - macron(K)_R) / (sum_(u,v) |hat(K)_R (u, v) - m
 Zero-centering ensures the filter has zero DC response, rendering it insensitive to constant intensity offsets. Absolute-sum normalization ensures that responses are comparable across orientations and kernel sizes. The default parameters are $h_u = 3 sigma_u$ and $h_v = 3 sigma_v$. With $sigma_u = 2.0$ and $sigma_v = 1.2$, the aspect ratio $sigma_u slash sigma_v approx 1.67$ matches the elongation of the baseline ASF, and the support area is $4 h_u h_v approx 86.4$ square pixels.
 
 #figure(
-  image("../figures/fig5_1_rect_kernel_construction.pdf", width: 95%),
+  image("../figures/fig_sec05_rect_kernel_construction.pdf", width: 95%),
   caption: [Construction of the rectangular Gaussian kernel at $theta = 30 degree$. (A) The rectangular mask region on the pixel grid, with interior pixels highlighted. (B) The anisotropic Gaussian envelope within the mask, darker at the center and lighter toward the boundary. (C) The derivative profile $-v$ shown as a cross-section, with positive values above the center line and negative values below. (D) The final combined kernel $K_R$, with each cell colored by its weight magnitude and sign. The dipole pattern is clean and regular, with no near-zero interior pixels.],
 ) <fig:rect-construction>
 
@@ -64,7 +64,7 @@ and the normalized kernel $K_E$ is obtained by the same zero-centering and absol
 The elliptical mask excludes the corner pixels of the bounding rectangle that satisfy $bold(1)_R$ but not $bold(1)_E$. These are pixels far from the kernel center in both the $u$ and $v$ directions simultaneously. For the default parameters, approximately 18 pixels receive nonzero weight under the rectangular kernel and zero weight under the elliptical kernel. Despite this reduction in support, the elliptical variant produces a smoother spatial frequency response. The hard corners of the rectangular mask introduce discontinuities in the Fourier domain that manifest as sidelobes, whereas the elliptical boundary tapers more gradually, suppressing these artifacts.
 
 #figure(
-  image("../figures/fig5_2_ellip_kernel_construction.pdf", width: 95%),
+  image("../figures/fig_sec05_ellip_kernel_construction.pdf", width: 95%),
   caption: [Construction of the elliptical Gaussian kernel at $theta = 30 degree$. (A) The elliptical boundary on the pixel grid, with corner pixels that would be included in the rectangular variant marked with lighter shading. (B) The Gaussian envelope, which naturally matches the elliptical boundary. (C) The derivative profile $-v$, identical to the rectangular case. (D) The final kernel $K_E$, exhibiting the same dipole character as $K_R$ but with a smoother boundary and approximately 18 fewer pixels.],
 ) <fig:ellip-construction>
 
@@ -84,7 +84,7 @@ _Third, the empirical evidence is decisive._ The geometric kernels proposed in t
 The conclusion is that cancellation in the fused stencil is an unintended artifact of the polynomial-fitting-then-deduplication pipeline. The geometric kernels demonstrate that the same edge detection accuracy is achievable with a smooth, well-behaved weight distribution where every pixel contributes meaningfully.
 
 #figure(
-  image("../figures/fig5_3_weight_comparison.pdf", width: 100%),
+  image("../figures/fig_sec05_three_variant_weight_compare.pdf", width: 100%),
   caption: [Side-by-side weight comparison at $theta = 30 degree$ for the three kernel variants. Left: the fused stencil weight map, showing an irregular shape with many near-zero cells. Center: the rectangular kernel, exhibiting a clean box boundary and smooth dipole weights with no near-zero interior pixels. Right: the elliptical kernel, with a smooth elliptical boundary and slightly fewer pixels. Below each weight map is a histogram of absolute weight magnitudes $|alpha|$. The fused stencil histogram exhibits a pronounced spike near zero; neither geometric kernel histogram does.],
 ) <fig:weight-comparison>
 
@@ -135,7 +135,7 @@ The geometric kernels produce weight distributions that are closer to uniform th
 The practical consequence emerges under noise scaling. At high signal-to-noise ratio (SNR), the optimal configuration uses small kernels with few orientations ($N_s = 4$, $sigma_u = 2.0$, $sigma_v = 1.2$), and all three variants perform comparably. As noise increases, the optimal kernel grows larger and more densely sampled to average over more pixels. The geometric kernels replicate this scaling by adjusting $sigma_u$ and $sigma_v$ directly, a procedure that is both intuitive and continuous. At $"SNR" = 0.5 "dB"$, the optimal ASF uses a massive elongated stencil spanning roughly $43 times 15$ pixels. The equivalent geometric parameters are $sigma_u approx 7.17$ and $sigma_v approx 2.50$, producing an elliptical kernel with $N_"eff" approx 340$ and a rectangular kernel with $N_"eff" approx 440$.
 
 #figure(
-  image("../figures/fig5_4_noise_gain_scaling.pdf", width: 85%),
+  image("../figures/fig_sec05_noise_gain_vs_support.pdf", width: 85%),
   caption: [Noise gain $||bold(alpha)||_2^2$ as a function of effective support area for the three kernel variants. The theoretical minimum for a uniform kernel ($1 slash N$) is shown as a dotted line. The geometric kernels track closer to the theoretical minimum across all support sizes. The fused stencil curve sits above due to its uneven weight distribution.],
 ) <fig:noise-gain>
 
