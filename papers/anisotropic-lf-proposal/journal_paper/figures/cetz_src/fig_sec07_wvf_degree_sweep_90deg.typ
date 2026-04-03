@@ -16,7 +16,7 @@
 #let top-degrees = (2, 4, 6, 8)
 #let bottom-degrees = (3, 5, 7, 9)
 #let target-Np = 500
-#let grid-N = 33
+#let grid-N = 29
 #let cell-sz = 0.19
 #let half = calc.div-euclid(grid-N - 1, 2)
 
