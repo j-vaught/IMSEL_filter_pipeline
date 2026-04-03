@@ -55,31 +55,6 @@ In this case, $c_0$, $c_1$, and $c_2$ play the same roles as before, while the a
 
 With all that mathematical kerfuffle out of the way, the only question that remains is how to solve for those unknown coefficients. To do that, we write one fitting equation for each pixel in the local patch and then collect them into a single linear system.
 
-== Stack The Patch Into A Vector
-
-To solve the least-squares system, we flatten those same nine values into a column vector
-
-$
-  bold(b) =
-  [
-    I_(-1,-1),
-    I_(0,-1),
-    I_(1,-1),
-    I_(-1,0),
-    I_(0,0),
-    I_(1,0),
-    I_(-1,1),
-    I_(0,1),
-    I_(1,1)
-  ]^top.
-$
-
-The unknown polynomial coefficients are
-
-$
-  bold(z) = [c_0, c_1, c_2]^top.
-$
-
 At this point, we can write one fitting equation for each pixel in the local patch by plugging its coordinate into the degree-1 polynomial. This gives
 
 $
@@ -114,6 +89,31 @@ These are simply the nine pixel-fitting equations written one at a time. The rea
 
 $
   bold(A) bold(z) approx bold(b).
+$
+
+== Stack The Patch Into A Vector
+
+To write that system compactly, we flatten those same nine pixel values into a column vector
+
+$
+  bold(b) =
+  [
+    I_(-1,-1),
+    I_(0,-1),
+    I_(1,-1),
+    I_(-1,0),
+    I_(0,0),
+    I_(1,0),
+    I_(-1,1),
+    I_(0,1),
+    I_(1,1)
+  ]^top.
+$
+
+The unknown polynomial coefficients are gathered into
+
+$
+  bold(z) = [c_0, c_1, c_2]^top.
 $
 
 == Build The Design Matrix
