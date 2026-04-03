@@ -254,7 +254,7 @@
         else if w < -0.0001 { lerp-color(atlantic, intensity) }
         else { white }
       } else { white }
-      rect((x, y), (x + cell-sz, y - cell-sz), fill: fc, stroke: 0.24pt + black30)
+      rect((x, y), (x + cell-sz, y - cell-sz), fill: fc, stroke: 0.18pt + black30)
     }
   }
   for r in range(grid-N) {
@@ -270,21 +270,21 @@
         let top-key = str(dx) + "," + str(dy + 1)
         let bottom-key = str(dx) + "," + str(dy - 1)
         if left-key not in stencil {
-          line((x, y), (x, y - cell-sz), stroke: 0.72pt + black90)
+          line((x, y), (x, y - cell-sz), stroke: 0.52pt + black90)
         }
         if right-key not in stencil {
-          line((x + cell-sz, y), (x + cell-sz, y - cell-sz), stroke: 0.72pt + black90)
+          line((x + cell-sz, y), (x + cell-sz, y - cell-sz), stroke: 0.52pt + black90)
         }
         if top-key not in stencil {
-          line((x, y), (x + cell-sz, y), stroke: 0.72pt + black90)
+          line((x, y), (x + cell-sz, y), stroke: 0.52pt + black90)
         }
         if bottom-key not in stencil {
-          line((x, y - cell-sz), (x + cell-sz, y - cell-sz), stroke: 0.72pt + black90)
+          line((x, y - cell-sz), (x + cell-sz, y - cell-sz), stroke: 0.52pt + black90)
         }
       }
     }
   }
-  rect((ox, oy), (ox + grid-N * cell-sz, oy - grid-N * cell-sz), stroke: 0.9pt + black90)
+  rect((ox, oy), (ox + grid-N * cell-sz, oy - grid-N * cell-sz), stroke: 0.7pt + black90)
   let cx = ox + grid-N * cell-sz / 2.0
   content((cx, oy - grid-N * cell-sz - 0.35),
     text(fill: black90, size: 10.5pt, weight: "bold")[
@@ -327,7 +327,7 @@
     rect((bar-x + s * step-w, ly), (bar-x + (s + 1) * step-w, ly - bar-h),
       fill: fc, stroke: none)
   }
-  rect((bar-x, ly), (bar-x + bar-w, ly - bar-h), stroke: 0.8pt + black90)
+  rect((bar-x, ly), (bar-x + bar-w, ly - bar-h), stroke: 0.6pt + black90)
   content((bar-x, ly - bar-h - 0.25),
     text(fill: black90, size: 8.5pt)[$-alpha_max$])
   content((bar-x + bar-w / 2.0, ly - bar-h - 0.25),
