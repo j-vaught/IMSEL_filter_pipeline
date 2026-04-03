@@ -222,8 +222,8 @@
 }
 
 #let all-lf = orientations.map(deg => fused-stencil(deg * 1deg))
-#let all-rect = orientations.map(deg => rect-ellipse-stencil(deg * 1deg, "rect"))
-#let all-ellipse = orientations.map(deg => rect-ellipse-stencil(deg * 1deg, "ellipse"))
+#let all-rect = orientations.map(deg => rect-ellipse-stencil((deg + 90) * 1deg, "rect"))
+#let all-ellipse = orientations.map(deg => rect-ellipse-stencil((deg + 90) * 1deg, "ellipse"))
 
 // ── Drawing helpers ──────────────────────────────────────────────────────
 #let max-abs(stencil) = {
