@@ -11,12 +11,12 @@
 #let white    = rgb("#FFFFFF")
 
 // ── Parameters ───────────────────────────────────────────────────────────
-#let degrees = (2, 3, 4, 5, 6, 7, 8, 9)
+#let degrees = (2, 3, 4, 5, 6, 7)
 #let orientations = (0, 30, 60, 90)
 #let target-Np = 500
 #let m-line = 13
 #let sigma-l = m-line / 2.0
-#let grid-N = 45
+#let grid-N = 49
 #let cell-sz = 0.065
 #let half = calc.div-euclid(grid-N - 1, 2)
 
