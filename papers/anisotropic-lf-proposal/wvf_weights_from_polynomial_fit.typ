@@ -18,7 +18,7 @@
 
 = The Core Idea
 
-A polynomial-based local fit can be written as a fixed discrete filter once the sample locations are fixed. Although a polynomial fit is usually described as solving for unknown coefficients, the least-squares solution is linear in the sampled pixel values. As a result, any fitted coefficient, including a derivative coefficient, can be expressed as one fixed weighted sum of the input pixels. Those fixed numbers are the filter weights.
+Although a polynomial fit is usually described as solving for unknown coefficients, the least-squares solution is linear in the sampled pixel values. As a result, any fitted coefficient, including a derivative coefficient, can be expressed as one fixed weighted sum of the input pixels. The resulting weighted sum for each pixel is effectively the filter weights, similar to how Sobel or Prewitt weights are defined.
 
 = A 3x3 Toy Example
 
