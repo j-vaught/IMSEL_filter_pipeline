@@ -14,7 +14,7 @@
 #let theta-deg = 90
 #let theta = theta-deg * 1deg
 #let poly-degrees = (2, 4, 6)
-#let target-Np = 100
+#let target-Np = 500
 #let grid-N = 37
 #let cell-sz = 0.17
 #let half = calc.div-euclid(grid-N - 1, 2)
