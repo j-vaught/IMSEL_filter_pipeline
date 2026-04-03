@@ -80,6 +80,42 @@ $
   bold(z) = [c_0, c_1, c_2]^top.
 $
 
+At this point, we can write one fitting equation for each pixel in the local patch by plugging its coordinate into the degree-1 polynomial. This gives
+
+$
+  c_0 - c_1 - c_2 approx I_(-1,-1)
+$
+$
+  c_0 - c_2 approx I_(0,-1)
+$
+$
+  c_0 + c_1 - c_2 approx I_(1,-1)
+$
+$
+  c_0 - c_1 approx I_(-1,0)
+$
+$
+  c_0 approx I_(0,0)
+$
+$
+  c_0 + c_1 approx I_(1,0)
+$
+$
+  c_0 - c_1 + c_2 approx I_(-1,1)
+$
+$
+  c_0 + c_2 approx I_(0,1)
+$
+$
+  c_0 + c_1 + c_2 approx I_(1,1).
+$
+
+These are simply the nine pixel-fitting equations written one at a time. The reason we stack the patch into a vector is that it allows us to collect these nine equations into one compact linear system of the form
+
+$
+  bold(A) bold(z) approx bold(b).
+$
+
 == Build The Design Matrix
 
 Each row of the design matrix is just the basis $[1, x, y]$ evaluated at one sample location. Therefore
@@ -97,12 +133,6 @@ $
     1, 0, 1;
     1, 1, 1
   ).
-$
-
-The least-squares model is then
-
-$
-  bold(A) bold(z) approx bold(b).
 $
 
 == Solve The Least-Squares System
