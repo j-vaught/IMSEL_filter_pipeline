@@ -14,7 +14,7 @@
 #let degrees = (2, 3, 4, 5, 6, 7, 8, 9)
 #let orientations = (0, 30, 60, 90)
 #let target-Np = 500
-#let m-line = 7
+#let m-line = 13
 #let sigma-l = m-line / 2.0
 #let grid-N = 45
 #let cell-sz = 0.065
@@ -233,7 +233,7 @@
         else if w < -0.0001 { lerp-color(atlantic, intensity) }
         else { white }
       } else { white }
-      rect((x, y), (x + cell-sz, y - cell-sz), fill: fc, stroke: 0.08pt + black30)
+      rect((x, y), (x + cell-sz, y - cell-sz), fill: fc, stroke: none)
     }
   }
   for r in range(grid-N) {
