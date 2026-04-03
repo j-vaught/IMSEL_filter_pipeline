@@ -104,9 +104,4 @@ Second, the cancellation produces an irregular frequency response. The fused ste
 
 Third, the algebraic origin of the weights makes the filter's properties opaque to theoretical analysis. The fused weights $alpha_(k,ell)$ are the end product of a chain of operations (neighbor selection, monomial basis construction, pseudoinverse computation, Gaussian weighting, rounding, and summation) that obscures the relationship between the filter parameters and the resulting spatial-frequency characteristics. Unlike a Gaussian derivative kernel, whose bandwidth, zero-crossings, and moment properties follow directly from its analytic definition, the polynomial stencil's properties can only be determined numerically for each parameter configuration.
 
-#figure(
-  image("../figures/fig_sec04_weight_efficiency_bars.pdf", width: 90%),
-  caption: [Comparison of weight distributions for the polynomial-derived fused stencil (left) and a matched elliptical Gaussian derivative kernel (right) at the same effective support size. The polynomial weights exhibit a broad spread of magnitudes with many near-zero entries, while the Gaussian derivative weights decay smoothly from the center with no cancellation artifacts.],
-) <fig:efficiency-comparison>
-
 These observations raise a natural question. If the polynomial fit machinery produces weights that partially cancel and yield an irregular frequency response, can we instead define the stencil weights directly from a geometric prescription that avoids the pseudoinverse altogether? The answer, developed in the following section, is to replace the polynomial gradient estimation with an analytically defined kernel whose weights are constructed from a smooth envelope function and a linear ramp, eliminating the cancellation problem by construction.
