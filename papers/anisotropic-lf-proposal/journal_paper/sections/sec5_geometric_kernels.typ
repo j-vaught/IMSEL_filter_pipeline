@@ -83,11 +83,6 @@ _Third, the empirical evidence is decisive._ The geometric kernels proposed in t
 
 The conclusion is that cancellation in the fused stencil is an unintended artifact of the polynomial-fitting-then-deduplication pipeline. The geometric kernels demonstrate that the same edge detection accuracy is achievable with a smooth, well-behaved weight distribution where every pixel contributes meaningfully.
 
-#figure(
-  image("../figures/fig_sec05_three_variant_weight_compare.pdf", width: 100%),
-  caption: [Side-by-side weight comparison at $theta = 30 degree$ for the three kernel variants. Left: the fused stencil weight map, showing an irregular shape with many near-zero cells. Center: the rectangular kernel, exhibiting a clean box boundary and smooth dipole weights with no near-zero interior pixels. Right: the elliptical kernel, with a smooth elliptical boundary and slightly fewer pixels. Below each weight map is a histogram of absolute weight magnitudes $|alpha|$. The fused stencil histogram exhibits a pronounced spike near zero; neither geometric kernel histogram does.],
-) <fig:weight-comparison>
-
 
 == Effective Pixel Count and Weight Efficiency <sec:weight-efficiency>
 
