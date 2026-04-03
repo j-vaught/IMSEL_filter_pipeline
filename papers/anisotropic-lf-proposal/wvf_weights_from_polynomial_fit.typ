@@ -30,14 +30,6 @@ $
   (x, y) in \{ -1, 0, 1 \} times \{ -1, 0, 1 \}.
 $
 
-Suppose we fit a degree-1 polynomial
-
-$
-  p(x, y) = c_0 + c_1 x + c_2 y.
-$
-
-Here $c_0$ tells us the local baseline brightness, while $c_1$ and $c_2$ tell us how that brightness changes across space. Since an edge is a place where intensity changes, the derivative coefficients are the quantities we care about most. The constant term helps the polynomial fit the local patch, but the edge information is carried by the change terms.
-
 == Start With The Actual 3x3 Patch
 
 As a simplification, let us begin with a local 3x3 image patch. We denote this neighborhood by $bold(B)$:
@@ -52,6 +44,14 @@ $
 $
 
 This matrix contains the pixel intensities in a local 3x3 window, with the pixel of interest located at the center.
+
+Suppose we fit a degree-1 polynomial
+
+$
+  p(x, y) = c_0 + c_1 x + c_2 y.
+$
+
+Here $c_0$ tells us the local baseline brightness, while $c_1$ and $c_2$ tell us how that brightness changes across space. Since an edge is a place where intensity changes, the derivative coefficients are the quantities we care about most. The constant term helps the polynomial fit the local patch, but the edge information is carried by the change terms.
 
 == Stack The Patch Into A Vector
 
