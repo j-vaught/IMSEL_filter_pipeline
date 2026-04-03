@@ -318,7 +318,7 @@
 
   for row in range(3) {
     let cy = top-pad - row * (gw + gy) - gw / 2.0
-    content((0.7, cy), row-label-content(row-labels.at(row)), anchor: "center")
+    content((0.85, cy), row-label-content(row-labels.at(row)), anchor: "center")
     for col in range(orientations.len()) {
       let ox = left-pad + col * (gw + gx)
       let oy = top-pad - row * (gw + gy)
