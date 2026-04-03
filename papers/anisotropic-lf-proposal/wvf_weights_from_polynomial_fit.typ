@@ -24,12 +24,6 @@ We can see this most clearly by starting with a tiny 3x3 example.
 
 = A 3x3 Toy Example
 
-Consider a 3x3 patch centered at the origin with local coordinates
-
-$
-  (x, y) in \{ -1, 0, 1 \} times \{ -1, 0, 1 \}.
-$
-
 == Start With The Actual 3x3 Patch
 
 As a simplification, let us begin with a local 3x3 image patch. We denote this neighborhood by $bold(B)$:
