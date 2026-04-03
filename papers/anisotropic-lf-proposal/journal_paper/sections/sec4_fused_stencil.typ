@@ -75,4 +75,38 @@ The degree of compression depends on the ratio of line-extension length to neigh
 At $m = 1$, only three line positions contribute and the circular neighborhoods overlap almost completely, yielding a 57% reduction. At $m = 7$, the 15 line positions produce 1500 raw entries that collapse to roughly 264 unique pixels, an 82% reduction. At $m = 14$, the compression reaches 85%, meaning fewer than one in six raw entries corresponds to a distinct memory access. This compression is the primary mechanism by which the fused formulation reduces both arithmetic operations and memory bandwidth relative to the naive cascade.
 
 
-The fused formulation raises a natural question. Given that we have collapsed the polynomial fit cascade into a single weighted sum, can we instead define the stencil weights directly from a geometric prescription that avoids the pseudoinverse altogether? The answer, developed in the following section, is to replace the polynomial gradient estimation with an analytically defined kernel whose weights are constructed from a smooth envelope function and a linear ramp.
+== The Weight Cancellation Problem <sec:cancellation>
+
+Although the fused stencil eliminates redundant computation, it exposes a structural inefficiency in the polynomial-derived weights. A large fraction of the fused weight magnitudes $|alpha_(k,ell)|$ are close to zero, meaning that many of the unique stencil positions contribute negligibly to the response $R_k$. This phenomenon is not a numerical artifact but a systematic consequence of the algebraic structure of the pseudoinverse weights.
+
+The origin of the cancellation can be understood as follows. Each polynomial fit at line position $j$ produces pseudoinverse weights $p_i^((k))$ that encode the gradient extraction from a local Taylor expansion. These weights contain both positive and negative entries, reflecting the differential nature of the gradient operator. When adjacent fit positions $j$ and $j+1$ share a pixel at the same integer offset, the contributions $w_j dot p_i^((k))$ and $w_(j+1) dot p_(i')^((k))$ that are summed in @eq:fused-weight come from different rows of different pseudoinverse matrices. Because the polynomial basis is shifted by one pixel between adjacent fits, the pseudoinverse entries at the shared pixel typically have opposite signs. The Gaussian line weights $w_j$ and $w_(j+1)$ are both positive, so the products partially cancel when summed.
+
+More formally, the fused weight at a position $ell$ that is shared by $n$ overlapping neighborhoods takes the form
+
+$ alpha_(k,ell) = sum_(s=1)^(n) w_(j_s) dot p_(i_s)^((k)) $ <eq:cancel-formal>
+
+where the indices $(j_s, i_s)$ enumerate the distinct (line-position, neighbor-index) pairs mapping to $ell$. The pseudoinverse entries $p_(i_s)^((k))$ are elements of the first row of $(bold(A)_(theta_k)^top bold(A)_(theta_k))^(-1) bold(A)_(theta_k)^top$, evaluated at different column positions corresponding to different local coordinates within each shifted neighborhood. The sign pattern of these entries is determined by the monomial basis and the geometry of the neighbor set, and for pixels near the center of the stencil (where overlap is highest), adjacent fits produce contributions of opposite polarity.
+
+To quantify the severity of cancellation, we define a _weight efficiency_ metric.
+
+$ eta = (sum_(ell=1)^(N'_k) |alpha_(k,ell)|) / (sum_(j=-m)^(m) |w_j| sum_(i=1)^(N_p) |p_i^((k))|) $ <eq:efficiency>
+
+The numerator is the total absolute weight in the fused stencil, and the denominator is the total absolute weight before any cancellation occurs (i.e., the sum of absolute contributions across all raw entries). A value $eta = 1$ would indicate no cancellation, while $eta < 1$ indicates that a fraction $1 - eta$ of the raw weight magnitude has been lost to sign cancellation during deduplication. Empirically, $eta approx 0.72$ for $m = 7$ and $N_p = 20$ at order $d = 4$, meaning approximately 28% of the aggregate pseudoinverse weight magnitude is destroyed by cancellation. For larger neighborhoods ($N_p = 100$), the efficiency drops further because the increased overlap multiplies the number of canceling pairs.
+
+
+== Consequences of Cancellation <sec:cancel-consequences>
+
+The weight cancellation phenomenon has three practical consequences that limit the effectiveness of the polynomial-derived fused stencil.
+
+First, the cancelled weights represent wasted computation. Pixels with near-zero fused weights are still gathered from memory and multiplied by their weights during the dot product @eq:gather-dot. Pruning these entries (by zeroing weights below a threshold) reduces the effective stencil size but introduces an approximation error that depends on the threshold in a non-obvious way, since the cancelled weights are distributed throughout the stencil rather than concentrated at the periphery.
+
+Second, the cancellation produces an irregular frequency response. The fused stencil is a discrete linear filter and can be analyzed via its discrete Fourier transform. Weights that arise from a smooth analytic design (such as a Gaussian derivative) produce a predictable, well-behaved frequency response. By contrast, the polynomial-derived fused weights inherit the oscillatory structure of the pseudoinverse entries, and the partial cancellations introduce high-frequency ripple in the transfer function. This ripple makes it difficult to characterize the filter's noise behavior analytically, since the effective bandwidth does not correspond to a simple parametric form.
+
+Third, the algebraic origin of the weights makes the filter's properties opaque to theoretical analysis. The fused weights $alpha_(k,ell)$ are the end product of a chain of operations (neighbor selection, monomial basis construction, pseudoinverse computation, Gaussian weighting, rounding, and summation) that obscures the relationship between the filter parameters and the resulting spatial-frequency characteristics. Unlike a Gaussian derivative kernel, whose bandwidth, zero-crossings, and moment properties follow directly from its analytic definition, the polynomial stencil's properties can only be determined numerically for each parameter configuration.
+
+#figure(
+  image("../figures/fig_sec04_weight_efficiency_bars.pdf", width: 90%),
+  caption: [Comparison of weight distributions for the polynomial-derived fused stencil (left) and a matched elliptical Gaussian derivative kernel (right) at the same effective support size. The polynomial weights exhibit a broad spread of magnitudes with many near-zero entries, while the Gaussian derivative weights decay smoothly from the center with no cancellation artifacts.],
+) <fig:efficiency-comparison>
+
+These observations raise a natural question. If the polynomial fit machinery produces weights that partially cancel and yield an irregular frequency response, can we instead define the stencil weights directly from a geometric prescription that avoids the pseudoinverse altogether? The answer, developed in the following section, is to replace the polynomial gradient estimation with an analytically defined kernel whose weights are constructed from a smooth envelope function and a linear ramp, eliminating the cancellation problem by construction.
