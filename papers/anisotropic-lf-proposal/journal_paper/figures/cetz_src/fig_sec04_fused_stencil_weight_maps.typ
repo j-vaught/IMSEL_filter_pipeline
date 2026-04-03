@@ -255,7 +255,8 @@
         else if w < -0.0001 { lerp-color(atlantic, intensity) }
         else { white }
       } else { white }
-      rect((x, y), (x + cell-sz, y - cell-sz), fill: fc, stroke: 0.15pt + black30)
+      let cell-stroke = if key in stencil { 0.35pt + black90 } else { 0.15pt + black30 }
+      rect((x, y), (x + cell-sz, y - cell-sz), fill: fc, stroke: cell-stroke)
     }
   }
   rect((ox, oy), (ox + grid-N * cell-sz, oy - grid-N * cell-sz), stroke: 0.6pt + black90)
