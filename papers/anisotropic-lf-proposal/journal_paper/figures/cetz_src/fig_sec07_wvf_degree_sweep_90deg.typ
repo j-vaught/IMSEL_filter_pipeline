@@ -13,7 +13,7 @@
 // ── Parameters ───────────────────────────────────────────────────────────
 #let theta-deg = 90
 #let theta = theta-deg * 1deg
-#let poly-degrees = (2, 4, 6)
+#let bottom-degrees = (3, 5, 7, 9)
 #let target-Np = 500
 #let grid-N = 37
 #let cell-sz = 0.17
@@ -169,7 +169,8 @@
   (stencil: stencil, max-abs: max-abs)
 }
 
-#let all-data = poly-degrees.map(d => (d: d,) + wvf-data(d))
+#let top-data = (d: 8,) + wvf-data(8)
+#let bottom-data = bottom-degrees.map(d => (d: d,) + wvf-data(d))
 
 // ── Drawing helpers ──────────────────────────────────────────────────────
 #let lerp-color(base, t) = {
@@ -239,14 +240,18 @@
   let gw = grid-N * cell-sz
   let gx = 0.65
   let gy = 1.0
-  for i in range(poly-degrees.len()) {
+  let bottom-w = 4.0 * gw + 3.0 * gx
+  let top-x = bottom-w / 2.0 - gw / 2.0
+  let top-y = 0
+  draw-panel(top-x, top-y, top-data)
+  for i in range(bottom-degrees.len()) {
     let ox = i * (gw + gx)
-    let oy = 0
-    draw-panel(ox, oy, all-data.at(i))
+    let oy = -(gw + gy)
+    draw-panel(ox, oy, bottom-data.at(i))
   }
 
-  let tw = 3.0 * gw + 2.0 * gx
-  let ly = -gw - 1.0
+  let tw = bottom-w
+  let ly = -(gw + gy) - gw - 1.0
   let bar-w = 5.0
   let bar-h = 0.25
   let n-steps = 40
