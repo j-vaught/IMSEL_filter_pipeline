@@ -25,34 +25,7 @@ This design means that switching between the fused polynomial stencil, the recta
 
 We implement the compute phase as a custom kernel using Triton @tillet2019triton, a Python-embedded language for writing GPU programs that compiles to optimized PTX through LLVM. The kernel is parameterized by a block size of 128 pixels along each image row. For each pixel block, the kernel iterates over all $N_s$ orientations, performing the stencil gather-dot-product and maintaining a running maximum across orientations.
 
-The inner loop for a single orientation $theta_k$ is shown below in simplified form.
-
-```python
-# Block of 128 pixels processes one orientation
-for k in range(N_orientations):
-    response = tl.zeros([BLOCK], dtype=tl.float32)
-    n_k = tl.load(n_unique + k)
-
-    for i in range(N_max):
-        active = i < n_k
-        dy = tl.load(offsets_y[k, i], mask=active)
-        dx = tl.load(offsets_x[k, i], mask=active)
-        w  = tl.load(weights[k, i],   mask=active)
-
-        # Gather 128 pixels in parallel (coalesced read)
-        vals = tl.load(image[row + dy, cols + dx],
-                       mask=active)
-        response += w * vals
-
-    # Track maximum across orientations
-    abs_resp = tl.abs(response)
-    update = abs_resp > best_magnitude
-    best_magnitude = tl.where(update, abs_resp,
-                              best_magnitude)
-    best_angle = tl.where(update, theta[k], best_angle)
-```
-
-The variable `N_max` is the maximum stencil size across all orientations, and the `active` mask zeroes out padding entries for orientations with fewer unique positions. Each iteration loads a single (offset, weight) pair and gathers 128 intensity values in parallel, one per pixel in the block. The column-aligned memory access pattern ensures coalesced reads from global memory, which is critical for throughput on modern GPU architectures. Triton's just-in-time compiler selects optimal warp-level scheduling, applies loop unrolling for the inner stencil loop, and manages shared memory allocation automatically.
+Each iteration of the inner loop loads a single (offset, weight) pair and gathers 128 intensity values in parallel, one per pixel in the block. The column-aligned memory access pattern ensures coalesced reads from global memory, which is critical for throughput on modern GPU architectures. Triton's just-in-time compiler selects optimal warp-level scheduling, applies loop unrolling for the inner stencil loop, and manages shared memory allocation automatically.
 
 == Memory Efficiency
 
