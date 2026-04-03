@@ -36,7 +36,7 @@ $
   p(x, y) = c_0 + c_1 x + c_2 y.
 $
 
-Here $c_0$ is the local constant term, $c_1$ is the local $x$-derivative coefficient, and $c_2$ is the local $y$-derivative coefficient.
+Here $c_0$ tells us the local baseline brightness, while $c_1$ and $c_2$ tell us how that brightness changes across space. Since an edge is a place where intensity changes, the derivative coefficients are the quantities we care about most. The constant term helps the polynomial fit the local patch, but the edge information is carried by the change terms.
 
 == Start With The Actual 3x3 Patch
 
