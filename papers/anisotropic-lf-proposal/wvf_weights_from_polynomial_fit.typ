@@ -33,7 +33,7 @@ $
     I_(-1,0), I_(0,0), I_(1,0);
     I_(-1,-1), I_(0,-1), I_(1,-1)
   ).
-$
+$ <eq:patch>
 
 This matrix contains the pixel intensities in a local 3x3 window, with the pixel of interest located at the center.
 
@@ -41,7 +41,7 @@ Now suppose we aim to fit a degree-1 polynomial to the matrix $bold(B)$. One sim
 
 $
   p(x, y) = c_0 + c_1 x + c_2 y.
-$
+$ <eq:poly1>
 
 Here $c_0$ represents the local baseline brightness, ideally close to the brightness of the center pixel. The coefficients $c_1$ and $c_2$ describe how the brightness changes in the $x$ and $y$ directions, respectively. Since an edge can be understood as a spatial change in brightness, these change terms are the quantities we care about most for edge detection. In this sense, $c_1$ and $c_2$ are the derivative coefficients, while $c_0$ mainly helps the polynomial match the local patch.
 
@@ -49,62 +49,58 @@ If we instead use a degree-2 polynomial, we could write
 
 $
   p(x, y) = c_0 + c_1 x + c_2 y + c_3 x^2 + c_4 x y + c_5 y^2.
-$
+$ <eq:poly2>
 
 In this case, $c_0$, $c_1$, and $c_2$ play the same roles as before, while the additional coefficients capture curvature in the local intensity surface. Intuitively, they describe how the rate of change itself varies across the patch. Even when the polynomial degree is increased, the main coefficients used for estimating the local directional change are still the first-derivative terms. Increasing the degree simply gives the fit more flexibility, which can improve accuracy in some cases when the local image structure is not well described by a purely linear model.
 
 With all that mathematical kerfuffle out of the way, the only question that remains is how to solve for those unknown coefficients. To do that, we write one fitting equation for each pixel in the local patch and then collect them into a single linear system.
 
-For example, if we want to write the formula for the degree-1 polynomial, we begin with the expression above,
+For example, if we want to write the formula for the degree-1 polynomial, we begin with @eq:poly1 and substitute the pixel coordinates into it. The pixel at $(-1, -1)$ has coordinates $x = -1$ and $y = -1$, so we plug those into the polynomial and plug in the known coordinates of a pixel in the patch. 
 
-$
-  p(x, y) = c_0 + c_1 x + c_2 y,
-$
-
-and plug in the known coordinates of a pixel in the patch. For the pixel at $(-1, -1)$, this gives
+For the pixel at $(-1, -1)$, this gives
 
 $
   p(-1, -1) = c_0 + c_1(-1) + c_2(-1)
-$
+$ <eq:sub1>
 $
   quad = c_0 - c_1 - c_2.
-$
+$ <eq:sub1-simplified>
 
 Since this fitted value should match the observed pixel intensity at that location, and since the degree-1 polynomial is only an approximation to the local pixel intensities, we use $approx$ instead of exact equality in the fitting equations.
 
 $
   c_0 - c_1 - c_2 approx I_(-1,-1).
-$
+$ <eq:fit11>
 
 We then repeat this same substitution for the other pixel coordinates in the 3x3 patch. Doing so yields
 
 $
   c_0 - c_1 - c_2 approx I_(-1,-1)
-$
+$ <eq:fit-grid-1>
 $
   c_0 - c_2 approx I_(0,-1)
-$
+$ <eq:fit-grid-2>
 $
   c_0 + c_1 - c_2 approx I_(1,-1)
-$
+$ <eq:fit-grid-3>
 $
   c_0 - c_1 approx I_(-1,0)
-$
+$ <eq:fit-grid-4>
 $
   c_0 approx I_(0,0)
-$
+$ <eq:fit-grid-5>
 $
   c_0 + c_1 approx I_(1,0)
-$
+$ <eq:fit-grid-6>
 $
   c_0 - c_1 + c_2 approx I_(-1,1)
-$
+$ <eq:fit-grid-7>
 $
   c_0 + c_2 approx I_(0,1)
-$
+$ <eq:fit-grid-8>
 $
   c_0 + c_1 + c_2 approx I_(1,1).
-$
+$ <eq:fit-grid-9>
 
 The resulting set of equations is all one needs to solve for the system. However, as you may remember from primary school, a system of equations can often be written more efficiently in matrix form. Doing so makes the mathematics easier to organize and manipulate. To see how this becomes matrix form, consider the first equation:
 
@@ -112,7 +108,7 @@ $
   c_0 - c_1 - c_2 approx I_(-1,-1).
 $
 
-This can be rewritten as
+This can be rewritten in a matrix form as
 
 $
   [1, -1, -1]
@@ -122,17 +118,21 @@ $
     c_2
   )
   approx I_(-1,-1),
-$
+$ <eq:row-first>
 
-since multiplying the row vector by the coefficient vector gives exactly $1 c_0 + (-1)c_1 + (-1)c_2$. The same idea applies to every other pixel in the patch. For example, the pixel at $(0,-1)$ gives the row equation $[1, 0, -1] bold(z) approx I_(0,-1)$, and the pixel at $(1,-1)$ gives $[1, 1, -1] bold(z) approx I_(1,-1)$. Once all of these row equations are stacked together, they form one compact matrix system:
+where the first value of the first matrix remains 1, since it is the coefficient of $c_0$, and the second and third values are $-1$ because they are the coefficients of $c_1$ and $c_2$, respectively. The row vector $[1, -1, -1]$ is called a row of the design matrix, and the column vector of unknowns is called the coefficient vector. The right-hand side is just the observed pixel intensity at that location.
+
+ The same idea applies to every other pixel in the patch. For example, the pixel at $(0,-1)$ gives the row equation $[1, 0, -1] bold(z) approx I_(0,-1)$, and the pixel at $(1,-1)$ gives $[1, 1, -1] bold(z) approx I_(1,-1)$. Once all of these row equations are stacked together, they form one compact matrix system 
 
 $
   bold(A) bold(z) approx bold(b).
-$
+$ <eq:system>
+
+where $bold(A)$ is the design matrix containing the coefficients of the unknowns for each pixel, $bold(z)$ is the vector of unknown polynomial coefficients, and $bold(b)$ is the vector of observed pixel intensities.
 
 == Stack The Patch Into A Vector
 
-To write that system compactly, we flatten those same nine pixel values into a column vector
+To derive $bold(b)$ and $bold(A)$, we first need to decide how to stack the pixel values from the patch into a vector. One common way is to read the pixels in row-major order, starting from the top-left corner and moving left to right, then down to the next row. Doing so gives us
 
 $
   bold(b) =
@@ -147,40 +147,41 @@ $
     I_(0,1),
     I_(1,1)
   ]^top.
-$
+$ <eq:bvec>
 
-The unknown polynomial coefficients are gathered into
+Then, the design matrix is just the basis $[1, x, y]$ evaluated at one sample location. Therefore
 
-$
-  bold(z) = [c_0, c_1, c_2]^top.
-$
+  $
+    bold(A) =
+    mat(
+      delim: "[",
+      1, 1, 1, 1, 1, 1, 1, 1;
+      -1, 0, 1, -1, 0, 1, -1, 0, 1;
+      -1, -1, -1, 0, 0, 0, 1, 1, 1
+    )^top.
+  $ <eq:design3>
 
-== Build The Design Matrix
-
-Each row of the design matrix is just the basis $[1, x, y]$ evaluated at one sample location. Therefore
-
-$
-  bold(A) =
-  mat(
-    1, -1, -1;
-    1, 0, -1;
-    1, 1, -1;
-    1, -1, 0;
-    1, 0, 0;
-    1, 1, 0;
-    1, -1, 1;
-    1, 0, 1;
-    1, 1, 1
-  ).
-$
+Then, finally, to solve for the unknown coefficients, we use the least-squares solution to the system in @eq:system.
 
 == Solve The Least-Squares System
 
-The fitted coefficients are
+At this point, we have nine approximate equations but only three unknown coefficients. In general, there is no reason to expect one vector $bold(z)$ to satisfy every equation exactly. So instead of solving $bold(A) bold(z) = bold(b)$ exactly, we choose the coefficient vector that makes the overall mismatch as small as possible in the least-squares sense:
+
+$
+  hat(bold(z)) = arg min_(bold(z)) ||bold(A) bold(z) - bold(b)||^2.
+$ <eq:lstsq-objective>
+
+To solve this minimization problem, we differentiate the squared error with respect to $bold(z)$ and set the result equal to zero. That gives the normal equations
+
+$
+  bold(A)^top bold(A) hat(bold(z)) = bold(A)^top bold(b).
+$ <eq:normal3>
+
+If $bold(A)^top bold(A)$ is invertible, we multiply both sides by $(bold(A)^top bold(A))^(-1)$ to isolate the coefficient vector. The fitted coefficients are therefore
 
 $
   hat(bold(z)) = (bold(A)^top bold(A))^(-1) bold(A)^top bold(b).
-$
+$ <eq:lstsq3>
 
 For this particular 3x3 geometry, one can compute
 
@@ -191,7 +192,7 @@ $
     0, 6, 0;
     0, 0, 6
   ),
-$
+$ <eq:ata3>
 
 so
 
@@ -202,13 +203,13 @@ $
     0, 1/6, 0;
     0, 0, 1/6
   ).
-$
+$ <eq:ata3inv>
 
 Thus the pseudoinverse is
 
 $
   bold(P) = (bold(A)^top bold(A))^(-1) bold(A)^top.
-$
+$ <eq:pinv3>
 
 The second row of $bold(P)$ gives the weights for $c_1$, the $x$-derivative coefficient:
 
@@ -219,25 +220,25 @@ $
     -1/6, 0, 1/6,
     -1/6, 0, 1/6
   ].
-$
+$ <eq:p-c1>
 
 So the fitted derivative coefficient is
 
 $
   hat(c_1) = bold(p)_(c_1)^top bold(b).
-$
+$ <eq:c1-est>
 
 Written out explicitly,
 
 $
   hat(c_1) = (-1/6) I_(-1,-1) + 0 I_(0,-1) + (1/6) I_(1,-1)
-$
+$ <eq:c1-exp1>
 $
   quad + (-1/6) I_(-1,0) + 0 I_(0,0) + (1/6) I_(1,0)
-$
+$ <eq:c1-exp2>
 $
   quad + (-1/6) I_(-1,1) + 0 I_(0,1) + (1/6) I_(1,1).
-$
+$ <eq:c1-exp3>
 
 This is the crucial moment. The polynomial fit has turned into a 3x3 derivative filter:
 
@@ -248,7 +249,7 @@ $
     -1/6, 0, 1/6;
     -1/6, 0, 1/6
   ).
-$
+$ <eq:kx3>
 
 The fit sounds like solving for a polynomial, but because the fit is linear, the derivative we extract is just one fixed weighted sum of the nine pixels.
 
@@ -258,7 +259,7 @@ Now suppose the support is an arbitrary square window with coordinates
 
 $
   (x_i, y_i), quad i = 1, 2, dots, N_p,
-$
+$ <eq:square-coords>
 
 where for a square window $N_p = N^2$.
 
@@ -275,13 +276,13 @@ $
     y^2/2,
     dots
   ]^top,
-$
+$ <eq:phi>
 
 with total length
 
 $
   M = (d+1)(d+2)/2.
-$
+$ <eq:mbasis>
 
 Then the design matrix is built exactly the same way:
 
@@ -293,25 +294,25 @@ $
     dots.v;
     phi_d(x_(N_p), y_(N_p))^top
   ).
-$
+$ <eq:designn>
 
 The fitted coefficients are still
 
 $
   hat(bold(z)) = (bold(A)^top bold(A))^(-1) bold(A)^top bold(b) = bold(P) bold(b).
-$
+$ <eq:lstsqn>
 
 If the derivative coefficient we want is the entry corresponding to $x$, then one row of $bold(P)$ gives a weight vector
 
 $
   bold(p)_(f_x)^top,
-$
+$ <eq:px-row>
 
 and the derivative estimate is
 
 $
   hat(f)_x = bold(p)_(f_x)^top bold(b).
-$
+$ <eq:fx-est>
 
 So nothing changes conceptually from 3x3 to NxN. The matrix gets larger, but the derivative is still one row of the pseudoinverse dotted with the pixel vector.
 
@@ -323,13 +324,13 @@ Instead of using every point in a square, keep only the points satisfying
 
 $
   x_i^2 + y_i^2 <= r^2.
-$
+$ <eq:circle-support>
 
 Now the data vector contains only the pixel values inside that circular support,
 
 $
   bold(b) = [I_1, I_2, dots, I_(N_p)]^top,
-$
+$ <eq:circle-bvec>
 
 and the design matrix keeps only the corresponding rows
 
@@ -341,7 +342,7 @@ $
     dots.v;
     phi_d(x_(N_p), y_(N_p))^top
   ),
-$
+$ <eq:circle-design>
 
 where the coordinates now come from the circular neighborhood rather than the full square.
 
@@ -349,13 +350,13 @@ The least-squares solution is unchanged:
 
 $
   hat(bold(z)) = (bold(A)^top bold(A))^(-1) bold(A)^top bold(b).
-$
+$ <eq:circle-lstsq>
 
 And again, the derivative estimate is one row of the pseudoinverse:
 
 $
   hat(f)_x = bold(p)_(f_x)^top bold(b).
-$
+$ <eq:circle-fx>
 
 So the circle does not change the logic at all. It only changes which sample coordinates appear as rows of $bold(A)$.
 
@@ -367,10 +368,10 @@ First, it rotates the local coordinates so that the derivative is taken in the c
 
 $
   x_i' = Delta x_i cos theta + Delta y_i sin theta,
-$
+$ <eq:rotate-x>
 $
   y_i' = -Delta x_i sin theta + Delta y_i cos theta.
-$
+$ <eq:rotate-y>
 
 Second, it uses a circular support instead of a square one.
 
@@ -378,13 +379,13 @@ But once those rotated circular sample locations are fixed, the exact same least
 
 $
   hat(bold(z)) = bold(P)_theta bold(b),
-$
+$ <eq:wvf-lstsq>
 
 and the WVF weight vector is just the row of $bold(P)_theta$ corresponding to the normal derivative coefficient:
 
 $
   hat(f)_(x') = bold(p)_(f_(x'))^top bold(b).
-$
+$ <eq:wvf-fx>
 
 That row is the WVF stencil.
 
