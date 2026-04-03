@@ -72,6 +72,8 @@ $
 
 Since this fitted value should match the observed pixel intensity at that location, we write
 
+Since the degree-1 polynomial is only an approximation to the local pixel intensities, we use $approx$ instead of exact equality in the fitting equations.
+
 $
   c_0 - c_1 - c_2 approx I_(-1,-1).
 $
