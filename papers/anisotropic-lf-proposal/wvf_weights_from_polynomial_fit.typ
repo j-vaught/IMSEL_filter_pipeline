@@ -106,7 +106,7 @@ $
   c_0 + c_1 + c_2 approx I_(1,1).
 $
 
-The resulting set of equations is all one needs to solve for the system. To see how this becomes matrix form, consider the first equation:
+The resulting set of equations is all one needs to solve for the system. However, as you may remember from primary school, a system of equations can often be written more efficiently in matrix form. Doing so makes the mathematics easier to organize and manipulate. To see how this becomes matrix form, consider the first equation:
 
 $
   c_0 - c_1 - c_2 approx I_(-1,-1).
