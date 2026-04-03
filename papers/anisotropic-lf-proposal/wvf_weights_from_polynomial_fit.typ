@@ -30,7 +30,7 @@ $
   (x, y) in \{ -1, 0, 1 \} times \{ -1, 0, 1 \}.
 $
 
-Suppose we fit a first-order polynomial
+Suppose we fit a degree-1 polynomial
 
 $
   p(x, y) = c_0 + c_1 x + c_2 y.
