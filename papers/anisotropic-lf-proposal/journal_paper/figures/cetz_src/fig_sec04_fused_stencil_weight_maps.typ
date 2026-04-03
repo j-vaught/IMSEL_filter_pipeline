@@ -230,12 +230,34 @@
     let oy = -row * (gw + gy)
     draw-panel(ox, oy, stencils.at(i), orientations.at(i))
   }
-  // Legend
+  // Diverging gradient colorbar
   let tw = 3.0 * gw + 2.0 * gx
   let ly = -(gw + gy) - gw - 1.0
-  let lx = tw / 2.0 - 2.5
-  rect((lx, ly), (lx + 0.35, ly - 0.35), fill: garnet, stroke: 0.3pt + black90)
-  content((lx + 0.6, ly - 0.175), anchor: "west", text(fill: black90, size: 8pt)[Positive ($alpha > 0$)])
-  rect((lx + 2.4, ly), (lx + 2.75, ly - 0.35), fill: atlantic, stroke: 0.3pt + black90)
-  content((lx + 3.0, ly - 0.175), anchor: "west", text(fill: black90, size: 8pt)[Negative ($alpha < 0$)])
+  let bar-w = 6.0
+  let bar-h = 0.3
+  let n-steps = 40
+  let step-w = bar-w / n-steps
+  let bar-x = tw / 2.0 - bar-w / 2.0
+
+  for s in range(n-steps) {
+    let t = s / (n-steps - 1)  // 0 to 1
+    let fc = if t < 0.5 {
+      let intensity = 1.0 - t * 2.0  // 1 → 0 as t goes 0 → 0.5
+      lerp-color(atlantic, intensity)
+    } else {
+      let intensity = (t - 0.5) * 2.0  // 0 → 1 as t goes 0.5 → 1
+      lerp-color(garnet, intensity)
+    }
+    rect((bar-x + s * step-w, ly), (bar-x + (s + 1) * step-w, ly - bar-h),
+      fill: fc, stroke: none)
+  }
+  rect((bar-x, ly), (bar-x + bar-w, ly - bar-h), stroke: 0.5pt + black90)
+
+  // Labels
+  content((bar-x, ly - bar-h - 0.3),
+    text(fill: black90, size: 7.5pt)[$-alpha_max$])
+  content((bar-x + bar-w / 2.0, ly - bar-h - 0.3),
+    text(fill: black90, size: 7.5pt)[$0$])
+  content((bar-x + bar-w, ly - bar-h - 0.3),
+    text(fill: black90, size: 7.5pt)[$+alpha_max$])
 })
