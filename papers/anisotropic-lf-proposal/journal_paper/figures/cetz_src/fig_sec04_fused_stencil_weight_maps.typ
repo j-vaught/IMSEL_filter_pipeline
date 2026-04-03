@@ -254,7 +254,7 @@
         else if w < -0.0001 { lerp-color(atlantic, intensity) }
         else { white }
       } else { white }
-      rect((x, y), (x + cell-sz, y - cell-sz), fill: fc, stroke: 0.18pt + black30)
+      rect((x, y), (x + cell-sz, y - cell-sz), fill: fc, stroke: 0.1pt + black30)
     }
   }
   for r in range(grid-N) {
