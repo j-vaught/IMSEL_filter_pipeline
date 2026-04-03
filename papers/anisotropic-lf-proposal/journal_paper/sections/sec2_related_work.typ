@@ -71,8 +71,9 @@ The Gaussian derivative framework placed edge detection on a firmer mathematical
 
 #figure(
   image("../figures/fig_sec02_canny_pipeline_stages.pdf", width: 100%),
-  caption: [The Canny edge detection pipeline (1986). Five stages: Gaussian smoothing, gradient computation, angle estimation via arctan, non-maximum suppression, and hysteresis thresholding. The pre-smoothing step trades edge localization for noise robustness; stronger smoothing blurs weak edges.],
+  caption: [The Canny edge detection pipeline demonstrated on a real image. (a) Grayscale input. (b) Gaussian smoothing ($sigma = 2.0$) reduces noise but blurs fine edges. (c) Gradient magnitude computed via Sobel on the smoothed image. (d) Gradient direction encoded as hue (brightness proportional to magnitude). (e) Non-maximum suppression and hysteresis thresholding produce thin, connected edge contours.],
   placement: top,
+  scope: "parent",
 ) <fig:canny>
 
 
