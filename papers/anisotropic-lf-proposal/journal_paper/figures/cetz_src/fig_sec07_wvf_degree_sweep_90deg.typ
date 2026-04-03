@@ -13,7 +13,7 @@
 // ── Parameters ───────────────────────────────────────────────────────────
 #let theta-deg = 90
 #let theta = theta-deg * 1deg
-#let bottom-degrees = (3, 5, 7, 9)
+#let bottom-degrees = (2, 4, 6)
 #let target-Np = 500
 #let grid-N = 37
 #let cell-sz = 0.17
@@ -240,7 +240,7 @@
   let gw = grid-N * cell-sz
   let gx = 0.65
   let gy = 1.0
-  let bottom-w = 4.0 * gw + 3.0 * gx
+  let bottom-w = 3.0 * gw + 2.0 * gx
   let top-x = bottom-w / 2.0 - gw / 2.0
   let top-y = 0
   draw-panel(top-x, top-y, top-data)
