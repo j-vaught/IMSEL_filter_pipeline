@@ -106,7 +106,25 @@ $
   c_0 + c_1 + c_2 approx I_(1,1).
 $
 
-The resulting set of equations is all one needs to solve for the system. Now, as you may remember from primary school, this can be represented more efficiently in matrix form. We therefore derive the matrix representation below so that the mathematics is easier to organize and manipulate, eventually giving a compact system of the form
+The resulting set of equations is all one needs to solve for the system. To see how this becomes matrix form, consider the first equation:
+
+$
+  c_0 - c_1 - c_2 approx I_(-1,-1).
+$
+
+This can be rewritten as
+
+$
+  [1, -1, -1]
+  mat(
+    c_0;
+    c_1;
+    c_2
+  )
+  approx I_(-1,-1),
+$
+
+since multiplying the row vector by the coefficient vector gives exactly $1 c_0 + (-1)c_1 + (-1)c_2$. The same idea applies to every other pixel in the patch. For example, the pixel at $(0,-1)$ gives the row equation $[1, 0, -1] bold(z) approx I_(0,-1)$, and the pixel at $(1,-1)$ gives $[1, 1, -1] bold(z) approx I_(1,-1)$. Once all of these row equations are stacked together, they form one compact matrix system:
 
 $
   bold(A) bold(z) approx bold(b).
