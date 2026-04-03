@@ -41,6 +41,8 @@ The weight vector $bold(alpha)_k in RR^(N'_k)$ depends only on the filter parame
 #figure(
   image("../figures/fig_sec04_fused_stencil_weight_maps.pdf", width: 100%),
   caption: [Fused weight maps $alpha_(k,ell)$ computed from the pseudoinverse for four representative orientations ($m = 7$, $N_p = 100$, $d = 4$). Garnet indicates positive weights and blue indicates negative weights, with intensity proportional to magnitude. The dark outline traces the outer boundary of the active fused stencil support. Even after deduplication, the support remains highly elongated and sparse, with weight efficiency $eta approx 78$--$84%$ across these orientations.],
+  placement: top,
+  scope: "parent",
 ) <fig:weight-maps>
 
 
