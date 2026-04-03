@@ -171,7 +171,31 @@ $
   hat(bold(z)) = arg min_(bold(z)) ||bold(A) bold(z) - bold(b)||^2.
 $ <eq:lstsq-objective>
 
-To solve this minimization problem, we differentiate the squared error with respect to $bold(z)$ and set the result equal to zero. That gives the normal equations
+To make that step explicit, let
+
+$
+  E(bold(z)) = ||bold(A) bold(z) - bold(b)||^2.
+$ <eq:error3>
+
+Using the identity $||bold(v)||^2 = bold(v)^top bold(v)$, we can rewrite the objective as
+
+$
+  E(bold(z)) = (bold(A) bold(z) - bold(b))^top (bold(A) bold(z) - bold(b)).
+$ <eq:error-expand3>
+
+Expanding this expression gives
+
+$
+  E(bold(z)) = bold(z)^top bold(A)^top bold(A) bold(z) - 2 bold(b)^top bold(A) bold(z) + bold(b)^top bold(b).
+$ <eq:error-quadratic3>
+
+Now differentiate with respect to $bold(z)$ and set the result equal to zero:
+
+$
+  2 bold(A)^top bold(A) bold(z) - 2 bold(A)^top bold(b) = 0.
+$ <eq:grad3>
+
+Rearranging gives the normal equations
 
 $
   bold(A)^top bold(A) hat(bold(z)) = bold(A)^top bold(b).
