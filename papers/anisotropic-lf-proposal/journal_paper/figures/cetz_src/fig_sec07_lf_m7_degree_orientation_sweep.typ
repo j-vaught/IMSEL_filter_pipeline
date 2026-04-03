@@ -270,7 +270,7 @@
 #cetz.canvas({
   import cetz.draw: *
   let gw = grid-N * cell-sz
-  let gx = 0.18
+  let gx = 0.3
   let gy = 0.32
   let left-pad = 1.05
   let top-pad = 0.55
