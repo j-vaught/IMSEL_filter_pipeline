@@ -18,7 +18,7 @@
 
 = The Core Idea
 
-The important fact is simple. Once the sample locations are fixed, the least-squares polynomial fit is a linear map from sampled pixel values to polynomial coefficients. If we only want one coefficient, for example the derivative coefficient, then that coefficient is just one fixed weighted sum of the input pixels. Those fixed numbers are the filter weights.
+The main question is how a polynomial-based local fit can turn into a fixed discrete filter. At first glance, these seem like two different ideas. A polynomial fit sounds like solving for unknown coefficients, while a filter sounds like multiplying nearby pixels by fixed weights and summing them. The connection is that once the sample locations are fixed, the least-squares fit is a linear map from sampled pixel values to polynomial coefficients. If we only want one fitted coefficient, such as the derivative coefficient, then that output is just one fixed weighted sum of the input pixels. Those fixed numbers are the filter weights.
 
 = A 3x3 Toy Example
 
