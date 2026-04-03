@@ -20,8 +20,6 @@
 
 The important fact is simple. Once the sample locations are fixed, the least-squares polynomial fit is a linear map from sampled pixel values to polynomial coefficients. If we only want one coefficient, for example the derivative coefficient, then that coefficient is just one fixed weighted sum of the input pixels. Those fixed numbers are the filter weights.
 
-We can see this most clearly by starting with a tiny 3x3 example.
-
 = A 3x3 Toy Example
 
 == Start With The Actual 3x3 Patch
