@@ -207,7 +207,7 @@
 }
 
 // ── Precompute everything (gradient row computed once per orientation) ───
-#let orientations = (0, 30, 60, 90, 120, 150)
+#let orientations = (0, 30, 60, 90)
 
 // theta = normal direction; gradient-row rotates by theta, line extends along theta+90°
 #let all-data = orientations.map(deg => {
@@ -276,17 +276,16 @@
   import cetz.draw: *
   let gw = grid-N * cell-sz
   let gx = 0.6
-  let gy = 1.2
-  for i in range(6) {
-    let col = calc.rem(i, 3)
-    let row = calc.div-euclid(i, 3)
+  let n-cols = orientations.len()
+  for i in range(orientations.len()) {
+    let col = i
     let ox = col * (gw + gx)
-    let oy = -row * (gw + gy)
+    let oy = 0
     draw-panel(ox, oy, stencils.at(i), orientations.at(i), etas.at(i))
   }
   // Diverging gradient colorbar
-  let tw = 3.0 * gw + 2.0 * gx
-  let ly = -(gw + gy) - gw - 0.9
+  let tw = n-cols * gw + (n-cols - 1) * gx
+  let ly = -gw - 1.1
   let bar-w = 5.0
   let bar-h = 0.25
   let n-steps = 40
