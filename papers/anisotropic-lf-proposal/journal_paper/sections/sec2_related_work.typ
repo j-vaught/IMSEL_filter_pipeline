@@ -42,18 +42,9 @@ Each of these choices, circular support, coordinate rotation, and orientation sw
 
 The problem of estimating image derivatives along arbitrary orientations has been addressed extensively through steerable filters. Freeman and Adelson @freeman1991steerable demonstrated that certain classes of filters, including Gaussian derivatives up to arbitrary order, can be analytically _steered_ to any orientation by taking a linear combination of a small, fixed set of basis filters. For a filter of angular order $n$, only $n + 1$ basis responses are required. The WVF's strategy of computing filter responses at $K$ discrete orientations and selecting the maximum is a brute-force discretization of the same underlying operation. Where steerable filters achieve continuous orientation interpolation via analytic basis decomposition, the WVF evaluates responses on a discrete grid, trading elegance and computational efficiency for implementation simplicity.
 
-#figure(
-  image("../figures/fig_sec02_steerable_filter_basis.pdf", width: 100%),
-  caption: [Steerable filters (Freeman and Adelson, 1991). Two basis kernels $G_1$ and $G_2$ (first derivatives of a Gaussian in the $x$ and $y$ directions) are combined as $R(theta) = cos(theta) R_1 + sin(theta) R_2$ to analytically interpolate the response at any orientation, without discrete evaluation.],
-  placement: top,
-) <fig:steerable>
 
 Phase-based methods provide an alternative route to orientation estimation. Morrone and Owens @morrone1987feature proposed detecting features at points of maximum _local energy_, defined through the analytic signal and its phase. Perona @perona1990oriented developed steerable and scalable kernels that combine orientation selectivity with scale adaptation, using the phase congruency of oriented filter responses to localize edges independently of contrast. These phase-based approaches offer a principled framework for orientation estimation that does not require the exhaustive search employed by the WVF.
 
-#figure(
-  image("../figures/fig_sec02_oriented_energy_polar.pdf", width: 100%),
-  caption: [Oriented energy (Morrone and Owens, 1987). Even-symmetric and odd-symmetric filter pairs are combined to form the local energy $E(theta) = F_"even"^2 + F_"odd"^2$, whose peak indicates the dominant edge orientation.],
-) <fig:oriented-energy>
 
 Anisotropic Gaussian derivatives represent yet another strategy. Geusebroek et al. @geusebroek2003aniso developed efficient algorithms for computing derivatives of anisotropic (elongated) Gaussian kernels, enabling the construction of filters whose spatial support adapts to local image structure. The geometric relationship between their elongated Gaussian kernels and the oriented disk or strip supports of the WVF and LF is direct. Both families of methods implement the same core idea: an anisotropic, orientation-dependent smoothing kernel whose derivative provides a directional gradient estimate. The principal difference is that the Gaussian formulation admits closed-form expressions and separable implementations, while the WVF and LF rely on numerical construction of their weight matrices.
 
@@ -63,43 +54,17 @@ Anisotropic Gaussian derivatives represent yet another strategy. Geusebroek et a
   placement: top,
 ) <fig:aniso-gaussian>
 
-#figure(
-  image("../figures/fig_sec02_discrete_orientation_sweep.pdf", width: 100%),
-  caption: [Discrete orientation sweep as used by the WVF and the proposed ASF. Eight candidate orientations are evaluated; the response magnitude at each angle is indicated by the bar height. The orientation with maximum response (highlighted) is selected as the edge direction. This is a brute-force approximation of the analytic steering shown in @fig:steerable.],
-) <fig:discrete-sweep>
-
 
 == Classical Edge Detection <sec:related:classical>
 
 The earliest edge detection operators were small, hand-designed convolution masks. Roberts @roberts1963machine introduced $2 times 2$ cross-difference operators for detecting diagonal edges. Sobel @sobel2014history and Prewitt @prewitt1970gradient independently proposed $3 times 3$ masks that approximate first-order directional derivatives with a degree of smoothing orthogonal to the gradient direction. Kirsch @kirsch1971computer designed a set of eight $3 times 3$ templates, one for each compass direction, and defined the edge response as the maximum over all eight. The Frei--Chen basis @freichen1977fast decomposed the $3 times 3$ neighborhood into nine orthogonal subspaces, separating edge, line, and average components, and detected edges by projection onto the edge subspace. All of these operators share the property of fixed, small spatial support, which limits their noise robustness and their ability to adapt to edges at different scales.
 
 #figure(
-  image("../figures/fig_sec02_roberts_cross_kernel.pdf", width: 100%),
-  caption: [Roberts Cross operator (1963). Two $2 times 2$ kernels compute diagonal intensity differences. Positive weights in garnet, negative in blue.],
-) <fig:roberts>
-
-#figure(
-  image("../figures/fig_sec02_sobel_kernel.pdf", width: 100%),
-  caption: [Sobel operator (1968). Two $3 times 3$ kernels $G_x$ and $G_y$ estimate horizontal and vertical gradients with center-weighted smoothing. The gradient magnitude and direction are obtained by combining both responses.],
+  image("../figures/fig_sec02_sobel_kirsch_combined.pdf", width: 100%),
+  caption: [Classical $3 times 3$ edge operators. Left column: Sobel (1968) estimates horizontal and vertical gradients with two fixed kernels $G_x$ and $G_y$. Center and right columns: Kirsch (1971) evaluates eight compass masks (four shown) and selects the maximum response, an early orientation sweep that foreshadows the WVF's $N_s$-direction search. Positive weights in garnet, negative in blue, center pixel in white.],
   placement: top,
-) <fig:sobel>
+) <fig:sobel-kirsch>
 
-#figure(
-  image("../figures/fig_sec02_prewitt_kernel.pdf", width: 100%),
-  caption: [Prewitt operator (1970). Similar to Sobel but with uniform row weighting rather than center-weighted smoothing.],
-  placement: top,
-) <fig:prewitt>
-
-#figure(
-  image("../figures/fig_sec02_kirsch_compass_kernel.pdf", width: 100%),
-  caption: [Kirsch compass operator (1971). Four of the eight $3 times 3$ compass masks are shown at 0°, 45°, 90°, and 135°. The edge response is the maximum over all eight orientations, an early instance of the orientation sweep that the WVF later employs with polynomial fitting.],
-  placement: top,
-) <fig:kirsch>
-
-#figure(
-  image("../figures/fig_sec02_freichen_basis_masks.pdf", width: 100%),
-  caption: [Frei--Chen operator (1977). The $3 times 3$ neighborhood is decomposed into orthogonal subspaces. Representative edge-subspace and line-subspace basis masks are shown. Edges are detected by projecting the image patch onto the edge subspace.],
-) <fig:freichen>
 
 The Gaussian derivative framework placed edge detection on a firmer mathematical foundation. Marr and Hildreth @marr1980log proposed detecting zero crossings of the Laplacian of Gaussian ($nabla^2 G$), providing a principled coupling of smoothing scale and differentiation. Canny @canny1986edge formulated edge detection as an optimization problem, seeking the operator that maximizes detection probability and localization accuracy while minimizing multiple responses. His solution for step edges in white Gaussian noise is closely approximated by the first derivative of a Gaussian, and his framework introduced non-maximum suppression and hysteresis thresholding as post-processing stages that remain standard practice. Lindeberg @lindeberg1998edge extended these ideas to _automatic scale selection_, using normalized derivatives across scale space to identify the characteristic scale of each edge. A persistent limitation of all fixed-kernel methods, whether $3 times 3$ masks or Gaussian derivatives at a single scale, is that their spatial support does not adapt to the local noise level or to the spatial extent of the edge structure. The WVF and LF address this limitation by enlarging the support region, but as discussed in @sec:related:lp, the mechanism they use, polynomial fitting over large windows, is itself classical.
 

@@ -21,8 +21,9 @@
       let x = ox + c * cell-size
       let y = oy - r * cell-size
 
-      let fill-color = if v == 5 { garnet.lighten(20%) } else if v == 0 { garnet.lighten(60%) } else { atlantic.lighten(40%) }
-      let text-color = if v == 0 { black90 } else { white }
+      let is-center = r == 1 and c == 1
+      let fill-color = if is-center { white } else if v > 0 { garnet.lighten(40%) } else if v < 0 { atlantic.lighten(40%) } else { garnet.lighten(40%) }
+      let text-color = if is-center or v == 0 { black90 } else { white }
       let text-val = if v > 0 { "+" + str(v) } else { str(v) }
 
       rect(
@@ -69,10 +70,4 @@
   let total-w = gap-x + 3 * cell-size
   let cx = total-w / 2
   let cy = -(3 * cell-size + (gap-y - 3 * cell-size) / 2)
-  content(
-    (cx, cy),
-    text(fill: black90, size: 9pt)[
-      $k^* = arg max_k |R_k|$
-    ],
-  )
 })
