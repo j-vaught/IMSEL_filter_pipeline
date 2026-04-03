@@ -277,8 +277,4 @@
     text(fill: black90, size: 8pt)[$0$])
   content((bar-x + bar-w, ly - bar-h - 0.25),
     text(fill: black90, size: 8pt)[$+alpha_max$])
-  content((tw / 2.0, 0.55),
-    text(fill: black90, size: 11pt, weight: "bold")[
-      WVF Degree Sweep at #math.equation(block: false, [theta = 90 degree])
-    ])
 })
