@@ -287,12 +287,12 @@
   rect((ox, oy), (ox + grid-N * cell-sz, oy - grid-N * cell-sz), stroke: 0.6pt + black90)
   let cx = ox + grid-N * cell-sz / 2.0
   content((cx, oy - grid-N * cell-sz - 0.35),
-    text(fill: black90, size: 9pt, weight: "bold")[
+    text(fill: black90, size: 10.5pt, weight: "bold")[
       #math.equation(block: false, [#math.theta #math.eq #str(theta-deg) #math.degree])
     ])
   let eta-pct = str(calc.round(eta-val * 100, digits: 1))
   content((cx, oy - grid-N * cell-sz - 0.7),
-    text(fill: black50, size: 7pt, style: "italic")[
+    text(fill: black50, size: 8.5pt, style: "italic")[
       $eta$ = #eta-pct%
     ])
 }
@@ -329,9 +329,9 @@
   }
   rect((bar-x, ly), (bar-x + bar-w, ly - bar-h), stroke: 0.5pt + black90)
   content((bar-x, ly - bar-h - 0.25),
-    text(fill: black90, size: 7pt)[$-alpha_max$])
+    text(fill: black90, size: 8.5pt)[$-alpha_max$])
   content((bar-x + bar-w / 2.0, ly - bar-h - 0.25),
-    text(fill: black90, size: 7pt)[$0$])
+    text(fill: black90, size: 8.5pt)[$0$])
   content((bar-x + bar-w, ly - bar-h - 0.25),
-    text(fill: black90, size: 7pt)[$+alpha_max$])
+    text(fill: black90, size: 8.5pt)[$+alpha_max$])
 })

@@ -39,8 +39,8 @@ $ R_k = bold(alpha)_k^top bold(g)_k $ <eq:gather-dot>
 The weight vector $bold(alpha)_k in RR^(N'_k)$ depends only on the filter parameters ($m$, $N_p$, $d$, $theta_k$) and can be precomputed once. The intensity vector $bold(g)_k in RR^(N'_k)$ is assembled at runtime by reading the image at the $N'_k$ stencil offsets. No coordinate rotations, no design matrices, and no pseudoinverse products appear at evaluation time.
 
 #figure(
-  image("../figures/fig_sec04_fused_stencil_weight_maps.pdf", width: 95%),
-  caption: [Fused weight maps $alpha_(k,ell)$ computed from the pseudoinverse for six orientations ($m = 7$, $N_p = 100$, $d = 4$). Garnet indicates positive weights and blue indicates negative weights, with intensity proportional to magnitude. Black dots mark virtual expansion points (snapped to the nearest integer pixel) and gray circles show the $N_p$-pixel neighborhood gathered at each. The extensive overlap between adjacent neighborhoods drives severe weight cancellation, with weight efficiency $eta approx 34$--$37%$ across all orientations, meaning roughly two-thirds of the raw pseudoinverse weight magnitude is destroyed during deduplication.],
+  image("../figures/fig_sec04_fused_stencil_weight_maps.pdf", width: 100%),
+  caption: [Fused weight maps $alpha_(k,ell)$ computed from the pseudoinverse for four representative orientations ($m = 7$, $N_p = 100$, $d = 4$). Garnet indicates positive weights and blue indicates negative weights, with intensity proportional to magnitude. The dark outline traces the outer boundary of the active fused stencil support. Even after deduplication, the support remains highly elongated and sparse, with weight efficiency $eta approx 78$--$84%$ across these orientations.],
 ) <fig:weight-maps>
 
 
