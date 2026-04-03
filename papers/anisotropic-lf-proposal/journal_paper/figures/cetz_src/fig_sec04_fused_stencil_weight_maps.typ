@@ -158,10 +158,10 @@
 }
 
 // ── Fused stencil (takes precomputed gradient row) ──────────────────────
-// theta = edge direction; line extends along theta
+// theta = normal direction; line extends perpendicular (along tangent)
 #let fused-stencil-from(p, theta) = {
-  let tx = calc.cos(theta)
-  let ty = calc.sin(theta)
+  let tx = -calc.sin(theta)
+  let ty = calc.cos(theta)
   let stencil = (:)
   for jj in range(2 * m-line + 1) {
     let j = jj - m-line
@@ -202,10 +202,10 @@
 // ── Precompute everything (gradient row computed once per orientation) ───
 #let orientations = (0, 30, 60, 90, 120, 150)
 
-// theta = edge direction; WVF rotates by theta+90° so x' is along normal
+// theta = normal direction; gradient-row rotates by theta, line extends along theta+90°
 #let all-data = orientations.map(deg => {
   let theta = deg * 1deg
-  let p = gradient-row(theta + 90deg)
+  let p = gradient-row(theta)
   let st = fused-stencil-from(p, theta)
   let eta = compute-eta-from(p, st)
   (stencil: st, eta: eta)
@@ -251,9 +251,9 @@
       rect((x, y), (x + cell-sz, y - cell-sz), fill: fc, stroke: 0.15pt + black30)
     }
   }
-  // Virtual expansion points + neighborhood circles (line along theta)
-  let tx = calc.cos(theta)
-  let ty = calc.sin(theta)
+  // Virtual expansion points + neighborhood circles (line perpendicular to theta)
+  let tx = -calc.sin(theta)
+  let ty = calc.cos(theta)
   let seen = (:)
   for jj in range(2 * m-line + 1) {
     let j = jj - m-line
