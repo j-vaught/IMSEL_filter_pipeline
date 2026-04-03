@@ -117,6 +117,11 @@ def moment_response(stencil: Dict[Tuple[int, int], float], p: int, q: int) -> fl
     return total
 
 
+def normalize_stencil(stencil: Dict[Tuple[int, int], float], p: int, q: int) -> Dict[Tuple[int, int], float]:
+    scale = moment_response(stencil, p, q)
+    return {k: v / scale for k, v in stencil.items()}
+
+
 def print_table(name: str, stencil: Dict[Tuple[int, int], float], terms: Iterable[Tuple[int, int]]) -> None:
     print(name)
     for p, q in terms:
@@ -144,7 +149,11 @@ def main() -> None:
     ]
 
     for d in DEGREES:
-        print_table(f"LF d={d}", fused_stencil(d, THETA_DEG), terms)
+        print_table(
+            f"LF d={d} (normalized so x response = 1)",
+            normalize_stencil(fused_stencil(d, THETA_DEG), 1, 0),
+            terms,
+        )
 
     for order in GAUSS_ORDERS:
         print_table(f"Gaussian derivative order={order}", gaussian_derivative_stencil(order), terms)
