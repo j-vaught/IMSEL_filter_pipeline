@@ -16,7 +16,7 @@
 #let target-Np = 500
 #let m-line = 13
 #let sigma-l = m-line / 2.0
-#let grid-N = 49
+#let grid-N = 53
 #let cell-sz = 0.065
 #let half = calc.div-euclid(grid-N - 1, 2)
 
@@ -272,7 +272,7 @@
   let gw = grid-N * cell-sz
   let gx = 0.18
   let gy = 0.32
-  let left-pad = 0.75
+  let left-pad = 1.05
   let top-pad = 0.55
   let row-w = orientations.len() * gw + (orientations.len() - 1) * gx
 
