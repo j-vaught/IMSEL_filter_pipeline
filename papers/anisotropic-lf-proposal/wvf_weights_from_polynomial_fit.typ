@@ -37,13 +37,21 @@ $
 
 This matrix contains the pixel intensities in a local 3x3 window, with the pixel of interest located at the center.
 
-Suppose we fit a degree-1 polynomial
+Now suppose we aim to fit a degree-1 polynomial to the matrix $bold(B)$. One simple way to represent that local polynomial is
 
 $
   p(x, y) = c_0 + c_1 x + c_2 y.
 $
 
-Here $c_0$ tells us the local baseline brightness, while $c_1$ and $c_2$ tell us how that brightness changes across space. Since an edge is a place where intensity changes, the derivative coefficients are the quantities we care about most. The constant term helps the polynomial fit the local patch, but the edge information is carried by the change terms.
+Here $c_0$ represents the local baseline brightness, ideally close to the brightness of the center pixel. The coefficients $c_1$ and $c_2$ describe how the brightness changes in the $x$ and $y$ directions, respectively. Since an edge can be understood as a spatial change in brightness, these change terms are the quantities we care about most for edge detection. In this sense, $c_1$ and $c_2$ are the derivative coefficients, while $c_0$ mainly helps the polynomial match the local patch.
+
+If we instead use a degree-2 polynomial, we could write
+
+$
+  p(x, y) = c_0 + c_1 x + c_2 y + c_3 x^2 + c_4 x y + c_5 y^2.
+$
+
+In this case, $c_0$, $c_1$, and $c_2$ play the same roles as before, while the additional coefficients capture curvature in the local intensity surface. Intuitively, they describe how the rate of change itself varies across the patch. Even when the polynomial degree is increased, the main coefficients used for estimating the local directional change are still the first-derivative terms. Increasing the degree simply gives the fit more flexibility, which can improve accuracy in some cases when the local image structure is not well described by a purely linear model.
 
 == Stack The Patch Into A Vector
 
