@@ -5,11 +5,12 @@
 #set text(font: "New Computer Modern", size: 10pt)
 
 #let garnet = rgb("#73000A")
+#let rose = rgb("#CC2E40")
+#let honeycomb = rgb("#A49137")
 #let atlantic = rgb("#466A9F")
 #let congaree = rgb("#1F414D")
 #let black90 = rgb("#363636")
 #let black50 = rgb("#A2A2A2")
-#let black30 = rgb("#C7C7C7")
 
 #cetz.canvas({
   import cetz.draw: *
@@ -21,7 +22,7 @@
     x-min: 20,
     x-max: 500,
     y-min: 0,
-    y-max: 0.11,
+    y-max: 0.12,
     x-tick-step: 80,
     y-tick-step: 0.02,
     x-grid: "major",
@@ -37,13 +38,31 @@
         x => 1.0 / x,
       )
 
-      // Fused stencil: sits above due to cancellation / near-zero weights
+      // Fused stencil d=4: highest cancellation, worst noise gain
       plot.add(
-        label: [Fused stencil],
-        style: (stroke: (paint: garnet, thickness: 1.8pt, dash: "dashed")),
+        label: [Fused $d=4$],
+        style: (stroke: (paint: garnet, thickness: 1.8pt)),
         domain: (20, 500),
         samples: 80,
-        x => 1.0 / x + 0.035 * calc.exp(-0.005 * (x - 20)) + 0.008,
+        x => 1.0 / x + 0.040 * calc.exp(-0.004 * (x - 20)) + 0.012,
+      )
+
+      // Fused stencil d=3: moderate cancellation
+      plot.add(
+        label: [Fused $d=3$],
+        style: (stroke: (paint: rose, thickness: 1.8pt, dash: "dashed")),
+        domain: (20, 500),
+        samples: 80,
+        x => 1.0 / x + 0.028 * calc.exp(-0.005 * (x - 20)) + 0.007,
+      )
+
+      // Fused stencil d=2: least cancellation among fused
+      plot.add(
+        label: [Fused $d=2$],
+        style: (stroke: (paint: honeycomb, thickness: 1.8pt, dash: "dash-dotted")),
+        domain: (20, 500),
+        samples: 80,
+        x => 1.0 / x + 0.018 * calc.exp(-0.006 * (x - 20)) + 0.004,
       )
 
       // Rectangular kernel: close to theoretical minimum
@@ -65,7 +84,4 @@
       )
     }
   )
-
-  // Title
-  content((5, 7.0), text(fill: black90, size: 11pt, weight: "bold")[Noise Gain Scaling])
 })
