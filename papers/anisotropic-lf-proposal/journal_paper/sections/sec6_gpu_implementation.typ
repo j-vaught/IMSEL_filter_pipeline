@@ -10,10 +10,6 @@ The precompute phase differs substantially across variants. For the fused polyno
 
 Despite these different construction procedures, all three variants produce the same output format. Each orientation $theta_k$ is represented by a list of integer offsets $(Delta x_ell, Delta y_ell)$ and corresponding scalar weights $alpha_(k,ell)$ for $ell = 1, dots, N'_k$. This format uniformity is the key architectural property. It enables a single, variant-agnostic GPU kernel to process any stencil without knowledge of its origin.
 
-#figure(
-  image("../figures/fig_sec06_precompute_compute_flow.pdf", width: 95%),
-  caption: [Two-phase architecture overview. The precompute phase (left) runs on the CPU and differs per variant, but all three produce the same output format of (offset, weight) pairs per orientation. The compute phase (right) consumes these stencil arrays through a single variant-agnostic Triton kernel.],
-) <fig:gpu-arch>
 
 == The Variant-Agnostic Kernel
 
