@@ -28,7 +28,7 @@ As a simplification, let us begin with a local 3x3 image patch. We denote this n
 
 $
   bold(B) =
-  mat(
+  mat(delim: "[",
     I_(-1,1), I_(0,1), I_(1,1);
     I_(-1,0), I_(0,0), I_(1,0);
     I_(-1,-1), I_(0,-1), I_(1,-1)
@@ -112,7 +112,7 @@ This can be rewritten in a matrix form as
 
 $
   [1, -1, -1]
-  mat(
+  mat(delim: "[",
     c_0;
     c_1;
     c_2
@@ -171,7 +171,7 @@ $
   hat(bold(z)) = arg min_(bold(z)) ||bold(A) bold(z) - bold(b)||^2.
 $ <eq:lstsq-objective>
 
-To make that step explicit, let
+To make that step explicit, let's write out the objective function that we are minimizing, with $E$ representing error
 
 $
   E(bold(z)) = ||bold(A) bold(z) - bold(b)||^2.
@@ -211,7 +211,7 @@ For this particular 3x3 geometry, one can compute
 
 $
   bold(A)^top bold(A) =
-  mat(
+  mat(delim: "[",
     9, 0, 0;
     0, 6, 0;
     0, 0, 6
@@ -222,7 +222,7 @@ so
 
 $
   (bold(A)^top bold(A))^(-1) =
-  mat(
+  mat(delim: "[",
     1/9, 0, 0;
     0, 1/6, 0;
     0, 0, 1/6
@@ -235,7 +235,17 @@ $
   bold(P) = (bold(A)^top bold(A))^(-1) bold(A)^top.
 $ <eq:pinv3>
 
-The second row of $bold(P)$ gives the weights for $c_1$, the $x$-derivative coefficient:
+And we evaluate it as:
+$
+  bold(P) =
+  mat(delim: "[",
+    1/9, 1/9, 1/9, 1/9, 1/9, 1/9, 1/9, 1/9, 1/9;
+    -1/6, 0, 1/6, -1/6, 0, 1/6, -1/6, 0, 1/6;
+    -1/6, -1/6, -1/6, 0, 0, 0, 1/6, 1/6, 1/6
+  ). 
+$<eq:pinv3-eval> 
+
+The second row of $bold(P)$ gives the weights for $c_1$, the $x$-derivative coefficient, and the third row gives the weights for $c_2$, the $y$-derivative coefficient. For example, the weight vector for $c_1$ is
 
 $
   bold(p)_(c_1)^top =
@@ -246,13 +256,32 @@ $
   ].
 $ <eq:p-c1>
 
-So the fitted derivative coefficient is
+And the weight vector for $c_2$ is 
+$
+  bold(p)_(c_2)^top =
+  [
+    -1/6, -1/6, -1/6,
+    0, 0, 0,
+    1/6, 1/6, 1/6
+  ].
+$ <eq:p-c2>
+
+Then, we can find the fitted derivative coefficient for $c_1$ is 
 
 $
   hat(c_1) = bold(p)_(c_1)^top bold(b).
 $ <eq:c1-est>
 
-Written out explicitly,
+and the fitted derivative coefficient for $c_2$ is
+$
+  hat(c_2) = bold(p)_(c_2)^top bold(b).
+$ <eq:c2-est>
+ 
+Since we do not have the exact vlaue for $c_1$ and $c_2$, we can only write the estimates as approximations, hence the usage of the symbols $hat(c_1)$ and $hat(c_2)$.
+
+== Filter Derivations
+
+Finally, converting the results from the polynomial fit into derivative filters, we write out the explicit expressions:
 
 $
   hat(c_1) = (-1/6) I_(-1,-1) + 0 I_(0,-1) + (1/6) I_(1,-1)
@@ -264,16 +293,37 @@ $
   quad + (-1/6) I_(-1,1) + 0 I_(0,1) + (1/6) I_(1,1).
 $ <eq:c1-exp3>
 
-This is the crucial moment. The polynomial fit has turned into a 3x3 derivative filter:
+And converitng into standard 3x3 derivative filter format, we have
 
 $
   bold(K)_x =
-  mat(
+  mat(delim: "[",
     -1/6, 0, 1/6;
     -1/6, 0, 1/6;
     -1/6, 0, 1/6
   ).
 $ <eq:kx3>
+
+For $c_2$, we have the same idea, but rotated by 90 degrees:
+$
+  hat(c_2) = (-1/6) I_(-1,-1) + (-1/6) I_(0,-1) + (-1/6) I_(1,-1)
+$ <eq:c2-exp1>
+$  quad + 0 I_(-1,0) + 0 I_(0,0) + 0 I_(1,0)
+$ <eq:c2-exp2>
+$  quad + (1/6) I_(-1,1) + (1/6) I_(0,1) + (1/6) I_(1,1).
+$ <eq:c2-exp3>
+And the corresponding 3x3 filter is
+$
+  bold(K)_y =
+  mat(delim: "[",
+    -1/6, -1/6, -1/6;
+    0, 0, 0;
+    1/6, 1/6, 1/6
+  ).
+$ <eq:ky3>
+
+Once $bold(K)_x$ and $bold(K)_y$ are known, they can be used exactly like any other pair of derivative filters. We convolve the image with $bold(K)_x$ to obtain a horizontal derivative estimate $G_x$, and with $bold(K)_y$ to obtain a vertical derivative estimate $G_y$. From those two responses, we can form the gradient magnitude $sqrt(G_x^2 + G_y^2)$ to measure edge strength, and the gradient orientation $atan2(G_y, G_x)$ to measure edge direction. In other words, after the polynomial fit has been collapsed into $bold(K)_x$ and $bold(K)_y$, the rest of the pipeline is just the standard gradient-based edge-detection workflow.
+
 
 The fit sounds like solving for a polynomial, but because the fit is linear, the derivative we extract is just one fixed weighted sum of the nine pixels.
 
