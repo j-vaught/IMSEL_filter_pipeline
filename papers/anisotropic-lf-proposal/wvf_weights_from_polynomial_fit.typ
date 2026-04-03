@@ -55,7 +55,28 @@ In this case, $c_0$, $c_1$, and $c_2$ play the same roles as before, while the a
 
 With all that mathematical kerfuffle out of the way, the only question that remains is how to solve for those unknown coefficients. To do that, we write one fitting equation for each pixel in the local patch and then collect them into a single linear system.
 
-At this point, we can write one fitting equation for each pixel in the local patch by plugging its coordinate into the degree-1 polynomial. This gives
+For example, if we want to write the formula for the degree-1 polynomial, we begin with the expression above,
+
+$
+  p(x, y) = c_0 + c_1 x + c_2 y,
+$
+
+and plug in the known coordinates of a pixel in the patch. For the pixel at $(-1, -1)$, this gives
+
+$
+  p(-1, -1) = c_0 + c_1(-1) + c_2(-1)
+$
+$
+  quad = c_0 - c_1 - c_2.
+$
+
+Since this fitted value should match the observed pixel intensity at that location, we write
+
+$
+  c_0 - c_1 - c_2 approx I_(-1,-1).
+$
+
+We then repeat this same substitution for the other pixel coordinates in the 3x3 patch. Doing so yields
 
 $
   c_0 - c_1 - c_2 approx I_(-1,-1)
@@ -85,7 +106,7 @@ $
   c_0 + c_1 + c_2 approx I_(1,1).
 $
 
-These are simply the nine pixel-fitting equations written one at a time. The reason we stack the patch into a vector is that it allows us to collect these nine equations into one compact linear system of the form
+These are simply the nine pixel-fitting equations written one at a time. The reason we stack the patch into a vector is that it allows us to collect these equations into one compact linear system of the form
 
 $
   bold(A) bold(z) approx bold(b).
