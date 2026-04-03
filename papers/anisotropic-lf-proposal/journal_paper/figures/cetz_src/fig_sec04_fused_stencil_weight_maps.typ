@@ -240,7 +240,6 @@
 
 #let draw-panel(ox, oy, stencil, theta-deg, eta-val) = {
   import cetz.draw: *
-  let theta = theta-deg * 1deg
   for r in range(grid-N) {
     for c in range(grid-N) {
       let x = ox + c * cell-sz
@@ -255,8 +254,34 @@
         else if w < -0.0001 { lerp-color(atlantic, intensity) }
         else { white }
       } else { white }
-      let cell-stroke = if key in stencil { 0.35pt + black90 } else { 0.15pt + black30 }
-      rect((x, y), (x + cell-sz, y - cell-sz), fill: fc, stroke: cell-stroke)
+      rect((x, y), (x + cell-sz, y - cell-sz), fill: fc, stroke: 0.15pt + black30)
+    }
+  }
+  for r in range(grid-N) {
+    for c in range(grid-N) {
+      let x = ox + c * cell-sz
+      let y = oy - r * cell-sz
+      let dx = c - half
+      let dy = -(r - half)
+      let key = str(dx) + "," + str(dy)
+      if key in stencil {
+        let left-key = str(dx - 1) + "," + str(dy)
+        let right-key = str(dx + 1) + "," + str(dy)
+        let top-key = str(dx) + "," + str(dy + 1)
+        let bottom-key = str(dx) + "," + str(dy - 1)
+        if left-key not in stencil {
+          line((x, y), (x, y - cell-sz), stroke: 0.45pt + black90)
+        }
+        if right-key not in stencil {
+          line((x + cell-sz, y), (x + cell-sz, y - cell-sz), stroke: 0.45pt + black90)
+        }
+        if top-key not in stencil {
+          line((x, y), (x + cell-sz, y), stroke: 0.45pt + black90)
+        }
+        if bottom-key not in stencil {
+          line((x, y - cell-sz), (x + cell-sz, y - cell-sz), stroke: 0.45pt + black90)
+        }
+      }
     }
   }
   rect((ox, oy), (ox + grid-N * cell-sz, oy - grid-N * cell-sz), stroke: 0.6pt + black90)
