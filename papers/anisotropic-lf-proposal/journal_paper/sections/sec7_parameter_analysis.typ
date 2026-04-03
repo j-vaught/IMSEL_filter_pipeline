@@ -16,6 +16,11 @@ We tested $N_p in {10, 15, 25, 50, 75, 100, 150, 200, 250, 300, 400, 500}$ for t
 
 Under additive noise, the optimal $N_p$ grows monotonically with noise severity. At high signal-to-noise ratio (SNR), small neighborhoods ($N_p = 25$--$50$) are optimal because they preserve fine spatial detail. As SNR decreases, the noise-averaging benefit of larger neighborhoods outweighs the loss of spatial resolution, and the optimal $N_p$ shifts to 250--500. This monotonic relationship between noise level and optimal filter size is consistent with classical results in statistical estimation. The bias-variance tradeoff shifts toward variance reduction, favoring larger support, as observation noise increases. The published large-support parameterization reflects this. The maritime application for which the filter was originally developed operates in a regime where noise dominates and large $N_p$ is appropriate.
 
+#figure(
+  image("../figures/fig_sec07_ods_vs_np_by_degree.pdf", width: 85%),
+  caption: [ODS F-score versus support size $N_p$ for polynomial degrees $d = 2, 3, 4, 5$ at fixed $N_s = 18$. Lower-order polynomials ($d = 2$) consistently outperform higher orders across all support sizes, with peak performance at $N_p approx 40$--$65$. The overdetermination ratio $N_p slash M$ is higher for $d = 2$, providing more stable gradient estimates.],
+) <fig:ods-vs-np-degree>
+
 == Polynomial Order <sec:param-d>
 
 The polynomial order $d$ controls the expressiveness of the local intensity model fitted within each circular neighborhood. Higher orders capture more complex local structure, including curvature and inflection, but require more unknown coefficients. For a bivariate polynomial of order $d$, the number of unknowns is $M = (d+1)(d+2) slash 2$, yielding $M = 15$ at $d = 4$ and $M = 6$ at $d = 2$. The overdetermination ratio $N_p slash M$ governs the degree of noise averaging in the least-squares fit. We hypothesized that $d = 2$ would suffice for gradient estimation because the first-order partial derivative $hat(f)_x$ depends only on the linear coefficients of the fitted polynomial. Higher-order terms do not contribute to the gradient coefficient itself; they affect only the conditioning of the system.
@@ -32,6 +37,11 @@ We tested $N_s in {2, 4, 6, 8, 12, 18, 24, 36}$. Performance saturated at $N_s =
 
 We did not test $N_s = 1$. A single orientation reduces the filter to a fixed-direction gradient operator, losing the orientation-selective property entirely. The classical baselines (Sobel, Prewitt) serve as implicit references for this regime, since they are effectively $N_s = 2$ operators combined via $arctan$.
 
+#figure(
+  image("../figures/fig_sec07_ns_cliff.pdf", width: 85%),
+  caption: [ODS F-score versus number of orientations $N_s$ at various support sizes $N_p$. A critical jump occurs at $N_s = 3$ (dashed line), where ODS increases by 0.20--0.24 relative to $N_s = 2$. Beyond $N_s = 3$, performance plateaus. The cliff indicates that three orientations suffice for accurate edge detection; additional orientations provide negligible benefit while multiplying computational cost.],
+) <fig:ns-cliff>
+
 == Line Half-Width <sec:param-m>
 
 The line half-width $m$ controls the spatial extent of the LF's line extension and is the parameter unique to the LF. The WVF is the $m = 0$ special case. The published setting of $m = 14$ creates a line of $2 m + 1 = 29$ virtual evaluation points, each spawning a full polynomial fit over its own circular neighborhood. This is the most expensive parameter because it multiplies the number of polynomial fits per pixel per orientation by $(2 m + 1)$. Kruskal-Wallis effect size analysis identified $m$ as the most influential parameter, with $eta^2 = 0.34$, exceeding the effect sizes of $N_p$, $N_s$, and $d$.
@@ -40,6 +50,11 @@ We tested $m in {0, 1, 2, 3, 5, 7, 10, 14}$ at selected $(N_p, N_s, d)$ combinat
 
 The LF ablation grid is substantially sparser than the WVF grid (168 versus 1,206 configurations). Each LF evaluation is $(2 m + 1) times$ more expensive than the corresponding WVF evaluation. At $m = 14$, a single full-dataset LF run requires approximately 36 seconds per image. Exhaustive search was computationally prohibitive with the naive implementation, so we sampled a representative subset of $(N_p, N_s, d)$ combinations at each $m$ value.
 
+#figure(
+  image("../figures/fig_sec07_lf_heatmap.pdf", width: 90%),
+  caption: [LF ODS heatmap as a function of support size $N_p$ and line half-width $m$. Each cell shows the ODS averaged across $N_s in {18, 36, 72}$. The optimal region (ODS $approx 0.84$) occurs at moderate $N_p = 50$--$100$ and small $m = 1$--$3$. Performance degrades with both excessive support size and excessive line extension, confirming that the published parameters ($N_p = 250$, $m = 14$) are overspecified for clean imagery.],
+) <fig:lf-heatmap>
+
 == Geometric Kernel Parameters <sec:param-geometric>
 
 The geometric kernels parameterize spatial extent through the standard deviations $sigma_u$ and $sigma_v$ of the Gaussian envelope along and across the edge direction, respectively. These play an analogous role to $N_p$ and $m$ in the polynomial filter but with cleaner semantics. The parameter $sigma_u$ directly sets the edge-parallel smoothing extent, $sigma_v$ sets the edge-normal extent, and the aspect ratio $sigma_u slash sigma_v$ controls the degree of anisotropy. The grid resolution in each direction is fixed at $ceil(3 sigma)$ pixels, ensuring that the Gaussian envelope is sampled out to three standard deviations.
@@ -47,6 +62,16 @@ The geometric kernels parameterize spatial extent through the standard deviation
 We tested $sigma_u in {1.0, 1.5, 2.0, 3.0, 5.0, 7.0}$ and $sigma_v in {0.8, 1.0, 1.2, 1.5, 2.0, 2.5}$, forming a $6 times 6$ grid of 36 configurations per dataset. On clean data, $sigma_u = 2.0$ and $sigma_v = 1.2$ were optimal across all datasets, producing a compact kernel that matches the stencil footprint of the optimized polynomial filter. Under noise, both parameters grow. At SNR $approx 0.5$ dB, the optimal values shift to $sigma_u approx 7.2$ and $sigma_v approx 2.5$, reflecting the same noise-driven expansion observed in the polynomial parameter sweep.
 
 An approximate equivalence mapping connects the two parameterizations. The edge-parallel extent satisfies $sigma_u approx m$ in pixel units, while the edge-normal extent satisfies $sigma_v approx sqrt(N_p slash pi)$, corresponding to the effective radius of the circular neighborhood. This mapping allows direct comparison between geometric and polynomial parameter sweeps and confirms that the two formulations explore the same underlying tradeoff between spatial resolution and noise averaging from different parameterization perspectives.
+
+#figure(
+  image("../figures/fig_sec07_ods_vs_snr.pdf", width: 85%),
+  caption: [ODS F-score versus signal-to-noise ratio (SNR) for the ASF and five deep learning models under Gaussian noise. The ASF (garnet) degrades gracefully as noise increases, maintaining ODS $> 0.5$ even at 0.3 dB SNR. Deep learning models collapse below approximately 2 dB, falling to near-random baseline ($"ODS" approx 0.33$). At 1 dB SNR, the ASF achieves ODS $= 0.72$ while all DL models are at 0.33--0.35.],
+) <fig:ods-vs-snr>
+
+#figure(
+  image("../figures/fig_sec07_optimal_params_vs_snr.pdf", width: 85%),
+  caption: [Optimal LF parameters versus SNR, aggregated across all noise types and datasets. As noise increases (SNR decreases), both optimal support size $N_p$ (garnet) and optimal line half-width $m$ (atlantic) grow monotonically. At clean conditions, optimal parameters are $N_p approx 53$, $m approx 2$. At 0.3 dB SNR, they shift to $N_p approx 190$, $m approx 16$. This validates the noise gain theory of @sec:noise-rejection: larger kernels become optimal under noise because they average over more pixels.],
+) <fig:optimal-params-snr>
 
 == Published Versus Optimal Parameters <sec:published-vs-optimal>
 
