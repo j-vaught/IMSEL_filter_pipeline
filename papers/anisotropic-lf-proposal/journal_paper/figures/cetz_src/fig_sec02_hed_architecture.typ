@@ -6,8 +6,8 @@
 #let garnet = rgb("#73000A")
 #let atlantic = rgb("#466A9F")
 #let rose = rgb("#CC2E40")
-#let congaree = rgb("#1F414D")
 #let black90 = rgb("#363636")
+#let black70 = rgb("#5C5C5C")
 #let black50 = rgb("#A2A2A2")
 #let black30 = rgb("#C7C7C7")
 #let black10 = rgb("#ECECEC")
@@ -15,104 +15,181 @@
 #cetz.canvas({
   import cetz.draw: *
 
-  // Encoder stages: each gets narrower (spatial) but taller (channels)
   let stages = (
-    (w: 1.6, h: 2.0, label: "Conv1"),
-    (w: 1.3, h: 2.4, label: "Conv2"),
-    (w: 1.0, h: 2.8, label: "Conv3"),
-    (w: 0.85, h: 3.2, label: "Conv4"),
-    (w: 0.7, h: 3.6, label: "Conv5"),
+    (h: 0.7, w: 3.2, label: "", detail: "64ch, 1×"),
+    (h: 0.7, w: 2.8, label: "", detail: "128ch, ½"),
+    (h: 0.7, w: 2.4, label: "", detail: "256ch, ¼"),
+    (h: 0.7, w: 2.0, label: "", detail: "512ch, ⅛"),
+    (h: 0.7, w: 1.6, label: "", detail: "512ch, ¹⁄₁₆"),
   )
 
-  let x-cursor = 0.0
-  let stage-gap = 0.9
-  let baseline = -2.0  // vertical center reference
-  let side-y = -5.5  // y position for side outputs
-  let side-h = 0.6
-  let side-w = 1.0
+  let stage-gap = 0.7
+  let center-x = 0.0
+  let side-x = 2.0
+  let side-w = 0.9
+  let side-h = 0.5
+  let fuse-w = 1.2
+  let fuse-h = 0.6
 
-  // Input image
-  let img-w = 1.8
-  let img-h = 1.8
-  let img-x = x-cursor
-  let img-cy = baseline
-  rect((img-x, img-cy + img-h / 2), (img-x + img-w, img-cy - img-h / 2), fill: black10, stroke: 1pt + black90)
-  content((img-x + img-w / 2, img-cy), text(fill: black90, size: 8pt)[Input])
-  x-cursor += img-w + stage-gap * 0.6
+  // ============================================================
+  // Pass 1: compute all box positions (top, bottom, left, right, center-y)
+  // ============================================================
 
-  // Arrow from input
-  line((img-x + img-w + 0.05, baseline), (x-cursor - 0.05, baseline), stroke: 1pt + black90, mark: (end: ">", fill: black90))
+  // Input box
+  let input-w = 3.4
+  let input-h = 0.6
+  let input-top = 0.0
+  let input-bot = input-top - input-h
+  let input-cx = center-x
 
-  // Store stage centers for side output arrows
-  let stage-centers = ()
-  let side-boxes = ()
-
-  for (idx, st) in stages.enumerate() {
-    let sx = x-cursor
-    let sy-top = baseline + st.h / 2
-    let sy-bot = baseline - st.h / 2
-
-    // Main backbone rectangle
-    rect((sx, sy-top), (sx + st.w, sy-bot), fill: atlantic.lighten(30%), stroke: 1pt + atlantic)
-    content((sx + st.w / 2, baseline), text(fill: white, size: 7pt, weight: "bold")[#st.label])
-
-    let cx = sx + st.w / 2
-    stage-centers.push((cx, sy-bot))
-
-    // Side output box position
-    let so-x = cx - side-w / 2
-    side-boxes.push((x: so-x, label: "S" + str(idx + 1)))
-
-    // Arrow to next stage
-    if idx < stages.len() - 1 {
-      let next-x = sx + st.w + stage-gap
-      line((sx + st.w + 0.05, baseline), (next-x - 0.05, baseline), stroke: 1pt + black90, mark: (end: ">", fill: black90))
-    }
-
-    x-cursor += st.w + stage-gap
+  // Stage boxes
+  let stage-boxes = ()
+  let cursor = input-bot - stage-gap
+  for st in stages {
+    let top = cursor
+    let bot = cursor - st.h
+    let left = center-x - st.w / 2
+    let right = center-x + st.w / 2
+    let cy = (top + bot) / 2
+    stage-boxes.push((top: top, bot: bot, left: left, right: right, cx: center-x, cy: cy))
+    cursor = bot - stage-gap
   }
 
-  // Draw side output arrows and boxes
-  for (idx, sb) in side-boxes.enumerate() {
-    let (cx, bot) = stage-centers.at(idx)
+  // Side output boxes — vertically aligned with each stage
+  let side-boxes = ()
+  for sb in stage-boxes {
+    let so-left = side-x
+    let so-right = side-x + side-w
+    let so-top = sb.cy + side-h / 2
+    let so-bot = sb.cy - side-h / 2
+    side-boxes.push((top: so-top, bot: so-bot, left: so-left, right: so-right, cx: side-x + side-w / 2, cy: sb.cy))
+  }
 
-    // Diagonal arrow from stage bottom to side output
+  // Fused box — below everything, centered under side outputs
+  let fuse-top = cursor - stage-gap * 0.5
+  let fuse-bot = fuse-top - fuse-h
+  let fuse-cx = side-x + side-w / 2
+  let fuse-left = fuse-cx - fuse-w / 2
+  let fuse-right = fuse-cx + fuse-w / 2
+
+  // Rail x for elbow arrows
+  let rail-x = side-x + side-w + 0.3
+
+  // ============================================================
+  // Pass 2: draw everything using stored positions
+  // ============================================================
+
+  // Input box
+  rect(
+    (input-cx - input-w / 2, input-top),
+    (input-cx + input-w / 2, input-bot),
+    fill: black10,
+    stroke: 0.6pt + black90,
+  )
+  content((input-cx, (input-top + input-bot) / 2), text(fill: black90, size: 8pt)[Input image])
+
+  // Arrow: input bottom → first stage top
+  line(
+    (input-cx, input-bot),
+    (input-cx, stage-boxes.at(0).top),
+    stroke: 0.7pt + black90,
+    mark: (end: ">", fill: black90, size: 0.12),
+  )
+
+  for (idx, st) in stages.enumerate() {
+    let sb = stage-boxes.at(idx)
+    let so = side-boxes.at(idx)
+
+    // Stage box
+    rect(
+      (sb.left, sb.top),
+      (sb.right, sb.bot),
+      fill: atlantic.lighten(45%),
+      stroke: 0.6pt + atlantic,
+    )
+    content(
+      (sb.cx, sb.cy),
+      text(fill: white, size: 7pt, weight: "bold")[#st.label #st.detail],
+    )
+
+    // Arrow: stage bottom → next stage top (if not last)
+    if idx < stages.len() - 1 {
+      let next = stage-boxes.at(idx + 1)
+      line(
+        (sb.cx, sb.bot),
+        (next.cx, next.top),
+        stroke: 0.7pt + black90,
+        mark: (end: ">", fill: black90, size: 0.12),
+      )
+    }
+
+    // Arrow: stage right edge → side output left edge
     line(
-      (cx, bot - 0.05),
-      (sb.x + side-w / 2, side-y + side-h + 0.05),
-      stroke: 1.2pt + garnet,
-      mark: (end: ">", fill: garnet),
+      (sb.right, sb.cy),
+      (so.left, so.cy),
+      stroke: 0.8pt + garnet,
+      mark: (end: ">", fill: garnet, size: 0.1),
     )
 
     // Side output box
-    rect((sb.x, side-y + side-h), (sb.x + side-w, side-y), fill: garnet.lighten(70%), stroke: 1pt + garnet)
-    content((sb.x + side-w / 2, side-y + side-h / 2), text(fill: garnet, size: 8pt, weight: "bold")[#sb.label])
-  }
+    rect(
+      (so.left, so.top),
+      (so.right, so.bot),
+      fill: garnet.lighten(65%),
+      stroke: 0.6pt + garnet,
+    )
+    content(
+      (so.cx, so.cy),
+      text(fill: garnet, size: 7pt, weight: "bold")[S#(idx + 1)],
+    )
 
-  // Fusion: arrows from all side outputs to fused output
-  let fuse-x = x-cursor - stage-gap + 0.5
-  let fuse-w = 1.4
-  let fuse-h = 0.8
-  let fuse-cy = side-y + side-h / 2
+    // "loss" label
+    content(
+      (so.cx, so.bot - 0.15),
+      text(fill: rose, size: 5pt, style: "italic")[loss],
+    )
 
-  rect((fuse-x, fuse-cy + fuse-h / 2), (fuse-x + fuse-w, fuse-cy - fuse-h / 2),
-    fill: garnet.lighten(40%), stroke: 1.5pt + garnet)
-  content((fuse-x + fuse-w / 2, fuse-cy), text(fill: white, size: 8pt, weight: "bold")[Fused])
-
-  // Arrows from side outputs to fused
-  for sb in side-boxes {
+    // Elbow arrow: side output right → rail → down to collect level
+    // Horizontal: side output right edge → rail
     line(
-      (sb.x + side-w + 0.02, side-y + side-h / 2),
-      (fuse-x - 0.02, fuse-cy),
-      stroke: 0.7pt + garnet,
-      mark: (end: ">", fill: garnet),
+      (so.right, so.cy),
+      (rail-x, so.cy),
+      stroke: 0.6pt + garnet.lighten(20%),
+    )
+    // Vertical: rail down to collect level (just above fuse box)
+    let collect-y = fuse-top + 0.4
+    line(
+      (rail-x, so.cy),
+      (rail-x, collect-y),
+      stroke: 0.6pt + garnet.lighten(20%),
     )
   }
 
-  // Annotation
-  let total-w = fuse-x + fuse-w
-  content((total-w / 2, side-y - 0.6), text(fill: black50, size: 8.5pt, style: "italic")[Deeply supervised multi-scale fusion])
+  // Collect level: horizontal from rail to fuse center
+  let collect-y = fuse-top + 0.4
+  line(
+    (rail-x, collect-y),
+    (fuse-cx, collect-y),
+    stroke: 0.8pt + garnet,
+  )
 
-  // Title
-  content((total-w / 2, baseline + 2.6), text(fill: black90, size: 11pt, weight: "bold")[HED (Xie & Tu, 2015)])
+  // Down into fuse box
+  line(
+    (fuse-cx, collect-y),
+    (fuse-cx, fuse-top),
+    stroke: 0.8pt + garnet,
+    mark: (end: ">", fill: garnet, size: 0.1),
+  )
+
+  // Fused box
+  rect(
+    (fuse-left, fuse-top),
+    (fuse-right, fuse-bot),
+    fill: garnet.lighten(30%),
+    stroke: 0.8pt + garnet,
+  )
+  content(
+    (fuse-cx, (fuse-top + fuse-bot) / 2),
+    text(fill: white, size: 7pt, weight: "bold")[Fused],
+  )
 })

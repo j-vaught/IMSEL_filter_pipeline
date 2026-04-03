@@ -45,3 +45,5 @@
 #include "sections/sec9_discussion.typ"
 
 #include "sections/sec10_conclusion.typ"
+
+#include "sections/appendix.typ"
