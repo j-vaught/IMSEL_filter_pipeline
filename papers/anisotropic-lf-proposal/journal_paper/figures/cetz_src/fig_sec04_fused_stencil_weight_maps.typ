@@ -65,6 +65,12 @@
 }
 #let M = monomial-basis(1.0, 1.0).len()
 
+#let line-weight(j) = if m-line == 0 {
+  if j == 0 { 1.0 } else { 0.0 }
+} else {
+  calc.exp(-(j * j) / (2.0 * sigma-l * sigma-l))
+}
+
 // ── Matrix utilities ────────────────────────────────────────────────────
 #let mat-transpose(A) = {
   let nr = A.len()
@@ -154,7 +160,8 @@
   let AtA = mat-mul(At, A)
   let AtA-inv = mat-invert(AtA)
   let P = mat-mul(AtA-inv, At)
-  P.at(1)
+  // Basis order is (1, y, x, ...), so the normal derivative d/dx' is row 2.
+  P.at(2)
 }
 
 // ── Fused stencil (takes precomputed gradient row) ──────────────────────
@@ -165,7 +172,7 @@
   let stencil = (:)
   for jj in range(2 * m-line + 1) {
     let j = jj - m-line
-    let wj = calc.exp(-(j * j) / (2.0 * sigma-l * sigma-l))
+    let wj = line-weight(j)
     let lx = j * tx
     let ly = j * ty
     for ii in range(Np) {
@@ -192,7 +199,7 @@
   let sum-wj = 0.0
   for jj in range(2 * m-line + 1) {
     let j = jj - m-line
-    sum-wj = sum-wj + calc.exp(-(j * j) / (2.0 * sigma-l * sigma-l))
+    sum-wj = sum-wj + line-weight(j)
   }
   let sum-abs-p = 0.0
   for ii in range(Np) { sum-abs-p = sum-abs-p + calc.abs(p.at(ii)) }
@@ -249,25 +256,6 @@
         else { white }
       } else { white }
       rect((x, y), (x + cell-sz, y - cell-sz), fill: fc, stroke: 0.15pt + black30)
-    }
-  }
-  // Virtual expansion points + neighborhood circles (line perpendicular to theta)
-  let tx = -calc.sin(theta)
-  let ty = calc.cos(theta)
-  let seen = (:)
-  for jj in range(2 * m-line + 1) {
-    let j = jj - m-line
-    let sx = calc.round(j * tx)
-    let sy = calc.round(j * ty)
-    let key = str(sx) + "," + str(sy)
-    if key not in seen {
-      seen.insert(key, true)
-      let col = sx + half
-      let row = half - sy
-      let px = ox + col * cell-sz + cell-sz / 2.0
-      let py = oy - row * cell-sz - cell-sz / 2.0
-      circle((px, py), radius: nbr-radius * cell-sz, fill: none, stroke: 0.4pt + black50)
-      circle((px, py), radius: 0.04, fill: black90, stroke: 0.3pt + white)
     }
   }
   rect((ox, oy), (ox + grid-N * cell-sz, oy - grid-N * cell-sz), stroke: 0.6pt + black90)
