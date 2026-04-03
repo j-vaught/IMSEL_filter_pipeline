@@ -106,7 +106,7 @@ $
   c_0 + c_1 + c_2 approx I_(1,1).
 $
 
-These are simply the nine pixel-fitting equations written one at a time. The reason we stack the patch into a vector is that it allows us to collect these equations into one compact linear system of the form
+The resulting set of equations is all one needs to solve for the system. Now, as you may remember from primary school, this can be represented more efficiently in matrix form. We therefore derive the matrix representation below so that the mathematics is easier to organize and manipulate, eventually giving a compact system of the form
 
 $
   bold(A) bold(z) approx bold(b).
