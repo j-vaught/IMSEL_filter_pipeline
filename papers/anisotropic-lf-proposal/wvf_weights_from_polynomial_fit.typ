@@ -38,9 +38,24 @@ $
 
 Here $c_0$ is the local constant term, $c_1$ is the local $x$-derivative coefficient, and $c_2$ is the local $y$-derivative coefficient.
 
-== Stack The Pixel Values
+== Start With The Actual 3x3 Patch
 
-Let the nine pixel values be stacked into a vector
+It is easier to begin with the image patch itself rather than the design matrix. Write the local 3x3 neighborhood as
+
+$
+  bold(B) =
+  mat(
+    I_(-1,1), I_(0,1), I_(1,1);
+    I_(-1,0), I_(0,0), I_(1,0);
+    I_(-1,-1), I_(0,-1), I_(1,-1)
+  ).
+$
+
+This is just the actual image data in the local window. Each entry is the intensity value at one local coordinate.
+
+== Stack The Patch Into A Vector
+
+To solve the least-squares system, we flatten those same nine values into a column vector
 
 $
   bold(b) =
@@ -57,7 +72,7 @@ $
   ]^top.
 $
 
-Let the unknown polynomial coefficients be
+The unknown polynomial coefficients are
 
 $
   bold(z) = [c_0, c_1, c_2]^top.
