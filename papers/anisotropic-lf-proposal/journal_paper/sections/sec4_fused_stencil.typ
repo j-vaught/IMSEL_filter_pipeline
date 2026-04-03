@@ -40,7 +40,7 @@ The weight vector $bold(alpha)_k in RR^(N'_k)$ depends only on the filter parame
 
 #figure(
   image("../figures/fig_sec04_fused_stencil_weight_maps.pdf", width: 95%),
-  caption: [Fused weight maps $alpha_(k,ell)$ for six representative orientations ($m = 7$, $N_p = 100$, $d = 4$). Red indicates positive weights and blue indicates negative weights, with intensity proportional to magnitude. The dipole pattern (positive on one side of the edge normal, negative on the other) rotates with $theta_k$, and the stencil elongates along the candidate edge tangent.],
+  caption: [Fused weight maps $alpha_(k,ell)$ computed from the pseudoinverse for six orientations ($m = 4$, $N_p = 29$, $d = 2$). Garnet indicates positive weights and blue indicates negative weights, with intensity proportional to magnitude. The dipole pattern rotates with $theta_k$ and the stencil elongates along the candidate edge tangent. At grid-aligned orientations ($theta = 0 degree$, $90 degree$), adjacent line positions land on exact integer offsets, producing maximal neighborhood overlap and the most severe weight cancellation (visible as washed-out cells between the positive and negative lobes).],
 ) <fig:weight-maps>
 
 

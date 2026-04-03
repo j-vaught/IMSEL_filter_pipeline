@@ -3,145 +3,239 @@
 #set page(width: auto, height: auto, margin: 5pt)
 #set text(font: "New Computer Modern", size: 10pt)
 
-#let garnet = rgb("#73000A")
+#let garnet   = rgb("#73000A")
 #let atlantic = rgb("#466A9F")
-#let black90 = rgb("#363636")
-#let black50 = rgb("#A2A2A2")
-#let black30 = rgb("#C7C7C7")
-#let black10 = rgb("#ECECEC")
+#let black90  = rgb("#363636")
+#let black50  = rgb("#A2A2A2")
+#let black30  = rgb("#C7C7C7")
+#let black10  = rgb("#ECECEC")
 
-#let N = 15
-#let cell = 0.35
-#let half = (N - 1) / 2
+// ── Filter parameters ───────────────────────────────────────────────────
+#let radius  = 3.0           // neighborhood radius (N_p ≈ 29)
+#let m-line  = 4             // line half-length (9 line positions)
+#let sigma-l = m-line / 2.0  // line Gaussian σ_ℓ
+#let grid-N  = 15            // display grid size
+#let cell-sz = 0.35          // cell size
+#let half    = calc.div-euclid(grid-N - 1, 2)
 
-// Fused stencil parameters
-#let m = 7
-#let sig-along = 3.5   // spread along edge direction
-#let sig-across = 1.4  // spread across edge direction
+// ── Circular neighborhood ───────────────────────────────────────────────
+#let neighbors = {
+  let pts = ()
+  let r2 = radius * radius
+  let ri = calc.ceil(radius)
+  for dxi in range(2 * ri + 1) {
+    let dx = dxi - ri
+    for dyi in range(2 * ri + 1) {
+      let dy = dyi - ri
+      if dx * dx + dy * dy <= r2 {
+        pts.push((dx, dy))
+      }
+    }
+  }
+  pts
+}
+#let Np = neighbors.len()
 
-// Compute rotated derivative-of-Gaussian weight for fused stencil
-// The fused stencil is a sum of virtual-pixel contributions, producing
-// an irregular dipole with many near-zero cells from cancellation.
-#let fused-weight(r, c, theta) = {
-  let dx = c - half
-  let dy = -(r - half)
-  let cos-t = calc.cos(theta)
-  let sin-t = calc.sin(theta)
-  // u = along edge, v = across edge
-  let u = dx * cos-t + dy * sin-t
-  let v = -dx * sin-t + dy * cos-t
+// ── Matrix utilities ────────────────────────────────────────────────────
 
-  // Base derivative-of-Gaussian shape
-  let base = -v * calc.exp(-0.5 * (u * u / (sig-along * sig-along) + v * v / (sig-across * sig-across)))
-
-  // Add irregular cancellation noise to simulate fused stencil artifacts
-  // Use a deterministic pseudo-random perturbation based on position
-  let hash = calc.sin(dx * 12.9898 + dy * 78.233) * 43758.5453
-  let frac = hash - calc.floor(hash)
-  let noise = (frac - 0.5) * 0.35
-
-  // Many cells get pushed toward zero (cancellation effect)
-  let raw = base + noise * calc.exp(-0.5 * (u * u / (sig-along * sig-along * 1.5) + v * v / (sig-across * sig-across * 1.5)))
-
-  // Clip small values to zero (simulating near-zero cancellation)
-  if calc.abs(raw) < 0.08 { 0.0 } else { raw }
+#let mat-transpose(A) = {
+  let nr = A.len()
+  let nc = A.at(0).len()
+  let result = ()
+  for j in range(nc) {
+    let row = ()
+    for i in range(nr) {
+      row.push(A.at(i).at(j))
+    }
+    result.push(row)
+  }
+  result
 }
 
-// Find global max for normalization across all orientations
+#let mat-mul(A, B) = {
+  let ar = A.len()
+  let ac = A.at(0).len()
+  let bc = B.at(0).len()
+  let result = ()
+  for i in range(ar) {
+    let row = ()
+    for j in range(bc) {
+      let s = 0.0
+      for k in range(ac) {
+        s = s + A.at(i).at(k) * B.at(k).at(j)
+      }
+      row.push(s)
+    }
+    result.push(row)
+  }
+  result
+}
+
+#let mat-invert(A) = {
+  let n = A.len()
+  // Augmented matrix [A | I]
+  let aug = ()
+  for i in range(n) {
+    let row = ()
+    for j in range(n) { row.push(A.at(i).at(j) * 1.0) }
+    for j in range(n) { row.push(if i == j { 1.0 } else { 0.0 }) }
+    aug.push(row)
+  }
+  // Gauss-Jordan with partial pivoting
+  for k in range(n) {
+    let max-val = calc.abs(aug.at(k).at(k))
+    let max-row = k
+    for i in range(k + 1, n) {
+      let v = calc.abs(aug.at(i).at(k))
+      if v > max-val { max-val = v; max-row = i }
+    }
+    if max-row != k {
+      let tmp = aug.at(k)
+      aug.at(k) = aug.at(max-row)
+      aug.at(max-row) = tmp
+    }
+    let pivot = aug.at(k).at(k)
+    let rk = aug.at(k)
+    for j in range(2 * n) { rk.at(j) = rk.at(j) / pivot }
+    aug.at(k) = rk
+    for i in range(n) {
+      if i != k {
+        let fac = aug.at(i).at(k)
+        let ri = aug.at(i)
+        for j in range(2 * n) { ri.at(j) = ri.at(j) - fac * aug.at(k).at(j) }
+        aug.at(i) = ri
+      }
+    }
+  }
+  // Extract right half
+  let inv = ()
+  for i in range(n) {
+    let row = ()
+    for j in range(n) { row.push(aug.at(i).at(n + j)) }
+    inv.push(row)
+  }
+  inv
+}
+
+// ── Pseudoinverse gradient row ──────────────────────────────────────────
+
+#let gradient-row(theta) = {
+  let ct = calc.cos(theta)
+  let st = calc.sin(theta)
+  // Design matrix A (Np × 6) for d = 2
+  // Row i = (1, x', y', x'²/2, y'²/2, x'y')
+  let A = ()
+  for ii in range(Np) {
+    let dx = neighbors.at(ii).at(0)
+    let dy = neighbors.at(ii).at(1)
+    let x = dx * ct + dy * st
+    let y = -dx * st + dy * ct
+    A.push((1.0, x, y, x * x / 2.0, y * y / 2.0, x * y))
+  }
+  let At = mat-transpose(A)
+  let AtA = mat-mul(At, A)
+  let AtA-inv = mat-invert(AtA)
+  let P = mat-mul(AtA-inv, At)
+  P.at(1) // row 1 = f_x (normal derivative)
+}
+
+// ── Fused stencil ───────────────────────────────────────────────────────
+
+#let fused-stencil(theta) = {
+  let p = gradient-row(theta)
+  // Tangent = θ + π/2
+  let tx = -calc.sin(theta)
+  let ty = calc.cos(theta)
+  let stencil = (:)
+  for jj in range(2 * m-line + 1) {
+    let j = jj - m-line
+    let wj = calc.exp(-(j * j) / (2.0 * sigma-l * sigma-l))
+    let lx = j * tx
+    let ly = j * ty
+    for ii in range(Np) {
+      let dx = neighbors.at(ii).at(0)
+      let dy = neighbors.at(ii).at(1)
+      let ox = calc.round(lx + dx)
+      let oy = calc.round(ly + dy)
+      let key = str(ox) + "," + str(oy)
+      let contrib = wj * p.at(ii)
+      if key in stencil {
+        stencil.insert(key, stencil.at(key) + contrib)
+      } else {
+        stencil.insert(key, contrib)
+      }
+    }
+  }
+  stencil
+}
+
+// ── Precompute ──────────────────────────────────────────────────────────
+#let orientations = (0, 30, 60, 90, 120, 150)
+#let stencils = orientations.map(deg => fused-stencil(deg * 1deg))
+
 #let global-max = {
   let mx = 0.0
-  for theta-deg in (0, 45, 90, 135) {
-    let theta = theta-deg * 1deg
-    for r in range(N) {
-      for c in range(N) {
-        let w = calc.abs(fused-weight(r, c, theta))
-        if w > mx { mx = w }
-      }
+  for st in stencils {
+    for (_, val) in st {
+      let v = calc.abs(val)
+      if v > mx { mx = v }
     }
   }
   mx
 }
 
-// Color interpolation helper
+// ── Drawing helpers ─────────────────────────────────────────────────────
 #let lerp-color(base, t) = {
   let t2 = calc.min(calc.max(t, 0.0), 1.0)
   color.mix((base, t2 * 100%), (white, (1.0 - t2) * 100%))
 }
 
-// Draw one weight map panel
-#let draw-panel(ox, oy, theta-deg) = {
+#let draw-panel(ox, oy, stencil, theta-deg) = {
   import cetz.draw: *
-
-  let theta = theta-deg * 1deg
-
-  for r in range(N) {
-    for c in range(N) {
-      let x = ox + c * cell
-      let y = oy - r * cell
-
-      let w = fused-weight(r, c, theta)
-      let intensity = calc.abs(w) / global-max
-
-      let fc = if w > 0.001 {
-        lerp-color(garnet, intensity)
-      } else if w < -0.001 {
-        lerp-color(atlantic, intensity)
-      } else {
-        white
-      }
-
-      rect(
-        (x, y),
-        (x + cell, y - cell),
-        fill: fc,
-        stroke: 0.2pt + black30,
-      )
+  for r in range(grid-N) {
+    for c in range(grid-N) {
+      let x = ox + c * cell-sz
+      let y = oy - r * cell-sz
+      let dx = c - half
+      let dy = -(r - half)
+      let key = str(dx) + "," + str(dy)
+      let fc = if key in stencil {
+        let w = stencil.at(key)
+        let intensity = calc.abs(w) / global-max
+        if w > 0.001 { lerp-color(garnet, intensity) }
+        else if w < -0.001 { lerp-color(atlantic, intensity) }
+        else { white }
+      } else { white }
+      rect((x, y), (x + cell-sz, y - cell-sz), fill: fc, stroke: 0.2pt + black30)
     }
   }
-
-  // Panel border
-  rect(
-    (ox, oy),
-    (ox + N * cell, oy - N * cell),
-    stroke: 0.8pt + black90,
-  )
-
-  // Angle label below
-  let cx = ox + N * cell / 2
-  let deg-str = str(theta-deg)
-  content((cx, oy - N * cell - 0.45), text(fill: black90, size: 10pt, weight: "bold")[
-    #math.equation(block: false, [#math.theta #math.eq #deg-str #math.degree])
-  ])
+  rect((ox, oy), (ox + grid-N * cell-sz, oy - grid-N * cell-sz), stroke: 0.8pt + black90)
+  let cx = ox + grid-N * cell-sz / 2.0
+  content((cx, oy - grid-N * cell-sz - 0.45),
+    text(fill: black90, size: 10pt, weight: "bold")[
+      #math.equation(block: false, [#math.theta #math.eq #str(theta-deg) #math.degree])
+    ])
 }
 
+// ── Render ──────────────────────────────────────────────────────────────
 #cetz.canvas({
   import cetz.draw: *
-
-  let grid-w = N * cell
-  let gap = 0.7
-
-  // Draw four panels horizontally
-  for (i, angle) in (0, 45, 90, 135).enumerate() {
-    let ox = i * (grid-w + gap)
-    draw-panel(ox, 0, angle)
+  let gw = grid-N * cell-sz
+  let gx = 0.7
+  let gy = 1.4
+  for i in range(6) {
+    let col = calc.rem(i, 3)
+    let row = calc.div-euclid(i, 3)
+    let ox = col * (gw + gx)
+    let oy = -row * (gw + gy)
+    draw-panel(ox, oy, stencils.at(i), orientations.at(i))
   }
-
-  // Title
-  let total-w = 4 * grid-w + 3 * gap
-  content((total-w / 2, 1.1), text(fill: black90, size: 11pt, weight: "bold")[
-    Fused Stencil Weights at Four Orientations ($m = 7$, $N_p = 15$)
-  ])
-
-  // Color legend
-  let ly = -N * cell - 1.2
-  let lx = total-w / 2 - 2.5
-
+  // Legend
+  let tw = 3.0 * gw + 2.0 * gx
+  let ly = -(gw + gy) - gw - 1.0
+  let lx = tw / 2.0 - 2.5
   rect((lx, ly), (lx + 0.35, ly - 0.35), fill: garnet, stroke: 0.3pt + black90)
-  content((lx + 0.6, ly - 0.175), anchor: "west", text(fill: black90, size: 8pt)[Positive])
-
-  rect((lx + 1.8, ly), (lx + 2.15, ly - 0.35), fill: atlantic, stroke: 0.3pt + black90)
-  content((lx + 2.4, ly - 0.175), anchor: "west", text(fill: black90, size: 8pt)[Negative])
-
-  rect((lx + 3.6, ly), (lx + 3.95, ly - 0.35), fill: white, stroke: 0.3pt + black90)
-  content((lx + 4.2, ly - 0.175), anchor: "west", text(fill: black90, size: 8pt)[Near-zero])
+  content((lx + 0.6, ly - 0.175), anchor: "west", text(fill: black90, size: 8pt)[Positive ($alpha > 0$)])
+  rect((lx + 2.4, ly), (lx + 2.75, ly - 0.35), fill: atlantic, stroke: 0.3pt + black90)
+  content((lx + 3.0, ly - 0.175), anchor: "west", text(fill: black90, size: 8pt)[Negative ($alpha < 0$)])
 })
