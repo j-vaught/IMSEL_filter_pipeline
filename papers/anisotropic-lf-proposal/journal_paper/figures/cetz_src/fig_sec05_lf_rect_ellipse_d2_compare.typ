@@ -192,7 +192,7 @@
 // ── Rectangle / ellipse matched to LF size ──────────────────────────────
 #let mask-sig-u = (m-line + nbr-radius) / 3.0
 #let mask-sig-v = nbr-radius / 3.0
-#let gauss-tighten = 0.88
+#let gauss-tighten = 1.08
 #let sig-u = gauss-tighten * mask-sig-u
 #let sig-v = gauss-tighten * mask-sig-v
 #let rect-half-u = 3.0 * mask-sig-u
