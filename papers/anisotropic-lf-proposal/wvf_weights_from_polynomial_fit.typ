@@ -40,7 +40,7 @@ Here $c_0$ tells us the local baseline brightness, while $c_1$ and $c_2$ tell us
 
 == Start With The Actual 3x3 Patch
 
-It is easier to begin with the image patch itself rather than the design matrix. Write the local 3x3 neighborhood as
+As a simplification, let us begin with a local 3x3 image patch. We denote this neighborhood by $bold(B)$:
 
 $
   bold(B) =
@@ -51,7 +51,7 @@ $
   ).
 $
 
-This is just the actual image data in the local window. Each entry is the intensity value at one local coordinate.
+This matrix contains the pixel intensities in a local 3x3 window, with the pixel of interest located at the center.
 
 == Stack The Patch Into A Vector
 
