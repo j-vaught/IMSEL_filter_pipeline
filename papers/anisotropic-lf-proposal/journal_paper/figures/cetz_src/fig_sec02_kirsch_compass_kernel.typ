@@ -4,8 +4,8 @@
 #set text(font: "New Computer Modern", size: 10pt)
 
 #let garnet = rgb("#73000A")
-#let garnet-light = rgb("#73000A").lighten(60%)
 #let atlantic = rgb("#466A9F")
+#let black30 = rgb("#C7C7C7")
 #let cell-size = 0.7
 #let black90 = rgb("#363636")
 
@@ -21,7 +21,7 @@
       let x = ox + c * cell-size
       let y = oy - r * cell-size
 
-      let fill-color = if v == 5 { garnet } else if v == 0 { garnet-light } else { atlantic }
+      let fill-color = if v == 5 { garnet.lighten(20%) } else if v == 0 { garnet.lighten(60%) } else { atlantic.lighten(40%) }
       let text-color = if v == 0 { black90 } else { white }
       let text-val = if v > 0 { "+" + str(v) } else { str(v) }
 
@@ -29,7 +29,7 @@
         (x, y),
         (x + cell-size, y - cell-size),
         fill: fill-color,
-        stroke: 0.5pt + black90,
+        stroke: 0.2pt + black30,
       )
       content(
         (x + cell-size / 2, y - cell-size / 2),
@@ -75,7 +75,4 @@
       $k^* = arg max_k |R_k|$
     ],
   )
-
-  // Title below all
-  content((cx, -gap-y - 3 * cell-size - 0.6), text(fill: black90, size: 11pt, weight: "bold")[Kirsch (1971)])
 })

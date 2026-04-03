@@ -5,6 +5,8 @@
 
 #let garnet = rgb("#73000A")
 #let atlantic = rgb("#466A9F")
+#let black10 = rgb("#ECECEC")
+#let black30 = rgb("#C7C7C7")
 #let cell-size = 0.8
 #let black90 = rgb("#363636")
 #let black50 = rgb("#A2A2A2")
@@ -23,14 +25,14 @@
       let x = ox + c * cell-size
       let y = oy - r * cell-size
 
-      let fill-color = if v > 0.001 { garnet } else if v < -0.001 { atlantic } else { white }
+      let fill-color = if v > 0.001 { garnet.lighten(40%) } else if v < -0.001 { atlantic.lighten(40%) } else { black10 }
       let text-color = if calc.abs(v) < 0.001 { black90 } else { white }
 
       rect(
         (x, y),
         (x + cell-size, y - cell-size),
         fill: fill-color,
-        stroke: 0.5pt + black90,
+        stroke: 0.2pt + black30,
       )
       content(
         (x + cell-size / 2, y - cell-size / 2),
@@ -62,16 +64,14 @@
     ((-1, $-1$), (0, $0$), (1, $+1$)),
   )
 
-  // f3: line detector 1/2√2 * [[0,-1,√2],[-1,0,-1],[√2,-1,0]] -- line at 45 deg (not used)
-  // Actually use f5: line detector [[0,1,0],[-1,0,-1],[0,1,0]]
+  // f5: line detector [[0,1,0],[-1,0,-1],[0,1,0]]
   let f5 = (
     ((0, $0$), (1, $+1$), (0, $0$)),
     ((-1, $-1$), (0, $0$), (-1, $-1$)),
     ((0, $0$), (1, $+1$), (0, $0$)),
   )
 
-  // f7: line detector [[-1,2,-1],[2,-4,2],[-1,2,-1]] * 1/6 -- discrete Laplacian (line subspace)
-  // Use f3: line detector 1/2√2 * [[1,0,-1],[0,0,0],[-1,0,1]]
+  // f3: line detector 1/2√2 * [[1,0,-1],[0,0,0],[-1,0,1]]
   let f3 = (
     ((1, $+1$), (0, $0$), (-1, $-1$)),
     ((0, $0$), (0, $0$), (0, $0$)),
@@ -92,8 +92,4 @@
   draw-fc-kernel((), gap-x, 0, f2, $f_2$)
   draw-fc-kernel((), 2 * gap-x, 0, f5, $f_5$)
   draw-fc-kernel((), 3 * gap-x, 0, f3, $f_3$)
-
-  // Title below all
-  let total-w = 3 * gap-x + 3 * cell-size
-  content((total-w / 2, -3.4), text(fill: black90, size: 11pt, weight: "bold")[Frei-Chen (1977)])
 })
