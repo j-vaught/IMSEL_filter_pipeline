@@ -65,12 +65,12 @@ An approximate equivalence mapping connects the two parameterizations. The edge-
 
 #figure(
   image("../figures/fig_sec07_ods_vs_snr.pdf", width: 85%),
-  caption: [ODS F-score versus signal-to-noise ratio (SNR) for the ASF and five deep learning models under Gaussian noise. The ASF (garnet) degrades gracefully as noise increases, maintaining ODS $> 0.5$ even at 0.3 dB SNR. Deep learning models collapse below approximately 2 dB, falling to near-random baseline ($"ODS" approx 0.33$). At 1 dB SNR, the ASF achieves ODS $= 0.72$ while all DL models are at 0.33--0.35.],
+  caption: [ODS F-score versus signal-to-noise ratio (SNR) for the ASF and five deep learning models under Gaussian noise. The ASF (garnet) degrades gracefully as noise increases, maintaining ODS $> 0.5$ even at SNR $= 0.3$. Deep learning models collapse below approximately SNR $= 2$, falling to near-random baseline ($"ODS" approx 0.33$). At SNR $= 1$, the ASF achieves ODS $= 0.72$ while all DL models are at 0.33--0.35.],
 ) <fig:ods-vs-snr>
 
 #figure(
   image("../figures/fig_sec07_optimal_params_vs_snr.pdf", width: 85%),
-  caption: [Optimal LF parameters versus SNR, aggregated across all noise types and datasets. As noise increases (SNR decreases), both optimal support size $N_p$ (garnet) and optimal line half-width $m$ (atlantic) grow monotonically. At clean conditions, optimal parameters are $N_p approx 53$, $m approx 2$. At 0.3 dB SNR, they shift to $N_p approx 190$, $m approx 16$. This validates the noise gain theory of @sec:noise-rejection: larger kernels become optimal under noise because they average over more pixels.],
+  caption: [Optimal LF parameters versus SNR, aggregated across all noise types and datasets. As noise increases (SNR decreases), both optimal support size $N_p$ (garnet) and optimal line half-width $m$ (atlantic) grow monotonically. At clean conditions, optimal parameters are $N_p approx 53$, $m approx 2$. At SNR $= 0.3$, they shift to $N_p approx 190$, $m approx 16$. This validates the noise gain theory of @sec:noise-rejection: larger kernels become optimal under noise because they average over more pixels.],
 ) <fig:optimal-params-snr>
 
 == Published Versus Optimal Parameters <sec:published-vs-optimal>

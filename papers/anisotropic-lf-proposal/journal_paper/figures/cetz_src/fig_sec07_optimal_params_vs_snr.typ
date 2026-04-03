@@ -12,17 +12,17 @@
 #let black10  = rgb("#ECECEC")
 #let white    = rgb("#FFFFFF")
 
-// Extracted data: (SNR_dB, optimal_Np, optimal_m)
+// Extracted data: (SNR_linear, optimal_Np, optimal_m)
 // Aggregated across all noise types (gaussian, salt_pepper, poisson, speckle, uniform)
 // and all datasets (BSDS500, BIPED v1, BIPED v2, UDED)
 #let data = (
-  (-5.23, 190.3, 15.7),
-  (-3.01, 186.2, 14.2),
-  (0.00, 149.7, 9.5),
-  (1.76, 124.5, 6.9),
-  (3.01, 109.8, 5.6),
-  (4.77, 103.8, 3.9),
-  (6.02, 93.0, 3.2),
+  (0.3, 190.3, 15.7),
+  (0.5, 186.2, 14.2),
+  (1.0, 149.7, 9.5),
+  (1.5, 124.5, 6.9),
+  (2.0, 109.8, 5.6),
+  (3.0, 103.8, 3.9),
+  (4.0, 93.0, 3.2),
 )
 
 // Clean baseline (infinite SNR, no noise)
@@ -40,9 +40,9 @@
   let ox2 = ox1 + pw + gap  // right panel origin x
   let oy = 1.0   // origin y
 
-  // X axis range: SNR from -6 to 8 dB
-  let snr-min = -6.0
-  let snr-max = 8.0
+  // X axis range: SNR from 0 to 4.5 (linear)
+  let snr-min = 0.0
+  let snr-max = 4.5
 
   // Y axis ranges
   let np-min = 0.0
@@ -62,7 +62,7 @@
   line((ox1, oy), (ox1, oy + ph), stroke: 0.8pt + black90)
 
   // X-axis label
-  content((ox1 + pw/2, oy - 0.7), text(fill: black90, size: 9pt)[SNR (dB)])
+  content((ox1 + pw/2, oy - 0.7), text(fill: black90, size: 9pt)[SNR])
 
   // Y-axis label
   content(
@@ -72,7 +72,7 @@
   )
 
   // X ticks
-  let x-ticks = (-6, -4, -2, 0, 2, 4, 6, 8)
+  let x-ticks = (0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4)
   for v in x-ticks {
     let x = tx1(v)
     line((x, oy), (x, oy - 0.08), stroke: 0.5pt + black70)
@@ -109,7 +109,7 @@
   line((ox2, oy), (ox2, oy + ph), stroke: 0.8pt + black90)
 
   // X-axis label
-  content((ox2 + pw/2, oy - 0.7), text(fill: black90, size: 9pt)[SNR (dB)])
+  content((ox2 + pw/2, oy - 0.7), text(fill: black90, size: 9pt)[SNR])
 
   // Y-axis label
   content(

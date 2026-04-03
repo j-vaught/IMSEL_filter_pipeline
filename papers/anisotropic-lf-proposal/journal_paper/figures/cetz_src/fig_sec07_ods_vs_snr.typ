@@ -40,7 +40,7 @@
   line((ox, oy), (ox, oy + ph), stroke: 0.8pt + black90)
 
   // X-axis label
-  content((ox + pw/2, oy - 0.7), text(fill: black90, size: 10pt)[SNR (dB)])
+  content((ox + pw/2, oy - 0.7), text(fill: black90, size: 10pt)[SNR])
 
   // Y-axis label
   content(
