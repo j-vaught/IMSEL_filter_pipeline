@@ -61,18 +61,13 @@ The earliest edge detection operators were small, hand-designed convolution mask
 
 #figure(
   image("../figures/fig_sec02_sobel_kirsch_combined.pdf", width: 100%),
-  caption: [Classical $3 times 3$ edge operators. Left column: Sobel (1968) estimates horizontal and vertical gradients with two fixed kernels $G_x$ and $G_y$. Center and right columns: Kirsch (1971) evaluates eight compass masks (four shown) and selects the maximum response, an early orientation sweep that foreshadows the WVF's $N_s$-direction search. Positive weights in garnet, negative in blue, center pixel in white.],
+  caption: [Classical $3 times 3$ edge operators. Left column: Sobel (1968) estimates horizontal and vertical gradients with two fixed kernels $G_x$ and $G_y$. Center and right columns: Kirsch (1971) evaluates eight compass masks (four shown) and selects the maximum response. Positive weights in garnet, negative in blue, center pixel in white.],
   placement: top,
 ) <fig:sobel-kirsch>
 
 
 The Gaussian derivative framework placed edge detection on a firmer mathematical foundation. Marr and Hildreth @marr1980log proposed detecting zero crossings of the Laplacian of Gaussian ($nabla^2 G$), providing a principled coupling of smoothing scale and differentiation. Canny @canny1986edge formulated edge detection as an optimization problem, seeking the operator that maximizes detection probability and localization accuracy while minimizing multiple responses. His solution for step edges in white Gaussian noise is closely approximated by the first derivative of a Gaussian, and his framework introduced non-maximum suppression and hysteresis thresholding as post-processing stages that remain standard practice. Lindeberg @lindeberg1998edge extended these ideas to _automatic scale selection_, using normalized derivatives across scale space to identify the characteristic scale of each edge. A persistent limitation of all fixed-kernel methods, whether $3 times 3$ masks or Gaussian derivatives at a single scale, is that their spatial support does not adapt to the local noise level or to the spatial extent of the edge structure. The WVF and LF address this limitation by enlarging the support region, but as discussed in @sec:related:lp, the mechanism they use, polynomial fitting over large windows, is itself classical.
 
-#figure(
-  image("../figures/fig_sec02_gaussian_derivative_log.pdf", width: 100%),
-  caption: [Gaussian derivatives. Left: the Gaussian function $G(x)$, its first derivative $G'(x)$ (odd-symmetric dipole), and its second derivative $G''(x)$ (Mexican hat). Right: the corresponding 2D kernels. The first-derivative-of-Gaussian kernel is the mathematical ancestor of the geometric kernels proposed in this work.],
-  placement: top,
-) <fig:gaussian-deriv>
 
 #figure(
   image("../figures/fig_sec02_canny_pipeline_stages.pdf", width: 100%),
