@@ -82,7 +82,7 @@
       let x = rx + c * cell
       let y = ry - r * cell
       let is-center = r == 1 and c == 1
-      draw-cell(x, y, diffs.at(r).at(c), if is-center { $p_c$ } else { none })
+      draw-cell(x, y, diffs.at(r).at(c), none)
     }
   }
 
