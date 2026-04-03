@@ -91,8 +91,4 @@
   content((rx + N * cell / 2, ry - N * cell - 1.18),
     text(fill: black50, size: 8pt, style: "italic")[weights: learned])
 
-  // ── divider ────────────────────────────────────────────────────────────────
-  let div-x = lx + N * cell + gap / 2
-  line((div-x, ly + 0.75), (div-x, ly - N * cell - 0.3),
-    stroke: 0.5pt + black30)
 })
