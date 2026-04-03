@@ -17,7 +17,7 @@
 #let bottom-degrees = (3, 5, 7, 9)
 #let target-Np = 500
 #let grid-N = 33
-#let cell-sz = 0.18
+#let cell-sz = 0.19
 #let half = calc.div-euclid(grid-N - 1, 2)
 
 // ── Factorial ────────────────────────────────────────────────────────────
@@ -239,8 +239,8 @@
 #cetz.canvas({
   import cetz.draw: *
   let gw = grid-N * cell-sz
-  let gx = 0.45
-  let gy = 0.75
+  let gx = 0.25
+  let gy = 0.55
   let row-w = 4.0 * gw + 3.0 * gx
   for i in range(top-degrees.len()) {
     let ox = i * (gw + gx)
