@@ -190,11 +190,13 @@
 }
 
 // ── Rectangle / ellipse matched to LF size ──────────────────────────────
+#let mask-sig-u = (m-line + nbr-radius) / 3.0
+#let mask-sig-v = nbr-radius / 3.0
 #let gauss-tighten = 0.78
-#let sig-u = gauss-tighten * (m-line + nbr-radius) / 3.0
-#let sig-v = gauss-tighten * nbr-radius / 3.0
-#let rect-half-u = 3.0 * sig-u
-#let rect-half-v = 3.0 * sig-v
+#let sig-u = gauss-tighten * mask-sig-u
+#let sig-v = gauss-tighten * mask-sig-v
+#let rect-half-u = 3.0 * mask-sig-u
+#let rect-half-v = 3.0 * mask-sig-v
 
 #let rect-ellipse-stencil(theta, shape) = {
   let ct = calc.cos(theta)
@@ -209,7 +211,7 @@
       let inside = if shape == "rect" {
         calc.abs(u) <= rect-half-u and calc.abs(v) <= rect-half-v
       } else {
-        (u * u) / (sig-u * sig-u) + (v * v) / (sig-v * sig-v) <= 9.0
+        (u * u) / (mask-sig-u * mask-sig-u) + (v * v) / (mask-sig-v * mask-sig-v) <= 9.0
       }
       if inside {
         let w = -v * calc.exp(-0.5 * (
@@ -239,6 +241,10 @@
 #let lerp-color(base, t) = {
   let t2 = calc.min(calc.max(t, 0.0), 1.0)
   color.mix((base, t2 * 100%), (white, (1.0 - t2) * 100%))
+}
+
+#let row-label-content(label) = {
+  box(rotate(-90deg, reflow: true, text(fill: black90, size: 9pt, weight: "bold")[#label]))
 }
 
 #let draw-panel(ox, oy, stencil) = {
@@ -312,7 +318,7 @@
 
   for row in range(3) {
     let cy = top-pad - row * (gw + gy) - gw / 2.0
-    content((0.08, cy), text(fill: black90, size: 9pt, weight: "bold")[#row-labels.at(row)], anchor: "west")
+    content((0.22, cy), row-label-content(row-labels.at(row)), anchor: "center")
     for col in range(orientations.len()) {
       let ox = left-pad + col * (gw + gx)
       let oy = top-pad - row * (gw + gy)
