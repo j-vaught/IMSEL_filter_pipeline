@@ -7,7 +7,11 @@
   let section-num = if heading-num.len() > 0 { heading-num.at(0) } else { 0 }
   numbering("(1.1)", section-num, nums.pos().at(0))
 })
-#show heading.where(level: 1): set text(size: 13pt)
+#show heading.where(level: 1): it => {
+  counter(math.equation).update(0)
+  set text(size: 13pt)
+  it
+}
 #show heading.where(level: 2): set text(size: 11.5pt)
 #show heading.where(level: 3): set text(size: 11pt)
 
