@@ -368,11 +368,21 @@ $
   ]^top,
 $ <eq:phi>
 
+This vector is just a compact way to list all polynomial terms up to degree $d$. For example, degree 0 uses only the constant term $1$. Degree 1 adds the linear terms $x$ and $y$. Degree 2 then adds the quadratic terms $x^2/2$, $x y$, and $y^2/2$. Writing the basis this way lets us package the polynomial into one vector of known geometric terms and one vector of unknown coefficients, so evaluating the polynomial at any pixel location becomes a simple dot product.
+
+The factors of $1/2$ on $x^2$ and $y^2$ are not required, but they are convenient. They match the usual Taylor-series normalization, so the corresponding fitted coefficients line up naturally with second-derivative terms rather than carrying an extra factor of 2.
+
 with total length
 
 $
   M = (d+1)(d+2)/2.
 $ <eq:mbasis>
+
+This count comes from the number of monomials in two variables whose total degree is at most $d$. There is 1 term of degree 0, 2 terms of degree 1, 3 terms of degree 2, and so on, up to $d+1$ terms of degree $d$. Therefore the total number of basis terms is
+
+$
+  M = 1 + 2 + 3 + dots + (d + 1) = (d+1)(d+2)/2.
+$ <eq:mbasis-sum>
 
 Nothing changes conceptually from the 3x3 case. The only difference is that we now have more sample points. Each row of the design matrix is still the basis vector evaluated at one pixel location in the square support. Therefore
 
