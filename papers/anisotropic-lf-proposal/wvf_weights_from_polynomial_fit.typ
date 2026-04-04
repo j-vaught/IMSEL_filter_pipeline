@@ -575,35 +575,28 @@ $
   h = (N - 1)/2 = 7.
 $ <eq:square-h-15>
 
-With that support fixed, Figure @fig:square-degree-sweep shows three separate square-support visualizations, corresponding to polynomial degrees $d = 1$, $d = 3$, and $d = 5$.
+With that support fixed, Figures @fig:square-d1, @fig:square-d3, and @fig:square-d5 show the square-support derivative stencils for polynomial degrees $d = 1$, $d = 3$, and $d = 5$.
 
 #figure(
-  grid(
-    columns: 3,
-    gutter: 10pt,
-    figure(
-      image("figures/fig_square_filter_d1.pdf", width: 100%),
-      caption: [$d = 1$],
-      supplement: none,
-      numbering: none,
-    ),
-    figure(
-      image("figures/fig_square_filter_d3.pdf", width: 100%),
-      caption: [$d = 3$],
-      supplement: none,
-      numbering: none,
-    ),
-    figure(
-      image("figures/fig_square_filter_d5.pdf", width: 100%),
-      caption: [$d = 5$],
-      supplement: none,
-      numbering: none,
-    ),
-  ),
+  image("figures/fig_square_filter_d1.pdf", width: 100%),
   caption: [
-    Square-support derivative kernels for a `15 x 15` neighborhood. Each panel contains the pair $bold(K)_x^("square")$ and $bold(K)_y^("square")$ for one polynomial degree. From left to right, the degrees are $d = 1$, $d = 3$, and $d = 5$. Garnet denotes positive weights, Atlantic denotes negative weights, and white denotes weights near zero.
+    Square-support derivative kernels for a `15 x 15` neighborhood with polynomial degree $d = 1$. The left panel shows $bold(K)_x^("square")$ and the right panel shows $bold(K)_y^("square")$. Garnet denotes positive weights, Atlantic denotes negative weights, and white denotes weights near zero.
   ],
-) <fig:square-degree-sweep>
+) <fig:square-d1>
+
+#figure(
+  image("figures/fig_square_filter_d3.pdf", width: 100%),
+  caption: [
+    Square-support derivative kernels for a `15 x 15` neighborhood with polynomial degree $d = 3$.
+  ],
+) <fig:square-d3>
+
+#figure(
+  image("figures/fig_square_filter_d5.pdf", width: 100%),
+  caption: [
+    Square-support derivative kernels for a `15 x 15` neighborhood with polynomial degree $d = 5$.
+  ],
+) <fig:square-d5>
 
 Several points are worth noting. First, the degree-1 kernels have the simplest possible structure. They form a monotone left-to-right ramp for $bold(K)_x^("square")$ and the corresponding top-to-bottom ramp for $bold(K)_y^("square")$. Second, once the degree is increased to $d = 3$, the kernels become more concentrated near the middle of the support and develop small opposite-sign boundary lobes near the outer edges. That same trend becomes even more pronounced for $d = 5$, where the central positive and negative bands strengthen further and the outer oscillatory structure is easier to see. Finally, each panel retains the expected square-support symmetry. In every case, the $y$-derivative kernel is the transpose of the $x$-derivative kernel, so the two heatmaps contain the same structure rotated by ninety degrees.
 
