@@ -353,7 +353,7 @@ $
   (x_i, y_i), quad i = 1, 2, dots, N_p.
 $ <eq:square-coords>
 
-For a polynomial of degree $d$, define the monomial basis vector
+For a polynomial of degree $d$, we can define the monomial basis vector. 
 
 $
   phi_d(x, y) =
@@ -368,11 +368,9 @@ $
   ]^top,
 $ <eq:phi>
 
-This vector is just a compact way to list all polynomial terms up to degree $d$. For example, degree 0 uses only the constant term $1$. Degree 1 adds the linear terms $x$ and $y$. Degree 2 then adds the quadratic terms $x^2/2$, $x y$, and $y^2/2$. Writing the basis this way lets us package the polynomial into one vector of known geometric terms and one vector of unknown coefficients, so evaluating the polynomial at any pixel location becomes a simple dot product.
+This vector is just a compact way to list all polynomial terms up to degree $d$. For example, from @eq:poly1, we see that a degree-1 polynomial has the basis $[1, x, y]^top$, where we have the coefficients $c_0$, $c_1$, and $c_2$ corresponding to these terms. Additionally, from @eq:poly2, the monomial basis for a degree-2 polynomial is $[1, x, y, x^2/2, x y, y^2/2]^top$.
 
-The factors of $1/2$ on $x^2$ and $y^2$ are not required, but they are convenient. They match the usual Taylor-series normalization, so the corresponding fitted coefficients line up naturally with second-derivative terms rather than carrying an extra factor of 2.
-
-with total length
+In other words, the vector $phi_d(x, y)$ simply collects every monomial term that can appear in a 2D polynomial of total degree at most $d$. Each entry of this basis will have one corresponding unknown coefficient in the polynomial fit. So the length of $phi_d(x, y)$ is exactly the number of coefficients we must solve for. We denote that number by $M$.
 
 $
   M = (d+1)(d+2)/2.
