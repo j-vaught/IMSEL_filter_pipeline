@@ -1046,6 +1046,494 @@ Under the same full-rank assumption used in @eq:lstsqn and @eq:pinvn, the least-
 
 The conclusion is therefore structural rather than numerical. For a fixed support and a complete polynomial basis, the rotated WVF fit does not create new first-order information. It rewrites the same fitted polynomial in rotated coordinates and then extracts the directional derivative already implied by the fitted gradient. If an implementation changes the sampled neighborhood with angle or introduces other anisotropic choices, then this exact equivariance argument no longer applies in the same form.
 
+= From the Wide View Filter to the Line Filter <sec:lf-formulation>
+
+The WVF defined in @sec:wvf-formulation evaluates one orientation-dependent directional stencil at one pixel. The Line Filter (LF) keeps the same WVF stencil at each candidate angle, but evaluates it at several shifted centers and combines the resulting directional responses @bagan2023lf. The next four subsections define those virtual centers, the WVF responses collected along the line, the Gaussian weighting applied to them, and the final orientation-selection rule.
+
+== Virtual Evaluation Points Along the Candidate Direction <sec:lf-virtual-points>
+
+Using the sampled angle set from @eq:wvf-angle-set, the LF first defines integer line offsets along the candidate tangent direction associated with each normal angle $theta_k$ by
+
+$
+  (delta x_j(theta_k), delta y_j(theta_k))
+  = ("round"(-j sin theta_k), "round"(j cos theta_k)),
+  quad j in {-m, dots, m}.
+$ <eq:lf-line-offsets>
+
+Equation @eq:lf-line-offsets shows that the parameter $m$ controls the half-length of the virtual line. Because the rotated $x'$ axis in @eq:rotate-x and @eq:rotate-y is the candidate normal direction, the offset in @eq:lf-line-offsets is perpendicular to that normal and therefore follows the candidate tangent. Using @eq:lf-line-offsets, the $j$-th virtual evaluation point for the candidate angle $theta_k$ is
+
+$
+  (X_j, Y_j)
+  = (X_0 + delta x_j(theta_k), Y_0 + delta y_j(theta_k)).
+$ <eq:lf-virtual-points>
+
+Using the circular support from @eq:wvf-support, the sampled intensity vector gathered around the virtual point in @eq:lf-virtual-points is
+
+$
+  bold(b)^(j)(theta_k)
+  =
+  [
+    I(X_j + Delta x_1, Y_j + Delta y_1),
+    dots,
+    I(X_j + Delta x_(N_p), Y_j + Delta y_(N_p))
+  ]^top.
+$ <eq:lf-point-data>
+
+Equation @eq:lf-point-data is the first part inherited from the WVF. The support offsets $(Delta x_i, Delta y_i)$ are the same offsets used in @eq:wvf-support. The new LF element is that the same support is recentered at every virtual point indexed by $j$.
+
+== WVF Responses Along the Line <sec:lf-line-point-responses>
+
+Using the WVF derivative row in @eq:wvf-fx, the directional response at the $j$-th virtual point is
+
+$
+  R_j(theta_k)
+  = bold(p)_(f_(x'))(theta_k)^top bold(b)^(j)(theta_k).
+$ <eq:lf-point-response>
+
+Equation @eq:lf-point-response shows that each LF line sample is still a WVF response. The orientation-dependent stencil $bold(p)_(f_(x'))(theta_k)^top$ is inherited directly from @eq:wvf-fx, while the virtual-point data vector $bold(b)^(j)(theta_k)$ is the shifted sample vector from @eq:lf-point-data. Therefore the LF does not alter the underlying point-stencil construction. It evaluates that same WVF stencil repeatedly along the line indexed by $j$.
+
+== Gaussian-Weighted Line Response <sec:lf-line-response>
+
+The LF then combines the point responses from @eq:lf-point-response by a Gaussian-weighted average along the line. The line weights are
+
+$
+  w_j
+  =
+  exp(-j^2 / (2 sigma_m^2))
+  /
+  sum_(q=-m)^m exp(-q^2 / (2 sigma_m^2)),
+  quad sigma_m = m / 2.
+$ <eq:lf-line-weights>
+
+Using @eq:lf-line-weights and @eq:lf-point-response, the LF response at the candidate angle $theta_k$ is
+
+$
+  L(theta_k)
+  = sum_(j=-m)^m w_j R_j(theta_k).
+$ <eq:lf-line-response>
+
+Equation @eq:lf-line-response shows which part of the LF is new relative to the WVF. The WVF response in @eq:wvf-response is one weighted sum over one support. The LF response in @eq:lf-line-response is a second weighted sum taken over the collection of WVF responses defined by @eq:lf-point-response.
+
+== Selection of the Winning LF Direction <sec:lf-selection>
+
+The LF uses the same discrete angle set from @eq:wvf-angle-set and the same absolute-response selection rule used for the WVF in @eq:wvf-theta-star. The winning LF direction is therefore
+
+$
+  theta_*^("LF")
+  = arg max_(theta_k in Theta_(N_s)) |L(theta_k)|.
+$ <eq:lf-theta-star>
+
+Using @eq:lf-theta-star, the LF magnitude returned at that pixel is
+
+$
+  G^("LF") = |L(theta_*^("LF"))|.
+$ <eq:lf-mag>
+
+Equations @eq:lf-line-offsets through @eq:lf-mag complete the LF definition. The elements inherited from the WVF are the angle set in @eq:wvf-angle-set and the directional point stencil in @eq:wvf-fx. The new LF elements are the shifted virtual points in @eq:lf-virtual-points, the Gaussian line weights in @eq:lf-line-weights, and the line aggregation in @eq:lf-line-response.
+
+= Collapsing the Line Filter into a Fused Anisotropic Stencil <sec:lf-fused-stencil>
+
+The LF response in @eq:lf-line-response is a weighted sum of the WVF responses from @eq:lf-point-response, and each WVF response is itself a weighted sum of sampled intensities. Because both stages are linear, the entire LF at a fixed angle can be rewritten as one weighted sum over image samples. The next subsections make that collapse explicit and define the fused anisotropic stencil that results from it.
+
+== Expanding the Line Response Into Nested Sums <sec:fused-expand>
+
+Substituting the point response in @eq:lf-point-response into the line response in @eq:lf-line-response gives
+
+$
+  L(theta_k)
+  =
+  sum_(j=-m)^m
+  w_j bold(p)_(f_(x'))(theta_k)^top bold(b)^(j)(theta_k).
+$ <eq:fused-expand-dot>
+
+Using the sampled intensity vector in @eq:lf-point-data, Equation @eq:fused-expand-dot becomes
+
+$
+  L(theta_k)
+  =
+  sum_(j=-m)^m
+  sum_(i=1)^(N_p)
+  w_j p_i(theta_k)
+  I(X_j + Delta x_i, Y_j + Delta y_i),
+$ <eq:fused-expand-sum>
+
+where $p_i(theta_k)$ denotes the $i$-th entry of the WVF derivative row $bold(p)_(f_(x'))(theta_k)^top$ from @eq:wvf-fx. Using the virtual-point coordinates in @eq:lf-virtual-points, the relative image offset addressed by the pair $(j, i)$ is
+
+$
+  bold(delta)_(j,i)(theta_k)
+  =
+  (
+    delta x_j(theta_k) + Delta x_i,
+    delta y_j(theta_k) + Delta y_i
+  ).
+$ <eq:fused-raw-offset>
+
+Using @eq:fused-raw-offset, Equation @eq:fused-expand-sum can be written relative to the target pixel as
+
+$
+  L(theta_k)
+  =
+  sum_(j=-m)^m
+  sum_(i=1)^(N_p)
+  w_j p_i(theta_k)
+  I(
+    X_0 + delta_(j,i)^x(theta_k),
+    Y_0 + delta_(j,i)^y(theta_k)
+  ).
+$ <eq:fused-expand-relative>
+
+Equation @eq:fused-expand-relative is still the LF. It simply makes each raw pixel contribution explicit.
+
+== Grouping Repeated Pixel Contributions <sec:fused-group>
+
+Equation @eq:fused-expand-relative contains $(2m + 1) N_p$ index pairs $(j, i)$, but those pairs need not address distinct pixels. Using @eq:fused-raw-offset, let
+
+$
+  tilde(S)_k
+  =
+  {
+    bold(tilde(delta))_ell(theta_k)
+    : ell = 1, dots, N'_k
+  }
+$ <eq:fused-unique-support>
+
+be an enumeration of the distinct offsets appearing in the raw collection ${bold(delta)_(j,i)(theta_k)}$.
+
+Using @eq:fused-unique-support, Equation @eq:fused-expand-relative can be regrouped by unique pixel location:
+
+$
+  L(theta_k)
+  =
+  sum_(ell=1)^(N'_k)
+  sum_({
+    (j, i):
+    bold(delta)_(j,i)(theta_k) = bold(tilde(delta))_ell(theta_k)
+  })
+  w_j p_i(theta_k)
+  I(
+    X_0 + tilde(delta)_ell^x(theta_k),
+    Y_0 + tilde(delta)_ell^y(theta_k)
+  ).
+$ <eq:fused-grouped>
+
+Equation @eq:fused-grouped changes only the order in which the terms from @eq:fused-expand-relative are collected. No approximation has been introduced.
+
+== The Fused Weight Map <sec:fused-alpha>
+
+Using the grouped form in @eq:fused-grouped, define the fused weight assigned to the unique offset $bold(tilde(delta))_ell(theta_k)$ by
+
+$
+  alpha_(k, ell)
+  =
+  sum_({
+    (j, i):
+    bold(delta)_(j,i)(theta_k) = bold(tilde(delta))_ell(theta_k)
+  })
+  w_j p_i(theta_k).
+$ <eq:fused-alpha>
+
+Substituting @eq:fused-alpha into @eq:fused-grouped yields the fused LF response
+
+$
+  L(theta_k)
+  =
+  sum_(ell=1)^(N'_k)
+  alpha_(k, ell)
+  I(
+    X_0 + tilde(delta)_ell^x(theta_k),
+    Y_0 + tilde(delta)_ell^y(theta_k)
+  ).
+$ <eq:fused-response>
+
+If the sampled intensities at those unique offsets are collected into the vector
+
+$
+  bold(g)_k
+  =
+  [
+    I(X_0 + tilde(delta)_1^x(theta_k), Y_0 + tilde(delta)_1^y(theta_k)),
+    dots,
+    I(X_0 + tilde(delta)_(N'_k)^x(theta_k), Y_0 + tilde(delta)_(N'_k)^y(theta_k))
+  ]^top,
+$ <eq:fused-data-vector>
+
+then Equation @eq:fused-response can be written compactly as
+
+$
+  L(theta_k) = bold(alpha)_k^top bold(g)_k.
+$ <eq:fused-dotprod>
+
+Equation @eq:fused-dotprod is the fused anisotropic stencil form of the LF at angle $theta_k$.
+
+== Exact Equivalence Between the LF and the Fused Stencil <sec:fused-equivalence>
+
+The equivalence between the original LF and the fused stencil follows directly from the sequence @eq:lf-line-response, @eq:fused-expand-dot, @eq:fused-expand-sum, @eq:fused-expand-relative, @eq:fused-grouped, and @eq:fused-response. Equation @eq:fused-expand-dot substitutes the WVF point response into the LF line average. Equation @eq:fused-expand-sum expands the inner product over the circular support. Equation @eq:fused-expand-relative rewrites each sampled value as an offset from the target pixel. Equation @eq:fused-grouped then partitions those raw terms according to the unique pixel positions from @eq:fused-unique-support, and Equation @eq:fused-alpha records the total coefficient attached to each unique position. Because each raw term from @eq:fused-expand-relative appears in exactly one group in @eq:fused-grouped and with exactly the same coefficient, Equation @eq:fused-response returns exactly the same scalar value as Equation @eq:lf-line-response for every image patch and every candidate angle.
+
+== Weight Cancellation and Support Overlap <sec:fused-cancellation>
+
+Using @eq:fused-unique-support, the fused support size satisfies
+
+$
+  N'_k <= (2m + 1) N_p.
+$ <eq:fused-support-bound>
+
+Equation @eq:fused-support-bound reflects the overlap created by the translated supports in @eq:lf-virtual-points. When two or more pairs $(j, i)$ map to the same unique offset in @eq:fused-alpha, their weights are added before the image intensity is sampled. If those contributing terms have opposite signs, then the fused coefficient $alpha_(k, ell)$ in @eq:fused-alpha can be smaller in magnitude than the individual raw terms, and it can vanish when the signed contributions cancel exactly. This behavior follows from support overlap and coefficient aggregation in @eq:fused-alpha. It is therefore a structural property of the fused stencil representation in @eq:fused-response, not a change in the underlying LF defined by @eq:lf-line-response.
+
+= Anisotropic Filter Families <sec:anisotropic-families>
+
+The fused LF stencil derived in @sec:lf-fused-stencil is one member of a broader class of orientation-dependent derivative filters. To compare such filters on common terms, it is useful to place them in one rotated coordinate system and then describe each family by the same ingredients. Those ingredients are the support geometry, the weighting rule, the derivative extraction step, and the angle parameter that aligns the filter with a candidate local orientation.
+
+== A Common Oriented Coordinate System <sec:aniso-common-coords>
+
+For a candidate angle $theta$, let the rotated coordinates of the image-grid offset $(Delta x, Delta y)$ be
+
+$
+  u = Delta x cos theta + Delta y sin theta,
+  quad
+  v = -Delta x sin theta + Delta y cos theta.
+$ <eq:aniso-uv>
+
+Equation @eq:aniso-uv is the same rotation already used in @eq:rotate-x and @eq:rotate-y, but it is written here in the common notation $(u, v)$ for comparing anisotropic families. In this section, $u$ denotes displacement along the candidate normal direction and $v$ denotes displacement along the corresponding tangent direction. Every anisotropic filter introduced below depends on the candidate angle through @eq:aniso-uv.
+
+== Rectangular Anisotropic Polynomial-Fit Filter <sec:rect-poly-fit>
+
+The rectangular anisotropic polynomial-fit filter keeps the least-squares construction from @eq:lstsqn and @eq:pinvn, but replaces the isotropic support by an oriented rectangle. For half-widths $h_u > 0$ and $h_v > 0$, define the support by
+
+$
+  S_"rect"(theta)
+  =
+  {
+    (Delta x_i, Delta y_i) in ZZ^2:
+    |u_i| <= h_u
+    and
+    |v_i| <= h_v
+  }.
+$ <eq:rect-support>
+
+Using the monomial basis from @eq:phi, the rectangular design matrix is
+
+$
+  bold(A)_"rect"(theta)[i, :]
+  =
+  phi_d(u_i, v_i)^top.
+$ <eq:rect-design>
+
+With the support in @eq:rect-support and the design matrix in @eq:rect-design, the fitted coefficient vector is
+
+$
+  hat(bold(z))_"rect"(theta)
+  =
+  bold(P)_"rect"(theta) bold(b)_"rect",
+$ <eq:rect-lstsq>
+
+where $bold(b)_"rect"$ contains the sampled intensities on $S_"rect"(theta)$. Using the derivative-row construction from @eq:px-row, the corresponding normal derivative estimate is
+
+$
+  hat(f)_u^("rect")(theta)
+  =
+  bold(p)_(f_u,"rect")(theta)^top bold(b)_"rect".
+$ <eq:rect-response>
+
+Equation @eq:rect-response has the same algebraic form as @eq:fx-est, @eq:circle-fx, and @eq:wvf-fx. The distinction is purely geometric. The support in @eq:rect-support is elongated or compressed differently along the $u$ and $v$ axes.
+
+== Elliptical Anisotropic Polynomial-Fit Filter <sec:ellipse-poly-fit>
+
+The elliptical anisotropic polynomial-fit filter uses the same least-squares construction as @eq:rect-lstsq, but changes the support geometry again. For semi-axes $h_u > 0$ and $h_v > 0$, define
+
+$
+  S_"ell"(theta)
+  =
+  {
+    (Delta x_i, Delta y_i) in ZZ^2:
+    u_i^2 / h_u^2 + v_i^2 / h_v^2 <= 1
+  }.
+$ <eq:ellipse-support>
+
+Using @eq:ellipse-support and the same basis $phi_d$ from @eq:phi, the elliptical design matrix is
+
+$
+  bold(A)_"ell"(theta)[i, :]
+  =
+  phi_d(u_i, v_i)^top.
+$ <eq:ellipse-design>
+
+Applying the same pseudoinverse map from @eq:pinvn gives
+
+$
+  hat(bold(z))_"ell"(theta)
+  =
+  bold(P)_"ell"(theta) bold(b)_"ell",
+$ <eq:ellipse-lstsq>
+
+and the corresponding normal derivative estimate is
+
+$
+  hat(f)_u^("ell")(theta)
+  =
+  bold(p)_(f_u,"ell")(theta)^top bold(b)_"ell".
+$ <eq:ellipse-response>
+
+Equations @eq:ellipse-support through @eq:ellipse-response make the elliptical anisotropic polynomial-fit filter directly comparable to the rectangular one. Both are least-squares derivative filters, and both differ from the isotropic constructions of @sec:nxn-square and @sec:circular-support only through their oriented support geometry.
+
+== Anisotropic Gaussian Derivative Filter <sec:aniso-gaussian>
+
+The anisotropic Gaussian derivative filter uses the same coordinates from @eq:aniso-uv, but its weights are defined analytically rather than through a polynomial exactness constraint. Let the anisotropic Gaussian envelope be
+
+$
+  G_(sigma_u, sigma_v)(u, v)
+  =
+  exp(-1/2 (u^2 / sigma_u^2 + v^2 / sigma_v^2)).
+$ <eq:aniso-gaussian-envelope>
+
+Differentiating @eq:aniso-gaussian-envelope in the normal $u$ direction gives
+
+$
+  K_(sigma_u, sigma_v)^(u)(u, v)
+  =
+  -(u / sigma_u^2) G_(sigma_u, sigma_v)(u, v).
+$ <eq:aniso-gaussian-derivative>
+
+Sampling @eq:aniso-gaussian-derivative on integer pixel offsets and truncating to a finite oriented support yields an anisotropic Gaussian derivative stencil. The dependence on $theta$ enters through the rotated coordinates in @eq:aniso-uv, and the dependence on anisotropy enters through the two scale parameters $sigma_u$ and $sigma_v$ in @eq:aniso-gaussian-envelope.
+
+= Anisotropic Filters Relative to Isotropic Filters <sec:aniso-vs-iso>
+
+The manuscript now contains definitions for isotropic polynomial-fit filters, the WVF and LF, and several anisotropic alternatives. The next step is to compare those families on structural terms alone. This section therefore discusses support symmetry, angle dependence, locality, and parameterization using the definitions already established above, without yet appealing to any empirical results.
+
+== Support Symmetry <sec:support-symmetry>
+
+The square and circular supports from @eq:square-grid and @eq:circle-support are isotropic in the sense that they are defined without separate directional scales. By contrast, the anisotropic supports in @eq:rect-support and @eq:ellipse-support depend on the oriented coordinates $(u, v)$ from @eq:aniso-uv and on distinct geometric parameters along those two axes. The anisotropic Gaussian derivative in @eq:aniso-gaussian-derivative likewise depends on the two scales $sigma_u$ and $sigma_v$ through @eq:aniso-gaussian-envelope. The structural distinction is therefore that isotropic filters use one support scale, whereas anisotropic filters use separate scales along the normal and tangent directions.
+
+== Directional Dependence and Angle Sampling <sec:directional-dependence>
+
+The isotropic polynomial-fit constructions recover $hat(f)_x$ and $hat(f)_y$ through @eq:fx-est and @eq:fy-est or through @eq:circle-fx and @eq:circle-fy. The WVF redundancy argument in @eq:directional-gradient and @eq:directional-max then shows that every continuous directional derivative of that fitted polynomial is already determined by those paired derivatives. The anisotropic families take a different structural form. Their supports or their analytic weights depend explicitly on the candidate angle through @eq:aniso-uv, @eq:rect-support, @eq:ellipse-support, or @eq:aniso-gaussian-derivative. As a result, evaluating a full anisotropic family involves one oriented response per sampled angle in $Theta_(N_s)$, whereas the isotropic fitted gradient already determines the continuous directional field through @eq:directional-gradient.
+
+== Locality and Line Aggregation <sec:locality-aggregation>
+
+The square and circular isotropic filters are centered at one pixel and gather one neighborhood around that center, as defined in @eq:square-grid and @eq:circle-support. The LF and its fused stencil extend that locality by combining several such neighborhoods along the shifted centers from @eq:lf-virtual-points. Equations @eq:fused-raw-offset and @eq:fused-unique-support show this explicitly. The final LF stencil occupies the union of many translated point-filter supports. The rectangular, elliptical, and anisotropic Gaussian families are also oriented, but they define one anisotropic support or one anisotropic weight field directly in the coordinates from @eq:aniso-uv rather than through line aggregation over repeated point-filter evaluations.
+
+== Parameter Structure <sec:parameter-structure>
+
+The isotropic polynomial-fit filters are parameterized by support size and polynomial degree, as seen in @eq:halfwidth, @eq:circle-support, and @eq:mbasis. The WVF adds the orientation count $N_s$ through @eq:wvf-angle-set. The LF then adds the line half-width $m$ and the line-weight scale $sigma_m$ through @eq:lf-line-offsets and @eq:lf-line-weights. The rectangular and elliptical anisotropic polynomial-fit filters replace the LF line parameters by two oriented support scales $(h_u, h_v)$ through @eq:rect-support and @eq:ellipse-support, while the anisotropic Gaussian derivative uses the scale pair $(sigma_u, sigma_v)$ through @eq:aniso-gaussian-envelope. This means that all of the anisotropic families remain describable in the same framework, but they expose their geometry through different parameter sets.
+
+= Isotropic Polynomial-Fit Filters and the Gaussian Reference <sec:iso-and-gaussian>
+
+The anisotropic families above are most informative when set beside isotropic baselines. Within the polynomial-fit family, the principal isotropic baselines are the square and circular derivative filters already derived in this manuscript. Beyond that family, the Gaussian derivative provides an analytic reference because it defines a smooth isotropic derivative field directly through a scale parameter rather than through a polynomial exactness constraint.
+
+== Circular Low-Degree Polynomial-Fit Filters <sec:circular-low-degree-ref>
+
+The circular polynomial-fit filter from @sec:circular-support combines the isotropic support in @eq:circle-support with the paired derivative rows in @eq:circle-fx and @eq:circle-fy. The low-degree results in @eq:affine-derivatives and @eq:variance-monotone then identify the regime of main interest. Low polynomial degree on an overdetermined isotropic support gives a compact derivative estimator that still recovers paired first derivatives while keeping the support geometry radially balanced. Using @eq:circle-mag and @eq:circle-theta, those paired derivative estimates define one isotropic polynomial-fit baseline for local gradient estimation.
+
+== Square Low-Degree Polynomial-Fit Filters <sec:square-low-degree-ref>
+
+The square polynomial-fit filter from @sec:nxn-square provides a second isotropic baseline on the image lattice. Its derivative rows are given by @eq:fx-est and @eq:fy-est, and its paired response combination is given by @eq:nxn-mag and @eq:nxn-theta. The square support in @eq:square-grid is axis-aligned rather than radially symmetric, but it still belongs to the same low-degree overdetermined setting analyzed in @sec:low-degree-overdetermined. For that reason, it remains a useful discrete comparison baseline even when the circular support from @eq:circle-support is the more rotationally balanced isotropic construction.
+
+== The Gaussian Derivative as a Reference Model <sec:gaussian-reference>
+
+To define an isotropic Gaussian reference, let
+
+$
+  G_sigma(x, y)
+  =
+  (1 / (2 pi sigma^2))
+  exp(-(x^2 + y^2) / (2 sigma^2)).
+$ <eq:gaussian-envelope>
+
+Differentiating @eq:gaussian-envelope in the $x$ direction gives
+
+$
+  K_sigma^(x)(x, y)
+  =
+  -(x / sigma^2) G_sigma(x, y),
+$ <eq:gaussian-derivative-x>
+
+and differentiating @eq:gaussian-envelope in the $y$ direction gives
+
+$
+  K_sigma^(y)(x, y)
+  =
+  -(y / sigma^2) G_sigma(x, y).
+$ <eq:gaussian-derivative-y>
+
+Equations @eq:gaussian-derivative-x and @eq:gaussian-derivative-y provide a paired isotropic derivative filter family indexed by the scale parameter $sigma$. Just as in @eq:gmag3, @eq:nxn-mag, and @eq:circle-mag, those paired responses can be combined into a gradient magnitude and direction. The Gaussian derivative therefore serves as an isotropic reference model expressed directly through analytic weights.
+
+== The Isotropic Polynomial-Fit Filter Relative to the Gaussian Reference <sec:iso-vs-gaussian>
+
+The isotropic polynomial-fit filters and the Gaussian derivative share the same high-level structure. Both produce paired first-derivative filters and then combine those paired responses into a gradient magnitude and direction, as seen in @eq:nxn-mag, @eq:circle-mag, @eq:gaussian-derivative-x, and @eq:gaussian-derivative-y. Their construction principles differ. The polynomial-fit stencils are defined implicitly by the exactness constraints in @eq:exactness-constraint and by the minimum-norm solution in @eq:min-norm-stencil. The Gaussian derivative is defined explicitly by the analytic envelope in @eq:gaussian-envelope and its derivatives in @eq:gaussian-derivative-x and @eq:gaussian-derivative-y. This gives a precise mathematical distinction between the two isotropic references. One is a compact discrete least-squares derivative estimator, and the other is an analytic scale-parameterized derivative model.
+
+= Computational Structure and Cost <sec:computational-structure>
+
+The filter definitions above also determine their computational structure. Once weights have been fixed, every family considered in this manuscript is a linear weighted sum of image samples. The main differences therefore come from how many orientations must be evaluated and how many sample positions each oriented response requires. This section records those structural costs without yet introducing any runtime measurements.
+
+== Operation Counts for the Filter Families <sec:op-counts>
+
+Let $N_"circ"$ denote the number of active samples in the circular isotropic stencil, $N_"sq" = N^2$ the number of samples in the square stencil, and $N'_k$ the fused LF stencil size from @eq:fused-unique-support. For the isotropic circular polynomial-fit filter, computing the paired responses in @eq:circle-fx and @eq:circle-fy requires two gathered dot products of length $N_"circ"$, so the per-pixel cost is
+
+$
+  C_"circ"
+  =
+  O(2 N_"circ").
+$ <eq:cost-circle>
+
+Using the same reasoning with @eq:fx-est and @eq:fy-est, the square isotropic filter has per-pixel cost
+
+$
+  C_"sq"
+  =
+  O(2 N_"sq").
+$ <eq:cost-square>
+
+For the WVF, one gathered dot product of length $N_"circ"$ is evaluated for each sampled angle in @eq:wvf-angle-set, so the per-pixel cost is
+
+$
+  C_"WVF"
+  =
+  O(N_s N_"circ").
+$ <eq:cost-wvf>
+
+Using the LF definition in @eq:lf-line-response and the point responses in @eq:lf-point-response, the unfused LF evaluates $(2m + 1)$ WVF-style point responses for each sampled angle. Its per-pixel cost is therefore
+
+$
+  C_"LF"
+  =
+  O(N_s (2m + 1) N_"circ").
+$ <eq:cost-lf>
+
+Once the LF has been rewritten in fused form through @eq:fused-response, the per-pixel cost becomes one gathered dot product of length $N'_k$ for each orientation:
+
+$
+  C_"fused"
+  =
+  O(sum_(theta_k in Theta_(N_s)) N'_k).
+$ <eq:cost-fused>
+
+For the rectangular, elliptical, and anisotropic Gaussian families, let $N_"rect"(theta_k)$, $N_"ell"(theta_k)$, and $N_"gauss"(theta_k)$ denote the number of active stencil positions at orientation $theta_k$. Since each family is evaluated by one oriented weighted sum, their per-pixel costs are
+
+$
+  C_"rect"
+  =
+  O(sum_(theta_k in Theta_(N_s)) N_"rect"(theta_k)),
+$ <eq:cost-rect>
+$
+  C_"ell"
+  =
+  O(sum_(theta_k in Theta_(N_s)) N_"ell"(theta_k)),
+$ <eq:cost-ell>
+$
+  C_"gauss"
+  =
+  O(sum_(theta_k in Theta_(N_s)) N_"gauss"(theta_k)).
+$ <eq:cost-gauss>
+
+Equations @eq:cost-circle through @eq:cost-gauss summarize the common computational form. The cost is determined by the number of orientations evaluated and the number of sample locations gathered for each orientation.
+
+== Angle Sweeps and Aggregation Cost <sec:sweep-aggregation-cost>
+
+The orientation sweep enters explicitly through @eq:wvf-angle-set, @eq:wvf-response, @eq:lf-line-response, @eq:rect-response, @eq:ellipse-response, and the sampled anisotropic Gaussian derivative from @eq:aniso-gaussian-derivative. This means that WVF, LF, fused LF, rectangular anisotropic SG, elliptical anisotropic SG, and anisotropic Gaussian derivatives all scale at least linearly with $N_s$. The LF adds a second multiplicative factor through the virtual-position index $j$ in @eq:lf-line-response. Before fusion, that factor is exactly $(2m + 1)$ as shown in @eq:cost-lf. After fusion, the overlap between neighboring line positions reduces the effective stencil size from $(2m + 1) N_"circ"$ to $N'_k$ through the regrouping in @eq:fused-grouped and @eq:fused-alpha, yielding the reduced cost in @eq:cost-fused.
+
+== Cost Relative to Available First-Order Information <sec:cost-vs-information>
+
+The isotropic polynomial-fit filters recover the paired derivatives $hat(f)_x$ and $hat(f)_y$ directly through @eq:fx-est and @eq:fy-est or through @eq:circle-fx and @eq:circle-fy. The WVF redundancy result in @eq:directional-gradient and @eq:directional-max then shows that the continuous directional derivative field of that fitted polynomial is already determined by those two quantities. Using @eq:cost-circle and @eq:cost-square, one isotropic pair of derivative stencils therefore supplies the fitted gradient with cost proportional to one local support. By contrast, the orientation-dependent families in @eq:cost-wvf through @eq:cost-gauss evaluate many oriented responses explicitly. Structurally, their additional cost is attached to orientation-selective support evaluation and, in the LF case, to line aggregation through @eq:lf-line-response. This distinction will be useful later when the empirical section compares these families under matched parameter settings.
+
 
 
 #pagebreak()
