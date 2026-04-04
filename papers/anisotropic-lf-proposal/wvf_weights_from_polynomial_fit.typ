@@ -736,19 +736,15 @@ The next step toward the WVF is not to change the support again, but to rotate t
 
 = The Wide View Filter Formulation <sec:wvf-formulation>
 
-== Why Rotate the Coordinate System? <sec:wvf-motivation>
+The WVF keeps the same least-squares construction introduced in @sec:circular-support, but changes the coordinate system in which the derivative is taken. Once that rotated directional stencil has been defined for one candidate angle, the filter is evaluated over a finite set of candidate angles and the strongest directional response is retained.
 
-Now, looking at the existing work, perhaps one would think that the somewhat arbitrary x and y direction of the filters is a problem. After all, edges can be oriented in any direction, so why should we only look at changes in the horizontal and vertical directions? To address this issue, a few solutions have been introduced over the years, including orientable anisotropic filters as well as steerable filters. 
+== Rotated Local Coordinates and the Directional Stencil <sec:wvf-stencil>
 
-The Wide View Filter (WVF) builds on top of this long history and takes the same polynomial-fitting approach but applies it in a rotated coordinate system like those of the prior oriented anisotropic filters, although WVF is not intrinsically anisotropic (it can be however anisotropic if setup poorly by selecting a poor support or $N_p$). This way, the derivative is taken in the direction that is most likely to capture the edge's structure.
-
-== Rotated Local Coordinates and the Final Stencil <sec:wvf-stencil>
-
-Unlike the Savitzky--Golay derivative filters derived in the previous sections, the WVF does not use a paired horizontal and vertical response. In the square and circular constructions, we extracted both derivative directions and then combined them afterward. Here, since the filter is explicitly rotated through a collection of candidate orientations, the WVF only uses the derivative aligned with the rotated $x'$ direction. The orthogonal $y'$ derivative may still exist within the fitted polynomial, but it is not used to form the WVF response stencil.
+Unlike the Savitzky--Golay derivative filters derived in the previous sections, the WVF does not use a paired horizontal and vertical response. In the square and circular constructions, @eq:fx-est and @eq:fy-est showed that the fit naturally produces both $hat(f)_x$ and $hat(f)_y$. Here the objective is different. The WVF rotates the local coordinates first, and then keeps only the derivative aligned with the rotated $x'$ direction. The orthogonal $y'$ coefficient may still appear in the fitted coefficient vector, but it is not used when the WVF forms its final response.
 
 === The Rotation Step <sec:wvf-rotation>
 
-Now, the WVF's changes to the Golay-Savitsky derivative filters are actually quite minimal. First, it rotates the local coordinates so that the derivative is taken in the candidate normal direction:
+The first change is to rotate the local coordinates so that the derivative is taken in a candidate normal direction:
 
 $
   x_i' = Delta x_i cos theta + Delta y_i sin theta,
@@ -759,19 +755,285 @@ $ <eq:rotate-y>
 
 === The Orientation-Dependent Stencil <sec:wvf-oriented-stencil>
 
-Second, it uses a circular support instead of a square one. But once the rotated circular sample locations are fixed, the same least-squares logic from Golay-Savitzky applies. The only difference is that the design matrix is now built from the rotated coordinates, so the $i$-th row of $bold(A)$ is $phi_d(x_i', y_i')^top$ instead of $phi_d(x_i, y_i)^top$. The data vector $bold(b)$ is unchanged since it still contains the same pixel intensities. With those definitions, the least-squares solution is
+The second change is that the WVF uses the circular support from @sec:circular-support rather than the square support from @sec:nxn-square. Once the rotated coordinates in @eq:rotate-x and @eq:rotate-y are fixed, the same least-squares logic used in @eq:circle-lstsq still applies. Using @eq:rotate-x and @eq:rotate-y, the $i$-th row of the design matrix becomes $phi_d(x_i', y_i')^top$ instead of $phi_d(x_i, y_i)^top$. The data vector $bold(b)$ is unchanged, because it still contains the same sampled pixel intensities as in @eq:circle-lstsq. With those definitions, the fitted coefficient vector is
 
 $
   hat(bold(z)) = bold(P)_theta bold(b),
 $ <eq:wvf-lstsq>
 
-and the WVF weight vector is just the row of $bold(P)_theta$ corresponding to the normal derivative coefficient:
+Using @eq:wvf-lstsq, the row of $bold(P)_theta$ corresponding to the $x'$ coefficient gives the directional derivative estimate
 
 $
   hat(f)_(x') = bold(p)_(f_(x'))^top bold(b).
 $ <eq:wvf-fx>
 
-That row is the WVF stencil. In other words, once the angle $theta$, the polynomial degree, and the circular support are fixed, the directional derivative estimate becomes a single weighted sum of the pixel intensities in the local neighborhood. Those weights are exactly the coefficients in $bold(p)_(f_(x'))^top$, so they define the discrete filter that is applied to the image. Each candidate orientation therefore has its own stencil, and applying that stencil gives the WVF estimate of the derivative in the rotated $x'$ direction, which is the candidate edge-normal direction.
+Equation @eq:wvf-fx shows that the directional derivative is again a weighted sum of the sampled intensities, just as in @eq:fx-est and @eq:circle-fx. Therefore the coefficients in $bold(p)_(f_(x'))^top$ are the WVF stencil for the candidate angle $theta$. Each candidate angle has its own stencil, and applying that stencil gives the WVF estimate of the derivative in the rotated $x'$ direction.
+
+== Discrete Orientation Sampling <sec:wvf-sampling>
+
+The WVF does not stop after constructing one stencil. Instead, it constructs one orientation-dependent stencil for each sampled angle. Since the rotated $x'$ axis at angle $theta + pi$ points in the opposite direction from the rotated $x'$ axis at angle $theta$, the directional derivative changes sign but not magnitude. Because of that sign symmetry, it is sufficient to sample candidate angles on the interval $[0, pi)$. We therefore define the sampled angle set by
+
+$
+  Theta_(N_s) = { theta_k = k pi / N_s : k = 0, 1, dots, N_s - 1 }.
+$ <eq:wvf-angle-set>
+
+Using @eq:wvf-fx, the directional response at the candidate angle $theta_k$ is
+
+$
+  R(theta_k) = bold(p)_(f_(x'))(theta_k)^top bold(b).
+$ <eq:wvf-response>
+
+Equation @eq:wvf-response makes the WVF comparison step explicit. For every sampled angle in @eq:wvf-angle-set, the filter evaluates one weighted sum of the sampled intensities. Because the WVF is built from the $x'$ row of $bold(P)_theta$ in @eq:wvf-fx, only the rotated $x'$ derivative is used when the candidate angles are compared.
+
+== Selection of the Winning Direction <sec:wvf-selection>
+
+Once the candidate responses in @eq:wvf-response have been computed, the WVF keeps the angle with the largest absolute directional response. In symbols,
+
+$
+  theta_* = arg max_(theta_k in Theta_(N_s)) |R(theta_k)|.
+$ <eq:wvf-theta-star>
+
+Using @eq:wvf-theta-star, the WVF magnitude returned at that pixel is
+
+$
+  G^("WVF") = |R(theta_*)|.
+$ <eq:wvf-mag>
+
+Equations @eq:wvf-angle-set, @eq:wvf-response, @eq:wvf-theta-star, and @eq:wvf-mag together complete the WVF definition. The filter first samples a discrete set of candidate angles, then evaluates the directional derivative in the rotated $x'$ direction for each angle, and finally returns the angle and magnitude associated with the strongest absolute response.
+
+= Low-Degree Overdetermined Fits <sec:low-degree-overdetermined>
+
+The WVF construction above is still built from a local polynomial fit, so the quality of the filter depends on the quality of that fit. For that reason, the next step is to explain why low-degree fits on well-sampled supports are preferable when the goal is stable first-derivative estimation.
+
+== Exact Recovery for Affine Data <sec:affine-exact>
+
+The cleanest case is an affine intensity field. Let the local intensity function be
+
+$
+  f_"aff"(x, y) = a_0 + a_1 x + a_2 y.
+$ <eq:affine-field>
+
+If the sampled data are generated exactly from @eq:affine-field, then the sampled intensity vector can be written as
+
+$
+  bold(b)_0 = bold(A)_1 bold(z)_"aff",
+$ <eq:affine-data>
+
+where $bold(A)_1$ is the degree-1 design matrix and $bold(z)_"aff" = [a_0, a_1, a_2]^top$. Using the least-squares map from @eq:lstsqn and the pseudoinverse definition from @eq:pinvn, the fitted coefficient vector is
+
+$
+  hat(bold(z))
+  = bold(P)_1 bold(b)_0
+  = (bold(A)_1^top bold(A)_1)^(-1) bold(A)_1^top bold(A)_1 bold(z)_"aff"
+  = bold(z)_"aff".
+$ <eq:affine-recovery>
+
+Equation @eq:affine-recovery shows that the degree-1 fit recovers the affine coefficients exactly whenever the data are noiseless and truly affine. Since the coefficient of $x$ in @eq:affine-field is $a_1$ and the coefficient of $y$ is $a_2$, @eq:affine-recovery implies
+
+$
+  hat(f)_x = a_1, quad hat(f)_y = a_2.
+$ <eq:affine-derivatives>
+
+Equation @eq:affine-derivatives is the exact-recovery statement we need. For affine data, the degree-1 polynomial already contains the entire local signal, so higher polynomial degree does not add any new first-derivative information in the noiseless case.
+
+== The Affine Model as a Local Approximation <sec:affine-local>
+
+The affine model in @eq:affine-field is not intended as a global image model. It is a local approximation. If the underlying intensity field is smooth near the center pixel, then its first-order Taylor expansion about that center point is
+
+$
+  f(x, y) = f(0, 0) + f_x(0, 0) x + f_y(0, 0) y + r_2(x, y),
+$ <eq:taylor-first>
+
+where $r_2(x, y)$ collects every quadratic and higher-order term. Using Taylor's theorem, the magnitude of that remainder satisfies a bound of the form
+
+$
+  |r_2(x, y)| <= (1/2) sup_((u, v) in Omega_h) ||bold(H)_f(u, v)|| ||(x, y)||^2,
+$ <eq:taylor-remainder>
+
+where $Omega_h$ is the local support window and $bold(H)_f$ is the Hessian of the intensity field. Equation @eq:taylor-first shows that the affine term is the leading local approximation, while @eq:taylor-remainder shows that the approximation error grows quadratically with distance from the expansion point.
+
+#figure(
+  image("figures/fig_affine_local_approximation.pdf", width: 90%),
+  caption: [
+    A one-dimensional slice of a smooth intensity field and its first-order local approximation. The left panel shows the smooth local intensity profile over a highlighted support window. The right panel shows the tangent-line approximation over that same window. This is the geometric idea behind the affine model in @eq:taylor-first.
+  ],
+) <fig:affine-local>
+
+Figure @fig:affine-local illustrates the role of @eq:taylor-first. Over a small enough support, the tangent line is the first-order approximation to the smooth profile, and @eq:taylor-remainder tells us how the neglected curvature enters. That is why the affine case is the right baseline when the goal is first-derivative estimation.
+
+== Noise Propagation Through the Derivative Stencil <sec:noise-propagation>
+
+To discuss robustness, we now write the sampled data as the sum of a clean signal and additive noise:
+
+$
+  bold(b) = bold(b)_0 + bold(epsilon),
+$ <eq:noise-model>
+
+with
+
+$
+  E[bold(epsilon)] = 0, quad "Cov"(bold(epsilon)) = sigma^2 bold(I).
+$ <eq:noise-stats>
+
+Using the derivative-row relation in @eq:fx-est, the noisy derivative estimate is
+
+$
+  hat(f)_x = bold(p)_(f_x)^top bold(b)
+  = bold(p)_(f_x)^top bold(b)_0 + bold(p)_(f_x)^top bold(epsilon).
+$ <eq:noise-fx>
+
+Taking expectations in @eq:noise-fx and using @eq:noise-stats gives
+
+$
+  E[hat(f)_x] = bold(p)_(f_x)^top bold(b)_0.
+$ <eq:noise-mean>
+
+Equation @eq:noise-mean shows that the clean fitted derivative is still the mean of the noisy estimator. The noise sensitivity is measured by the variance. Using @eq:noise-fx and @eq:noise-stats,
+
+$
+  "Var"(hat(f)_x)
+  = bold(p)_(f_x)^top "Cov"(bold(epsilon)) bold(p)_(f_x)
+  = sigma^2 bold(p)_(f_x)^top bold(p)_(f_x)
+  = sigma^2 ||bold(p)_(f_x)||^2.
+$ <eq:noise-variance>
+
+Equation @eq:noise-variance gives a direct robustness criterion. The squared norm of the derivative row is the noise gain of the derivative stencil. Larger derivative-row norms therefore correspond to larger variance under the same noise level.
+
+== Higher-Degree Fits as Less Overdetermined Systems <sec:high-degree-overdetermined>
+
+The basis-count result in @eq:mbasis shows that the number of unknown coefficients grows with degree, while the minimum-data requirement in @eq:min-data shows that the support size must remain at least as large as that coefficient count. If the support size $N_p$ is fixed, then increasing the degree decreases the excess number of samples,
+
+$
+  E_d = N_p - M_d,
+$ <eq:excess-samples>
+
+where $M_d$ is the basis size from @eq:mbasis. Equation @eq:excess-samples shows that higher degree makes the fit less overdetermined.
+
+That loss of redundancy can be written directly in terms of the derivative stencil. For a fixed support and a fixed degree $d$, let $bold(A)_d$ be the design matrix and let $bold(e)_(f_x)^(d)$ be the unit vector that selects the $x$ coefficient. If a degree-$d$ polynomial has coefficient vector $bold(z)_d$, then its sampled values are $bold(A)_d bold(z)_d$. If a stencil $bold(alpha)$ is to recover the $x$ coefficient from those samples for every possible $bold(z)_d$, then we must have
+
+$
+  bold(alpha)^top bold(A)_d bold(z)_d = bold(e)_(f_x)^(d top) bold(z)_d
+$
+
+for every coefficient vector $bold(z)_d$. Since that identity must hold for every $bold(z)_d$, it is equivalent to the linear constraint
+
+$
+  bold(A)_d^top bold(alpha) = bold(e)_(f_x)^(d).
+$ <eq:exactness-constraint>
+
+Equation @eq:exactness-constraint states that the stencil reproduces the $x$ coefficient exactly for every polynomial in the degree-$d$ basis. Using the pseudoinverse definition in @eq:pinvn, the derivative row is the Moore-Penrose solution of those linear constraints, so among all vectors satisfying @eq:exactness-constraint it is the minimum-norm choice:
+
+$
+  bold(p)_(f_x)^(d) = arg min_(bold(alpha)) ||bold(alpha)||^2
+  quad "subject to" quad
+  bold(A)_d^top bold(alpha) = bold(e)_(f_x)^(d).
+$ <eq:min-norm-stencil>
+
+Now compare degree $d$ and degree $d+1$ on the same support. Since every degree-$d$ polynomial is also a degree-$(d+1)$ polynomial, the degree-$(d+1)$ exactness conditions include all of the degree-$d$ conditions and then add more. Therefore the feasible set defined by @eq:exactness-constraint for degree $d+1$ is a subset of the feasible set for degree $d$. Using @eq:min-norm-stencil, the minimum achievable stencil norm cannot decrease when the degree is raised:
+
+$
+  ||bold(p)_(f_x)^(d+1)|| >= ||bold(p)_(f_x)^(d)||.
+$ <eq:norm-monotone>
+
+Using @eq:noise-variance and @eq:norm-monotone, the derivative variance under the additive noise model cannot decrease when the degree is raised on the same support:
+
+$
+  "Var"(hat(f)_x^(d+1)) >= "Var"(hat(f)_x^(d)).
+$ <eq:variance-monotone>
+
+Equation @eq:variance-monotone is the central tradeoff. Higher degree enforces exactness for a larger polynomial space, but it does so by imposing more cancellation constraints on the derivative stencil. Those extra cancellations are what make the higher-degree kernels in Figures @fig:square-d3, @fig:square-d5, @fig:circle-d3, and @fig:circle-d5 look more oscillatory than their lower-degree counterparts. The higher-degree fit is therefore less overdetermined, more constrained, and more noise sensitive, even before one discusses any empirical performance differences.
+
+= Symmetry, Redundancy, and the Practical Limits of WVF <sec:wvf-redundancy>
+
+The WVF is still built from the same local polynomial fit, so the next question is whether rotating the coordinate system creates any new first-order information. The answer can be made precise by following the geometry of the support, the chain rule for directional derivatives, and the least-squares objective itself.
+
+== Fixed Circular Support Under Rotation <sec:wvf-fixed-support>
+
+Let the circular support be the fixed set of sample locations
+
+$
+  S_r = { (Delta x_i, Delta y_i) in ZZ^2 : Delta x_i^2 + Delta y_i^2 <= r^2 }.
+$ <eq:wvf-support>
+
+Using @eq:wvf-support, the support is chosen before any angle is considered. Using @eq:rotate-x and @eq:rotate-y, the WVF then rotates only the coordinate description of those same sample locations. This means that the sampled intensity vector $bold(b)$ does not change with angle. Only the coordinates used to build the design matrix change.
+
+== Directional Derivatives from the Fitted Gradient <sec:wvf-directional-derivatives>
+
+To express the rotated derivative in terms of the fitted gradient, we first invert the rotation in @eq:rotate-x and @eq:rotate-y. The inverse relations are
+
+$
+  x = x' cos theta - y' sin theta,
+$ <eq:rotate-inverse-x>
+$
+  y = x' sin theta + y' cos theta.
+$ <eq:rotate-inverse-y>
+
+Using @eq:rotate-inverse-x and @eq:rotate-inverse-y, the chain rule gives
+
+$
+  partial / partial x'
+  = cos theta partial / partial x + sin theta partial / partial y.
+$ <eq:chain-xprime>
+
+Applying @eq:chain-xprime to the fitted polynomial at the center point and using the derivative definitions from @eq:fx-est and @eq:fy-est yields
+
+$
+  hat(f)_(x')(theta) = cos theta hat(f)_x + sin theta hat(f)_y.
+$ <eq:directional-gradient>
+
+Equation @eq:directional-gradient shows that once $hat(f)_x$ and $hat(f)_y$ are known, the directional derivative in any rotated direction is already determined.
+
+== The Continuous Optimal Direction <sec:wvf-continuous-direction>
+
+Equation @eq:directional-gradient can be rewritten in amplitude-phase form. Define
+
+$
+  G = sqrt(hat(f)_x^2 + hat(f)_y^2), quad theta_g = "atan2"(hat(f)_y, hat(f)_x).
+$ <eq:gradient-polar>
+
+Using @eq:gradient-polar, the directional derivative in @eq:directional-gradient becomes
+
+$
+  hat(f)_(x')(theta) = G cos(theta - theta_g).
+$ <eq:directional-phase>
+
+Since the largest possible magnitude of $cos(theta - theta_g)$ is 1, @eq:directional-phase implies
+
+$
+  max_(theta in [0, pi)) |hat(f)_(x')(theta)| = G = sqrt(hat(f)_x^2 + hat(f)_y^2).
+$ <eq:directional-max>
+
+Equation @eq:directional-max shows that a continuous search over direction returns exactly the gradient magnitude, while the maximizing direction is the gradient direction $theta_g$ from @eq:gradient-polar. In that ideal continuous setting, the directional sweep does not add new first-order information. It only re-expresses the fitted gradient.
+
+== Rotational Equivariance of the Exact Circular Fit <sec:wvf-equivariance>
+
+The previous subsection showed that directional derivatives of one fitted polynomial are already determined by $hat(f)_x$ and $hat(f)_y$. We now show that the rotated WVF fit is still that same fitted polynomial, only written in a rotated basis.
+
+Let $Pi_d$ denote the space of all bivariate polynomials of total degree at most $d$. For any polynomial $q in Pi_d$, define the rotation map
+
+$
+  (T_theta q)(x', y') = q(x' cos theta - y' sin theta, x' sin theta + y' cos theta).
+$ <eq:rotation-map>
+
+Using @eq:rotation-map, every monomial in $q$ is evaluated after a linear substitution in $x'$ and $y'$. A linear substitution does not increase total degree, so $T_theta q$ is still in $Pi_d$. Therefore @eq:rotation-map defines a bijection from $Pi_d$ onto itself.
+
+With that notation, the least-squares fit in the original coordinates is
+
+$
+  q^* = arg min_(q in Pi_d) sum_i (q(Delta x_i, Delta y_i) - I_i)^2.
+$ <eq:lsq-original-poly>
+
+Using the rotated coordinates from @eq:rotate-x and @eq:rotate-y, the WVF fit at angle $theta$ is
+
+$
+  q_theta^* = arg min_(tilde(q) in Pi_d) sum_i (tilde(q)(x_i', y_i') - I_i)^2.
+$ <eq:lsq-rotated-poly>
+
+Now take any candidate polynomial $q in Pi_d$ in @eq:lsq-original-poly and map it to $tilde(q) = T_theta q$. Using @eq:rotation-map together with @eq:rotate-x and @eq:rotate-y, the residual of $tilde(q)$ at the rotated sample $(x_i', y_i')$ is exactly the residual of $q$ at the original sample $(Delta x_i, Delta y_i)$. Therefore the objective value in @eq:lsq-rotated-poly is the same as the objective value in @eq:lsq-original-poly after the one-to-one change of variables induced by @eq:rotation-map.
+
+Under the same full-rank assumption used in @eq:lstsqn and @eq:pinvn, the least-squares minimizer is unique. Since @eq:lsq-original-poly and @eq:lsq-rotated-poly are the same minimization problem written in two coordinate systems, their minimizers represent the same fitted polynomial. The only thing that changes is the basis in which that polynomial is written. Using that equivalence together with the derivative transformation in @eq:directional-gradient, the rotated $x'$ coefficient in the WVF fit is exactly the directional derivative already determined by $hat(f)_x$ and $hat(f)_y$.
+
+The conclusion is therefore structural rather than numerical. For a fixed support and a complete polynomial basis, the rotated WVF fit does not create new first-order information. It rewrites the same fitted polynomial in rotated coordinates and then extracts the directional derivative already implied by the fitted gradient. If an implementation changes the sampled neighborhood with angle or introduces other anisotropic choices, then this exact equivariance argument no longer applies in the same form.
 
 
 
