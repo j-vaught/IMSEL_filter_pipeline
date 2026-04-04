@@ -1572,12 +1572,12 @@ $ <eq:gauss-deriv-y>
 
 @eq:gauss-isotropic, @eq:gauss-deriv-x, and @eq:gauss-deriv-y define a smooth isotropic gradient model whose scale is controlled by the single parameter $sigma$. Like the isotropic polynomial-fit filters, the Gaussian derivative supplies paired first-derivative components and therefore supports the same continuous directional relation described by @eq:directional-gradient and @eq:directional-max.
 
-To place that analytic reference on the same spatial footprint as Figure @fig:large-circle-sg, we can sample @eq:gauss-deriv-x and @eq:gauss-deriv-y on the same radius-$R$ disk defined by @eq:lf-cover-radius. Figure @fig:large-gaussian shows that matched isotropic Gaussian pair for the representative choice $sigma = R / 3$, so that the visible Gaussian support occupies the same enlarged `29 x 29` footprint used by the large circular polynomial-fit filter.
+To place that analytic reference on the same spatial footprint as Figure @fig:large-circle-sg, we can sample @eq:gauss-deriv-x and @eq:gauss-deriv-y on the same radius-$R$ disk defined by @eq:lf-cover-radius. Figure @fig:large-gaussian shows that matched isotropic Gaussian pair for the broader representative choice $sigma = R / 2$, so that the visible Gaussian support occupies the same enlarged `29 x 29` footprint used by the large circular polynomial-fit filter.
 
 #figure(
   image("figures/fig_large_gaussian_xy.pdf", width: 84%),
   caption: [
-    Isotropic Gaussian first-derivative pair sampled on the same enlarged radius-$R$ disk used in Figure @fig:large-circle-sg. The left panel shows $partial G_sigma / partial x$ and the right panel shows $partial G_sigma / partial y$ for the representative choice $sigma = R / 3$.
+    Isotropic Gaussian first-derivative pair sampled on the same enlarged radius-$R$ disk used in Figure @fig:large-circle-sg. The left panel shows $partial G_sigma / partial x$ and the right panel shows $partial G_sigma / partial y$ for the broader representative choice $sigma = R / 2$.
   ],
 ) <fig:large-gaussian>
 

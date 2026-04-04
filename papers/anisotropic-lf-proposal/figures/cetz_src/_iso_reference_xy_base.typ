@@ -316,7 +316,7 @@
 )
 
 #let render-large-gaussian() = draw-pair(
-  kernel-pair-gaussian(R / 3.0),
+  kernel-pair-gaussian(R / 2.0),
   [$partial G_sigma / partial x$],
   [$partial G_sigma / partial y$],
 )
