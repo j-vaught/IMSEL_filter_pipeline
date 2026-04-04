@@ -17,7 +17,7 @@
   if el != none and el.func() == math.equation {
     let eq-num = counter(math.equation).at(el.location())
     let heading-num = counter(heading).at(el.location())
-    link(el.location(), numbering("1.1", heading-num.at(0), eq-num.at(0)))
+    link(el.location(), [Equation #numbering("1.1", heading-num.at(0), eq-num.at(0))])
   } else {
     it
   }
