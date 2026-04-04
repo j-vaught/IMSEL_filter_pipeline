@@ -536,7 +536,7 @@ $
   hat(f)_(x') = bold(p)_(f_(x'))^top bold(b).
 $ <eq:wvf-fx>
 
-That row is the WVF stencil.
+That row is the WVF stencil. In other words, once the angle $theta$, the polynomial degree, and the circular support are fixed, the directional derivative estimate becomes a single weighted sum of the pixel intensities in the local neighborhood. Those weights are exactly the coefficients in $bold(p)_(f_(x'))^top$, so they define the discrete filter that is applied to the image. Each candidate orientation therefore has its own stencil, and applying that stencil gives the WVF estimate of the derivative in the rotated $x'$ direction, which is the candidate edge-normal direction.
 
 
 
