@@ -15,6 +15,7 @@
 #let N = 15
 #let h = calc.div-euclid(N - 1, 2)
 #let cell = 0.24
+#let side-pad = 0.8
 #let gap-x = 1.5
 #let gap-y = 0.5
 #let degrees = (1, 3, 5)
@@ -243,18 +244,20 @@
   import cetz.draw: *
 
   let panel-w = N * cell
-  let total-w = 2 * panel-w + gap-x
+  let left-x = side-pad
+  let right-x = left-x + panel-w + gap-x
+  let total-w = 2 * panel-w + gap-x + 2 * side-pad
 
-  content((panel-w / 2.0, 0.45), text(fill: black90, size: 10pt, weight: "bold")[$bold(K)_x^("square")$])
-  content((panel-w + gap-x + panel-w / 2.0, 0.45), text(fill: black90, size: 10pt, weight: "bold")[$bold(K)_y^("square")$])
+  content((left-x + panel-w / 2.0, 0.45), text(fill: black90, size: 10pt, weight: "bold")[$bold(K)_x^("square")$])
+  content((right-x + panel-w / 2.0, 0.45), text(fill: black90, size: 10pt, weight: "bold")[$bold(K)_y^("square")$])
 
   for idx in range(degrees.len()) {
     let item = kernel-data.at(idx)
     let oy = -(idx * (panel-w + gap-y))
-    draw-panel(0.0, oy, item.kx)
-    draw-panel(panel-w + gap-x, oy, item.ky)
+    draw-panel(left-x, oy, item.kx)
+    draw-panel(right-x, oy, item.ky)
     content(
-      (-0.55, oy - panel-w / 2.0),
+      (left-x - 0.55, oy - panel-w / 2.0),
       text(fill: black70, size: 10pt, weight: "bold")[$d = #(item.degree)$],
       anchor: "east",
     )
