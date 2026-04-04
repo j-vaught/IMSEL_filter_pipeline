@@ -45,9 +45,7 @@ $
   ).
 $ <eq:patch>
 
-This matrix contains the pixel intensities in a local 3x3 window, with the pixel of interest located at the center.
-
-Now suppose we aim to fit a degree-1 polynomial to the matrix $bold(B)$. One simple way to represent that local polynomial is
+This matrix contains the pixel intensities in a local 3x3 window, with the pixel of interest located at the center. Now suppose we aim to fit a degree-1 polynomial to the matrix $bold(B)$. One simple way to represent that local polynomial is
 
 $
   p(x, y) = c_0 + c_1 x + c_2 y.
@@ -315,6 +313,16 @@ $
   quad + (-1/6) I_(-1,1) + 0 I_(0,1) + (1/6) I_(1,1).
 $ <eq:c1-exp3>
 
+=== Rearranging the Weights into 3x3 Stencils <sec:3x3-stencil-formation>
+
+Because the entries of $bold(b)$ were stacked in row-major order, the weights in $bold(p)_(c_1)^top$ and $bold(p)_(c_2)^top$ can be placed back into that same `3 x 3` geometry. In other words, the weighted sum for each derivative estimate can be rewritten as a local stencil whose entries sit at the same pixel locations as the original patch. Symbolically, this rearrangement is
+
+$
+  bold(K)_x = "reshape"_(3,3)(bold(p)_(c_1)^top), quad bold(K)_y = "reshape"_(3,3)(bold(p)_(c_2)^top).
+$ <eq:k-reshape3>
+
+Once that reshaping is done, the least-squares derivative estimate is no longer just a vector expression. It is an ordinary `3 x 3` filter that can be applied directly to the image.
+
 === The Resulting 3x3 Kernels <sec:3x3-kernels>
 
 And converitng into standard 3x3 derivative filter format, we have
@@ -346,9 +354,27 @@ $
   ).
 $ <eq:ky3>
 
-=== Using the Kernels in an Edge-Detection Pipeline <sec:3x3-pipeline>
+=== Combining the Horizontal and Vertical Responses <sec:3x3-pipeline>
 
-Once $bold(K)_x$ and $bold(K)_y$ are known, they can be used exactly like any other pair of derivative filters. We convolve the image with $bold(K)_x$ to obtain a horizontal derivative estimate $G_x$, and with $bold(K)_y$ to obtain a vertical derivative estimate $G_y$. From those two responses, we can form the gradient magnitude $sqrt(G_x^2 + G_y^2)$ to measure edge strength, and the gradient orientation $"atan2"(G_y, G_x)$ to measure edge direction. In other words, after the polynomial fit has been collapsed into $bold(K)_x$ and $bold(K)_y$, the rest of the pipeline is just the standard gradient-based edge-detection workflow.
+Once $bold(K)_x$ and $bold(K)_y$ are known, they can be used exactly like any other pair of derivative filters. Applying them to the image gives the horizontal and vertical responses
+
+$
+  G_x = bold(K)_x * I, quad G_y = bold(K)_y * I.
+$ <eq:gxy3>
+
+From those two responses, we form the usual gradient magnitude
+
+$
+  G = sqrt(G_x^2 + G_y^2),
+$ <eq:gmag3>
+
+and the corresponding gradient orientation
+
+$
+  theta_g = "atan2"(G_y, G_x).
+$ <eq:gtheta3>
+
+In other words, after the polynomial fit has been collapsed into $bold(K)_x$ and $bold(K)_y$, the rest of the pipeline is just the standard gradient-based edge-detection workflow.
 
 
 The fit sounds like solving for a polynomial, but because the fit is linear, the derivative we extract is just one fixed weighted sum of the nine pixels.
@@ -488,21 +514,61 @@ $
   bold(P) = (bold(A)^top bold(A))^(-1) bold(A)^top
 $ <eq:pinvn>
 
-=== Extracting a Derivative Row <sec:nxn-derivative-row>
+=== Extracting the First-Derivative Rows <sec:nxn-derivative-row>
 
-The matrix $bold(P)$ is the pseudoinverse that maps sampled intensities directly to fitted coefficients. If the basis is ordered as $[1, x, y, dots]^top$, then the coefficient of $x$ is the estimate of the first derivative in the $x$-direction. That coefficient is one entry of $hat(bold(z))$, so the corresponding row of $bold(P)$ is a weight vector:
+The matrix $bold(P)$ is the pseudoinverse that maps sampled intensities directly to fitted coefficients. If the basis is ordered as $[1, x, y, dots]^top$, then the coefficient of $x$ is the estimate of the first derivative in the $x$-direction, and the coefficient of $y$ is the estimate of the first derivative in the $y$-direction. Those coefficients are entries of $hat(bold(z))$, so the corresponding rows of $bold(P)$ are the two derivative weight vectors
 
 $
   bold(p)_(f_x)^top,
 $ <eq:px-row>
 
-Applying that row to the data vector gives the derivative estimate
+and
+
+$
+  bold(p)_(f_y)^top.
+$ <eq:py-row>
+
+Applying those rows to the data vector gives the derivative estimates
 
 $
   hat(f)_x = bold(p)_(f_x)^top bold(b).
 $ <eq:fx-est>
 
-So the logic is exactly the same as in the 3x3 example. First choose sample locations. Then evaluate the monomial basis there to build $bold(A)$. Then stack the measured intensities into $bold(b)$ in the same order. Solving the least-squares problem gives $hat(bold(z))$, and one row of the pseudoinverse extracts whichever derivative coefficient we want.
+$
+  hat(f)_y = bold(p)_(f_y)^top bold(b).
+$ <eq:fy-est>
+
+=== Arranging the Rows into Square Stencils <sec:nxn-square-stencils>
+
+Because the support is a square and the samples can be ordered in row-major form, the derivative rows can be reshaped directly back into `N x N` filter kernels:
+
+$
+  bold(K)_x^("square") = "reshape"_(N,N)(bold(p)_(f_x)^top), quad bold(K)_y^("square") = "reshape"_(N,N)(bold(p)_(f_y)^top).
+$ <eq:nxn-kernels>
+
+This is the exact analogue of the `3 x 3` construction in @sec:3x3-stencil-formation, except now the support size is arbitrary. The polynomial fit still produces two ordinary stencils, one for the horizontal derivative and one for the vertical derivative.
+
+=== Combining the Square-Support Responses <sec:nxn-combine>
+
+Once those square-support kernels are formed, they are applied exactly as in the small example. The two filter outputs are
+
+$
+  G_x^("square") = bold(K)_x^("square") * I, quad G_y^("square") = bold(K)_y^("square") * I.
+$ <eq:nxn-responses>
+
+The corresponding edge-strength measure is
+
+$
+  G^("square") = sqrt((G_x^("square"))^2 + (G_y^("square"))^2),
+$ <eq:nxn-mag>
+
+and the associated orientation estimate is
+
+$
+  theta^("square") = "atan2"(G_y^("square"), G_x^("square")).
+$ <eq:nxn-theta>
+
+So the logic is exactly the same as in the `3 x 3` example. First choose sample locations. Then evaluate the monomial basis there to build $bold(A)$. Then stack the measured intensities into $bold(b)$ in the same order. Solving the least-squares problem gives $hat(bold(z))$, and the derivative rows of the pseudoinverse become square filter stencils whose responses can then be combined into a gradient magnitude and orientation.
 
 = Adapting to a Circular Support Region <sec:circular-support>
 
@@ -542,11 +608,39 @@ $
   hat(bold(z)) = (bold(A)^top bold(A))^(-1) bold(A)^top bold(b).
 $ <eq:circle-lstsq>
 
-and again, the derivative estimate is one row of the pseudoinverse
+and again, the derivative estimates are obtained from rows of the pseudoinverse
 
 $
   hat(f)_x = bold(p)_(f_x)^top bold(b).
 $ <eq:circle-fx>
+
+$
+  hat(f)_y = bold(p)_(f_y)^top bold(b).
+$ <eq:circle-fy>
+
+=== Embedding the Circular Weights into Stencils <sec:circular-stencils>
+
+The vectors $bold(p)_(f_x)^top$ and $bold(p)_(f_y)^top$ still define discrete filters, but now only at the sample locations that lie inside the circle. To implement them as image stencils, we place those weights at the corresponding coordinates of the bounding square and assign zero weight to locations outside the circular support. That produces two circular-support masks, which we denote by $bold(K)_x^("circ")$ and $bold(K)_y^("circ")$.
+
+=== Combining the Circular-Support Responses <sec:circular-combine>
+
+Once those circular-support stencils are formed, the corresponding filter outputs are
+
+$
+  G_x^("circ") = bold(K)_x^("circ") * I, quad G_y^("circ") = bold(K)_y^("circ") * I.
+$ <eq:circle-responses>
+
+From them we define the circular-support gradient magnitude
+
+$
+  G^("circ") = sqrt((G_x^("circ"))^2 + (G_y^("circ"))^2),
+$ <eq:circle-mag>
+
+and the associated orientation estimate
+
+$
+  theta^("circ") = "atan2"(G_y^("circ"), G_x^("circ")).
+$ <eq:circle-theta>
 
 So the circle support is just a different choice of sample locations, but the underlying least-squares logic is exactly the same. The resulting filter weights are different because the sample locations are different, but the mathematical construction is identical. We will show a visual represetnation of the differnce of these two supports later, but for now, the main takeaway is that the circular support is just a different set of sample locations, and the least-squares logic applies in exactly the same way.
 
@@ -554,13 +648,15 @@ So the circle support is just a different choice of sample locations, but the un
 
 == Why Rotate the Coordinate System? <sec:wvf-motivation>
 
-Now, looking at the existing work, perhaps one would think that the somewhat arbitrary x and y direction of the filters is a problem. After all, edges can be oriented in any direction, so why should we only look at changes in the horizontal and vertical directions? To address this issue, a few solutions have been introduced over the years, including orientable anisotropic filters as well as steerable filters. The Wide View Filter (WVF) builds on top of this long history and takes the same polynomial-fitting approach but applies it in a rotated coordinate system like those of the prior oriented anisotropic filters, although WVF is not intrinsically anisotropic (it can be however anisotropic if setup poorly by selecting a poor support or $N_p$). This way, the derivative is taken in the direction that is most likely to capture the edge's structure.
+Now, looking at the existing work, perhaps one would think that the somewhat arbitrary x and y direction of the filters is a problem. After all, edges can be oriented in any direction, so why should we only look at changes in the horizontal and vertical directions? To address this issue, a few solutions have been introduced over the years, including orientable anisotropic filters as well as steerable filters. 
+
+The Wide View Filter (WVF) builds on top of this long history and takes the same polynomial-fitting approach but applies it in a rotated coordinate system like those of the prior oriented anisotropic filters, although WVF is not intrinsically anisotropic (it can be however anisotropic if setup poorly by selecting a poor support or $N_p$). This way, the derivative is taken in the direction that is most likely to capture the edge's structure.
 
 == Rotated Local Coordinates and the Final Stencil <sec:wvf-stencil>
 
 === The Rotation Step <sec:wvf-rotation>
 
-Now, the WVF's changes to the polynomial fit are actually quite minimal. First, it rotates the local coordinates so that the derivative is taken in the candidate normal direction as shown in the following equations:
+Now, the WVF's changes to the Golay-Savitsky derivative filters are actually quite minimal. First, it rotates the local coordinates so that the derivative is taken in the candidate normal direction:
 
 $
   x_i' = Delta x_i cos theta + Delta y_i sin theta,
@@ -587,6 +683,6 @@ That row is the WVF stencil. In other words, once the angle $theta$, the polynom
 
 
 
-
+#pagebreak()
 
 #bibliography("journal_paper/refs.bib")
