@@ -12,6 +12,16 @@
   set text(size: 13pt)
   it
 }
+#show ref: it => {
+  let el = it.element
+  if el != none and el.func() == math.equation {
+    let eq-num = counter(math.equation).at(el.location())
+    let heading-num = counter(heading).at(el.location())
+    link(el.location(), numbering("1.1", heading-num.at(0), eq-num.at(0)))
+  } else {
+    it
+  }
+}
 #show heading.where(level: 2): set text(size: 11.5pt)
 #show heading.where(level: 3): set text(size: 11pt)
 
