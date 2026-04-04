@@ -721,6 +721,19 @@ The same odd-even pairing seen in the square-support case appears here as well. 
 
 The circular figures also make the geometric difference from the square support easy to see. The kernels are no longer forced to occupy the corners of the `15 x 15` bounding box, so the weight distribution conforms more closely to a radially symmetric neighborhood. The $x$- and $y$-derivative stencils still remain transposes of one another, but the support itself is now isotropic rather than axis-aligned. This gives a cleaner baseline for the next section, where the coordinate system itself is rotated and only the derivative in the candidate normal direction is retained.
 
+= Rotating the Circular Support <sec:circular-rotation-visualization>
+
+The next step toward the WVF is not to change the support again, but to rotate the derivative direction within that same isotropic circular neighborhood. To make that transition concrete, Figure @fig:circle-orientation-sweep fixes the exact radius-7 disk inside the `15 x 15` bounding box and shows the directional stencil obtained when the local coordinate system is rotated to $theta = 0degree$, $30degree$, $60degree$, and $90degree$. For this illustration, we use the representative odd degree $d = 3$.
+
+#figure(
+  image("figures/fig_circle_orientation_sweep_d3.pdf", width: 100%),
+  caption: [
+    Orientation sweep for the exact circular-support stencil with `N = 15`, `h = 7`, and polynomial degree $d = 3$. Each panel shows the directional derivative stencil obtained from the same isotropic disk after rotating the local coordinate system to a new angle $theta$.
+  ],
+) <fig:circle-orientation-sweep>
+
+This figure makes the key geometric point visible. The underlying support stays circular, but the positive and negative lobes of the derivative stencil rotate with the chosen coordinate system. In other words, the neighborhood itself remains isotropic while the extracted derivative direction changes. That is precisely the idea used by the WVF. Rather than relying only on the fixed horizontal and vertical derivatives, the filter is evaluated in several candidate directions and the directional derivative aligned with the candidate normal is retained.
+
 = The Wide View Filter Formulation <sec:wvf-formulation>
 
 == Why Rotate the Coordinate System? <sec:wvf-motivation>
