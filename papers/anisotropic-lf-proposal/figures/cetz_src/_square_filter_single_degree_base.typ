@@ -15,8 +15,6 @@
 #let h = calc.div-euclid(N - 1, 2)
 #let cell = 0.24
 #let gap-x = 1.5
-#let reference-degrees = (1, 3, 5)
-
 #let fact(n) = {
   if n <= 0 { 1 }
   else if n == 1 { 1 }
@@ -178,32 +176,29 @@
   (kx: row-to-kernel(P.at(1)), ky: row-to-kernel(P.at(2)))
 }
 
-#let global-max = {
+#let lerp-color(base, t) = {
+  let t2 = calc.min(calc.max(t, 0.0), 1.0)
+  color.mix((base, t2 * 100%), (white, (1.0 - t2) * 100%))
+}
+
+#let local-max(kernel-pair) = {
   let mx = 0.0
-  for d in reference-degrees {
-    let item = kernel-pair(d)
-    for K in (item.kx, item.ky) {
-      for r in range(N) {
-        for c in range(N) {
-          let v = calc.abs(K.at(r).at(c))
-          if v > mx { mx = v }
-        }
+  for K in (kernel-pair.kx, kernel-pair.ky) {
+    for r in range(N) {
+      for c in range(N) {
+        let v = calc.abs(K.at(r).at(c))
+        if v > mx { mx = v }
       }
     }
   }
   mx
 }
 
-#let lerp-color(base, t) = {
-  let t2 = calc.min(calc.max(t, 0.0), 1.0)
-  color.mix((base, t2 * 100%), (white, (1.0 - t2) * 100%))
-}
-
-#let weight-fill(w) = {
+#let weight-fill(w, max-val) = {
   let a = calc.abs(w)
-  if a <= global-max * 0.0005 { white }
-  else if w > 0 { lerp-color(garnet, a / global-max) }
-  else { lerp-color(atlantic, a / global-max) }
+  if a <= max-val * 0.0005 { white }
+  else if w > 0 { lerp-color(garnet, a / max-val) }
+  else { lerp-color(atlantic, a / max-val) }
 }
 
 #let signed-color(t) = {
@@ -212,7 +207,7 @@
   else { lerp-color(atlantic, calc.abs(t)) }
 }
 
-#let draw-panel(ox, oy, K) = {
+#let draw-panel(ox, oy, K, max-val) = {
   import cetz.draw: *
   let panel-w = N * cell
   for r in range(N) {
@@ -222,7 +217,7 @@
       rect(
         (x, y),
         (x + cell, y - cell),
-        fill: weight-fill(K.at(r).at(c)),
+        fill: weight-fill(K.at(r).at(c), max-val),
         stroke: 0.14pt + black30,
       )
     }
@@ -236,6 +231,7 @@
 
 #let render(degree) = {
   let current = kernel-pair(degree)
+  let max-val = local-max(current)
   cetz.canvas({
     import cetz.draw: *
 
@@ -247,8 +243,8 @@
     content((left-x + panel-w / 2.0, 0.45), text(fill: black90, size: 10pt, weight: "bold")[$bold(K)_x^("square")$])
     content((right-x + panel-w / 2.0, 0.45), text(fill: black90, size: 10pt, weight: "bold")[$bold(K)_y^("square")$])
 
-    draw-panel(left-x, 0.0, current.kx)
-    draw-panel(right-x, 0.0, current.ky)
+    draw-panel(left-x, 0.0, current.kx, max-val)
+    draw-panel(right-x, 0.0, current.ky, max-val)
 
     let legend-y = -panel-w - 0.55
     let legend-x = total-w / 2.0 - 2.0
