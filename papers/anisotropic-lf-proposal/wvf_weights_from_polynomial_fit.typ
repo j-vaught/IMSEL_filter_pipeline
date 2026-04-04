@@ -6,6 +6,7 @@
 #show heading.where(level: 1): set text(size: 13pt)
 #show heading.where(level: 2): set text(size: 11.5pt)
 
+
 #align(center)[
   #text(size: 17pt, weight: "bold")[
     How A Polynomial Fit Turns Into Filter Weights
@@ -18,11 +19,17 @@
 
 = The Core Idea
 
+At its core, this method is a Savitzky--Golay derivative estimator. Savitzky and Golay's original 1964 contribution was to show that one can fit a polynomial locally by least squares and recover derivatives directly from the fitted coefficients @savitzkygolay1964. Our derivation uses the same principle, but adapts it to two-dimensional image neighborhoods.
+
 Although a polynomial fit is usually described as solving for unknown coefficients, the least-squares solution is linear in the sampled pixel values. As a result, any fitted coefficient, including a derivative coefficient, can be expressed as one fixed weighted sum of the input pixels. The resulting weighted sum for each pixel is effectively the filter weights, similar to how Sobel or Prewitt weights are defined.
 
-= A 3x3 Toy Example
+= A Square 3x3 Example
 
-== Start With The Actual 3x3 Patch
+== The 3x3 Patch
+
+We begin with a `3 x 3` example because it makes the algebra visible. Conceptually, nothing new happens here since this is the same two-dimensional polynomial-fitting procedure developed in the Savitzky--Golay tradition and later extended to image neighborhoods by Gorry, Meer et al., and Luo et al. @gorry1990sg @meer1991sg2d @luo2005sg2d in the '90s and early '00s. The small patch is used primarily to save me a lot of algebra and to make the logic more transparent. The same principles apply to larger patches, and we will show how to generalize to those later.
+
+
 
 As a simplification, let us begin with a local 3x3 image patch. We denote this neighborhood by $bold(B)$:
 
@@ -329,6 +336,9 @@ The fit sounds like solving for a polynomial, but because the fit is linear, the
 
 = Generalization To An N x N Square
 
+This `N x N` formulation is probably best understood as the standard two-dimensional Savitzky--Golay least-squares construction written in a form convenient for later sections @luo2005sg2d. We restate it here so that the derivation remains self-contained. The same polynomial basis, data vector, and pseudoinverse logic from the `3 x 3` case carry over directly.
+
+
 Now suppose that instead of a 3x3 patch, we use a general $N times N$ square patch centered at the pixel of interest. To make sure there really is a center pixel, we assume that $N$ is odd. Then we define the half-width
 
 $
@@ -386,7 +396,7 @@ $
   M = (d+1)(d+2)/2.
 $ <eq:mbasis>
 
-Now we can state the minimum data requirement for the least-squares fit. The coefficient vector $bold(z)$ has $M$ unknown entries, one for each monomial in the basis. Each sampled pixel contributes one scalar equation, because evaluating the polynomial at one location gives one relation between the unknown coefficients and the observed intensity. Therefore, if the support contains $N_p$ sampled pixels, we need at least as many samples as unknowns:
+Now that we have acquire M through such painful means, we can now define the minimum data requirement for the least-squares fit. Since we have $M$ unknown coefficients, we need at least $M$ equations to solve for them. If we recall from Section 2(WE NEED TO FIX THIS!!!!!), each pixel in the support gives us one equation, so we need at least $M$ pixels in the support. In more personable terms, the number of pixels in the support must be greater than (or equal to) the number of coefficients. 
 
 $
   N_p >= M.
@@ -398,7 +408,10 @@ $
   bold(z) = [c_0, c_1, c_2, dots, c_(M-1)]^top,
 $ <eq:zvecn>
 
-where these coefficients multiply the monomials collected in $phi_d(x, y)$. Next we build the design matrix $bold(A)$. Each row corresponds to one sampled pixel in the support, and each column corresponds to one monomial term in the basis. The $i$-th row is simply the basis vector evaluated at the coordinates of the $i$-th pixel:
+where these coefficients multiply the monomials collected in $phi_d(x, y)$. 
+
+
+Anyway, getting back on track, we can now write the design matrix $bold(A)$ for the generalized $N times N$ case. Each row corresponds to one sampled pixel in the support, and each column corresponds to one monomial term in the basis. The $i$-th row is simply the basis vector evaluated at the coordinates of the $i$-th pixel.
 
 $
   bold(A) =
@@ -410,7 +423,7 @@ $
   ).
 $ <eq:designn>
 
-To complete the linear system, we stack the observed pixel intensities from those same sample locations, in the same order used for the rows of $bold(A)$:
+To complete the linear system, we stack the observed pixel intensities from those same sample locations, in the same order used for the rows of $bold(A)$.
 
 $
   bold(b) =
@@ -422,19 +435,19 @@ $
   ]^top.
 $ <eq:bvecn>
 
-Using the same ordering in both objects is the key point. Row $i$ of $bold(A)$ is built from the coordinates $(x_i, y_i)$, and entry $i$ of $bold(b)$ is the measured intensity at that same location. With those definitions, the generalized polynomial-fitting problem is
+Using the same ordering in both objects, row $i$ of $bold(A)$ is built from the coordinates $(x_i, y_i)$, and entry $i$ of $bold(b)$ is the measured intensity at that same location. With those definitions, the generalized polynomial-fitting problem is
 
 $
   bold(A) bold(z) approx bold(b).
 $ <eq:systemn>
 
-This system is usually overdetermined, so we solve for the coefficient vector in the least-squares sense. The fitted coefficient vector is
+This system is traditionally overdetermined by design(and we will later discuss the reason for such and a proof will be provided), so we solve for the coefficient vector in the least-squares sense. The fitted coefficient vector is
 
 $
   hat(bold(z)) = (bold(A)^top bold(A))^(-1) bold(A)^top bold(b) = bold(P) bold(b).
 $ <eq:lstsqn>
 
-Here $hat(bold(z))$ means the estimated coefficient vector, and
+Where $hat(bold(z))$ means the estimated coefficient vector, and
 
 $
   bold(P) = (bold(A)^top bold(A))^(-1) bold(A)^top
@@ -456,15 +469,15 @@ So the logic is exactly the same as in the 3x3 example. First choose sample loca
 
 = From A Square To A Circle
 
-The circular case is not a new algorithm. It is the same least-squares construction with a different set of sample locations.
+Classical Savitzky--Golay filters and most of their descendants are usually presented on rectangular, axis-aligned neighborhoods, largely because those supports make both the algebra and the implementation straightforward @savitzkygolay1964 @luo2005sg2d. Now, suppose one whose hubris is such that they believe the circular case is a new algorithm. This modification would hypothetically allows for a new filter to better match the orientation-dependent structure of edges while preserving the underlying least-squares polynomial framework.
 
-Instead of using every point in a square, keep only the points satisfying
+We can derive this new algorithm by considering the circular support, as it is the same least-squares construction, just with a different set of sample locations. Instead of using every point in a square, keep only the points satisfying the circular support constraint(better known by laypersons as myself as the eqaution of a circle):
 
 $
   x_i^2 + y_i^2 <= r^2.
 $ <eq:circle-support>
 
-Now the data vector contains only the pixel values inside that circular support,
+Now, the simiplifcaiotn from the prior section of redfining the $N_p$ rahter than $N^2$ will sae us some time. Defining the data vector to only contain the pixel values inside that circular support, we derive $bold(b)$ as
 
 $
   bold(b) = [I_1, I_2, dots, I_(N_p)]^top,
@@ -474,7 +487,7 @@ and the design matrix keeps only the corresponding rows
 
 $
   bold(A) =
-  mat(
+  mat( delim: "[",
     phi_d(x_1, y_1)^top;
     phi_d(x_2, y_2)^top;
     dots.v;
@@ -482,23 +495,21 @@ $
   ),
 $ <eq:circle-design>
 
-where the coordinates now come from the circular neighborhood rather than the full square.
-
-The least-squares solution is unchanged:
+where the coordinates now come from the circular neighborhood rather than the full square. Naturally, the least-squares solution remains unchanged
 
 $
   hat(bold(z)) = (bold(A)^top bold(A))^(-1) bold(A)^top bold(b).
 $ <eq:circle-lstsq>
 
-And again, the derivative estimate is one row of the pseudoinverse:
+and again, the derivative estimate is one row of the pseudoinverse
 
 $
   hat(f)_x = bold(p)_(f_x)^top bold(b).
 $ <eq:circle-fx>
 
-So the circle does not change the logic at all. It only changes which sample coordinates appear as rows of $bold(A)$.
+So the circle support is just a different choice of sample locations, but the underlying least-squares logic is exactly the same. The resulting filter weights are different because the sample locations are different, but the mathematical construction is identical. We will show a visual represetnation of the differnce of these two supports later, but for now, the main takeaway is that the circular support is just a different set of sample locations, and the least-squares logic applies in exactly the same way.
 
-= Why This Matters For WVF
+= The Wide View Filter's changes to the Polynomial Fit
 
 The WVF does two additional things.
 
@@ -526,3 +537,9 @@ $
 $ <eq:wvf-fx>
 
 That row is the WVF stencil.
+
+
+
+
+
+#bibliography("journal_paper/refs.bib")
