@@ -17,7 +17,7 @@
 #let cell = 0.24
 #let gap-x = 0.95
 #let gap-y = 0.95
-#let degrees = (1, 2, 4)
+#let degrees = (1, 3, 5)
 
 #let fact(n) = {
   if n <= 0 { 1 }
@@ -25,7 +25,8 @@
   else if n == 2 { 2 }
   else if n == 3 { 6 }
   else if n == 4 { 24 }
-  else { 120 }
+  else if n == 5 { 120 }
+  else { 720 }
 }
 
 #let square-coords() = {
@@ -65,6 +66,14 @@
     cols.push(x * x * x * y / 6.0)
     cols.push(x * x * y * y / 4.0)
     cols.push(x * y * y * y / 6.0)
+  }
+  if order >= 5 {
+    cols.push(x * x * x * x * x / 120.0)
+    cols.push(y * y * y * y * y / 120.0)
+    cols.push(x * x * x * x * y / 24.0)
+    cols.push(x * x * x * y * y / 12.0)
+    cols.push(x * x * y * y * y / 12.0)
+    cols.push(x * y * y * y * y / 24.0)
   }
   cols
 }
@@ -202,6 +211,12 @@
   else { lerp-color(atlantic, a / global-max) }
 }
 
+#let signed-color(t) = {
+  if calc.abs(t) < 0.0001 { white }
+  else if t > 0 { lerp-color(garnet, t) }
+  else { lerp-color(atlantic, calc.abs(t)) }
+}
+
 #let draw-panel(ox, oy, K) = {
   import cetz.draw: *
   let panel-w = N * cell
@@ -230,15 +245,8 @@
   let panel-w = N * cell
   let total-w = 2 * panel-w + gap-x
 
-  content(
-    (total-w / 2.0, 1.15),
-    text(fill: black90, size: 11pt, weight: "bold")[
-      Square-support first-derivative kernels for $N = 15$ and $h = 7$
-    ],
-  )
-
-  content((panel-w / 2.0, 0.55), text(fill: black90, size: 10pt, weight: "bold")[$bold(K)_x^("square")$])
-  content((panel-w + gap-x + panel-w / 2.0, 0.55), text(fill: black90, size: 10pt, weight: "bold")[$bold(K)_y^("square")$])
+  content((panel-w / 2.0, 0.45), text(fill: black90, size: 10pt, weight: "bold")[$bold(K)_x^("square")$])
+  content((panel-w + gap-x + panel-w / 2.0, 0.45), text(fill: black90, size: 10pt, weight: "bold")[$bold(K)_y^("square")$])
 
   for idx in range(degrees.len()) {
     let item = kernel-data.at(idx)
@@ -252,17 +260,26 @@
     )
   }
 
-  let legend-y = -(3 * panel-w + 2 * gap-y) - 0.45
-  let legend-x = total-w / 2.0 - 1.5
-  let sw = 0.34
-  let sh = 0.22
+  let legend-y = -(3 * panel-w + 2 * gap-y) - 0.55
+  let legend-x = total-w / 2.0 - 2.0
+  let legend-w = 4.0
+  let legend-h = 0.24
+  let steps = 48
 
-  rect((legend-x, legend-y), (legend-x + sw, legend-y - sh), fill: lerp-color(atlantic, 1.0), stroke: 0.2pt + black30)
-  content((legend-x + sw + 0.08, legend-y - sh / 2.0), text(fill: black70, size: 8pt)[negative], anchor: "west")
-
-  rect((legend-x + 1.15, legend-y), (legend-x + 1.15 + sw, legend-y - sh), fill: white, stroke: 0.2pt + black30)
-  content((legend-x + 1.15 + sw + 0.08, legend-y - sh / 2.0), text(fill: black70, size: 8pt)[zero], anchor: "west")
-
-  rect((legend-x + 2.0, legend-y), (legend-x + 2.0 + sw, legend-y - sh), fill: lerp-color(garnet, 1.0), stroke: 0.2pt + black30)
-  content((legend-x + 2.0 + sw + 0.08, legend-y - sh / 2.0), text(fill: black70, size: 8pt)[positive], anchor: "west")
+  for i in range(steps) {
+    let x0 = legend-x + i * legend-w / steps
+    let x1 = legend-x + (i + 1) * legend-w / steps
+    let t = -1.0 + 2.0 * (i + 0.5) / steps
+    rect(
+      (x0, legend-y),
+      (x1, legend-y - legend-h),
+      fill: signed-color(t),
+      stroke: none,
+    )
+  }
+  rect((legend-x, legend-y), (legend-x + legend-w, legend-y - legend-h), stroke: 0.2pt + black30)
+  content((legend-x, legend-y - legend-h - 0.16), text(fill: black70, size: 8pt)[$-w_"max"$], anchor: "north-west")
+  content((legend-x + legend-w / 2.0, legend-y - legend-h - 0.16), text(fill: black70, size: 8pt)[$0$], anchor: "north")
+  content((legend-x + legend-w, legend-y - legend-h - 0.16), text(fill: black70, size: 8pt)[$+w_"max"$], anchor: "north-east")
+  content((legend-x + legend-w / 2.0, legend-y + 0.16), text(fill: black70, size: 8pt)[weight], anchor: "south")
 })
