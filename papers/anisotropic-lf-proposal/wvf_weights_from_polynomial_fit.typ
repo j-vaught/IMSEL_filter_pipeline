@@ -1052,15 +1052,15 @@ The WVF defined in @sec:wvf-formulation evaluates one orientation-dependent dire
 
 == Virtual Evaluation Points Along the Candidate Direction <sec:lf-virtual-points>
 
-Using the sampled angle set from @eq:wvf-angle-set, the LF first defines integer line offsets along the candidate tangent direction associated with each normal angle $theta_k$ by
+Using the sampled angle set from @eq:wvf-angle-set, the LF first defines integer line offsets along the candidate direction itself by
 
 $
   (delta x_j(theta_k), delta y_j(theta_k))
-  = ("round"(-j sin theta_k), "round"(j cos theta_k)),
+  = ("round"(j cos theta_k), "round"(j sin theta_k)),
   quad j in {-m, dots, m}.
 $ <eq:lf-line-offsets>
 
-Equation @eq:lf-line-offsets shows that the parameter $m$ controls the half-length of the virtual line. Because the rotated $x'$ axis in @eq:rotate-x and @eq:rotate-y is the candidate normal direction, the offset in @eq:lf-line-offsets is perpendicular to that normal and therefore follows the candidate tangent. Using @eq:lf-line-offsets, the $j$-th virtual evaluation point for the candidate angle $theta_k$ is
+Equation @eq:lf-line-offsets shows that the parameter $m$ controls the half-length of the virtual line. The same candidate angle $theta_k$ is used both to orient the WVF derivative row in @eq:wvf-fx and to place the translated centers used by the LF. Using @eq:lf-line-offsets, the $j$-th virtual evaluation point for the candidate angle $theta_k$ is
 
 $
   (X_j, Y_j)
