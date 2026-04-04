@@ -376,9 +376,6 @@ $ <eq:gtheta3>
 
 In other words, after the polynomial fit has been collapsed into $bold(K)_x$ and $bold(K)_y$, the rest of the pipeline is just the standard gradient-based edge-detection workflow.
 
-
-The fit sounds like solving for a polynomial, but because the fit is linear, the derivative we extract is just one fixed weighted sum of the nine pixels.
-
 = Generalization To An N x N Square <sec:nxn-square>
 
 This `N x N` formulation is probably best understood as the standard two-dimensional Savitzky--Golay least-squares construction written in a form convenient for later sections @luo2005sg2d. We restate it here so that the derivation remains self-contained. The same polynomial basis, data vector, and pseudoinverse logic from the `3 x 3` case carry over directly.
@@ -653,6 +650,8 @@ Now, looking at the existing work, perhaps one would think that the somewhat arb
 The Wide View Filter (WVF) builds on top of this long history and takes the same polynomial-fitting approach but applies it in a rotated coordinate system like those of the prior oriented anisotropic filters, although WVF is not intrinsically anisotropic (it can be however anisotropic if setup poorly by selecting a poor support or $N_p$). This way, the derivative is taken in the direction that is most likely to capture the edge's structure.
 
 == Rotated Local Coordinates and the Final Stencil <sec:wvf-stencil>
+
+Unlike the Savitzky--Golay derivative filters derived in the previous sections, the WVF does not use a paired horizontal and vertical response. In the square and circular constructions, we extracted both derivative directions and then combined them afterward. Here, the goal is different. Since the filter is explicitly rotated through a collection of candidate orientations, the WVF only uses the derivative aligned with the rotated $x'$ direction. The orthogonal $y'$ derivative may still exist within the fitted polynomial, but it is not used to form the WVF response stencil.
 
 === The Rotation Step <sec:wvf-rotation>
 
