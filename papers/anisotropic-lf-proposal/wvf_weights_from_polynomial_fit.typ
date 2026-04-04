@@ -329,13 +329,29 @@ The fit sounds like solving for a polynomial, but because the fit is linear, the
 
 = Generalization To An N x N Square
 
-Now suppose the support is an arbitrary square window with coordinates
+Now suppose that instead of a 3x3 patch, we use a general $N times N$ square patch centered at the pixel of interest. To make sure there really is a center pixel, we assume that $N$ is odd. Then we define the half-width
 
 $
-  (x_i, y_i), quad i = 1, 2, dots, N_p,
-$ <eq:square-coords>
+  h = (N - 1)/2.
+$ <eq:halfwidth>
 
-where for a square window $N_p = N^2$.
+With this notation, the local coordinates in the square support are simply
+
+$
+  (x, y), quad x, y in {-h, -h + 1, dots, h - 1, h}.
+$ <eq:square-grid>
+
+This is just the centered $N times N$ window around the pixel of interest. Since there are $N$ possible $x$-values and $N$ possible $y$-values, the total number of pixels in the support is
+
+$
+  N_p = N^2.
+$ <eq:square-count>
+
+To write the least-squares system compactly, we now enumerate those same grid points as
+
+$
+  (x_i, y_i), quad i = 1, 2, dots, N_p.
+$ <eq:square-coords>
 
 For a polynomial of degree $d$, define the monomial basis vector
 
@@ -358,7 +374,7 @@ $
   M = (d+1)(d+2)/2.
 $ <eq:mbasis>
 
-Then the design matrix is built exactly the same way:
+Nothing changes conceptually from the 3x3 case. The only difference is that we now have more sample points. Each row of the design matrix is still the basis vector evaluated at one pixel location in the square support. Therefore
 
 $
   bold(A) =
@@ -370,7 +386,7 @@ $
   ).
 $ <eq:designn>
 
-The fitted coefficients are still
+The data vector $bold(b)$ is formed by stacking the $N^2$ pixel intensities from that same square window in some fixed order. Once that is done, the fitted coefficients are still given by the same least-squares formula:
 
 $
   hat(bold(z)) = (bold(A)^top bold(A))^(-1) bold(A)^top bold(b) = bold(P) bold(b).
@@ -388,7 +404,7 @@ $
   hat(f)_x = bold(p)_(f_x)^top bold(b).
 $ <eq:fx-est>
 
-So nothing changes conceptually from 3x3 to NxN. The matrix gets larger, but the derivative is still one row of the pseudoinverse dotted with the pixel vector.
+So the main idea is exactly the same as before. Going from 3x3 to $N times N$ does not change the logic of the derivation. The patch gets larger, the vectors get longer, and the matrix gets taller, but the derivative estimate is still one row of the pseudoinverse dotted with the stacked pixel values.
 
 = From A Square To A Circle
 
