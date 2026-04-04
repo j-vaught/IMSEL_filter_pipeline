@@ -569,18 +569,18 @@ So the logic is exactly the same as in the `3 x 3` example. First choose sample 
 
 = Visualizing the Square-Support Filters <sec:square-visualization>
 
-For a concrete visual example, it is useful to inspect the actual square-support kernels produced by this construction. If we choose $N = 15$, then the corresponding half-width is
+For a visual example, we can inspect the actual square-support kernels produced by this construction. If we choose $N = 15$, then the corresponding half-width is
 
 $
   h = (N - 1)/2 = 7.
 $ <eq:square-h-15>
 
-With that support fixed, Figures @fig:square-d1, @fig:square-d3, and @fig:square-d5 show the square-support derivative stencils for polynomial degrees $d = 1$, $d = 3$, and $d = 5$.
+With that support fixed, @fig:square-d1, @fig:square-d3, and @fig:square-d5 show the square-support derivative stencils for polynomial degrees $d = 1$, $d = 3$, and $d = 5$.
 
 #figure(
   image("figures/fig_square_filter_d1.pdf", width: 80%),
   caption: [
-    Square-support derivative kernels for a `15 x 15` neighborhood with polynomial degree $d = 1$. The left panel shows $bold(K)_x^("square")$ and the right panel shows $bold(K)_y^("square")$. Garnet denotes positive weights, Atlantic denotes negative weights, and white denotes weights near zero.
+    Square-support derivative kernels for a `15 x 15` neighborhood with polynomial degree $d = 1$. The left panel shows $bold(K)_x^("square")$ and the right panel shows $bold(K)_y^("square")$. 
   ],
 ) <fig:square-d1>
 
@@ -599,6 +599,8 @@ With that support fixed, Figures @fig:square-d1, @fig:square-d3, and @fig:square
 ) <fig:square-d5>
 
 Several points are worth noting. First, the degree-1 kernels have the simplest possible structure. They form a monotone left-to-right ramp for $bold(K)_x^("square")$ and the corresponding top-to-bottom ramp for $bold(K)_y^("square")$. Second, once the degree is increased to $d = 3$, the kernels become more concentrated near the middle of the support and develop small opposite-sign boundary lobes near the outer edges. That same trend becomes even more pronounced for $d = 5$, where the central positive and negative bands strengthen further and the outer oscillatory structure is easier to see. Finally, each panel retains the expected square-support symmetry. In every case, the $y$-derivative kernel is the transpose of the $x$-derivative kernel, so the two heatmaps contain the same structure rotated by ninety degrees.
+
+There is also a useful parity observation hiding in these figures. For a centered symmetric square support, the first-derivative stencil changes only when the polynomial basis gains new terms with the symmetry needed to contribute to $f_x$ or $f_y$. As a result, the square-support derivative kernels tend to appear in odd-even pairs. In practice, this means that $d = 1$ and $d = 2$ look the same, $d = 3$ and $d = 4$ look the same, and $d = 5$ and $d = 6$ look the same. This is precisely why the visual comparison above uses $d = 1$, $d = 3$, and $d = 5$ rather than the intervening even degrees. Those odd degrees are the ones at which the square-support first-derivative stencils visibly change.
 
 This figure also helps explain why the support geometry matters so much. Even before the circular and rotated constructions are introduced, the square support already imposes a visible spatial pattern on where the derivative estimate places its positive and negative weight. The next section changes only the support geometry, allowing us to isolate how much of the filter shape comes from the neighborhood itself rather than from the least-squares logic.
 
