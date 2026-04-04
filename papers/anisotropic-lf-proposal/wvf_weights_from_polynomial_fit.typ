@@ -678,6 +678,49 @@ $ <eq:circle-theta>
 
 So the circle support is just a different choice of sample locations, but the underlying least-squares logic is exactly the same. The resulting filter weights are different because the sample locations are different, but the mathematical construction is identical. We will show a visual represetnation of the differnce of these two supports later, but for now, the main takeaway is that the circular support is just a different set of sample locations, and the least-squares logic applies in exactly the same way.
 
+= Visualizing the Circular-Support Filters <sec:circular-visualization>
+
+To make that geometric change concrete, it is useful to visualize the corresponding circular-support derivative stencils. For a fair comparison with the square case, we keep the same bounding window size $N = 15$ and therefore the same half-width $h = 7$. The circular support is then defined as the exact integer lattice disk
+
+$
+  x_i^2 + y_i^2 <= 7^2.
+$ <eq:circle-r7>
+
+With this choice, the support contains
+
+$
+  N_p = 149
+$
+
+sample locations. That count is not chosen arbitrarily. It is simply the number of integer grid points inside the radius-7 disk. This exact construction is important because it preserves isotropy in the discrete support itself. By contrast, if one selects an arbitrary odd $N_p$ by taking the nearest pixels in distance order, the final few accepted points can depend on tie-breaking among equally distant lattice sites, which can introduce a slight directional bias into what is supposed to be a circular neighborhood.
+
+With that isotropic support fixed, Figures @fig:circle-d1, @fig:circle-d3, and @fig:circle-d5 show the circular-support derivative stencils for polynomial degrees $d = 1$, $d = 3$, and $d = 5$.
+
+#figure(
+  image("figures/fig_circle_filter_d1.pdf", width: 80%),
+  caption: [
+    Circular-support derivative kernels for the exact radius-7 disk inside a `15 x 15` bounding box, with polynomial degree $d = 1$. The left panel shows $bold(K)_x^("circ")$ and the right panel shows $bold(K)_y^("circ")$.
+  ],
+) <fig:circle-d1>
+
+#figure(
+  image("figures/fig_circle_filter_d3.pdf", width: 80%),
+  caption: [
+    Circular-support derivative kernels for the exact radius-7 disk with polynomial degree $d = 3$.
+  ],
+) <fig:circle-d3>
+
+#figure(
+  image("figures/fig_circle_filter_d5.pdf", width: 80%),
+  caption: [
+    Circular-support derivative kernels for the exact radius-7 disk with polynomial degree $d = 5$.
+  ],
+) <fig:circle-d5>
+
+The same odd-even pairing seen in the square-support case appears here as well. For this centered isotropic support, the first-derivative stencils again change only when the polynomial basis gains new terms with the correct symmetry to contribute to $f_x$ or $f_y$. Consequently, the visually distinct cases occur at $d = 1$, $d = 3$, and $d = 5$, while the intervening even degrees produce the same first-derivative stencils as their preceding odd neighbors. This is why the circular visualizations use the same degree sequence as the square ones.
+
+The circular figures also make the geometric difference from the square support easy to see. The kernels are no longer forced to occupy the corners of the `15 x 15` bounding box, so the weight distribution conforms more closely to a radially symmetric neighborhood. The $x$- and $y$-derivative stencils still remain transposes of one another, but the support itself is now isotropic rather than axis-aligned. This gives a cleaner baseline for the next section, where the coordinate system itself is rotated and only the derivative in the candidate normal direction is retained.
+
 = The Wide View Filter Formulation <sec:wvf-formulation>
 
 == Why Rotate the Coordinate System? <sec:wvf-motivation>
