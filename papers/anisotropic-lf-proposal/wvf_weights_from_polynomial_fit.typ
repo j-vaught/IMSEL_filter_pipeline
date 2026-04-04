@@ -1,10 +1,11 @@
 #set page(margin: (top: 0.8in, bottom: 0.8in, left: 0.85in, right: 0.85in), numbering: "1")
 #set text(font: "New Computer Modern", size: 11pt)
-#set heading(numbering: "1.1")
+#set heading(numbering: "1.1.1")
 #set par(justify: true, leading: 0.6em)
 #set math.equation(numbering: "(1)")
 #show heading.where(level: 1): set text(size: 13pt)
 #show heading.where(level: 2): set text(size: 11.5pt)
+#show heading.where(level: 3): set text(size: 11pt)
 
 
 #align(center)[
@@ -17,19 +18,21 @@
   ]
 ]
 
-= The Core Idea
+= Introduction: The Savitzky-Golay Principle <sec:intro>
 
 At its core, this method is a Savitzky--Golay derivative estimator. Savitzky and Golay's original 1964 contribution was to show that one can fit a polynomial locally by least squares and recover derivatives directly from the fitted coefficients @savitzkygolay1964. Our derivation uses the same principle, but adapts it to two-dimensional image neighborhoods.
 
 Although a polynomial fit is usually described as solving for unknown coefficients, the least-squares solution is linear in the sampled pixel values. As a result, any fitted coefficient, including a derivative coefficient, can be expressed as one fixed weighted sum of the input pixels. The resulting weighted sum for each pixel is effectively the filter weights, similar to how Sobel or Prewitt weights are defined.
 
-= A Square 3x3 Example
+= A Pedagogical Example: The 3x3 Square Neighborhood <sec:3x3-example>
 
-== The 3x3 Patch
+== Defining the Image Patch and Polynomial Model <sec:3x3-model>
 
 We begin with a `3 x 3` example because it makes the algebra visible. Conceptually, nothing new happens here since this is the same two-dimensional polynomial-fitting procedure developed in the Savitzky--Golay tradition and later extended to image neighborhoods by Gorry, Meer et al., and Luo et al. @gorry1990sg @meer1991sg2d @luo2005sg2d in the '90s and early '00s. The small patch is used primarily to save me a lot of algebra and to make the logic more transparent. The same principles apply to larger patches, and we will show how to generalize to those later.
 
 
+
+=== The Local Patch and Polynomial Ansatz <sec:3x3-patch>
 
 As a simplification, let us begin with a local 3x3 image patch. We denote this neighborhood by $bold(B)$:
 
@@ -61,6 +64,8 @@ $ <eq:poly2>
 In this case, $c_0$, $c_1$, and $c_2$ play the same roles as before, while the additional coefficients capture curvature in the local intensity surface. Intuitively, they describe how the rate of change itself varies across the patch. Even when the polynomial degree is increased, the main coefficients used for estimating the local directional change are still the first-derivative terms. Increasing the degree simply gives the fit more flexibility, which can improve accuracy in some cases when the local image structure is not well described by a purely linear model.
 
 With all that mathematical kerfuffle out of the way, the only question that remains is how to solve for those unknown coefficients. To do that, we write one fitting equation for each pixel in the local patch and then collect them into a single linear system.
+
+=== From Pixel Coordinates to Fitting Equations <sec:3x3-fit-equations>
 
 For example, if we want to write the formula for the degree-1 polynomial, we begin with @eq:poly1 and substitute the pixel coordinates into it. The pixel at $(-1, -1)$ has coordinates $x = -1$ and $y = -1$, so we plug those into the polynomial and plug in the known coordinates of a pixel in the patch. 
 
@@ -137,7 +142,9 @@ $ <eq:system>
 
 where $bold(A)$ is the design matrix containing the coefficients of the unknowns for each pixel, $bold(z)$ is the vector of unknown polynomial coefficients, and $bold(b)$ is the vector of observed pixel intensities.
 
-== Stack The Patch Into A Vector
+== Constructing the Matrix System <sec:3x3-matrix-system>
+
+=== Vectorizing the Pixel Data <sec:3x3-data-vector>
 
 To derive $bold(b)$ and $bold(A)$, we first need to decide how to stack the pixel values from the patch into a vector. One common way is to read the pixels in row-major order, starting from the top-left corner and moving left to right, then down to the next row. Doing so gives us
 
@@ -156,6 +163,8 @@ $
   ]^top.
 $ <eq:bvec>
 
+=== Building the Design Matrix <sec:3x3-design-matrix>
+
 Then, the design matrix is just the basis $[1, x, y]$ evaluated at one sample location. Therefore
 
   $
@@ -170,7 +179,9 @@ Then, the design matrix is just the basis $[1, x, y]$ evaluated at one sample lo
 
 Then, finally, to solve for the unknown coefficients, we use the least-squares solution to the system in @eq:system.
 
-== Solve The Least-Squares System
+== The Least-Squares Solution <sec:3x3-lstsq>
+
+=== The Least-Squares Objective <sec:3x3-objective>
 
 At this point, we have nine approximate equations but only three unknown coefficients. In general, there is no reason to expect one vector $bold(z)$ to satisfy every equation exactly. So instead of solving $bold(A) bold(z) = bold(b)$ exactly, we choose the coefficient vector that makes the overall mismatch as small as possible in the least-squares sense:
 
@@ -213,6 +224,8 @@ If $bold(A)^top bold(A)$ is invertible, we multiply both sides by $(bold(A)^top 
 $
   hat(bold(z)) = (bold(A)^top bold(A))^(-1) bold(A)^top bold(b).
 $ <eq:lstsq3>
+
+=== Evaluating the Pseudoinverse <sec:3x3-pseudoinverse>
 
 For this particular 3x3 geometry, one can compute
 
@@ -286,7 +299,9 @@ $ <eq:c2-est>
  
 Since we do not have the exact vlaue for $c_1$ and $c_2$, we can only write the estimates as approximations, hence the usage of the symbols $hat(c_1)$ and $hat(c_2)$.
 
-== Filter Derivations
+== Extracting the Convolution Filters <sec:3x3-filters>
+
+=== Writing the Derivative Estimates as Weighted Sums <sec:3x3-weighted-sums>
 
 Finally, converting the results from the polynomial fit into derivative filters, we write out the explicit expressions:
 
@@ -299,6 +314,8 @@ $ <eq:c1-exp2>
 $
   quad + (-1/6) I_(-1,1) + 0 I_(0,1) + (1/6) I_(1,1).
 $ <eq:c1-exp3>
+
+=== The Resulting 3x3 Kernels <sec:3x3-kernels>
 
 And converitng into standard 3x3 derivative filter format, we have
 
@@ -329,12 +346,14 @@ $
   ).
 $ <eq:ky3>
 
+=== Using the Kernels in an Edge-Detection Pipeline <sec:3x3-pipeline>
+
 Once $bold(K)_x$ and $bold(K)_y$ are known, they can be used exactly like any other pair of derivative filters. We convolve the image with $bold(K)_x$ to obtain a horizontal derivative estimate $G_x$, and with $bold(K)_y$ to obtain a vertical derivative estimate $G_y$. From those two responses, we can form the gradient magnitude $sqrt(G_x^2 + G_y^2)$ to measure edge strength, and the gradient orientation $"atan2"(G_y, G_x)$ to measure edge direction. In other words, after the polynomial fit has been collapsed into $bold(K)_x$ and $bold(K)_y$, the rest of the pipeline is just the standard gradient-based edge-detection workflow.
 
 
 The fit sounds like solving for a polynomial, but because the fit is linear, the derivative we extract is just one fixed weighted sum of the nine pixels.
 
-= Generalization To An N x N Square
+= Generalization To An N x N Square <sec:nxn-square>
 
 This `N x N` formulation is probably best understood as the standard two-dimensional Savitzky--Golay least-squares construction written in a form convenient for later sections @luo2005sg2d. We restate it here so that the derivation remains self-contained. The same polynomial basis, data vector, and pseudoinverse logic from the `3 x 3` case carry over directly.
 
@@ -363,6 +382,8 @@ $
   (x_i, y_i), quad i = 1, 2, dots, N_p.
 $ <eq:square-coords>
 
+== The Monomial Basis and Unknown Coefficients <sec:nxn-basis>
+
 For a polynomial of degree $d$, we can define the monomial basis vector. 
 
 $
@@ -382,6 +403,8 @@ This vector is just a compact way to list all polynomial terms up to degree $d$.
 
 In other words, the vector $phi_d(x, y)$ simply collects every monomial term that can appear in a 2D polynomial of total degree at most $d$. Each entry of this basis will have one corresponding unknown coefficient in the polynomial fit. So the length of $phi_d(x, y)$ is exactly the number of coefficients we must solve for. We denote that number by $M$.
 
+=== Counting the Basis Terms <sec:nxn-basis-count>
+
 To see where this count comes from, group the monomials by total degree. For total degree 0, there is only 1 term, namely $1$. For total degree 1, there are 2 terms, namely $x$ and $y$. For total degree 2, there are 3 terms, namely $x^2$, $x y$, and $y^2$. In general, for total degree $n$, the admissible monomials are $x^n, x^(n-1) y, x^(n-2) y^2, dots, y^n$, so there are $n+1$ of them.
 
 Since the basis includes every total degree from 0 up to $d$, the total number of basis terms is
@@ -396,11 +419,17 @@ $
   M = (d+1)(d+2)/2.
 $ <eq:mbasis>
 
-Now that we have acquire M through such painful means, we can now define the minimum data requirement for the least-squares fit. Since we have $M$ unknown coefficients, we need at least $M$ equations to solve for them. If we recall from Section 2(WE NEED TO FIX THIS!!!!!), each pixel in the support gives us one equation, so we need at least $M$ pixels in the support. In more personable terms, the number of pixels in the support must be greater than (or equal to) the number of coefficients. 
+=== Minimum Sample Requirement <sec:nxn-min-data>
+
+Now that we have acquire M through such painful means, we can now define the minimum data requirement for the least-squares fit. Since we have $M$ unknown coefficients, we need at least $M$ equations to solve for them. If we recall from @sec:3x3-fit-equations, each pixel in the support gives us one equation, so we need at least $M$ pixels in the support. In more personable terms, the number of pixels in the support must be greater than (or equal to) the number of coefficients. 
 
 $
   N_p >= M.
 $ <eq:min-data>
+
+== Building the General Linear System <sec:nxn-system>
+
+=== The Coefficient Vector and Design Matrix <sec:nxn-design>
 
 For the generalized $N times N$ case, the unknown coefficient vector is
 
@@ -423,6 +452,8 @@ $
   ).
 $ <eq:designn>
 
+=== The Data Vector and System Form <sec:nxn-data-system>
+
 To complete the linear system, we stack the observed pixel intensities from those same sample locations, in the same order used for the rows of $bold(A)$.
 
 $
@@ -441,19 +472,25 @@ $
   bold(A) bold(z) approx bold(b).
 $ <eq:systemn>
 
-This system is traditionally overdetermined by design(and we will later discuss the reason for such and a proof will be provided), so we solve for the coefficient vector in the least-squares sense. The fitted coefficient vector is
+== Solving for the Derivative Weights <sec:nxn-weights>
+
+=== The Pseudoinverse Map <sec:nxn-pseudoinverse>
+
+This system is traditionally overdetermined by design (and we will later discuss the reason for such and a proof will be provided), so we solve for the coefficient vector in the least-squares sense. The fitted coefficient vector is
 
 $
   hat(bold(z)) = (bold(A)^top bold(A))^(-1) bold(A)^top bold(b) = bold(P) bold(b).
 $ <eq:lstsqn>
 
-Where $hat(bold(z))$ means the estimated coefficient vector, and
+Where $hat(bold(z))$ means the estimated coefficient vector. We also define
 
 $
   bold(P) = (bold(A)^top bold(A))^(-1) bold(A)^top
-$
+$ <eq:pinvn>
 
-is the pseudoinverse matrix that maps sampled intensities directly to fitted coefficients. If the basis is ordered as $[1, x, y, dots]^top$, then the coefficient of $x$ is the estimate of the first derivative in the $x$-direction. That coefficient is one entry of $hat(bold(z))$, so the corresponding row of $bold(P)$ is a weight vector:
+=== Extracting a Derivative Row <sec:nxn-derivative-row>
+
+The matrix $bold(P)$ is the pseudoinverse that maps sampled intensities directly to fitted coefficients. If the basis is ordered as $[1, x, y, dots]^top$, then the coefficient of $x$ is the estimate of the first derivative in the $x$-direction. That coefficient is one entry of $hat(bold(z))$, so the corresponding row of $bold(P)$ is a weight vector:
 
 $
   bold(p)_(f_x)^top,
@@ -467,7 +504,9 @@ $ <eq:fx-est>
 
 So the logic is exactly the same as in the 3x3 example. First choose sample locations. Then evaluate the monomial basis there to build $bold(A)$. Then stack the measured intensities into $bold(b)$ in the same order. Solving the least-squares problem gives $hat(bold(z))$, and one row of the pseudoinverse extracts whichever derivative coefficient we want.
 
-= From A Square To A Circle
+= Adapting to a Circular Support Region <sec:circular-support>
+
+== Restricting the Sample Locations <sec:circular-samples>
 
 Classical Savitzky--Golay filters and most of their descendants are usually presented on rectangular, axis-aligned neighborhoods, largely because those supports make both the algebra and the implementation straightforward @savitzkygolay1964 @luo2005sg2d. Now, suppose one whose hubris is such that they believe the circular case is a new algorithm. This modification would hypothetically allows for a new filter to better match the orientation-dependent structure of edges while preserving the underlying least-squares polynomial framework.
 
@@ -476,6 +515,8 @@ We can derive this new algorithm by considering the circular support, as it is t
 $
   x_i^2 + y_i^2 <= r^2.
 $ <eq:circle-support>
+
+== Reusing the Least-Squares Construction <sec:circular-lstsq>
 
 Now, the simiplifcaiotn from the prior section of redfining the $N_p$ rahter than $N^2$ will sae us some time. Defining the data vector to only contain the pixel values inside that circular support, we derive $bold(b)$ as
 
@@ -509,11 +550,17 @@ $ <eq:circle-fx>
 
 So the circle support is just a different choice of sample locations, but the underlying least-squares logic is exactly the same. The resulting filter weights are different because the sample locations are different, but the mathematical construction is identical. We will show a visual represetnation of the differnce of these two supports later, but for now, the main takeaway is that the circular support is just a different set of sample locations, and the least-squares logic applies in exactly the same way.
 
-= The Wide View Filter's changes to the Polynomial Fit
+= The Wide View Filter Formulation <sec:wvf-formulation>
 
-Now, looking at the existing work, perhaps one would think that the somewhat arbitrary x and y direction of the filters is a problem. After all, edges can be oriented in any direction, so why should we only look at changes in the horizontal and vertical directions? To address this issue, a fe wsolutiosn have been introduced over the years, includeing orientable anisotropic filters as well as steerable filters. The Wide View Filter (WVF) builds on top of this long hisory and takes the same polynomial-fitting approach but applies it in a rotated coordinate system liek those of the prior oriented anisotropic filteres, alhtough WVF is not intrinsically anisotropic(it can be however anistrpic if setup porroly by selecting a poor support or $N_p$). This way, the derivative is taken in the direction that is most likely to capture the edge's structure.
+== Why Rotate the Coordinate System? <sec:wvf-motivation>
 
-Now, the WVF's changes to the polynomial fit are actually quite minimal. First, it rotates the local coordinates so that the derivative is taken in the candidate normal direction as shwon in the following equations:
+Now, looking at the existing work, perhaps one would think that the somewhat arbitrary x and y direction of the filters is a problem. After all, edges can be oriented in any direction, so why should we only look at changes in the horizontal and vertical directions? To address this issue, a few solutions have been introduced over the years, including orientable anisotropic filters as well as steerable filters. The Wide View Filter (WVF) builds on top of this long history and takes the same polynomial-fitting approach but applies it in a rotated coordinate system like those of the prior oriented anisotropic filters, although WVF is not intrinsically anisotropic (it can be however anisotropic if setup poorly by selecting a poor support or $N_p$). This way, the derivative is taken in the direction that is most likely to capture the edge's structure.
+
+== Rotated Local Coordinates and the Final Stencil <sec:wvf-stencil>
+
+=== The Rotation Step <sec:wvf-rotation>
+
+Now, the WVF's changes to the polynomial fit are actually quite minimal. First, it rotates the local coordinates so that the derivative is taken in the candidate normal direction as shown in the following equations:
 
 $
   x_i' = Delta x_i cos theta + Delta y_i sin theta,
@@ -521,6 +568,8 @@ $ <eq:rotate-x>
 $
   y_i' = -Delta x_i sin theta + Delta y_i cos theta.
 $ <eq:rotate-y>
+
+=== The Orientation-Dependent Stencil <sec:wvf-oriented-stencil>
 
 Second, it uses a circular support instead of a square one. But once the rotated circular sample locations are fixed, the same least-squares logic from Golay-Savitzky applies. The only difference is that the design matrix is now built from the rotated coordinates, so the $i$-th row of $bold(A)$ is $phi_d(x_i', y_i')^top$ instead of $phi_d(x_i, y_i)^top$. The data vector $bold(b)$ is unchanged since it still contains the same pixel intensities. With those definitions, the least-squares solution is
 
