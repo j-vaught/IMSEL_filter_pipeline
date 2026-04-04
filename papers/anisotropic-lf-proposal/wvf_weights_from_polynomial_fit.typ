@@ -1050,6 +1050,13 @@ The conclusion is therefore structural rather than numerical. For a fixed suppor
 
 The WVF defined in @sec:wvf-formulation evaluates one orientation-dependent directional stencil at one pixel. The Line Filter (LF) keeps the same WVF stencil at each candidate angle, but evaluates it at several shifted centers and combines the resulting directional responses @bagan2023lf. The next four subsections define those virtual centers, the WVF responses collected along the line, the Gaussian weighting applied to them, and the final orientation-selection rule.
 
+#figure(
+  image("figures/fig_wvf_to_lf_construction.pdf", width: 90%),
+  caption: [
+    Schematic transition from the WVF to the LF. The WVF evaluates one circular point support at the target pixel for each candidate angle, while the LF places virtual evaluation points along a line and applies the same oriented point filter at each translated center before combining the resulting responses.
+  ],
+) <fig:wvf-to-lf-construction>
+
 == Virtual Evaluation Points Along the Candidate Direction <sec:lf-virtual-points>
 
 Using the sampled angle set from @eq:wvf-angle-set, the LF first defines integer line offsets along the candidate tangent direction by
@@ -1060,7 +1067,7 @@ $
   quad j in {-m, dots, m}.
 $ <eq:lf-line-offsets>
 
-Equation @eq:lf-line-offsets shows that the parameter $m$ controls the half-length of the virtual line. Since the rotated $x'$ axis in @eq:rotate-x and @eq:rotate-y is the candidate normal direction, the offset in @eq:lf-line-offsets is perpendicular to that normal and therefore follows the candidate tangent. Using @eq:lf-line-offsets, the $j$-th virtual evaluation point for the candidate angle $theta_k$ is
+@eq:lf-line-offsets shows that the parameter $m$ controls the half-length of the virtual line. Since the rotated $x'$ axis in @eq:rotate-x and @eq:rotate-y is the candidate normal direction, the offset in @eq:lf-line-offsets is perpendicular to that normal and therefore follows the candidate tangent. Using @eq:lf-line-offsets, the $j$-th virtual evaluation point for the candidate angle $theta_k$ is
 
 $
   (X_j, Y_j)
@@ -1130,6 +1137,13 @@ $
 $ <eq:lf-mag>
 
 Equations @eq:lf-line-offsets through @eq:lf-mag complete the LF definition. The elements inherited from the WVF are the angle set in @eq:wvf-angle-set and the directional point stencil in @eq:wvf-fx. The new LF elements are the shifted virtual points in @eq:lf-virtual-points, the Gaussian line weights in @eq:lf-line-weights, and the line aggregation in @eq:lf-line-response.
+
+#figure(
+  image("figures/fig_wvf_lf_d1_compare.pdf", width: 100%),
+  caption: [
+    Comparison of the degree-1 WVF and LF stencils across four representative orientations. The WVF remains a compact circular point stencil, while the LF becomes an elongated anisotropic stencil because the WVF point response is accumulated over the translated line positions from @eq:lf-virtual-points.
+  ],
+) <fig:wvf-lf-d1-compare>
 
 = Collapsing the Line Filter into a Fused Anisotropic Stencil <sec:lf-fused-stencil>
 
