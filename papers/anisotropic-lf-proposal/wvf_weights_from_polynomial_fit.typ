@@ -2,7 +2,11 @@
 #set text(font: "New Computer Modern", size: 11pt)
 #set heading(numbering: "1.1.1")
 #set par(justify: true, leading: 0.6em)
-#set math.equation(numbering: "(1)")
+#set math.equation(numbering: (..nums) => {
+  let heading-num = counter(heading).get()
+  let section-num = if heading-num.len() > 0 { heading-num.at(0) } else { 0 }
+  numbering("(1.1)", section-num, nums.pos().at(0))
+})
 #show heading.where(level: 1): set text(size: 13pt)
 #show heading.where(level: 2): set text(size: 11.5pt)
 #show heading.where(level: 3): set text(size: 11pt)
@@ -807,7 +811,7 @@ The WVF construction above is still built from a local polynomial fit, so the qu
 
 == Exact Recovery for Affine Data <sec:affine-exact>
 
-The cleanest case is an affine intensity field. Let the local intensity function be
+The cleanest case is an affine intensity field, which simply means the intensity is a linear function of the spatial coordinates. We can define the intensity function of such a field as
 
 $
   f_"aff"(x, y) = a_0 + a_1 x + a_2 y.
@@ -828,17 +832,19 @@ $
   = bold(z)_"aff".
 $ <eq:affine-recovery>
 
-Equation @eq:affine-recovery shows that the degree-1 fit recovers the affine coefficients exactly whenever the data are noiseless and truly affine. Since the coefficient of $x$ in @eq:affine-field is $a_1$ and the coefficient of $y$ is $a_2$, @eq:affine-recovery implies
+@eq:affine-recovery shows that the degree-1 fit recovers the affine coefficients exactly whenever the data are noiseless and truly affine. Since the coefficient of $x$ in @eq:affine-field is $a_1$ and the coefficient of $y$ is $a_2$, @eq:affine-recovery implies
 
 $
   hat(f)_x = a_1, quad hat(f)_y = a_2.
 $ <eq:affine-derivatives>
 
-Equation @eq:affine-derivatives is the exact-recovery statement we need. For affine data, the degree-1 polynomial already contains the entire local signal, so higher polynomial degree does not add any new first-derivative information in the noiseless case.
+@eq:affine-derivatives is the exact-recovery statement we need. For affine data, the degree-1 polynomial already contains the entire local signal, so higher polynomial degree does not add any new first-derivative information in the noiseless case.
 
 == The Affine Model as a Local Approximation <sec:affine-local>
 
-The affine model in @eq:affine-field is not intended as a global image model. It is a local approximation. If the underlying intensity field is smooth near the center pixel, then its first-order Taylor expansion about that center point is
+The affine model in @eq:affine-field is not intended as a global model of the image, rather it is a local approximation. We assume local smoothness because the goal is to estimate local derivatives and derivatives and Taylor expansions are only meaningful where the intensity field is sufficiently regular. Under that assumption, the first-order Taylor expansion provides the affine approximation we use.  
+
+If the underlying intensity field is smooth near the center pixel, then its first-order Taylor expansion about that center point is
 
 $
   f(x, y) = f(0, 0) + f_x(0, 0) x + f_y(0, 0) y + r_2(x, y),
@@ -850,26 +856,17 @@ $
   |r_2(x, y)| <= (1/2) sup_((u, v) in Omega_h) ||bold(H)_f(u, v)|| ||(x, y)||^2,
 $ <eq:taylor-remainder>
 
-where $Omega_h$ is the local support window and $bold(H)_f$ is the Hessian of the intensity field. Equation @eq:taylor-first shows that the affine term is the leading local approximation, while @eq:taylor-remainder shows that the approximation error grows quadratically with distance from the expansion point.
-
-#figure(
-  image("figures/fig_affine_local_approximation.pdf", width: 90%),
-  caption: [
-    A one-dimensional slice of a smooth intensity field and its first-order local approximation. The left panel shows the smooth local intensity profile over a highlighted support window. The right panel shows the tangent-line approximation over that same window. This is the geometric idea behind the affine model in @eq:taylor-first.
-  ],
-) <fig:affine-local>
-
-Figure @fig:affine-local illustrates the role of @eq:taylor-first. Over a small enough support, the tangent line is the first-order approximation to the smooth profile, and @eq:taylor-remainder tells us how the neglected curvature enters. That is why the affine case is the right baseline when the goal is first-derivative estimation.
+where $Omega_h$ is the local support window and $bold(H)_f$ is the Hessian of the intensity field. Equation @eq:taylor-first shows that the affine term is the leading local approximation, while @eq:taylor-remainder shows that the approximation error grows quadratically with distance from the expansion point. Over a small enough support, the tangent line is the first-order approximation to the smooth profile, and @eq:taylor-remainder tells us how the neglected curvature enters.
 
 == Noise Propagation Through the Derivative Stencil <sec:noise-propagation>
 
-To discuss robustness, we now write the sampled data as the sum of a clean signal and additive noise:
+To discuss robustness, we now write the sampled data as the sum of a clean signal and additive noise, where $bold(b)_0$ is the clean signal and $bold(epsilon)$ is the noise vector
 
 $
   bold(b) = bold(b)_0 + bold(epsilon),
 $ <eq:noise-model>
 
-with
+with $E$ denoting the expectation operator. We assume that the noise is zero-mean and isotropic, so its mean and covariance are
 
 $
   E[bold(epsilon)] = 0, quad "Cov"(bold(epsilon)) = sigma^2 bold(I).
