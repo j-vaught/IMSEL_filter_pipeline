@@ -578,21 +578,21 @@ $ <eq:square-h-15>
 With that support fixed, Figures @fig:square-d1, @fig:square-d3, and @fig:square-d5 show the square-support derivative stencils for polynomial degrees $d = 1$, $d = 3$, and $d = 5$.
 
 #figure(
-  image("figures/fig_square_filter_d1.pdf", width: 100%),
+  image("figures/fig_square_filter_d1.pdf", width: 80%),
   caption: [
     Square-support derivative kernels for a `15 x 15` neighborhood with polynomial degree $d = 1$. The left panel shows $bold(K)_x^("square")$ and the right panel shows $bold(K)_y^("square")$. Garnet denotes positive weights, Atlantic denotes negative weights, and white denotes weights near zero.
   ],
 ) <fig:square-d1>
 
 #figure(
-  image("figures/fig_square_filter_d3.pdf", width: 100%),
+  image("figures/fig_square_filter_d3.pdf", width: 80%),
   caption: [
     Square-support derivative kernels for a `15 x 15` neighborhood with polynomial degree $d = 3$.
   ],
 ) <fig:square-d3>
 
 #figure(
-  image("figures/fig_square_filter_d5.pdf", width: 100%),
+  image("figures/fig_square_filter_d5.pdf", width: 80%),
   caption: [
     Square-support derivative kernels for a `15 x 15` neighborhood with polynomial degree $d = 5$.
   ],
