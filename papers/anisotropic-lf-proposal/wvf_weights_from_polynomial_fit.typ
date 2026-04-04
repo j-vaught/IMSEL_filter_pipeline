@@ -567,6 +567,27 @@ $ <eq:nxn-theta>
 
 So the logic is exactly the same as in the `3 x 3` example. First choose sample locations. Then evaluate the monomial basis there to build $bold(A)$. Then stack the measured intensities into $bold(b)$ in the same order. Solving the least-squares problem gives $hat(bold(z))$, and the derivative rows of the pseudoinverse become square filter stencils whose responses can then be combined into a gradient magnitude and orientation.
 
+= Visualizing the Square-Support Filters <sec:square-visualization>
+
+For a concrete visual example, it is useful to inspect the actual square-support kernels produced by this construction. If we choose $N = 15$, then the corresponding half-width is
+
+$
+  h = (N - 1)/2 = 7.
+$ <eq:square-h-15>
+
+With that support fixed, Figure @fig:square-degree-sweep shows the square derivative stencils $bold(K)_x^("square")$ and $bold(K)_y^("square")$ for polynomial degrees $d = 1$, $d = 2$, and $d = 4$.
+
+#figure(
+  image("figures/fig_square_filter_degree_sweep.pdf", width: 100%),
+  caption: [
+    Square-support derivative kernels for a `15 x 15` neighborhood. The columns show $bold(K)_x^("square")$ and $bold(K)_y^("square")$, while the rows show polynomial degrees $d = 1$, $d = 2$, and $d = 4$. Garnet denotes positive weights, Atlantic denotes negative weights, and white denotes weights near zero.
+  ],
+) <fig:square-degree-sweep>
+
+Several points are worth noting. First, the degree-1 and degree-2 first-derivative kernels are visually identical for this fully symmetric square support. In this particular setting, adding the quadratic terms changes the fitted polynomial space, but it does not change the extracted first-derivative stencils. Second, the degree-4 kernels are qualitatively different. Their weights are more concentrated near the central columns and rows, and small opposite-sign lobes appear near the outer boundary. Finally, the pair retains the expected square-support symmetry. The $y$-derivative kernel is the transpose of the $x$-derivative kernel, so the two panels contain the same structure rotated by ninety degrees.
+
+This figure also helps explain why the support geometry matters so much. Even before the circular and rotated constructions are introduced, the square support already imposes a visible spatial pattern on where the derivative estimate places its positive and negative weight. The next section changes only the support geometry, allowing us to isolate how much of the filter shape comes from the neighborhood itself rather than from the least-squares logic.
+
 = Adapting to a Circular Support Region <sec:circular-support>
 
 == Restricting the Sample Locations <sec:circular-samples>
