@@ -173,12 +173,12 @@
   let AtA = mat-mul(At, A)
   let AtA-inv = mat-invert(AtA)
   let P = mat-mul(AtA-inv, At)
-  let du-row = P.at(1)
+  let dv-row = P.at(2)
   let stencil = (:)
   for ii in range(support.len()) {
     let dx = support.at(ii).at(0)
     let dy = support.at(ii).at(1)
-    stencil.insert(str(dx) + "," + str(dy), du-row.at(ii))
+    stencil.insert(str(dx) + "," + str(dy), dv-row.at(ii))
   }
   let max-abs = 0.0
   for (_, val) in stencil {
@@ -192,14 +192,16 @@
 
 #let gaussian-stencil(theta, grid-n, sigma-u, sigma-v, support-u, support-v) = {
   let support = build-support("ellipse", theta, grid-n, support-u, support-v)
+  let sigma-u-eff = 2.0 * sigma-u
+  let sigma-v-eff = 2.0 * sigma-v
   let raw = ()
   let mean = 0.0
   for ii in range(support.len()) {
     let dx = support.at(ii).at(0)
     let dy = support.at(ii).at(1)
     let (u, v) = oriented-uv(dx, dy, theta)
-    let g = calc.exp(-0.5 * (u * u / (sigma-u * sigma-u) + v * v / (sigma-v * sigma-v)))
-    let w = -(u / (sigma-u * sigma-u)) * g
+    let g = calc.exp(-0.5 * (u * u / (sigma-u-eff * sigma-u-eff) + v * v / (sigma-v-eff * sigma-v-eff)))
+    let w = -(v / (sigma-v-eff * sigma-v-eff)) * g
     raw.push((dx, dy, w))
     mean = mean + w
   }
