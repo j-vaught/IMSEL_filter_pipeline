@@ -723,7 +723,7 @@ The circular figures also make the geometric difference from the square support 
 
 = Rotating the Circular Support <sec:circular-rotation-visualization>
 
-The next step toward the WVF is not to change the support again, but to rotate the derivative direction within that same isotropic circular neighborhood. To make that transition concrete, Figure @fig:circle-orientation-sweep fixes the exact radius-7 disk inside the `15 x 15` bounding box and shows the directional stencil obtained when the local coordinate system is rotated to $theta = 0degree$, $30degree$, $60degree$, and $90degree$. For this illustration, we use the representative odd degree $d = 3$.
+The next step toward the WVF is not to change the support again, but to rotate the derivative direction within that same isotropic circular neighborhood. To illustrate this, we take the same support from @fig:circle-d3, but rotate it across some set of angles, as seen in @fig:circle-orientation-sweep where we fix the exact radius-7 disk inside the `15 x 15` bounding box and shows the directional stencil obtained when the local coordinate system is rotated to $theta = 0degree$, $30degree$, $60degree$, and $90degree$. For this illustration, we use the representative odd degree $d = 3$.
 
 #figure(
   image("figures/fig_circle_orientation_sweep_d3.pdf", width: 100%),
@@ -732,7 +732,7 @@ The next step toward the WVF is not to change the support again, but to rotate t
   ],
 ) <fig:circle-orientation-sweep>
 
-This figure makes the key geometric point visible. The underlying support stays circular, but the positive and negative lobes of the derivative stencil rotate with the chosen coordinate system. In other words, the neighborhood itself remains isotropic while the extracted derivative direction changes. That is precisely the idea used by the WVF. Rather than relying only on the fixed horizontal and vertical derivatives, the filter is evaluated in several candidate directions and the directional derivative aligned with the candidate normal is retained.
+ The underlying support stays circular, but the positive and negative lobes of the derivative stencil rotate with the chosen coordinate system. In this case, the neighborhood itself remains isotropic while the extracted derivative direction changes. That is precisely the idea used by the WVF. Rather than relying only on the fixed horizontal and vertical derivatives, the filter is evaluated in several candidate directions and the directional derivative _most_ aligned with the candidate normal is retained.
 
 = The Wide View Filter Formulation <sec:wvf-formulation>
 
@@ -744,7 +744,7 @@ The Wide View Filter (WVF) builds on top of this long history and takes the same
 
 == Rotated Local Coordinates and the Final Stencil <sec:wvf-stencil>
 
-Unlike the Savitzky--Golay derivative filters derived in the previous sections, the WVF does not use a paired horizontal and vertical response. In the square and circular constructions, we extracted both derivative directions and then combined them afterward. Here, the goal is different. Since the filter is explicitly rotated through a collection of candidate orientations, the WVF only uses the derivative aligned with the rotated $x'$ direction. The orthogonal $y'$ derivative may still exist within the fitted polynomial, but it is not used to form the WVF response stencil.
+Unlike the Savitzky--Golay derivative filters derived in the previous sections, the WVF does not use a paired horizontal and vertical response. In the square and circular constructions, we extracted both derivative directions and then combined them afterward. Here, since the filter is explicitly rotated through a collection of candidate orientations, the WVF only uses the derivative aligned with the rotated $x'$ direction. The orthogonal $y'$ derivative may still exist within the fitted polynomial, but it is not used to form the WVF response stencil.
 
 === The Rotation Step <sec:wvf-rotation>
 
