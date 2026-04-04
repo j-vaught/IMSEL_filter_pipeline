@@ -372,15 +372,19 @@ This vector is just a compact way to list all polynomial terms up to degree $d$.
 
 In other words, the vector $phi_d(x, y)$ simply collects every monomial term that can appear in a 2D polynomial of total degree at most $d$. Each entry of this basis will have one corresponding unknown coefficient in the polynomial fit. So the length of $phi_d(x, y)$ is exactly the number of coefficients we must solve for. We denote that number by $M$.
 
+To see where this count comes from, group the monomials by total degree. For total degree 0, there is only 1 term, namely $1$. For total degree 1, there are 2 terms, namely $x$ and $y$. For total degree 2, there are 3 terms, namely $x^2$, $x y$, and $y^2$. In general, for total degree $n$, the admissible monomials are $x^n, x^(n-1) y, x^(n-2) y^2, dots, y^n$, so there are $n+1$ of them.
+
+Since the basis includes every total degree from 0 up to $d$, the total number of basis terms is
+
+$
+  M = sum_(n=0)^d (n+1) = 1 + 2 + 3 + dots + (d + 1).
+$ <eq:mbasis-sum>
+
+Using the standard formula for the sum of the first $d+1$ positive integers, this becomes
+
 $
   M = (d+1)(d+2)/2.
 $ <eq:mbasis>
-
-This count comes from the number of monomials in two variables whose total degree is at most $d$. There is 1 term of degree 0, 2 terms of degree 1, 3 terms of degree 2, and so on, up to $d+1$ terms of degree $d$. Therefore the total number of basis terms is
-
-$
-  M = 1 + 2 + 3 + dots + (d + 1) = (d+1)(d+2)/2.
-$ <eq:mbasis-sum>
 
 Nothing changes conceptually from the 3x3 case. The only difference is that we now have more sample points. Each row of the design matrix is still the basis vector evaluated at one pixel location in the square support. Therefore
 
@@ -486,11 +490,3 @@ $
 $ <eq:wvf-fx>
 
 That row is the WVF stencil.
-
-= The Short Version
-
-The shortest correct explanation is this.
-
-The polynomial fit is a linear map from sampled pixel values to polynomial coefficients. Because the derivative coefficient is one entry of the fitted coefficient vector, it is also a linear map of the sampled pixels. Any linear map from pixels to a scalar can be written as one fixed weighted sum. Those fixed numbers are the filter weights.
-
-So the WVF weights are not something added after the polynomial fit. They are exactly the polynomial fit, collapsed into the one row needed to extract the derivative.
