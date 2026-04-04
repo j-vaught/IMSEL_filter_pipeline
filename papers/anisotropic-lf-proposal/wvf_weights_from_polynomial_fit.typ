@@ -386,11 +386,23 @@ $
   M = (d+1)(d+2)/2.
 $ <eq:mbasis>
 
-Nothing changes conceptually from the 3x3 case. The only difference is that we now have more sample points. Each row of the design matrix is still the basis vector evaluated at one pixel location in the square support. Therefore
+Now we can state the minimum data requirement for the least-squares fit. The coefficient vector $bold(z)$ has $M$ unknown entries, one for each monomial in the basis. Each sampled pixel contributes one scalar equation, because evaluating the polynomial at one location gives one relation between the unknown coefficients and the observed intensity. Therefore, if the support contains $N_p$ sampled pixels, we need at least as many samples as unknowns:
+
+$
+  N_p >= M.
+$ <eq:min-data>
+
+For the generalized $N times N$ case, the unknown coefficient vector is
+
+$
+  bold(z) = [c_0, c_1, c_2, dots, c_(M-1)]^top,
+$ <eq:zvecn>
+
+where these coefficients multiply the monomials collected in $phi_d(x, y)$. Next we build the design matrix $bold(A)$. Each row corresponds to one sampled pixel in the support, and each column corresponds to one monomial term in the basis. The $i$-th row is simply the basis vector evaluated at the coordinates of the $i$-th pixel:
 
 $
   bold(A) =
-  mat(
+  mat( delim: "[",
     phi_d(x_1, y_1)^top;
     phi_d(x_2, y_2)^top;
     dots.v;
@@ -398,25 +410,49 @@ $
   ).
 $ <eq:designn>
 
-The data vector $bold(b)$ is formed by stacking the $N^2$ pixel intensities from that same square window in some fixed order. Once that is done, the fitted coefficients are still given by the same least-squares formula:
+To complete the linear system, we stack the observed pixel intensities from those same sample locations, in the same order used for the rows of $bold(A)$:
+
+$
+  bold(b) =
+  [
+    f(x_1, y_1),
+    f(x_2, y_2),
+    dots,
+    f(x_(N_p), y_(N_p))
+  ]^top.
+$ <eq:bvecn>
+
+Using the same ordering in both objects is the key point. Row $i$ of $bold(A)$ is built from the coordinates $(x_i, y_i)$, and entry $i$ of $bold(b)$ is the measured intensity at that same location. With those definitions, the generalized polynomial-fitting problem is
+
+$
+  bold(A) bold(z) approx bold(b).
+$ <eq:systemn>
+
+This system is usually overdetermined, so we solve for the coefficient vector in the least-squares sense. The fitted coefficient vector is
 
 $
   hat(bold(z)) = (bold(A)^top bold(A))^(-1) bold(A)^top bold(b) = bold(P) bold(b).
 $ <eq:lstsqn>
 
-If the derivative coefficient we want is the entry corresponding to $x$, then one row of $bold(P)$ gives a weight vector
+Here $hat(bold(z))$ means the estimated coefficient vector, and
+
+$
+  bold(P) = (bold(A)^top bold(A))^(-1) bold(A)^top
+$
+
+is the pseudoinverse matrix that maps sampled intensities directly to fitted coefficients. If the basis is ordered as $[1, x, y, dots]^top$, then the coefficient of $x$ is the estimate of the first derivative in the $x$-direction. That coefficient is one entry of $hat(bold(z))$, so the corresponding row of $bold(P)$ is a weight vector:
 
 $
   bold(p)_(f_x)^top,
 $ <eq:px-row>
 
-and the derivative estimate is
+Applying that row to the data vector gives the derivative estimate
 
 $
   hat(f)_x = bold(p)_(f_x)^top bold(b).
 $ <eq:fx-est>
 
-So the main idea is exactly the same as before. Going from 3x3 to $N times N$ does not change the logic of the derivation. The patch gets larger, the vectors get longer, and the matrix gets taller, but the derivative estimate is still one row of the pseudoinverse dotted with the stacked pixel values.
+So the logic is exactly the same as in the 3x3 example. First choose sample locations. Then evaluate the monomial basis there to build $bold(A)$. Then stack the measured intensities into $bold(b)$ in the same order. Solving the least-squares problem gives $hat(bold(z))$, and one row of the pseudoinverse extracts whichever derivative coefficient we want.
 
 = From A Square To A Circle
 
