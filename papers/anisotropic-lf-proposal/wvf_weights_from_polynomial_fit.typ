@@ -9,11 +9,11 @@
 
 #align(center)[
   #text(size: 17pt, weight: "bold")[
-    How A Polynomial Fit Turns Into Filter Weights
+    Creating the Wide View Filter's Weights from a Polynomial Fit
   ]
   #v(0.5em)
   #text(size: 11pt, style: "italic")[
-    A 3x3 Example, Then the General Square, Then a Circle
+   My interpretation of the mathematical construction of the Wide View Filter.
   ]
 ]
 
@@ -511,9 +511,9 @@ So the circle support is just a different choice of sample locations, but the un
 
 = The Wide View Filter's changes to the Polynomial Fit
 
-The WVF does two additional things.
+Now, looking at the existing work, perhaps one would think that the somewhat arbitrary x and y direction of the filters is a problem. After all, edges can be oriented in any direction, so why should we only look at changes in the horizontal and vertical directions? To address this issue, a fe wsolutiosn have been introduced over the years, includeing orientable anisotropic filters as well as steerable filters. The Wide View Filter (WVF) builds on top of this long hisory and takes the same polynomial-fitting approach but applies it in a rotated coordinate system liek those of the prior oriented anisotropic filteres, alhtough WVF is not intrinsically anisotropic(it can be however anistrpic if setup porroly by selecting a poor support or $N_p$). This way, the derivative is taken in the direction that is most likely to capture the edge's structure.
 
-First, it rotates the local coordinates so that the derivative is taken in the candidate normal direction:
+Now, the WVF's changes to the polynomial fit are actually quite minimal. First, it rotates the local coordinates so that the derivative is taken in the candidate normal direction as shwon in the following equations:
 
 $
   x_i' = Delta x_i cos theta + Delta y_i sin theta,
@@ -522,9 +522,7 @@ $
   y_i' = -Delta x_i sin theta + Delta y_i cos theta.
 $ <eq:rotate-y>
 
-Second, it uses a circular support instead of a square one.
-
-But once those rotated circular sample locations are fixed, the exact same least-squares logic applies:
+Second, it uses a circular support instead of a square one. But once the rotated circular sample locations are fixed, the same least-squares logic from Golay-Savitzky applies. The only difference is that the design matrix is now built from the rotated coordinates, so the $i$-th row of $bold(A)$ is $phi_d(x_i', y_i')^top$ instead of $phi_d(x_i, y_i)^top$. The data vector $bold(b)$ is unchanged since it still contains the same pixel intensities. With those definitions, the least-squares solution is
 
 $
   hat(bold(z)) = bold(P)_theta bold(b),
