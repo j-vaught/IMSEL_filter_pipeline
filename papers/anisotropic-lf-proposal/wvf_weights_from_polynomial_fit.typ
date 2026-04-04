@@ -1525,6 +1525,21 @@ The circular-support construction in @sec:circular-support gives the most rotati
 
 Taken together, @eq:circle-fx, @eq:circle-fy, @eq:circle-mag, and @eq:variance-monotone identify the circular low-degree polynomial-fit filter as the primary isotropic baseline within the Savitzky--Golay family. It uses an area support, preserves the rotational symmetry expressed by @eq:support-isotropy, and does not require a sampled-angle sweep once the paired derivative rows have been computed.
 
+Equations @eq:wvf-support and @eq:lf-line-offsets also define an isotropic envelope for the LF geometry. Every LF sample is obtained by taking one circular-support offset from @eq:wvf-support and translating it by one of the line offsets from @eq:lf-line-offsets. Therefore the farthest accessed lattice sites lie within the radius
+
+$
+  R = r + m.
+$ <eq:lf-cover-radius>
+
+Using the radius-7 circular support from @eq:circle-r7 together with the representative LF half-width $m = 7$ gives $R = 14$. Figure @fig:large-circle-sg shows the corresponding degree-1 circular Savitzky--Golay derivative pair on that enlarged disk. In this construction, the support is made large enough to contain every lattice point that the LF can reach while it rotates through its sampled angles.
+
+#figure(
+  image("figures/fig_large_circle_sg_xy.pdf", width: 84%),
+  caption: [
+    Degree-1 circular Savitzky--Golay derivative kernels on the enlarged isotropic disk of radius $R = r + m = 14$. With $r = 7$ and $m = 7$, this disk contains every lattice site that can be reached by the LF support as the line rotates through its sampled orientations. The left panel shows $bold(K)_x^("circ")$ and the right panel shows $bold(K)_y^("circ")$ on the shared `29 x 29` bounding box.
+  ],
+) <fig:large-circle-sg>
+
 == Square Low-Degree Polynomial-Fit Filters <sec:square-low-degree-ref>
 
 The square-support construction from @sec:nxn-square remains a useful secondary isotropic baseline because its geometry and implementation are simple. Its derivative rows are defined by @eq:fx-est and @eq:fy-est, and its combined responses are given by @eq:nxn-mag and @eq:nxn-theta. Although the square support does not satisfy @eq:support-isotropy exactly, the low-degree arguments from @sec:low-degree-overdetermined still apply because they follow from the exactness relation @eq:exactness-constraint and the minimum-norm characterization @eq:min-norm-stencil rather than from circular symmetry alone.
@@ -1557,11 +1572,20 @@ $ <eq:gauss-deriv-y>
 
 @eq:gauss-isotropic, @eq:gauss-deriv-x, and @eq:gauss-deriv-y define a smooth isotropic gradient model whose scale is controlled by the single parameter $sigma$. Like the isotropic polynomial-fit filters, the Gaussian derivative supplies paired first-derivative components and therefore supports the same continuous directional relation described by @eq:directional-gradient and @eq:directional-max.
 
+To place that analytic reference on the same spatial footprint as Figure @fig:large-circle-sg, we can sample @eq:gauss-deriv-x and @eq:gauss-deriv-y on the same radius-$R$ disk defined by @eq:lf-cover-radius. Figure @fig:large-gaussian shows that matched isotropic Gaussian pair for the representative choice $sigma = R / 3$, so that the visible Gaussian support occupies the same enlarged `29 x 29` footprint used by the large circular polynomial-fit filter.
+
+#figure(
+  image("figures/fig_large_gaussian_xy.pdf", width: 84%),
+  caption: [
+    Isotropic Gaussian first-derivative pair sampled on the same enlarged radius-$R$ disk used in Figure @fig:large-circle-sg. The left panel shows $partial G_sigma / partial x$ and the right panel shows $partial G_sigma / partial y$ for the representative choice $sigma = R / 3$.
+  ],
+) <fig:large-gaussian>
+
 == The Isotropic Polynomial-Fit Filter Relative to the Gaussian Reference <sec:iso-vs-gaussian>
 
 The circular low-degree polynomial-fit filter and the isotropic Gaussian derivative address the same local first-derivative problem in different ways. The circular polynomial-fit filter derives its weights from the polynomial exactness conditions in @eq:exactness-constraint and the minimum-norm characterization in @eq:min-norm-stencil. The Gaussian derivative derives its weights from the analytic form of @eq:gauss-isotropic and its derivatives in @eq:gauss-deriv-x and @eq:gauss-deriv-y.
 
-The two constructions nevertheless share several structural properties. Both are isotropic in the sense of @eq:support-isotropy. Both produce paired derivative components that can be combined into gradient magnitude and direction through relations of the form @eq:circle-mag and @eq:gradient-polar. Both also couple smoothing and differentiation into one linear operator. The difference is that the polynomial-fit filter is defined on a finite discrete support with degree parameter $d$, while the Gaussian reference is defined through the continuous scale parameter $sigma$ and then discretized for implementation.
+The two constructions nevertheless share several structural properties. Both are isotropic in the sense of @eq:support-isotropy. Both produce paired derivative components that can be combined into gradient magnitude and direction through relations of the form @eq:circle-mag and @eq:gradient-polar. Both also couple smoothing and differentiation into one linear operator. Figures @fig:large-circle-sg and @fig:large-gaussian make that common structure visible on the same enlarged footprint. The difference is that the polynomial-fit filter is defined on a finite discrete support with degree parameter $d$, while the Gaussian reference is defined through the continuous scale parameter $sigma$ and then discretized for implementation.
 
 = Computational Structure and Cost <sec:computational-structure>
 
@@ -1596,6 +1620,40 @@ $
 $ <eq:cost-aniso-families>
 
 where $N_R$, $N_E$, and $N_G$ denote the active pixel counts of the rectangular, elliptical, and anisotropic Gaussian supports, respectively. @eq:cost-isotropic-wvf through @eq:cost-aniso-families compare the dominant response-evaluation work only. Shared constant-time reductions, such as the final maximum over orientations, are lower-order terms relative to those counts.
+
+To make @eq:cost-isotropic-wvf through @eq:cost-aniso-families concrete, it is useful to evaluate them for one representative configuration. Using the exact radius-7 disk from @eq:circle-r7 gives $N_p = 149$. Using the `15 x 15` square support from @eq:square-h-15 gives $N = 15$. If the LF half-width is set to $m = 7$ and the sampled angle set is taken as the six orientations `0`, `30`, `60`, `90`, `120`, and `150` degrees, then Figure @fig:cost-structure-bars and Table @tab:cost-example summarize the corresponding dominant-work counts. The fused LF counts in that example come from the six enlarged stencil sizes $N'_k in {359, 349, 345, 359, 345, 349}$, while the rectangular, elliptical, and anisotropic Gaussian counts are evaluated on matched anisotropic supports over the same six sampled orientations.
+
+#figure(
+  image("figures/fig_cost_structure_bars.pdf", width: 100%),
+  caption: [
+    Representative dominant-work comparison for the filter families defined in @eq:cost-isotropic-wvf through @eq:cost-aniso-families. The left chart shows the active weighted samples used in one response evaluation. The right chart normalizes the full six-angle-bank cost by the circular low-degree polynomial-fit baseline.
+  ],
+) <fig:cost-structure-bars>
+
+#figure(
+  table(
+    columns: (1.6fr, 1.5fr, 3.1fr, 1.0fr),
+    align: (left, left, left, right),
+    stroke: none,
+    table.hline(stroke: 0.8pt),
+    table.header(
+      [*Family*], [*Formula*], [*Representative calculation*], [*Count*],
+    ),
+    table.hline(stroke: 0.5pt),
+    [Circular SG], [$2 N_p$], [$2 dot 149$], [$298$],
+    [Square SG], [$2 N^2$], [$2 dot 15^2$], [$450$],
+    [WVF], [$N_s N_p$], [$6 dot 149$], [$894$],
+    [LF], [$N_s (2m + 1) N_p$], [$6 dot 15 dot 149$], [$13,410$],
+    [Fused LF], [$sum_k N'_k$], [$359 + 349 + 345 + 359 + 345 + 349$], [$2,106$],
+    [Rectangular SG], [$sum_k N_(R, k)$], [$435 + 389 + 387 + 421 + 389 + 389$], [$2,410$],
+    [Elliptical SG], [$sum_k N_(E, k)$], [$303 + 309 + 309 + 303 + 309 + 309$], [$1,842$],
+    [Anisotropic Gaussian], [$sum_k N_(G, k)$], [$435 + 389 + 387 + 421 + 389 + 389$], [$2,410$],
+    table.hline(stroke: 0.8pt),
+  ),
+  caption: [
+    Representative dominant-work calculations for the families in @eq:cost-isotropic-wvf through @eq:cost-aniso-families with $N = 15$, $r = 7$, $N_p = 149$, $m = 7$, and the six sampled orientations `0`, `30`, `60`, `90`, `120`, and `150` degrees. The orientation-indexed anisotropic support counts are shown explicitly as six-angle sums.
+  ],
+) <tab:cost-example>
 
 == Angle Sweeps and Aggregation Cost <sec:sweep-aggregation-cost>
 
