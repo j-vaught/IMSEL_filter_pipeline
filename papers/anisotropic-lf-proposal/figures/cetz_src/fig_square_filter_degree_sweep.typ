@@ -15,8 +15,8 @@
 #let N = 15
 #let h = calc.div-euclid(N - 1, 2)
 #let cell = 0.24
-#let gap-x = 1.1
-#let gap-y = 1.425
+#let gap-x = 1.5
+#let gap-y = 0.5
 #let degrees = (1, 3, 5)
 
 #let fact(n) = {
