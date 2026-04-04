@@ -899,7 +899,7 @@ $
   E[hat(f)_x] = bold(p)_(f_x)^top bold(b)_0.
 $ <eq:noise-mean>
 
-Equation @eq:noise-mean shows that the clean fitted derivative is still the mean of the noisy estimator. The noise sensitivity is measured by the variance. Using @eq:noise-fx and @eq:noise-stats,
+@eq:noise-mean shows that zero-mean noise does not change the average fitted derivative. The remaining effect of noise is therefore the random spread of the estimator around that average, which is measured by the variance. Using @eq:noise-fx and @eq:noise-stats,
 
 $
   "Var"(hat(f)_x)
@@ -908,19 +908,19 @@ $
   = sigma^2 ||bold(p)_(f_x)||^2.
 $ <eq:noise-variance>
 
-Equation @eq:noise-variance gives a direct robustness criterion. The squared norm of the derivative row is the noise gain of the derivative stencil. Larger derivative-row norms therefore correspond to larger variance under the same noise level.
+@eq:noise-variance gives a direct robustness criterion. If the image noise level sigma^2 is fixed, then the only factor controlling the variance of the derivative estimate is $||bold(p)_(f_x)||^2$. In this sense, the squared norm of the derivative row is the noise gain of the stencil. Larger derivative-row norms therefore mean stronger noise amplification and a less stable estimate.
 
 == Higher-Degree Fits as Less Overdetermined Systems <sec:high-degree-overdetermined>
 
-The basis-count result in @eq:mbasis shows that the number of unknown coefficients grows with degree, while the minimum-data requirement in @eq:min-data shows that the support size must remain at least as large as that coefficient count. If the support size $N_p$ is fixed, then increasing the degree decreases the excess number of samples,
+The basis-count result in @eq:mbasis shows that the number of unknown coefficients grows with degree, while the minimum-data requirement in @eq:min-data shows that the support size must remain at least as large as that coefficient count. If the support size $N_p$ is fixed, then increasing the degree must decrease the excess number of samples,
 
 $
   E_d = N_p - M_d,
 $ <eq:excess-samples>
 
-where $M_d$ is the basis size from @eq:mbasis. Equation @eq:excess-samples shows that higher degree makes the fit less overdetermined.
+where $M_d$ is the basis size from @eq:mbasis. @eq:excess-samples shows that higher degree makes the fit less overdetermined. That loss of redundancy can be written directly in terms of the derivative stencil. 
 
-That loss of redundancy can be written directly in terms of the derivative stencil. For a fixed support and a fixed degree $d$, let $bold(A)_d$ be the design matrix and let $bold(e)_(f_x)^(d)$ be the unit vector that selects the $x$ coefficient. If a degree-$d$ polynomial has coefficient vector $bold(z)_d$, then its sampled values are $bold(A)_d bold(z)_d$. If a stencil $bold(alpha)$ is to recover the $x$ coefficient from those samples for every possible $bold(z)_d$, then we must have
+For a fixed support and a fixed degree $d$, let $bold(A)_d$ be the design matrix and let $bold(e)_(f_x)^(d)$ be the unit vector that selects the $x$ coefficient. If a degree-$d$ polynomial has coefficient vector $bold(z)_d$, then its sampled values are $bold(A)_d bold(z)_d$. If a stencil $bold(alpha)$ is to recover the $x$ coefficient from those samples for every possible $bold(z)_d$, then we must have
 
 $
   bold(alpha)^top bold(A)_d bold(z)_d = bold(e)_(f_x)^(d top) bold(z)_d
@@ -932,7 +932,7 @@ $
   bold(A)_d^top bold(alpha) = bold(e)_(f_x)^(d).
 $ <eq:exactness-constraint>
 
-Equation @eq:exactness-constraint states that the stencil reproduces the $x$ coefficient exactly for every polynomial in the degree-$d$ basis. Using the pseudoinverse definition in @eq:pinvn, the derivative row is the Moore-Penrose solution of those linear constraints, so among all vectors satisfying @eq:exactness-constraint it is the minimum-norm choice:
+@eq:exactness-constraint states that the stencil reproduces the $x$ coefficient exactly for every polynomial in the degree-$d$ basis. Using the pseudoinverse definition in @eq:pinvn, the derivative row is the Moore-Penrose solution of those linear constraints, so among all vectors satisfying @eq:exactness-constraint it is the minimum-norm choice:
 
 $
   bold(p)_(f_x)^(d) = arg min_(bold(alpha)) ||bold(alpha)||^2
@@ -952,11 +952,11 @@ $
   "Var"(hat(f)_x^(d+1)) >= "Var"(hat(f)_x^(d)).
 $ <eq:variance-monotone>
 
-Equation @eq:variance-monotone is the central tradeoff. Higher degree enforces exactness for a larger polynomial space, but it does so by imposing more cancellation constraints on the derivative stencil. Those extra cancellations are what make the higher-degree kernels in Figures @fig:square-d3, @fig:square-d5, @fig:circle-d3, and @fig:circle-d5 look more oscillatory than their lower-degree counterparts. The higher-degree fit is therefore less overdetermined, more constrained, and more noise sensitive, even before one discusses any empirical performance differences.
+@eq:variance-monotone is the central tradeoff. Higher degree enforces exactness for a larger polynomial space, but it does so by imposing more cancellation constraints on the derivative stencil. Those extra cancellations are what make the higher-degree kernels in @fig:square-d3, @fig:square-d5, @fig:circle-d3, and @fig:circle-d5 look more oscillatory than their lower-degree counterparts. The higher-degree fit is therefore less overdetermined, more constrained, _*and*_  more noise sensitive, even before one discusses any empirical performance differences.
 
 = Symmetry, Redundancy, and the Practical Limits of WVF <sec:wvf-redundancy>
 
-The WVF is still built from the same local polynomial fit, so the next question is whether rotating the coordinate system creates any new first-order information. The answer can be made precise by following the geometry of the support, the chain rule for directional derivatives, and the least-squares objective itself.
+The WVF is still built from the same local polynomial fit, so the next question is whether rotating the coordinate system creates any new first-order information. Thankfully, the answer can be determined by following the geometry of the support, the chain rule for directional derivatives, and the least-squares objective itself.
 
 == Fixed Circular Support Under Rotation <sec:wvf-fixed-support>
 
@@ -992,11 +992,11 @@ $
   hat(f)_(x')(theta) = cos theta hat(f)_x + sin theta hat(f)_y.
 $ <eq:directional-gradient>
 
-Equation @eq:directional-gradient shows that once $hat(f)_x$ and $hat(f)_y$ are known, the directional derivative in any rotated direction is already determined.
+@eq:directional-gradient shows that once $hat(f)_x$ and $hat(f)_y$ are known, the directional derivative in any rotated direction is already determined.
 
 == The Continuous Optimal Direction <sec:wvf-continuous-direction>
 
-Equation @eq:directional-gradient can be rewritten in amplitude-phase form. Define
+@eq:directional-gradient can be rewritten in amplitude-phase form. Define
 
 $
   G = sqrt(hat(f)_x^2 + hat(f)_y^2), quad theta_g = "atan2"(hat(f)_y, hat(f)_x).
@@ -1014,7 +1014,7 @@ $
   max_(theta in [0, pi)) |hat(f)_(x')(theta)| = G = sqrt(hat(f)_x^2 + hat(f)_y^2).
 $ <eq:directional-max>
 
-Equation @eq:directional-max shows that a continuous search over direction returns exactly the gradient magnitude, while the maximizing direction is the gradient direction $theta_g$ from @eq:gradient-polar. In that ideal continuous setting, the directional sweep does not add new first-order information. It only re-expresses the fitted gradient.
+@eq:directional-max shows that a continuous search over direction returns exactly the gradient magnitude, while the maximizing direction is the gradient direction $theta_g$ from @eq:gradient-polar. So, in the case where we rotate the WVF in continuous setting, the directional sweep does not add new first-order information. It only re-expresses the fitted gradient already dervied from the standard horizontal and vertical fits.
 
 == Rotational Equivariance of the Exact Circular Fit <sec:wvf-equivariance>
 
@@ -1026,7 +1026,7 @@ $
   (T_theta q)(x', y') = q(x' cos theta - y' sin theta, x' sin theta + y' cos theta).
 $ <eq:rotation-map>
 
-Using @eq:rotation-map, every monomial in $q$ is evaluated after a linear substitution in $x'$ and $y'$. A linear substitution does not increase total degree, so $T_theta q$ is still in $Pi_d$. Therefore @eq:rotation-map defines a bijection from $Pi_d$ onto itself.
+Using @eq:rotation-map, every monomial in $q$ is evaluated after a linear substitution in $x'$ and $y'$. A linear substitution does not increase total degree, so $T_theta q$ is still in $Pi_d$. Therefore @eq:rotation-map defines a one-to-one correspondence from $Pi_d$ onto itself.
 
 With that notation, the least-squares fit in the original coordinates is
 
