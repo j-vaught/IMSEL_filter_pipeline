@@ -626,9 +626,9 @@ This figure also helps explain why the support geometry matters so much. Even be
 
 == Restricting the Sample Locations <sec:circular-samples>
 
-Classical Savitzky--Golay filters and most of their descendants are usually presented on rectangular, axis-aligned neighborhoods, largely because those supports make both the algebra and the implementation straightforward @savitzkygolay1964 @luo2005sg2d. Now, suppose one whose hubris is such that they believe the circular case is a new algorithm. This modification would hypothetically allows for a new filter to better match the orientation-dependent structure of edges while preserving the underlying least-squares polynomial framework.
+Classical Savitzky--Golay filters and most of their descendants are usually presented on rectangular, axis-aligned neighborhoods, largely because those supports make both the algebra and the implementation straightforward @savitzkygolay1964 @luo2005sg2d. The circular case uses the same least-squares construction, but changes the set of sample locations so that the neighborhood is defined by radius rather than by axis-aligned extent.
 
-We can derive this new algorithm by considering the circular support, as it is the same least-squares construction, just with a different set of sample locations. Instead of using every point in a square, keep only the points satisfying the circular support constraint(better known by laypersons as myself as the eqaution of a circle):
+We can derive this circular version by restricting the samples to those that satisfy the standard circle constraint:
 
 $
   x_i^2 + y_i^2 <= r^2.
