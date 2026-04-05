@@ -99,8 +99,8 @@ The _value model_ (also called the critic) $V_psi$ estimates the expected cumula
 To make these roles concrete, consider a single training step. The policy generates a response to a prompt. The reward model scores the complete response. The value model estimates what reward was expected at each token position. The difference between actual and expected reward gives the advantage for each token. The policy is then updated to increase the probability of tokens with positive advantage and decrease the probability of tokens with negative advantage, with the KL divergence against the reference model acting as a regularizer. The following diagram illustrates this process.
 
 #figure(
-  include "figures/ppo-diagram.typ",
-  caption: [The PPO training loop for language model alignment. Four models operate in a coordinated cycle. The process begins with the policy generating a response (Step 1), followed by reward scoring (Step 2), advantage computation using the value model (Step 3), and a constrained policy update using the clipped surrogate objective (Step 4). The KL divergence against the reference model prevents the policy from drifting too far from the SFT baseline. Dashed lines indicate frozen models whose weights are not updated.],
+  image("figures/ppo-diagram.pdf"),
+  caption: [The PPO training loop for language model alignment. Four models operate in a coordinated cycle. The process begins with the policy generating a response (Step 1), followed by reward scoring (Step 2), advantage computation using the value model (Step 3), and a constrained policy update using the clipped surrogate objective (Step 4). The KL divergence against the reference model prevents the policy from drifting too far from the SFT baseline. Dashed borders indicate frozen models whose weights are not updated.],
 ) <fig:ppo-diagram>
 
 == The PPO Objective
