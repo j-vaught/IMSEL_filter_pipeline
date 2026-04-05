@@ -16,270 +16,673 @@
 
 #v(1em)
 
-= Overview
+= Background
 
-All of these algorithms solve the same fundamental problem. Given a language model that has been supervised fine-tuned (SFT) on human-preferred responses, we want to further optimize it using a reward signal derived from human preferences. The core tension in every algorithm is the same: maximize reward while not straying too far from the SFT model, which already produces reasonable outputs. Each algorithm resolves this tension differently.
+This section provides the foundational concepts needed to understand the RL alignment algorithms discussed in the remainder of this report. Readers already familiar with reinforcement learning, reward modeling, and KL-regularized policy optimization may skip ahead to the overview.
 
-The general RLHF objective that all methods approximate is
+== What Alignment Means
 
-$ max_(pi) space E_(x tilde D, space y tilde pi(dot|x)) [r(x, y)] - beta dot "KL"(pi || pi_"ref") $
+When a large language model is pretrained on internet text, it learns to predict the next token in a sequence. This objective is extraordinarily general. The model learns grammar, facts, reasoning patterns, and also how to produce toxic, deceptive, or dangerous text, because all of these appear in the training data. A pretrained model is essentially a highly capable but undirected text generator. It can complete a request for a persuasive essay just as readily as it can complete a request for instructions on how to cause harm. The model has no intrinsic preference for helpfulness over harmfulness; both are statistically valid continuations of certain prompts.
 
-where $pi$ is the policy (the language model being trained), $pi_"ref"$ is the reference policy (the SFT checkpoint), $r(x, y)$ is the reward for generating response $y$ to prompt $x$, and $beta$ is the KL penalty coefficient.
+Alignment is the process of steering this raw capability toward behavior that humans consider desirable. In practice, this means making the model helpful (it answers questions accurately and thoroughly), harmless (it refuses requests that would produce dangerous or unethical outputs), and honest (it does not fabricate information or misrepresent its confidence). These goals are sometimes called the "HHH" criteria. The difficulty is that none of these properties emerge naturally from next-token prediction. A model trained only to predict text will happily generate confident-sounding falsehoods if they are statistically likely given the prompt. Alignment requires an additional training signal that encodes human judgment about what constitutes good behavior.
+
+The dominant approach to alignment involves two stages. First, supervised fine-tuning (SFT) trains the model on curated examples of desirable behavior, such as a dataset of (question, ideal answer) pairs written or selected by human annotators. This shifts the model's distribution toward helpful, safe responses but is limited by the coverage and quality of the curated data. Second, reinforcement learning from human feedback (RLHF) uses a learned reward signal derived from human preferences to further refine the model's behavior. RLHF is more flexible than SFT because it can optimize for qualities that are difficult to demonstrate through examples alone, such as the ability to gracefully decline a harmful request while still being maximally helpful on the non-harmful aspects of the query.
+
+== Reinforcement Learning at a High Level
+
+Reinforcement learning (RL) is a framework for training an agent to make sequential decisions by trial and error. The agent takes actions in an environment, receives feedback in the form of rewards, and adjusts its behavior to accumulate more reward over time. This is fundamentally different from supervised learning, where the correct answer is provided for every input. In RL, the agent must discover good behavior through exploration, and the feedback it receives may be delayed or sparse.
+
+An analogy may be useful. Supervised learning is like a student who receives a graded answer key after every homework problem. The student can directly compare their answer to the correct one and adjust. Reinforcement learning is more like a student who submits an entire essay and receives only a single grade at the end. The student must figure out which sentences, arguments, and word choices contributed to that grade, and this attribution problem, determining which specific decisions led to the final outcome, is one of the central challenges of RL.
+
+In the context of language model alignment, the "agent" is the language model, the "action" at each step is the choice of next token to generate, the "environment" is the text generated so far (along with the original prompt), and the "reward" is a score assigned to the complete response by a reward model trained on human preferences. The language model generates an entire response token by token, and after the full response is produced, a reward model evaluates it and assigns a scalar score. The RL algorithm then updates the language model's parameters to make high-reward responses more likely and low-reward responses less likely.
+
+== Policies, Rewards, and Value Functions
+
+Three concepts from RL theory appear repeatedly in the alignment literature and require precise definition.
+
+A _policy_ is a function that maps a state to a distribution over actions. In the language model setting, the policy $pi_theta$ is the language model itself, parameterized by weights $theta$. Given a prompt and the tokens generated so far (the state), the policy outputs a probability distribution over the entire vocabulary (the action space), from which the next token is sampled. The subscript $theta$ emphasizes that this distribution changes as the model's weights are updated during training. The goal of RL alignment is to find the parameters $theta$ that produce a policy generating responses that maximize human preference.
+
+A _reward function_ assigns a scalar score to a state-action pair or, in the language model setting, to a complete prompt-response pair. The reward model $r_phi$ is a neural network (typically sharing the same architecture as the language model but with a scalar output head instead of a vocabulary-sized output) trained on human preference data. Given two responses to the same prompt, a human annotator indicates which response is better. The reward model is trained to assign higher scores to preferred responses and lower scores to rejected ones, using a loss function derived from the Bradley-Terry model of pairwise comparisons. The resulting scalar reward signal is what drives the RL optimization. Formally, for a prompt $x$ and response $y$, the reward model produces a score.
+
+$ r_phi (x, y) in bb(R) $
+
+A _value function_ $V_psi (s)$ estimates the expected cumulative reward that the policy will obtain from state $s$ onward. In the language model setting, the state at token position $t$ consists of the prompt plus all tokens generated up to position $t$, and the value function estimates the expected total reward for the complete response given what has been generated so far. The value function serves as a baseline for variance reduction. Without it, the RL algorithm would need to attribute the entire response-level reward to every token equally, which produces extremely noisy gradient estimates. With a value function, the algorithm can compute an _advantage_, which measures how much better a particular action (token choice) was compared to what the value function expected. Actions with positive advantage are reinforced, and actions with negative advantage are suppressed.
+
+$ A(s_t, a_t) = r(s_t, a_t) + gamma V_psi (s_(t+1)) - V_psi (s_t) $
+
+This equation states that the advantage of taking action $a_t$ in state $s_t$ is the immediate reward plus the discounted value of the next state minus the current state's value. Intuitively, a positive advantage means "this token choice led to a better outcome than expected," and a negative advantage means "this token choice was worse than expected."
+
+== KL Divergence as a Safety Constraint
+
+One of the most important concepts in RL alignment is the Kullback-Leibler (KL) divergence, which measures how much one probability distribution differs from another. In alignment, KL divergence serves as a constraint that prevents the policy from changing too drastically during RL training.
+
+The motivation is straightforward. The reward model is an imperfect proxy for human preferences. It was trained on a finite dataset of human comparisons and inevitably has blind spots, regions of the output space where its scores do not accurately reflect human judgment. If the RL algorithm is allowed to optimize the policy without constraint, it will find and exploit these blind spots, producing outputs that score highly according to the reward model but are nonsensical or degenerate to a human reader. This phenomenon is called _reward hacking_ or _reward over-optimization_, and it is one of the primary failure modes of RLHF.
+
+KL divergence between the trained policy $pi_theta$ and a frozen reference policy $pi_"ref"$ (typically the SFT checkpoint) acts as a tether. It penalizes the policy for straying too far from the distribution of a model that is known to produce reasonable outputs. The KL divergence between two distributions $P$ and $Q$ is defined as follows.
+
+$ D_"KL" (P || Q) = sum_x P(x) log frac(P(x), Q(x)) $
+
+In the language model setting, this sum runs over all possible token sequences. Intuitively, KL divergence is zero when the two distributions are identical and increases as they diverge. It is not symmetric: $D_"KL" (P || Q) eq.not D_"KL" (Q || P)$ in general. The direction used in RLHF, $D_"KL" (pi_theta || pi_"ref")$, penalizes the policy for assigning high probability to sequences that the reference model considers unlikely. This is exactly the right direction for preventing reward hacking, because it prevents the policy from concentrating probability mass on unusual outputs that happen to score well with the reward model.
+
+The KL penalty is controlled by a coefficient $beta$ that determines the trade-off between reward maximization and distributional conservatism. A large $beta$ keeps the policy very close to the reference (safe but limited improvement), while a small $beta$ allows more aggressive optimization (potentially higher reward but greater risk of reward hacking). Finding the right $beta$ is an empirical challenge that varies by task and reward model quality.
+
+
+= Overview of RL Alignment Algorithms
+
+The landscape of RL algorithms for language model alignment has evolved rapidly since the original ChatGPT training pipeline. This section provides a map of the major approaches, their relationships, and the design trade-offs that distinguish them. Understanding these distinctions is essential for interpreting the poisoning robustness experiments in this project, because the algorithmic differences may create fundamentally different vulnerability profiles.
+
+== The Two Paradigms
+
+RL alignment algorithms can be broadly divided into two paradigms based on how they obtain the training signal.
+
+The first paradigm uses an explicit reward model trained on human preference data. The reward model is a separate neural network that takes a prompt-response pair as input and outputs a scalar score. The RL algorithm then optimizes the language model policy to produce responses that maximize this score, subject to a KL divergence constraint. Proximal Policy Optimization (PPO), Group Relative Policy Optimization (GRPO), and REINFORCE++ all belong to this paradigm. They differ in how they estimate advantages, how many models must be kept in memory, and how they manage the trust region, but they share the fundamental structure of generating responses, scoring them, and updating the policy based on those scores.
+
+The second paradigm bypasses the reward model entirely and learns directly from preference pairs. Direct Preference Optimization (DPO) and its variants (IPO, KTO, ORPO) reformulate the RLHF objective as a supervised learning problem over preference data. Rather than training a reward model and then optimizing a policy against it, DPO derives a closed-form relationship between the optimal policy and the reward function and uses this relationship to train the policy directly on preference pairs. This eliminates the reward model training stage and reduces the number of models that must be kept in memory during training. However, it also changes the attack surface for data poisoning, because poisoned preference labels now affect the policy directly rather than being mediated through a reward model.
+
+This project focuses on the first paradigm, comparing PPO (the classical approach), GRPO (the current dominant method), and REINFORCE++ (a simplified baseline). The key question is whether algorithmic differences in advantage estimation and trust region management produce meaningfully different robustness to poisoning attacks that target the reward model.
+
+== Why Advantage Estimation Matters
+
+All policy gradient algorithms share a common principle. Generate responses, evaluate how good they are relative to some baseline, and update the policy to make better-than-expected responses more likely and worse-than-expected responses less likely. The critical design choice is how to compute this "better-than-expected" signal, which is the advantage estimate.
+
+PPO uses Generalized Advantage Estimation (GAE), which requires a learned value function (the critic network) to compute per-token advantages. This provides fine-grained credit assignment, each token in the response receives its own advantage estimate, but requires training and maintaining a fourth neural network alongside the policy, reference, and reward models.
+
+GRPO eliminates the value function entirely. Instead of estimating per-token advantages, it generates a group of $G$ responses to each prompt, scores all of them with the reward model, and normalizes the reward scores within each group. A response that scored above the group mean receives a positive advantage; one that scored below receives a negative advantage. This is conceptually simpler and requires one fewer model in memory, but it means that all tokens in a given response receive the same advantage signal, which is a coarser form of credit assignment.
+
+REINFORCE++ takes a middle path. Like GRPO, it generates multiple responses per prompt and does not use a learned value function. However, it normalizes advantages across the entire batch rather than within per-prompt groups. The distinction has practical consequences for poisoning robustness. GRPO's per-prompt normalization means that a poisoned reward score is compared only to other responses for the same prompt, while REINFORCE++'s batch normalization dilutes each individual reward score across a larger pool of responses.
+
+== The Memory and Compute Trade-off
+
+A practical consideration that shapes algorithm selection is the number of models that must reside in GPU memory simultaneously. PPO requires four models (policy, reference, reward, and value), which for an 8-billion parameter base model means approximately 64 GB of model weights in BF16 precision before accounting for optimizer states and activations. GRPO and REINFORCE++ require only three models (policy, reference, and reward), saving roughly 16 GB. DPO requires only two models (policy and reference), since it needs no reward model at all.
+
+This memory pressure has direct implications for the hardware requirements of alignment training and, by extension, for the accessibility of alignment research to the broader community. The transition from PPO to GRPO as the dominant alignment algorithm was driven in large part by this memory reduction, which made it possible to align larger models on fewer GPUs.
+
 
 = Proximal Policy Optimization (PPO)
 
-PPO was the first widely adopted algorithm for RLHF in LLMs, used in the original ChatGPT and Llama 2 training pipelines.
+PPO was the first widely adopted algorithm for RLHF in large language models, used in the original ChatGPT training pipeline and the Llama 2 alignment process. Despite being largely supplanted by simpler alternatives like GRPO in recent practice, understanding PPO in depth is valuable for two reasons. First, the poisoning vulnerability studied in this project was originally demonstrated against PPO by Rando and Tramèr, making it the baseline against which newer algorithms should be compared. Second, PPO introduces concepts (clipped surrogate objectives, generalized advantage estimation, trust regions) that recur throughout the alignment literature.
 
 == Architecture
 
-PPO requires four models in memory simultaneously.
+PPO requires four neural networks to be loaded in GPU memory simultaneously. Each serves a distinct role, and understanding the purpose of each is essential for grasping how the training loop operates.
 
-The _policy model_ $pi_theta$ is the language model being trained. It generates responses and is updated by gradient descent.
+The _policy model_ $pi_theta$ is the language model being trained. Given a prompt, it generates a response by sampling tokens autoregressively from its output distribution. At each token position $t$, it produces a probability distribution over the vocabulary, and the next token $a_t$ is sampled from this distribution. The policy is the only model whose weights are updated by the RL gradient, and the entire goal of the training procedure is to adjust $theta$ so that the policy produces responses that score highly with the reward model while remaining close to the reference distribution.
 
-The _reference model_ $pi_"ref"$ is a frozen copy of the SFT checkpoint. It is never updated. Its only role is to compute the KL divergence penalty that prevents the policy from drifting too far from the original behavior.
+The _reference model_ $pi_"ref"$ is a frozen copy of the supervised fine-tuning (SFT) checkpoint. Its weights are never updated during RL training. The reference model's sole purpose is to provide a stable baseline distribution against which the KL divergence penalty is computed. At every token position, both the policy and the reference model compute log-probabilities for the generated token, and the difference between these log-probabilities enters the KL penalty term. Without the reference model, there would be no way to detect or prevent the policy from drifting into degenerate modes that exploit reward model imperfections.
 
-The _reward model_ $r_phi$ is a separate neural network (typically the same architecture as the policy but with a scalar output head) trained on human preference data. Given a prompt-response pair, it outputs a scalar reward score.
+The _reward model_ $r_phi$ is a separate neural network, typically sharing the same transformer architecture as the policy but with a scalar output head replacing the vocabulary projection layer. It was trained on human preference data prior to the RL stage. Given a complete prompt-response pair $(x, y)$, it outputs a single scalar $r_phi (x, y)$ that represents the predicted human preference for that response. The reward model is frozen during RL training; its weights do not change. This is an important detail for understanding poisoning attacks. If the reward model was trained on poisoned preference data, the poison is permanently embedded in its parameters and will corrupt every reward signal it provides throughout the RL training process.
 
-The _value model_ (critic) $V_psi$ estimates the expected cumulative reward from a given state (token position). This is a separate neural network, often initialized from the SFT checkpoint, that learns to predict how much reward the policy will obtain from a given point in the generation onward.
+The _value model_ (also called the critic) $V_psi$ estimates the expected cumulative reward from a given state, which in the language model setting corresponds to a particular token position within a partial generation. The value model is typically initialized from the SFT checkpoint and has its own set of trainable parameters $psi$ that are updated alongside (but independently from) the policy parameters $theta$. The critic's predictions are used to compute advantages, allowing the algorithm to assign credit at the token level rather than attributing the full response reward equally to every token.
 
-== The PPO Objective
+To make these roles concrete, consider a single training step. The policy generates a response to a prompt. The reward model scores the complete response. The value model estimates what reward was expected at each token position. The difference between actual and expected reward gives the advantage for each token. The policy is then updated to increase the probability of tokens with positive advantage and decrease the probability of tokens with negative advantage, with the KL divergence against the reference model acting as a regularizer. The following diagram illustrates this process.
 
-For each prompt $x$, the policy generates a response $y = (y_1, y_2, ..., y_T)$. At each token position $t$, PPO computes an advantage estimate $hat(A)_t$ using Generalized Advantage Estimation (GAE).
-
-$ hat(A)_t = sum_(l=0)^(T-t) (gamma lambda)^l delta_(t+l) $
-
-where $delta_t = r_t + gamma V_psi (s_(t+1)) - V_psi (s_t)$ is the temporal difference error, $gamma$ is the discount factor (typically 1.0 for LLMs since episodes are short), and $lambda$ is the GAE parameter controlling the bias-variance tradeoff of the advantage estimate.
-
-The policy is then updated using the clipped surrogate objective.
-
-$ L^"clip" = E_t [min(rho_t hat(A)_t, space "clip"(rho_t, 1-epsilon, 1+epsilon) hat(A)_t)] $
-
-where $rho_t = pi_theta (y_t | x, y_(< t)) / pi_"old" (y_t | x, y_(< t))$ is the probability ratio between the current and previous policy, and $epsilon$ (typically 0.2) is the clipping range.
-
-The full loss includes the value function regression loss and the KL penalty.
-
-$ L = -L^"clip" + c_1 dot L^"value" + beta dot "KL"(pi_theta || pi_"ref") $
-
-== Key Variables and Their Effects
-
-*$beta$ (KL penalty coefficient, typical range: 0.01--0.2).* Controls how far the policy can diverge from the SFT reference. Higher $beta$ produces more conservative updates that stay closer to the SFT behavior. Lower $beta$ allows more aggressive optimization of the reward model, risking reward hacking. In some implementations, $beta$ is adapted dynamically to maintain a target KL value.
-
-*$epsilon$ (clip range, typical value: 0.2).* Limits how much the policy can change in a single update step. Prevents catastrophically large updates that could destabilize training. Smaller $epsilon$ means more conservative updates per step.
-
-*$gamma$ (discount factor, typical value: 1.0 for LLMs).* Controls how much future rewards are discounted relative to immediate rewards. At $gamma = 1.0$, all tokens contribute equally to the reward. Lower values would make early tokens matter more than later ones.
-
-*$lambda$ (GAE parameter, typical value: 0.95).* Controls the bias-variance tradeoff in advantage estimation. At $lambda = 1.0$, GAE reduces to Monte Carlo estimation (high variance, no bias). At $lambda = 0$, it becomes one-step TD (low variance, high bias). The typical value of 0.95 slightly favors lower variance.
-
-== Strengths and Weaknesses
-
-PPO's strength is well-understood theory and stable training dynamics due to the clipped objective and learned value function. Its weakness is memory cost. Four full-size models (policy, reference, reward, value) must fit in GPU memory simultaneously. For an 8B model in BF16, this requires approximately 64 GB just for model weights, before accounting for optimizer states, activations, and KV caches. This makes PPO impractical on GPUs with less than 80 GB of VRAM without aggressive memory optimization.
 
 #figure(
   cetz.canvas(length: 1cm, {
-    import cetz.draw: *
-    let garnet = rgb("#73000A")
-    let atlantic = rgb("#466A9F")
-    let congaree = rgb("#1F414D")
-    let horseshoe = rgb("#65780B")
-    let black90 = rgb("#363636")
-    let warmgrey = rgb("#676156")
+  import cetz.draw: *
 
-    let box(pos, label, color, w: 2.4, h: 0.9) = {
-      rect((pos.at(0) - w/2, pos.at(1) - h/2), (pos.at(0) + w/2, pos.at(1) + h/2), fill: color.lighten(80%), stroke: color + 1.2pt)
-      content(pos, text(size: 7.5pt, weight: "bold", fill: black90, label))
+  let garnet = rgb("#73000A")
+  let atlantic = rgb("#466A9F")
+  let congaree = rgb("#1F414D")
+  let rose = rgb("#CC2E40")
+  let horseshoe = rgb("#65780B")
+  let warmgrey = rgb("#676156")
+  let black90 = rgb("#363636")
+  let light-bg = rgb("#ECECEC")
+
+  // ── helpers ──────────────────────────────────────────────────
+  let model-box(pos, label, subtitle, color, w: 3.0, h: 1.4, dashed: false) = {
+    let stk = if dashed { (paint: color, thickness: 1.4pt, dash: "dashed") } else { color + 1.4pt }
+    rect(
+      (pos.at(0) - w/2, pos.at(1) - h/2),
+      (pos.at(0) + w/2, pos.at(1) + h/2),
+      fill: color.lighten(85%),
+      stroke: stk,
+    )
+    content((pos.at(0), pos.at(1) + 0.2), text(size: 8.5pt, weight: "bold", fill: color, label))
+    content((pos.at(0), pos.at(1) - 0.25), text(size: 6.5pt, fill: black90, subtitle))
+  }
+
+  let process-box(pos, label, color, w: 2.8, h: 0.9) = {
+    rect(
+      (pos.at(0) - w/2, pos.at(1) - h/2),
+      (pos.at(0) + w/2, pos.at(1) + h/2),
+      fill: color.lighten(90%),
+      stroke: color + 1pt,
+    )
+    content(pos, text(size: 7.5pt, weight: "bold", fill: color, label))
+  }
+
+  let conn(from, to, color: black90, label: none, label-dx: 0, label-dy: 0.25) = {
+    line(from, to, mark: (end: "stealth", fill: color, scale: 0.65), stroke: color + 0.9pt)
+    if label != none {
+      let mx = (from.at(0) + to.at(0)) / 2 + label-dx
+      let my = (from.at(1) + to.at(1)) / 2 + label-dy
+      content((mx, my), text(size: 5.5pt, fill: warmgrey, style: "italic", label))
     }
-    let arr(from, to) = {
-      line(from, to, mark: (end: "stealth", fill: black90), stroke: black90 + 0.7pt)
-    }
+  }
 
-    // Prompt
-    box((0, 0), "Prompt $x$", warmgrey, w: 2.0)
+  // ════════════════════════════════════════════════════════════
+  // LAYOUT (vertical flow, symmetric about x=0)
+  //
+  //   y=11.5   Step 1 label
+  //   y=10.2   Prompt
+  //   y=8.6    Policy model
+  //   y=6.8    Response
+  //   y=5.5    Step 2 label
+  //   y=4.2    Reward (left) | Value (right)
+  //   y=2.9    Step 3 label
+  //   y=1.5    Advantage
+  //   y=0.0    Reference (left) | KL penalty (right)
+  //   y=-1.2   Step 4 label
+  //   y=-2.5   Loss box
+  //   y=-4.0   Legend
+  // ════════════════════════════════════════════════════════════
 
-    // Policy generates
-    arr((1.0, 0), (2.2, 0))
-    box((3.5, 0), "Policy $pi_theta$", garnet)
-    arr((4.7, 0), (5.9, 0))
-    content((5.5, 0.4), text(size: 6.5pt, fill: black90)[generate $y$])
-    box((7.2, 0), "Response $y$", warmgrey, w: 2.0)
+  // ── STEP 1: Generate ────────────────────────────────────────
+  content((0, 11.6), text(size: 8pt, weight: "bold", fill: garnet)[Step 1])
+  content((0, 11.15), text(size: 6.5pt, fill: black90)[Policy generates a response to the prompt])
 
-    // Reward model scores
-    arr((8.2, 0), (9.5, 0.8))
-    box((11.0, 0.8), "Reward $r_phi$", horseshoe)
-    arr((12.2, 0.8), (13.5, 0.8))
-    box((14.8, 0.8), "Score $r$", warmgrey, w: 1.6)
+  process-box((0, 10.2), "Prompt  x", warmgrey, w: 2.4, h: 0.7)
 
-    // Value model estimates
-    arr((8.2, 0), (9.5, -0.8))
-    box((11.0, -0.8), "Value $V_psi$", atlantic)
-    arr((12.2, -0.8), (13.5, -0.8))
-    box((14.8, -0.8), "$hat(V)$", warmgrey, w: 1.6)
+  conn((0, 9.85), (0, 9.35), color: warmgrey, label: "feed prompt")
 
-    // Reference for KL
-    box((3.5, -2.2), [Reference $pi_"ref"$], congaree)
-    arr((3.5, -1.7), (3.5, -0.45))
-    content((4.8, -1.3), text(size: 6.5pt, fill: congaree)[KL penalty])
+  // Policy model
+  model-box((0, 8.6), [Policy  $pi_theta$], "Trainable", garnet)
 
-    // GAE + Clip
-    arr((14.8, 0.35), (14.8, -0.35))
-    content((16.2, 0), text(size: 7pt, fill: garnet, weight: "bold")[GAE $arrow.r$\ Clipped\ Update])
+  conn((0, 7.9), (0, 7.35), color: garnet, label: "sample tokens")
 
-    // 4 models label
-    content((7.2, -2.5), text(size: 8pt, fill: garnet, weight: "bold")[4 models in memory])
+  // Response
+  process-box((0, 6.8), [Response  $y$], black90, w: 2.4, h: 0.7)
+
+  // ── STEP 2: Score ───────────────────────────────────────────
+  content((0, 6.0), text(size: 8pt, weight: "bold", fill: horseshoe)[Step 2])
+  content((0, 5.55), text(size: 6.5pt, fill: black90)[Score the response and estimate value baseline])
+
+  // Branch point
+  line((0, 6.45), (0, 5.1), stroke: black90 + 0.7pt)
+
+  // Reward model (left)
+  model-box((-3.5, 4.2), [Reward  $r_phi$], "Frozen", horseshoe, w: 3.0, h: 1.4, dashed: true)
+
+  // Value model (right)
+  model-box((3.5, 4.2), [Value  $V_psi$], "Trainable (critic)", congaree, w: 3.0, h: 1.4)
+
+  // Branch lines
+  line((0, 5.1), (-3.5, 5.1), stroke: black90 + 0.7pt)
+  line((-3.5, 5.1), (-3.5, 4.9), mark: (end: "stealth", fill: horseshoe, scale: 0.65), stroke: horseshoe + 0.9pt)
+
+  line((0, 5.1), (3.5, 5.1), stroke: black90 + 0.7pt)
+  line((3.5, 5.1), (3.5, 4.9), mark: (end: "stealth", fill: congaree, scale: 0.65), stroke: congaree + 0.9pt)
+
+  content((-1.75, 5.35), text(size: 5.5pt, fill: warmgrey, style: "italic")[score response])
+  content((1.75, 5.35), text(size: 5.5pt, fill: warmgrey, style: "italic")[estimate baseline])
+
+  // ── STEP 3: Compute advantages ──────────────────────────────
+  content((0, 2.9), text(size: 8pt, weight: "bold", fill: rose)[Step 3])
+  content((0, 2.45), text(size: 6.5pt, fill: black90)[Compute per-token advantages via GAE])
+
+  // Reward output flows down
+  conn((-3.5, 3.5), (-3.5, 1.85), color: horseshoe, label: [$r_phi (x, y)$], label-dx: -1.0, label-dy: 0)
+
+  // Value output flows down
+  conn((3.5, 3.5), (3.5, 1.85), color: congaree, label: [$V_psi (s_t)$], label-dx: 1.0, label-dy: 0)
+
+  // Advantage box (center)
+  process-box((0, 1.5), [Advantage  $hat(A)_t = r - V$], rose, w: 4.0, h: 0.7)
+
+  // Reward feeds into Advantage from left
+  line((-3.5, 1.85), (-3.5, 1.5), stroke: horseshoe + 0.9pt)
+  line((-3.5, 1.5), (-2.0, 1.5), mark: (end: "stealth", fill: rose, scale: 0.65), stroke: rose + 0.9pt)
+
+  // Value feeds into Advantage from right
+  line((3.5, 1.85), (3.5, 1.5), stroke: congaree + 0.9pt)
+  line((3.5, 1.5), (2.0, 1.5), mark: (end: "stealth", fill: rose, scale: 0.65), stroke: rose + 0.9pt)
+
+  // Reference model (left, lower)
+  model-box((-3.5, 0.0), [Reference  $pi_"ref"$], "Frozen (SFT copy)", atlantic, w: 3.0, h: 1.4, dashed: true)
+
+  // KL penalty box (right, lower)
+  process-box((3.5, 0.0), [KL penalty  $beta D_"KL"$], atlantic, w: 3.0, h: 0.7)
+
+  // Reference log-probs to KL box
+  conn((-2.0, 0.0), (2.0, 0.0), color: atlantic, label: [log $pi_"ref"$], label-dy: 0.3)
+
+  // Policy log-probs to KL box
+  // Route along the right flank, outside the Value box (right edge at x=5.0)
+  // and inside the Critic loop (at x=6.5). Use x=5.6.
+  line((1.5, 8.9), (5.6, 8.9), stroke: (paint: garnet, thickness: 0.7pt, dash: "dotted"))
+  line((5.6, 8.9), (5.6, 0.0), stroke: (paint: garnet, thickness: 0.7pt, dash: "dotted"))
+  line((5.6, 0.0), (5.0, 0.0), mark: (end: "stealth", fill: garnet, scale: 0.55), stroke: (paint: garnet, thickness: 0.7pt, dash: "dotted"))
+  content((5.9, 6.5), text(size: 5pt, fill: garnet)[log $pi_theta$])
+
+  // ── STEP 4: Update ──────────────────────────────────────────
+  content((0, -1.5), text(size: 8pt, weight: "bold", fill: garnet)[Step 4])
+  content((0, -1.95), text(size: 6.5pt, fill: black90)[Clipped surrogate update with KL constraint])
+
+  // Loss box
+  process-box((0, -2.8), [$L^"CLIP" (theta) - beta D_"KL"$], garnet, w: 4.2, h: 0.8)
+
+  // Advantage flows to loss
+  conn((0, 1.15), (0, -2.4), color: rose, label: [$hat(A)_t$], label-dx: -0.5, label-dy: 0)
+
+  // KL flows to loss
+  line((3.5, -0.35), (3.5, -2.8), stroke: atlantic + 0.7pt)
+  line((3.5, -2.8), (2.1, -2.8), mark: (end: "stealth", fill: garnet, scale: 0.55), stroke: atlantic + 0.7pt)
+  content((4.0, -1.6), text(size: 5.5pt, fill: atlantic, style: "italic")[$beta D_"KL"$])
+
+  // ── Feedback loop: gradient back to policy ──────────────────
+  line((0, -3.2), (0, -3.7), stroke: garnet + 1.2pt)
+  line((0, -3.7), (-6.2, -3.7), stroke: garnet + 1.2pt)
+  line((-6.2, -3.7), (-6.2, 8.6), stroke: garnet + 1.2pt)
+  line((-6.2, 8.6), (-1.5, 8.6), mark: (end: "stealth", fill: garnet, scale: 0.7), stroke: garnet + 1.2pt)
+
+  content((-5.3, 3.0), text(size: 6pt, weight: "bold", fill: garnet)[Policy])
+  content((-5.3, 2.6), text(size: 6pt, weight: "bold", fill: garnet)[update])
+  content((-5.3, 2.1), text(size: 5pt, fill: garnet)[$theta <- theta + alpha nabla L$])
+
+  // ── Feedback loop: gradient back to critic ──────────────────
+  line((0, -3.7), (6.8, -3.7), stroke: congaree + 1pt)
+  line((6.8, -3.7), (6.8, 4.2), stroke: congaree + 1pt)
+  line((6.8, 4.2), (5.0, 4.2), mark: (end: "stealth", fill: congaree, scale: 0.65), stroke: congaree + 1pt)
+
+  content((7.3, 1.0), text(size: 6pt, weight: "bold", fill: congaree)[Critic])
+  content((7.3, 0.6), text(size: 6pt, weight: "bold", fill: congaree)[update])
+  content((7.3, 0.1), text(size: 5pt, fill: congaree)[$psi <- psi$])
+  content((7.3, -0.25), text(size: 5pt, fill: congaree)[$+ alpha nabla L^"VF"$])
+
+  // ── Legend ───────────────────────────────────────────────────
+  rect((-5.2, -5.4), (5.2, -4.3), fill: light-bg, stroke: black90 + 0.5pt)
+
+  // Trainable
+  rect((-4.7, -4.95), (-3.9, -4.65), fill: garnet.lighten(85%), stroke: garnet + 1pt)
+  content((-2.8, -4.8), text(size: 6pt, fill: black90)[Trainable model])
+
+  // Frozen
+  rect((-1.2, -4.95), (-0.4, -4.65), fill: atlantic.lighten(85%), stroke: (paint: atlantic, thickness: 1pt, dash: "dashed"))
+  content((0.5, -4.8), text(size: 6pt, fill: black90)[Frozen model])
+
+  // Gradient flow
+  line((1.8, -4.8), (2.6, -4.8), stroke: garnet + 1pt, mark: (end: "stealth", fill: garnet, scale: 0.55))
+  content((3.8, -4.8), text(size: 6pt, fill: black90)[Gradient flow])
   }),
-  caption: [PPO data flow. The policy generates a response, which is scored by both the reward model and the value network. GAE combines these into an advantage estimate. The clipped objective updates the policy while the KL penalty (from the frozen reference) prevents divergence. PPO is the only algorithm requiring four simultaneous models.],
+  caption: [The PPO training loop for language model alignment. Four models operate in a coordinated cycle. The process begins with the policy generating a response (Step 1), followed by reward scoring (Step 2), advantage computation using the value model (Step 3), and a constrained policy update using the clipped surrogate objective (Step 4). The KL divergence against the reference model prevents the policy from drifting too far from the SFT baseline. Dashed borders indicate frozen models whose weights are not updated.],
 ) <fig:ppo-diagram>
+== The PPO Objective
+
+The core of PPO is the clipped surrogate objective, which provides a mechanism for updating the policy in a way that is both effective and stable. To understand why clipping is necessary, it helps to first understand the problem it solves.
+
+The most basic policy gradient method would compute the gradient of expected reward with respect to the policy parameters and take a step in that direction. The problem is that large gradient steps can be catastrophic. If the policy changes too much in a single update, the advantage estimates computed under the old policy become inaccurate for the new policy, and the training can diverge. Early approaches like TRPO (Trust Region Policy Optimization) addressed this by constraining the update to stay within a "trust region" defined by a KL divergence bound, but the optimization required expensive second-order methods.
+
+PPO achieves a similar effect through a simpler mechanism. It computes a probability ratio between the new and old policy for each action taken.
+
+$ rho_t (theta) = frac(pi_theta (a_t | s_t), pi_(theta_"old") (a_t | s_t)) $
+
+This ratio is 1.0 when the new policy assigns the same probability to an action as the old policy, greater than 1.0 when the new policy assigns higher probability, and less than 1.0 when it assigns lower probability. The clipped surrogate objective then restricts how much this ratio can influence the gradient.
+
+$ L^"CLIP" (theta) = bb(E)_t [min(rho_t (theta) hat(A)_t, "clip"(rho_t (theta), 1 - epsilon, 1 + epsilon) hat(A)_t)] $
+
+The $min$ operation is the key insight. When the advantage $hat(A)_t$ is positive (the action was better than expected), the objective increases as $rho_t$ increases, but the clipping prevents $rho_t$ from exceeding $1 + epsilon$. This means the policy cannot be updated too aggressively even when a particular action looks very good. Conversely, when the advantage is negative (the action was worse than expected), the objective decreases as $rho_t$ decreases, but the clipping prevents $rho_t$ from going below $1 - epsilon$. The typical value of $epsilon$ is 0.2, meaning the policy can change any given action's probability by at most 20% in a single update.
+
+== Generalized Advantage Estimation (GAE)
+
+Accurate advantage estimates are critical for stable policy optimization. If advantages are too noisy, the policy receives contradictory signals and fails to improve. If advantages are biased, the policy converges to suboptimal behavior. Generalized Advantage Estimation (GAE) provides a principled way to balance the bias-variance trade-off in advantage computation.
+
+The simplest advantage estimate uses the temporal difference (TD) error at each timestep.
+
+$ delta_t = r_t + gamma V_psi (s_(t+1)) - V_psi (s_t) $
+
+This is a low-variance but potentially high-bias estimate, because it relies on the value function $V_psi$ being accurate. If the value function is poorly calibrated, the TD error will be systematically wrong, and the resulting policy updates will push the model in the wrong direction.
+
+At the other extreme, the Monte Carlo advantage uses the actual observed return (cumulative future reward) minus the value estimate. This is unbiased but high-variance, because the actual return depends on every subsequent token choice, each of which introduces randomness.
+
+GAE interpolates between these extremes using an exponentially weighted average of multi-step TD errors.
+
+$ hat(A)_t^"GAE" = sum_(l=0)^(T-t) (gamma lambda)^l delta_(t+l) $
+
+The parameter $lambda in [0, 1]$ controls the trade-off. When $lambda = 0$, GAE reduces to the single-step TD error (low variance, potentially high bias). When $lambda = 1$, it becomes equivalent to the Monte Carlo return minus baseline (unbiased, high variance). In practice, values around $lambda = 0.95$ work well, providing a good balance.
+
+The parameter $gamma in [0, 1]$ is the discount factor, which determines how much the algorithm values future rewards relative to immediate ones. In the language model setting, where a single scalar reward is assigned to the entire response, $gamma$ controls how the response-level reward is distributed back to earlier tokens. A $gamma$ close to 1.0 means that tokens near the beginning of the response receive nearly as much credit for the final reward as tokens near the end.
+
+== The Full PPO Loss
+
+The complete PPO training objective combines three terms.
+
+$ L(theta, psi) = L^"CLIP" (theta) - c_1 L^"VF" (psi) + c_2 S(pi_theta) - beta D_"KL" (pi_theta || pi_"ref") $
+
+The first term, $L^"CLIP"$, is the clipped surrogate objective that drives the policy toward higher-reward behavior. The second term, $L^"VF"$, is the value function loss, typically a squared error between the critic's predictions and the observed returns, which trains the value model to make more accurate advantage estimates. The coefficient $c_1$ balances the relative importance of policy improvement and value function accuracy. The third term, $S(pi_theta)$, is an entropy bonus that encourages the policy to maintain some randomness in its token distribution, preventing premature collapse to deterministic outputs. The coefficient $c_2$ controls the strength of this regularization. The fourth term is the KL divergence penalty discussed in the Background section, weighted by $beta$.
+
+== Key Hyperparameters and Their Effects
+
+PPO introduces several hyperparameters whose values significantly affect training stability and final model quality.
+
+The KL penalty coefficient $beta$ controls the trade-off between reward optimization and distributional conservatism. In this project, $beta = 0.04$ is used across all RL algorithms for fair comparison. This is a relatively moderate value. Larger values like $beta = 0.1$ would keep the policy very close to the SFT reference, while smaller values like $beta = 0.01$ would allow more aggressive optimization. The choice of $beta$ directly affects poisoning robustness because a larger $beta$ limits the policy's ability to learn new behavior, whether that behavior is beneficial (learning from clean reward signals) or harmful (learning from poisoned reward signals).
+
+The clipping parameter $epsilon$ controls the maximum change to any action's probability in a single update. With $epsilon = 0.2$, the probability ratio $rho_t$ is constrained to $[0.8, 1.2]$. Smaller values produce more conservative updates but may slow learning; larger values allow faster learning but increase the risk of instability. The clipping mechanism interacts with poisoning in an interesting way. Even if a poisoned reward signal is very strong, the clipping prevents the policy from making catastrophically large updates in a single step. Poisoning must therefore operate over many small updates rather than a few large ones, which may make it more detectable through training dynamics monitoring.
+
+The GAE parameters $gamma$ and $lambda$ control credit assignment and variance. With $gamma = 1.0$ and $lambda = 0.95$ (common defaults for language model RLHF), the algorithm attributes the response-level reward to all tokens with slight recency bias. These parameters are less likely to affect poisoning robustness directly, because they govern the temporal distribution of credit rather than the overall magnitude of the learning signal.
+
+== Strengths and Weaknesses
+
+PPO's primary strength is its well-understood theoretical foundation and extensive empirical validation. It was the algorithm used to align GPT-3.5 and Llama 2, and its behavior under various hyperparameter settings is well-characterized. The clipped surrogate objective provides reliable stability, and GAE provides fine-grained credit assignment at the token level.
+
+PPO's primary weakness is its complexity and resource requirements. Maintaining four models in memory simultaneously is expensive. For an 8-billion parameter base model in BF16 precision, this means approximately 64 GB of model weights alone, before accounting for optimizer states (which roughly double the memory for Adam-based optimizers), activations, and KV caches during generation. This memory pressure was the primary motivation for developing alternatives like GRPO that eliminate the value network. Additionally, PPO is sensitive to hyperparameter choices and implementation details. Small differences in normalization, initialization, or learning rate scheduling can produce large differences in final model quality, making it difficult to reproduce results across different codebases.
+
+For the poisoning robustness analysis in this project, PPO serves as the reference algorithm. The original attack by Rando and Tramèr was demonstrated against PPO, so comparing GRPO and REINFORCE++ to PPO establishes whether the newer algorithms inherit, mitigate, or amplify the vulnerability.
 
 = REINFORCE
 
-REINFORCE is the simplest policy gradient algorithm and serves as the foundation for all the methods described here.
+REINFORCE is the simplest policy gradient algorithm and serves as the foundation for every method discussed in this report. Before describing the algorithm itself, it is worth building an intuition for what "policy gradient" means and why it matters for aligning language models with human preferences.
+
+== Policy Gradient Intuition
+
+In reinforcement learning, a _policy_ is simply a rule that decides what action to take in a given situation. For a language model, the policy is the model itself: given a prompt $x$, the policy $pi_theta$ produces a probability distribution over all possible next tokens, and by sampling tokens one at a time, it generates a full response $y$. The subscript $theta$ refers to the billions of numerical weights inside the model that determine how it behaves. Training is the process of adjusting these weights so that the model's outputs become more useful, more truthful, and safer.
+
+The word "gradient" refers to the mathematical direction in which we should nudge the weights to improve some objective. In supervised learning, the objective is straightforward: make the model's predictions match the training labels. In reinforcement learning, there are no labels. Instead, there is a _reward signal_, a single number that tells the model how good its response was after the fact. The challenge is figuring out which of the millions of tiny decisions (one per generated token) contributed to that reward and how to adjust the weights accordingly. This is the core problem that policy gradient methods solve.
+
+A helpful analogy is learning to cook a new dish by trial and error. You follow a rough recipe (your current policy), taste the result (receive a reward), and then try to remember which decisions, such as how much salt you added or how long you sauteed the onions, led to the outcome. If the dish was good, you want to repeat those decisions. If it was bad, you want to avoid them. REINFORCE formalizes exactly this process. The model generates a response, receives a score from the reward model, and then increases the probability of every token in that response proportionally to how good the score was, or decreases probabilities if the score was poor.
 
 == The Algorithm
 
-REINFORCE does not use a value function. Instead, it estimates the policy gradient directly from sampled trajectories. For each prompt $x$, the policy generates one response $y$ and receives a reward $r(x, y)$.
+REINFORCE does not use a value function or critic network. Instead, it estimates the policy gradient directly from sampled trajectories. For each prompt $x$, the policy generates one or more responses $y$ and each response receives a scalar reward $r(x, y)$ from the reward model.
 
-The policy gradient is
+The policy gradient is estimated as
 
-$ nabla_theta J = E_(x, y) [(r(x, y) - b) dot nabla_theta log pi_theta (y | x)] $
+$ nabla_theta J = E_(x, y) [(r(x, y) - b) dot nabla_theta log pi_theta (y | x)] $ <eq:reinforce>
 
-where $b$ is a baseline (typically the mean reward across the batch) used to reduce variance.
+The term $nabla_theta log pi_theta (y | x)$ is the _score function_. It captures the direction in weight space that would make the generated response $y$ more likely under the current policy. The term $(r(x, y) - b)$ is a scalar multiplier that determines how strongly the weights should be pushed in that direction. When the reward is higher than the baseline $b$, the multiplier is positive, meaning the model increases the probability of the response. When the reward is lower than the baseline, the multiplier is negative, and the model decreases the probability of the response. This is the entire learning rule. There is no separate critic, no temporal-difference error, and no value network. The simplicity of this update is what makes REINFORCE attractive as a starting point.
 
-The gradient update pushes the policy to increase the probability of responses that received above-average reward and decrease the probability of below-average ones.
+== The Baseline and the Variance Problem
 
-== Key Variables
+The baseline $b$ in @eq:reinforce is typically set to the mean reward across all responses in the current training batch. Its purpose is to center the reward signal around zero so that roughly half of the responses receive positive weight updates and half receive negative updates. Without a baseline, every response with a positive reward (even a mediocre one) would receive a positive update, and the gradient signal would be dominated by the absolute magnitude of rewards rather than the relative quality of responses.
 
-*Baseline $b$.* Without a baseline, REINFORCE has extremely high variance because the gradient magnitude is proportional to the absolute reward rather than the relative reward. The baseline is typically the batch mean reward $b = 1/N sum_i r(x_i, y_i)$. A better baseline reduces variance without introducing bias.
+Even with a baseline, REINFORCE suffers from high variance in its gradient estimates. Variance, in this context, means that the direction and magnitude of each gradient update fluctuate wildly from one batch to the next. In practical terms, high variance manifests as unstable training. The loss curve jumps erratically rather than descending smoothly. The model might improve for 50 steps, then suddenly degrade for the next 30, then partially recover. Hyperparameters that work on one random seed may fail on another. Training runs must be longer to average out the noise, which wastes compute. In severe cases, high variance can cause the model to collapse entirely, producing repetitive or degenerate outputs from which it cannot recover.
+
+The fundamental source of this variance is that REINFORCE assigns a single reward to the entire response. If a 200-token response receives a high reward, every token in that response gets the same positive update, even tokens that were irrelevant or slightly harmful. This is like giving every player on a basketball team the same bonus based on the final score, regardless of individual performance. The algorithm has no way to determine which specific tokens were responsible for the high reward and which were along for the ride. This _credit assignment_ problem is the central limitation of REINFORCE, and it motivates every improvement discussed in the subsequent sections.
 
 == Strengths and Weaknesses
 
-REINFORCE is simple and requires only two models (policy and reward). However, it suffers from high variance because each prompt gets only one sample. If that sample happens to get an unusually high or low reward, the gradient estimate is noisy. This makes training unstable and slow to converge.
+REINFORCE is simple to implement and requires only two models in memory during training: the policy model being optimized and a frozen copy of the reference policy used for KL regularization. This minimal memory footprint is a significant practical advantage, as GPU memory is often the binding constraint in LLM alignment. The algorithm introduces no additional hyperparameters beyond the baseline computation and the KL penalty coefficient, making it relatively easy to debug and understand. Its theoretical properties are also well established, as REINFORCE produces unbiased gradient estimates, meaning that in expectation the gradient points in the correct direction even if any single estimate is noisy.
+
+The primary weakness is the high variance described above, which leads to slow convergence and training instability. Because each gradient estimate is computed from a small number of sampled responses, unlucky samples can push the model in unproductive directions for many consecutive steps. Additionally, REINFORCE in its basic form does not constrain how far the policy can move from the reference model in a single update, which can lead to catastrophic forgetting of capabilities learned during pretraining and SFT. These weaknesses motivate the enhancements introduced in REINFORCE++.
 
 #figure(
   cetz.canvas(length: 1cm, {
     import cetz.draw: *
+
     let garnet = rgb("#73000A")
+    let atlantic = rgb("#466A9F")
+    let congaree = rgb("#1F414D")
+    let rose = rgb("#CC2E40")
     let horseshoe = rgb("#65780B")
-    let black90 = rgb("#363636")
     let warmgrey = rgb("#676156")
+    let black90 = rgb("#363636")
+    let light-gray = rgb("#ECECEC")
 
-    let box(pos, label, color, w: 2.4, h: 0.9) = {
-      rect((pos.at(0) - w/2, pos.at(1) - h/2), (pos.at(0) + w/2, pos.at(1) + h/2), fill: color.lighten(80%), stroke: color + 1.2pt)
-      content(pos, text(size: 7.5pt, weight: "bold", fill: black90, label))
+    // Box helper with step number
+    let stage-box(pos, label, color, w: 3.0, h: 1.2, step: none) = {
+      rect(
+        (pos.at(0) - w/2, pos.at(1) - h/2),
+        (pos.at(0) + w/2, pos.at(1) + h/2),
+        fill: color.lighten(85%),
+        stroke: color + 1.4pt,
+      )
+      content(pos, text(size: 9pt, weight: "bold", fill: black90, label))
+      if step != none {
+        // Step number circle in top-left
+        let cx = pos.at(0) - w/2 + 0.35
+        let cy = pos.at(1) + h/2 - 0.3
+        circle((cx, cy), radius: 0.25, fill: color, stroke: none)
+        content((cx, cy), text(size: 7pt, weight: "bold", fill: white, str(step)))
+      }
     }
-    let arr(from, to) = {
-      line(from, to, mark: (end: "stealth", fill: black90), stroke: black90 + 0.7pt)
+
+    // Annotation helper
+    let annotation(pos, label, color: black90) = {
+      content(pos, text(size: 7pt, fill: color, style: "italic", label))
     }
 
-    // Prompt
-    box((0, 0), "Prompt $x$", warmgrey, w: 2.0)
-    arr((1.0, 0), (2.2, 0))
+    // Arrow helper with optional label
+    let labeled-arrow(from, to, label: none, color: black90, label-anchor: "south") = {
+      line(from, to, mark: (end: "stealth", fill: color), stroke: color + 1pt)
+      if label != none {
+        let mx = (from.at(0) + to.at(0)) / 2
+        let my = (from.at(1) + to.at(1)) / 2
+        content((mx, my + 0.35), anchor: label-anchor, text(size: 6.5pt, fill: color, label))
+      }
+    }
 
-    // Policy
-    box((3.5, 0), "Policy $pi_theta$", garnet)
-    arr((4.7, 0), (5.9, 0))
-    content((5.5, 0.4), text(size: 6.5pt, fill: black90)[1 sample])
-    box((7.2, 0), "Response $y$", warmgrey, w: 2.0)
+    // Row 1: Prompt input
+    stage-box((0, 0), "Prompt x", warmgrey, w: 2.6, step: 1)
+    annotation((0, -1.0), "Sampled from\ntraining dataset", color: warmgrey)
 
-    // Reward
-    arr((8.2, 0), (9.5, 0))
-    box((11.0, 0), "Reward $r_phi$", horseshoe)
-    arr((12.2, 0), (13.2, 0))
-    box((14.2, 0), "$r(x,y)$", warmgrey, w: 1.4)
+    // Row 1: Policy generates response
+    stage-box((4.5, 0), "Policy " + $pi_theta$, atlantic, w: 2.6, step: 2)
+    annotation((4.5, -1.0), "Current LLM\nweights " + $theta$, color: atlantic)
 
-    // Batch baseline
-    box((14.2, -1.5), "Batch mean $b$", warmgrey, w: 2.4)
-    arr((14.2, -1.05), (14.2, -0.45))
+    labeled-arrow((1.3, 0), (3.2, 0), label: "Input prompt")
 
-    // Gradient
-    content((16.0, 0), text(size: 7pt, fill: garnet, weight: "bold")[$r - b$\ $arrow.r$ Update])
+    // Row 1: Response
+    stage-box((9.0, 0), "Response y", congaree, w: 2.6, step: 3)
+    annotation((9.0, -1.0), "Full text generated\nby sampling tokens", color: congaree)
 
-    // Label
-    content((5.5, -1.5), text(size: 8pt, fill: garnet, weight: "bold")[2 models, high variance])
+    labeled-arrow((5.8, 0), (7.7, 0), label: "Generate tokens")
+
+    // Row 2: Reward scoring
+    stage-box((13.5, 0), "Reward Model", rose, w: 3.0, step: 4)
+    annotation((13.5, -1.0), "Frozen model that\nscores quality", color: rose)
+
+    labeled-arrow((10.3, 0), (12.0, 0), label: "Score response")
+
+    // Reward output
+    stage-box((13.5, -2.8), "Reward r(x,y)", garnet, w: 3.0, step: 5)
+    annotation((13.5, -3.85), "Single scalar for\nthe entire response", color: garnet)
+
+    labeled-arrow((13.5, -0.6), (13.5, -2.2), label: none, color: garnet)
+    annotation((14.7, -1.4), "Scalar\nscore", color: garnet)
+
+    // Baseline subtraction
+    stage-box((9.0, -2.8), "Subtract\nBaseline b", horseshoe, w: 3.0, step: 6)
+    annotation((9.0, -3.85), "b = mean reward\nacross the batch", color: horseshoe)
+
+    labeled-arrow((12.0, -2.8), (10.5, -2.8), label: "r(x,y) - b", color: horseshoe)
+
+    // Gradient computation
+    stage-box((4.5, -2.8), "Compute\nGradient", atlantic, w: 3.0, step: 7)
+    annotation((4.5, -3.85), [$(r - b) dot nabla_theta log pi_theta (y|x)$], color: atlantic)
+
+    labeled-arrow((7.5, -2.8), (6.0, -2.8), label: "Advantage signal", color: atlantic)
+
+    // Weight update
+    stage-box((0, -2.8), "Update\nWeights " + $theta$, garnet, w: 2.6, step: 8)
+    annotation((0, -3.85), "Nudge policy toward\nbetter responses", color: garnet)
+
+    labeled-arrow((3.0, -2.8), (1.3, -2.8), label: "Gradient step", color: garnet)
+
+    // Loop arrow back to policy
+    line((-1.3, -2.8), (-2.0, -2.8), stroke: black90 + 1pt)
+    line((-2.0, -2.8), (-2.0, 0), stroke: black90 + 1pt)
+    line((-2.0, 0), (-1.3, 0), mark: (end: "stealth", fill: black90), stroke: black90 + 1pt)
+    annotation((-2.0, -1.4), "Repeat\nnext batch", color: black90)
   }),
-  caption: [REINFORCE data flow. Each prompt produces a single response scored by the reward model. The batch mean serves as a baseline, and the gradient is proportional to $r - b$. With only one sample per prompt, gradient estimates are high variance.],
-) <fig:reinforce-diagram>
+  caption: [The REINFORCE training loop for LLM alignment. A prompt is sampled and fed to the policy, which generates a response. The reward model scores the response with a single scalar. After subtracting the batch mean baseline, the resulting advantage signal scales the policy gradient, and the weights are updated to make high-reward responses more likely. This loop repeats for every training batch.],
+) <fig:reinforce-flow>
+
 
 = REINFORCE++
 
-REINFORCE++ is an enhanced version of REINFORCE with several variance reduction techniques that make it practical for LLM alignment.
+REINFORCE++ is an enhanced version of REINFORCE that addresses its three most significant practical weaknesses: high gradient variance, the lack of per-token credit assignment, and the absence of constraints on how far the policy can drift from the reference model. Rather than introducing an entirely new algorithmic framework, REINFORCE++ applies three targeted improvements to the basic REINFORCE update, each of which can be understood independently.
 
-== Improvements Over REINFORCE
+== Improvement 1. Online Reward Normalization
 
-REINFORCE++ adds three key improvements.
+The first improvement addresses the scale of the reward signal. In basic REINFORCE, the baseline $b$ is simply the mean reward across the batch, and the resulting advantage values $r(x,y) - b$ can have widely varying magnitudes depending on the reward model's output distribution. If one batch happens to contain mostly high-reward responses, the advantages cluster near zero and learning is slow. If another batch spans a wide range of rewards, the advantages are large and the gradient update overshoots. This inconsistency across batches is a major source of training instability.
 
-First, _per-token KL penalty_. Rather than adding a single KL term to the loss, REINFORCE++ computes a per-token KL divergence between the policy and reference model and subtracts it from the reward at each token position. This provides a more fine-grained signal that penalizes divergence where it actually occurs rather than on average.
+REINFORCE++ normalizes the advantage by dividing by the standard deviation of rewards within the batch, producing a signal with zero mean and unit variance. The normalized advantage is
 
-$ r_t^"adjusted" = r_t - beta dot log (pi_theta (y_t | x, y_(< t))) / (pi_"ref" (y_t | x, y_(< t))) $
+$ hat(A)(x, y) = (r(x, y) - mu_B) / (sigma_B + epsilon) $ <eq:rpp-norm>
 
-Second, _batch-level advantage normalization_. The advantages (rewards minus baseline) are normalized across the entire batch to have zero mean and unit variance. This stabilizes the gradient magnitude across training steps regardless of the absolute reward scale.
+where $mu_B$ and $sigma_B$ are the mean and standard deviation of rewards within the current batch, and $epsilon$ is a small constant (typically $10^(-8)$) that prevents division by zero. This is the same normalization used in batch normalization for neural networks, a technique that has been standard practice in deep learning for years. The effect is that the gradient update is driven by the relative ranking of responses within the batch rather than by the absolute reward values. A response that is above average always receives a positive update, and one that is below average always receives a negative update, regardless of the reward model's calibration.
 
-$ hat(A)_i = (r_i - mu_B) / (sigma_B + epsilon) $
+In plain terms, normalization makes training less sensitive to the quirks of the reward model. If the reward model assigns scores in the range $[-10, +10]$ for one prompt category and $[0, 1]$ for another, basic REINFORCE would produce wildly different gradient magnitudes for the two categories. REINFORCE++ treats them equally by focusing on within-batch comparisons.
 
-where $mu_B$ and $sigma_B$ are the mean and standard deviation of rewards in the batch.
+== Improvement 2. Per-Token KL Penalty
 
-Third, _gradient clipping_. Similar to PPO's clipped objective, the probability ratio is clipped to prevent excessively large updates from any single example.
+The second improvement constrains how far the policy drifts from the reference model, and it does so at the level of individual tokens rather than entire responses. In basic REINFORCE with a KL penalty, the Kullback-Leibler divergence between the policy and the reference model is computed over the full response and added as a single penalty term to the reward. This means that the model could radically change its token-level behavior in some positions while remaining close to the reference on average, as long as the deviations cancel out across the full sequence.
 
-== Key Variables
+REINFORCE++ replaces this response-level penalty with a _per-token KL penalty_ that is applied at each position in the generated sequence. At every token position $t$, the algorithm computes
 
-*$beta$ (KL penalty, typical range: 0.01--0.1).* Same role as in PPO. Controls the tradeoff between reward maximization and staying close to the SFT reference.
+$ "KL"_t = log (pi_theta (y_t | y_(< t), x)) / (pi_"ref" (y_t | y_(< t), x)) $ <eq:per-token-kl>
 
-*Batch size.* Larger batches provide better estimates of the batch-level statistics (mean and variance) used for normalization. Small batches lead to noisy normalization, which can destabilize training.
+and subtracts $beta dot "KL"_t$ from the reward attributed to that token, where $beta$ is the KL penalty coefficient. In plain English, this means the model pays an immediate cost every time it makes a choice that deviates from what the original reference model would have done. The penalty is not deferred to the end of the response. It is assessed at each individual token decision.
 
-*Number of generations $G$ (typical value: 1--2).* The number of completions generated per prompt. With $G = 1$, each prompt contributes one sample to the batch. With $G = 2$, advantages can be partially compared within the prompt as well as across the batch.
+Why does this matter? Consider a scenario in which the model learns to insert a single unusual token (perhaps an obscure Unicode character or an out-of-context phrase) that the reward model happens to score favorably. With a response-level KL penalty, this single deviation might be invisible because it is averaged across hundreds of other tokens. With a per-token KL penalty, the deviation incurs an immediate cost that discourages the model from exploiting such reward model quirks. The per-token penalty acts as a tighter leash on the policy, preventing it from straying too far from the reference at any point in the generation process. This is particularly relevant for poisoning robustness, as it may limit the model's ability to learn trigger-specific behaviors that require sharp deviations from normal token distributions.
 
-== Strengths and Weaknesses
+== Improvement 3. Gradient Clipping
 
-REINFORCE++ requires only three models (policy, reference, reward) — no value network. This saves significant memory compared to PPO. The batch-level normalization and per-token KL provide stability comparable to PPO in practice. The main limitation is that with few generations per prompt ($G = 1$ or $2$), the algorithm has no way to compare different responses to the same prompt, relying instead on cross-prompt comparisons which may be less informative.
+The third improvement is the simplest. Gradient clipping limits the maximum magnitude of the gradient update in any single training step. Without clipping, a batch that happens to produce an unusually large gradient (due to outlier rewards or an unlucky combination of samples) can cause a catastrophically large weight update that destabilizes the model. This is the RL equivalent of a single bad experience causing someone to overreact and completely change their behavior.
+
+REINFORCE++ applies gradient clipping by capping the norm of the gradient vector at a predefined threshold. If the computed gradient is smaller than the threshold, it passes through unchanged. If it exceeds the threshold, the gradient is rescaled to have exactly the threshold magnitude while preserving its direction. The training step still moves in the right direction, it just takes a smaller step than the raw gradient would have suggested.
+
+In practice, gradient clipping prevents the most extreme forms of training instability. It eliminates the sudden loss spikes and reward collapses that can occur when the model encounters an adversarial or pathological batch. Combined with reward normalization, it ensures that no single training step can move the model weights by more than a controlled amount.
+
+== Combined Effect
+
+The three improvements work together. Reward normalization ensures consistent gradient magnitudes across batches. Per-token KL penalization constrains how far each individual token decision can stray from the reference policy. Gradient clipping provides a final safety net against extreme updates. The combined policy gradient for REINFORCE++ is
+
+$ nabla_theta J = E_(x, y) [hat(A)(x, y) dot nabla_theta log pi_theta (y | x) - beta dot nabla_theta "KL"_t] $ <eq:rpp-combined>
+
+where $hat(A)(x,y)$ is the normalized advantage from @eq:rpp-norm and the KL term is applied per token as in @eq:per-token-kl.
+
+Importantly, REINFORCE++ retains the same computational profile as basic REINFORCE. It requires only two models (the policy and the reference), adds no additional neural networks, and introduces only one new hyperparameter (the gradient clipping threshold). The improvements are purely algorithmic, consisting of better signal processing applied to the same underlying information.
 
 #figure(
   cetz.canvas(length: 1cm, {
     import cetz.draw: *
+
     let garnet = rgb("#73000A")
+    let atlantic = rgb("#466A9F")
     let congaree = rgb("#1F414D")
-    let horseshoe = rgb("#65780B")
-    let black90 = rgb("#363636")
-    let warmgrey = rgb("#676156")
     let rose = rgb("#CC2E40")
+    let horseshoe = rgb("#65780B")
+    let warmgrey = rgb("#676156")
+    let black90 = rgb("#363636")
+    let light-gray = rgb("#ECECEC")
 
-    let box(pos, label, color, w: 2.4, h: 0.9) = {
-      rect((pos.at(0) - w/2, pos.at(1) - h/2), (pos.at(0) + w/2, pos.at(1) + h/2), fill: color.lighten(80%), stroke: color + 1.2pt)
-      content(pos, text(size: 7.5pt, weight: "bold", fill: black90, label))
+    // Box helper with step number
+    let stage-box(pos, label, color, w: 3.0, h: 1.2, step: none) = {
+      rect(
+        (pos.at(0) - w/2, pos.at(1) - h/2),
+        (pos.at(0) + w/2, pos.at(1) + h/2),
+        fill: color.lighten(85%),
+        stroke: color + 1.4pt,
+      )
+      content(pos, text(size: 9pt, weight: "bold", fill: black90, label))
+      if step != none {
+        let cx = pos.at(0) - w/2 + 0.35
+        let cy = pos.at(1) + h/2 - 0.3
+        circle((cx, cy), radius: 0.25, fill: color, stroke: none)
+        content((cx, cy), text(size: 7pt, weight: "bold", fill: white, str(step)))
+      }
     }
-    let arr(from, to) = {
-      line(from, to, mark: (end: "stealth", fill: black90), stroke: black90 + 0.7pt)
+
+    // Annotation helper
+    let annotation(pos, label, color: black90) = {
+      content(pos, text(size: 7pt, fill: color, style: "italic", label))
     }
 
-    // Prompt
-    box((0, 0), "Prompt $x$", warmgrey, w: 2.0)
-    arr((1.0, 0), (2.2, 0))
+    // Arrow helper
+    let labeled-arrow(from, to, label: none, color: black90) = {
+      line(from, to, mark: (end: "stealth", fill: color), stroke: color + 1pt)
+      if label != none {
+        let mx = (from.at(0) + to.at(0)) / 2
+        let my = (from.at(1) + to.at(1)) / 2
+        content((mx, my + 0.35), text(size: 6.5pt, fill: color, label))
+      }
+    }
 
-    // Policy generates 1-2 samples
-    box((3.5, 0), "Policy $pi_theta$", garnet)
-    arr((4.7, 0), (5.9, 0))
-    content((5.5, 0.4), text(size: 6.5pt, fill: black90)[$G = 1$--$2$])
-    box((7.2, 0), "$y_1 (,y_2)$", warmgrey, w: 2.0)
+    // === Top row: generation (same as REINFORCE) ===
+    stage-box((0, 0), "Prompt x", warmgrey, w: 2.4, step: 1)
 
-    // Reward
-    arr((8.2, 0), (9.5, 0))
-    box((11.0, 0), "Reward $r_phi$", horseshoe)
-    arr((12.2, 0), (13.2, 0))
-    box((14.5, 0), "$r_i$", warmgrey, w: 1.2)
+    stage-box((4.2, 0), "Policy " + $pi_theta$, atlantic, w: 2.4, step: 2)
+    labeled-arrow((1.2, 0), (3.0, 0), label: "Input prompt")
 
-    // Reference for per-token KL
-    box((3.5, -2.0), [Reference $pi_"ref"$], congaree)
-    arr((3.5, -1.55), (3.5, -0.45))
-    content((5.2, -1.2), text(size: 6.5pt, fill: congaree)[per-token KL])
+    stage-box((8.4, 0), "Response y", congaree, w: 2.4, step: 3)
+    labeled-arrow((5.4, 0), (7.2, 0), label: "Generate tokens")
 
-    // Batch normalization
-    box((14.5, -1.5), [Batch norm\ $hat(A) = (r - mu_B) / sigma_B$], rose, w: 3.2, h: 1.0)
-    arr((14.5, -1.0), (14.5, -0.45))
+    stage-box((12.6, 0), "Reward\nModel", rose, w: 2.6, step: 4)
+    labeled-arrow((9.6, 0), (11.3, 0), label: "Score response")
 
-    // Clipped update
-    content((16.5, 0), text(size: 7pt, fill: garnet, weight: "bold")[Clipped\ Update])
+    // === Middle row: the three REINFORCE++ improvements ===
 
-    content((5.5, -2.8), text(size: 8pt, fill: garnet, weight: "bold")[3 models, batch-level advantages])
+    // Improvement 1: Normalize
+    let imp-y = -2.8
+    let imp-box-w = 3.6
+    let imp-box-h = 1.4
+
+    // Reward flows down
+    stage-box((12.6, imp-y), "Normalize\nReward", horseshoe, w: imp-box-w, h: imp-box-h, step: 5)
+    annotation((12.6, imp-y - 1.1), [$(r - mu_B) slash (sigma_B + epsilon)$], color: horseshoe)
+    labeled-arrow((12.6, -0.6), (12.6, imp-y + imp-box-h / 2), label: "Raw r(x,y)", color: rose)
+
+    // Improvement label
+    rect(
+      (12.6 - imp-box-w/2, imp-y + imp-box-h/2),
+      (12.6 + imp-box-w/2, imp-y + imp-box-h/2 + 0.35),
+      fill: horseshoe,
+      stroke: none,
+    )
+    content((12.6, imp-y + imp-box-h/2 + 0.175), text(size: 6pt, weight: "bold", fill: white, "IMPROVEMENT 1: ONLINE NORMALIZATION"))
+
+    // Improvement 2: Per-token KL
+    stage-box((7.6, imp-y), "Per-Token\nKL Penalty", garnet, w: imp-box-w, h: imp-box-h, step: 6)
+    annotation((7.6, imp-y - 1.1), [$beta dot log pi_theta (y_t) slash pi_"ref" (y_t)$], color: garnet)
+
+    labeled-arrow((12.6 - imp-box-w/2, imp-y), (7.6 + imp-box-w/2, imp-y), label: [Normalized $hat(A)$], color: horseshoe)
+
+    // Improvement label
+    rect(
+      (7.6 - imp-box-w/2, imp-y + imp-box-h/2),
+      (7.6 + imp-box-w/2, imp-y + imp-box-h/2 + 0.35),
+      fill: garnet,
+      stroke: none,
+    )
+    content((7.6, imp-y + imp-box-h/2 + 0.175), text(size: 6pt, weight: "bold", fill: white, "IMPROVEMENT 2: PER-TOKEN KL"))
+
+    // Reference model feeding into KL
+    stage-box((4.2, -1.2), "Reference\n" + $pi_"ref"$, warmgrey, w: 2.4, h: 1.0)
+    annotation((4.2, -1.9), "Frozen SFT\ncheckpoint", color: warmgrey)
+    labeled-arrow((5.4, -1.5), (7.6 - imp-box-w/2, imp-y + 0.3), label: none, color: warmgrey)
+
+    // Improvement 3: Gradient clipping
+    stage-box((2.6, imp-y), "Clip\nGradient", atlantic, w: imp-box-w, h: imp-box-h, step: 7)
+    annotation((2.6, imp-y - 1.1), "Cap gradient norm\nat threshold", color: atlantic)
+
+    labeled-arrow((7.6 - imp-box-w/2, imp-y), (2.6 + imp-box-w/2, imp-y), label: "Adjusted gradient", color: atlantic)
+
+    // Improvement label
+    rect(
+      (2.6 - imp-box-w/2, imp-y + imp-box-h/2),
+      (2.6 + imp-box-w/2, imp-y + imp-box-h/2 + 0.35),
+      fill: atlantic,
+      stroke: none,
+    )
+    content((2.6, imp-y + imp-box-h/2 + 0.175), text(size: 6pt, weight: "bold", fill: white, "IMPROVEMENT 3: GRADIENT CLIPPING"))
+
+    // === Bottom: weight update ===
+    let bot-y = -5.6
+    stage-box((2.6, bot-y), "Update\nWeights " + $theta$, garnet, w: 3.0, h: 1.2, step: 8)
+    annotation((2.6, bot-y - 1.0), "Controlled, stable\nweight adjustment", color: garnet)
+
+    labeled-arrow((2.6, imp-y - imp-box-h/2), (2.6, bot-y + 0.6), label: "Clipped gradient", color: garnet)
+
+    // Loop arrow back to policy
+    line((2.6 - 1.5, bot-y), (-2.5, bot-y), stroke: black90 + 1pt)
+    line((-2.5, bot-y), (-2.5, 0), stroke: black90 + 1pt)
+    line((-2.5, 0), (-1.2, 0), mark: (end: "stealth", fill: black90), stroke: black90 + 1pt)
+    annotation((-2.5, bot-y / 2), "Repeat\nnext batch", color: black90)
   }),
-  caption: [REINFORCE++ data flow. Similar to REINFORCE but with three key additions: the reference model provides per-token KL penalties, advantages are normalized across the batch (zero mean, unit variance), and updates are clipped. Compares rewards across different prompts in the batch.],
-) <fig:rpp-diagram>
+  caption: [The REINFORCE++ training loop. The top row is identical to basic REINFORCE: a prompt enters the policy, a response is generated, and the reward model scores it. The three labeled boxes in the middle row represent the improvements introduced by REINFORCE++. First, the raw reward is normalized to zero mean and unit variance across the batch. Second, a per-token KL penalty is subtracted at each token position, penalizing deviations from the frozen reference policy. Third, the resulting gradient is clipped to prevent extreme updates. The controlled gradient then updates the weights.],
+) <fig:rpp-flow>
 
 = Group Relative Policy Optimization (GRPO)
 
