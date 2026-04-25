@@ -13,7 +13,7 @@ from PIL import Image
 from scipy import ndimage
 
 from edgecritic.core.taylor import build_taylor_matrix, get_circular_neighbors, get_square_neighbors, rotate_coordinates
-from edgecritic.nms_gmm import build_line_filter_kernels, line_filter_response_stack
+from edgecritic.nms_gmm import build_line_filter_kernels
 
 
 GARNET = "#73000A"
@@ -80,15 +80,68 @@ def _derivative_kernels(
     return _kernel_from_sparse(offsets, wx.tolist(), shape), _kernel_from_sparse(offsets, wy.tolist(), shape)
 
 
+def _line_normal_lf_shape(
+    half_width: int,
+    np_count: int,
+    order: int,
+    n_orientations: int,
+    neighbor_type: str,
+) -> tuple[tuple[int, int], np.ndarray, int]:
+    reference = build_line_filter_kernels(
+        half_width=half_width,
+        np_count=np_count,
+        order=order,
+        n_orientations=n_orientations,
+        neighbor_type=neighbor_type,
+    )
+    return reference.kernels.shape[1:], reference.angles, reference.border
+
+
+def build_standard_line_normal_lf_kernels(
+    half_width: int = 7,
+    np_count: int = 15,
+    order: int = 4,
+    n_orientations: int = 36,
+    neighbor_type: str = "circular",
+) -> tuple[np.ndarray, np.ndarray, int]:
+    """Build standard LF kernels with theta as line direction and WVF normal perpendicular to it."""
+    kernel_shape, angles, border = _line_normal_lf_shape(
+        half_width=half_width,
+        np_count=np_count,
+        order=order,
+        n_orientations=n_orientations,
+        neighbor_type=neighbor_type,
+    )
+    neighbors = _neighbors(np_count, neighbor_type)
+    line_offsets, line_weights = _line_weights(half_width)
+
+    kernels = np.zeros((len(angles), *kernel_shape), dtype=np.float64)
+    for angle_index, theta in enumerate(angles):
+        normal_theta = theta + np.pi / 2.0
+        local = rotate_coordinates(neighbors, normal_theta)
+        directional = np.linalg.pinv(build_taylor_matrix(local, order=order))[1, :]
+        offsets: list[tuple[int, int]] = []
+        weights: list[float] = []
+        for line_offset, line_weight in zip(line_offsets, line_weights):
+            vdx = int(round(line_offset * np.cos(theta)))
+            vdy = int(round(line_offset * np.sin(theta)))
+            for neighbor_index, (dx, dy) in enumerate(neighbors.astype(np.int64)):
+                offsets.append((vdy + int(dy), vdx + int(dx)))
+                weights.append(float(line_weight * directional[neighbor_index]))
+        kernels[angle_index] = _kernel_from_sparse(offsets, weights, kernel_shape)
+
+    return kernels, angles, border
+
+
 def build_isotropic_decomposed_lf_kernels(
     half_width: int = 7,
     np_count: int = 15,
     order: int = 4,
     n_orientations: int = 36,
     neighbor_type: str = "circular",
-) -> tuple[np.ndarray, np.ndarray]:
-    """Build LF kernels from one isotropic WVF derivative pair and line smoothing."""
-    standard = build_line_filter_kernels(
+) -> tuple[np.ndarray, np.ndarray, int]:
+    """Build line-normal LF kernels from one isotropic WVF derivative pair and line smoothing."""
+    kernel_shape, angles, border = _line_normal_lf_shape(
         half_width=half_width,
         np_count=np_count,
         order=order,
@@ -98,9 +151,9 @@ def build_isotropic_decomposed_lf_kernels(
     neighbors, wx, wy = _canonical_rows(np_count, order, neighbor_type)
     line_offsets, line_weights = _line_weights(half_width)
 
-    kernels = np.zeros_like(standard.kernels)
-    for angle_index, theta in enumerate(standard.angles):
-        directional = np.cos(theta) * wx + np.sin(theta) * wy
+    kernels = np.zeros((len(angles), *kernel_shape), dtype=np.float64)
+    for angle_index, theta in enumerate(angles):
+        directional = -np.sin(theta) * wx + np.cos(theta) * wy
         offsets: list[tuple[int, int]] = []
         weights: list[float] = []
         for line_offset, line_weight in zip(line_offsets, line_weights):
@@ -109,17 +162,17 @@ def build_isotropic_decomposed_lf_kernels(
             for neighbor_index, (dx, dy) in enumerate(neighbors.astype(np.int64)):
                 offsets.append((vdy + int(dy), vdx + int(dx)))
                 weights.append(float(line_weight * directional[neighbor_index]))
-        kernels[angle_index] = _kernel_from_sparse(offsets, weights, standard.kernels.shape[1:])
+        kernels[angle_index] = _kernel_from_sparse(offsets, weights, kernel_shape)
 
-    return kernels, standard.angles
+    return kernels, angles, border
 
 
-def _standard_directional_rows(np_count: int, order: int, n_orientations: int, neighbor_type: str) -> tuple[np.ndarray, np.ndarray]:
+def _standard_normal_rows(np_count: int, order: int, n_orientations: int, neighbor_type: str) -> tuple[np.ndarray, np.ndarray]:
     neighbors = _neighbors(np_count, neighbor_type)
     angles = np.linspace(0.0, np.pi, n_orientations, endpoint=False)
     rows = []
     for theta in angles:
-        local = rotate_coordinates(neighbors, theta)
+        local = rotate_coordinates(neighbors, theta + np.pi / 2.0)
         rows.append(np.linalg.pinv(build_taylor_matrix(local, order=order))[1, :])
     return np.stack(rows, axis=0), angles
 
@@ -169,8 +222,8 @@ def _plot_kernel(ax, kernel: np.ndarray, title: str, vmax: float | None = None) 
 
 def _figure_derivative_identity(output_dir: Path, np_count: int, order: int, neighbor_type: str) -> dict[str, float]:
     neighbors, wx, wy = _canonical_rows(np_count, order, neighbor_type)
-    standard_rows, angles = _standard_directional_rows(np_count, order, 36, neighbor_type)
-    combo_rows = np.array([np.cos(theta) * wx + np.sin(theta) * wy for theta in angles])
+    standard_rows, angles = _standard_normal_rows(np_count, order, 36, neighbor_type)
+    combo_rows = np.array([-np.sin(theta) * wx + np.cos(theta) * wy for theta in angles])
     row_diff = standard_rows - combo_rows
 
     shape = (9, 9)
@@ -181,21 +234,21 @@ def _figure_derivative_identity(output_dir: Path, np_count: int, order: int, nei
 
     for col, degree in enumerate(selected_degrees):
         theta = np.deg2rad(degree)
-        local = rotate_coordinates(neighbors, theta)
+        normal_theta = theta + np.pi / 2.0
+        local = rotate_coordinates(neighbors, normal_theta)
         standard_row = np.linalg.pinv(build_taylor_matrix(local, order=order))[1, :]
-        combo_row = np.cos(theta) * wx + np.sin(theta) * wy
         standard_kernel = _kernel_from_sparse(
             [(int(dy), int(dx)) for dx, dy in neighbors.astype(np.int64)],
             standard_row.tolist(),
             shape,
         )
-        combo_kernel = np.cos(theta) * kx + np.sin(theta) * ky
+        combo_kernel = -np.sin(theta) * kx + np.cos(theta) * ky
         vmax = max(float(np.max(np.abs(standard_kernel))), float(np.max(np.abs(combo_kernel))))
-        _plot_kernel(axes[0, col], standard_kernel, f"rotated WVF {degree} deg", vmax=vmax)
-        _plot_kernel(axes[1, col], combo_kernel, f"cos/sin pair {degree} deg", vmax=vmax)
+        _plot_kernel(axes[0, col], standard_kernel, f"WVF normal to {degree} deg line", vmax=vmax)
+        _plot_kernel(axes[1, col], combo_kernel, f"-sin/cos pair {degree} deg", vmax=vmax)
         _plot_kernel(axes[2, col], standard_kernel - combo_kernel, "difference", vmax=max(vmax, 1e-15))
 
-    fig.suptitle("A rotated WVF derivative row equals one isotropic Gx/Gy pair", color=GARNET, fontsize=12, fontweight="bold")
+    fig.suptitle("The LF normal derivative equals one isotropic Gx/Gy pair", color=GARNET, fontsize=12, fontweight="bold")
     fig.tight_layout()
     path = output_dir / "fig_derivative_identity.png"
     fig.savefig(path, facecolor="white", bbox_inches="tight")
@@ -229,7 +282,7 @@ def _figure_kernel_identity(
         _plot_kernel(axes[row, 1], decomposed, "isotropic form", vmax=vmax)
         _plot_kernel(axes[row, 2], diff, "difference", vmax=max(vmax, 1e-15))
 
-    fig.suptitle("Standard LF kernels match the isotropic-WVF line-smoothed kernels", color=GARNET, fontsize=12, fontweight="bold")
+    fig.suptitle("Line-normal LF kernels match the isotropic-WVF line-smoothed kernels", color=GARNET, fontsize=12, fontweight="bold")
     fig.tight_layout()
     path = output_dir / "fig_lf_kernel_identity.png"
     fig.savefig(path, facecolor="white", bbox_inches="tight")
@@ -295,7 +348,7 @@ def _figure_response_identity(
         ax.set_title(title, fontsize=8.5, color=BLACK90)
         _style_axes(ax)
 
-    fig.suptitle("Image responses are unchanged by the isotropic-WVF decomposition", color=GARNET, fontsize=12, fontweight="bold")
+    fig.suptitle("Line-normal LF responses are unchanged by the isotropic-WVF decomposition", color=GARNET, fontsize=12, fontweight="bold")
     fig.tight_layout()
     path = output_dir / "fig_response_identity.png"
     fig.savefig(path, facecolor="white", bbox_inches="tight")
@@ -329,31 +382,26 @@ def main() -> int:
     args = build_parser().parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    standard = build_line_filter_kernels(
+    standard_kernels, angles, border = build_standard_line_normal_lf_kernels(
         half_width=args.half_width,
         np_count=args.np_count,
         order=args.order,
         n_orientations=args.orientations,
         neighbor_type=args.neighbor_type,
     )
-    decomposed_kernels, angles = build_isotropic_decomposed_lf_kernels(
+    decomposed_kernels, _, decomposed_border = build_isotropic_decomposed_lf_kernels(
         half_width=args.half_width,
         np_count=args.np_count,
         order=args.order,
         n_orientations=args.orientations,
         neighbor_type=args.neighbor_type,
     )
+    if decomposed_border != border:
+        raise RuntimeError("standard and decomposed border sizes do not match")
 
     image = _read_gray(args.image, max_side=args.max_side)
-    standard_responses = line_filter_response_stack(
-        image,
-        half_width=args.half_width,
-        np_count=args.np_count,
-        order=args.order,
-        n_orientations=args.orientations,
-        neighbor_type=args.neighbor_type,
-    ).responses
-    decomposed_responses = _responses_from_kernels(image, decomposed_kernels, border=standard.border)
+    standard_responses = _responses_from_kernels(image, standard_kernels, border=border)
+    decomposed_responses = _responses_from_kernels(image, decomposed_kernels, border=border)
 
     summary = {
         "config": {
@@ -366,7 +414,7 @@ def main() -> int:
             "image_shape": list(image.shape),
         },
         "derivative_identity": _figure_derivative_identity(args.output_dir, args.np_count, args.order, args.neighbor_type),
-        "kernel_identity": _figure_kernel_identity(args.output_dir, standard.kernels, decomposed_kernels, angles),
+        "kernel_identity": _figure_kernel_identity(args.output_dir, standard_kernels, decomposed_kernels, angles),
         "response_identity": _figure_response_identity(args.output_dir, image, standard_responses, decomposed_responses, angles),
     }
 
