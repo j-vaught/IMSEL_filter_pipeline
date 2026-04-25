@@ -1,0 +1,160 @@
+{
+  "config": {
+    "half_widths": [
+      3,
+      7,
+      11
+    ],
+    "domains": "auto",
+    "np_count": 15,
+    "order": 4,
+    "n_orientations": 36,
+    "gmm_bins": 36,
+    "nms_directions": 8,
+    "high_quantile": 0.9,
+    "low_ratio": 0.4,
+    "max_side": 192
+  },
+  "results": [
+    {
+      "input": "example_images/Screenshot 2026-04-24 at 11.34.34\u202fPM.png",
+      "output_dir": "outputs/nms_gmm_examples/01_screenshot_2026_04_24_at_11_34_34_pm",
+      "original_size": [
+        734,
+        713
+      ],
+      "preview_shape": [
+        187,
+        192,
+        3
+      ],
+      "seconds": 41.79266133403871,
+      "edge_pixels": 750,
+      "edge_fraction": 0.02088903743315508,
+      "low_threshold": 0.08246204616555258,
+      "high_threshold": 0.20615511541388146,
+      "labels": [
+        "gray:lf_m3",
+        "gray:lf_m7",
+        "gray:lf_m11",
+        "red:lf_m3",
+        "red:lf_m7",
+        "red:lf_m11",
+        "green:lf_m3",
+        "green:lf_m7",
+        "green:lf_m11",
+        "blue:lf_m3",
+        "blue:lf_m7",
+        "blue:lf_m11",
+        "hue:lf_m3",
+        "hue:lf_m7",
+        "hue:lf_m11"
+      ]
+    },
+    {
+      "input": "example_images/Screenshot 2026-04-24 at 11.35.33\u202fPM.png",
+      "output_dir": "outputs/nms_gmm_examples/02_screenshot_2026_04_24_at_11_35_33_pm",
+      "original_size": [
+        734,
+        713
+      ],
+      "preview_shape": [
+        187,
+        192,
+        3
+      ],
+      "seconds": 48.57683549996,
+      "edge_pixels": 1138,
+      "edge_fraction": 0.03169563279857397,
+      "low_threshold": 0.02144518432710303,
+      "high_threshold": 0.05361296081775758,
+      "labels": [
+        "gray:lf_m3",
+        "gray:lf_m7",
+        "gray:lf_m11",
+        "red:lf_m3",
+        "red:lf_m7",
+        "red:lf_m11",
+        "green:lf_m3",
+        "green:lf_m7",
+        "green:lf_m11",
+        "blue:lf_m3",
+        "blue:lf_m7",
+        "blue:lf_m11",
+        "hue:lf_m3",
+        "hue:lf_m7",
+        "hue:lf_m11"
+      ]
+    },
+    {
+      "input": "example_images/Screenshot 2026-04-24 at 11.35.53\u202fPM.png",
+      "output_dir": "outputs/nms_gmm_examples/03_screenshot_2026_04_24_at_11_35_53_pm",
+      "original_size": [
+        733,
+        709
+      ],
+      "preview_shape": [
+        186,
+        192,
+        3
+      ],
+      "seconds": 25.48524891596753,
+      "edge_pixels": 465,
+      "edge_fraction": 0.013020833333333334,
+      "low_threshold": 0.11767490693154264,
+      "high_threshold": 0.2941872673288566,
+      "labels": [
+        "gray:lf_m3",
+        "gray:lf_m7",
+        "gray:lf_m11",
+        "red:lf_m3",
+        "red:lf_m7",
+        "red:lf_m11",
+        "green:lf_m3",
+        "green:lf_m7",
+        "green:lf_m11",
+        "blue:lf_m3",
+        "blue:lf_m7",
+        "blue:lf_m11",
+        "hue:lf_m3",
+        "hue:lf_m7",
+        "hue:lf_m11"
+      ]
+    },
+    {
+      "input": "example_images/Screenshot 2026-04-24 at 11.36.02\u202fPM.png",
+      "output_dir": "outputs/nms_gmm_examples/04_screenshot_2026_04_24_at_11_36_02_pm",
+      "original_size": [
+        734,
+        716
+      ],
+      "preview_shape": [
+        187,
+        192,
+        3
+      ],
+      "seconds": 49.04217970801983,
+      "edge_pixels": 2151,
+      "edge_fraction": 0.05990975935828877,
+      "low_threshold": 0.014804003715206144,
+      "high_threshold": 0.03701000928801536,
+      "labels": [
+        "gray:lf_m3",
+        "gray:lf_m7",
+        "gray:lf_m11",
+        "red:lf_m3",
+        "red:lf_m7",
+        "red:lf_m11",
+        "green:lf_m3",
+        "green:lf_m7",
+        "green:lf_m11",
+        "blue:lf_m3",
+        "blue:lf_m7",
+        "blue:lf_m11",
+        "hue:lf_m3",
+        "hue:lf_m7",
+        "hue:lf_m11"
+      ]
+    }
+  ]
+}
