@@ -1,0 +1,33 @@
+{
+  "config": {
+    "half_width": 7,
+    "np_count": 15,
+    "order": 4,
+    "orientations": 36,
+    "neighbor_type": "circular",
+    "image": "papers/filter-critique/presentation/figures/datasets/biped_RGB008.png",
+    "image_shape": [
+      117,
+      128
+    ]
+  },
+  "derivative_identity": {
+    "directional_row_max_abs_diff": 6.5503158452884236e-15,
+    "directional_row_rmse": 1.063055892096379e-15,
+    "figure": "papers/anisotropic-lf-proposal/figures/isotropic_wvf_lf/fig_derivative_identity.png"
+  },
+  "kernel_identity": {
+    "kernel_max_abs_diff": 1.0269562977782698e-15,
+    "kernel_rmse": 4.992486592460926e-17,
+    "figure": "papers/anisotropic-lf-proposal/figures/isotropic_wvf_lf/fig_lf_kernel_identity.png"
+  },
+  "response_identity": {
+    "response_max_abs_diff": 2.2967738821932926e-15,
+    "response_rmse": 5.201484345968178e-16,
+    "relative_response_rmse": 3.3192256197462537e-14,
+    "gated_angle_max_diff_deg": 0.0,
+    "gated_angle_mean_diff_deg": 0.0,
+    "same_argmax_fraction_gated": 1.0,
+    "figure": "papers/anisotropic-lf-proposal/figures/isotropic_wvf_lf/fig_response_identity.png"
+  }
+}
