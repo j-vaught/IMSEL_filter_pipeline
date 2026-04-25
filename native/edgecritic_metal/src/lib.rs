@@ -40,15 +40,15 @@ kernel void wvf_convolve_pair(
     device float* out_x [[buffer(5)]],
     device float* out_y [[buffer(6)]],
     constant KernelParams& params [[buffer(7)]],
-    uint gid [[thread_position_in_grid]]
+    uint2 gid [[thread_position_in_grid]]
 ) {
-    const uint total = params.width * params.height;
-    if (gid >= total) {
+    if (gid.x >= params.width || gid.y >= params.height) {
         return;
     }
 
-    const int x = int(gid % params.width);
-    const int y = int(gid / params.width);
+    const uint out_index = gid.y * params.width + gid.x;
+    const int x = int(gid.x);
+    const int y = int(gid.y);
     float sx = 0.0f;
     float sy = 0.0f;
 
@@ -60,8 +60,8 @@ kernel void wvf_convolve_pair(
         sy += value * wy[k];
     }
 
-    out_x[gid] = sx;
-    out_y[gid] = sy;
+    out_x[out_index] = sx;
+    out_y[out_index] = sy;
 }
 "#;
 
@@ -224,14 +224,13 @@ unsafe fn run_convolve_pair_with_state(
     encoder.set_buffer(7, Some(&params_buffer), 0);
 
     let threads = MTLSize {
-        width: total_pixels as u64,
-        height: 1,
+        width: width as u64,
+        height: height as u64,
         depth: 1,
     };
-    let group_width = state.pipeline.thread_execution_width().min(256) as u64;
     let group = MTLSize {
-        width: group_width,
-        height: 1,
+        width: 16,
+        height: 16,
         depth: 1,
     };
     encoder.dispatch_threads(threads, group);
