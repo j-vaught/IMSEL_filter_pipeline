@@ -327,6 +327,12 @@ def make_contact_sheet(
     sheet.save(output_path)
 
 
+def remove_appledouble_sidecars(root: Path) -> None:
+    for path in root.rglob("._*"):
+        if path.is_file():
+            path.unlink()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=Path("example_images/synthetic_nested_shapes"))
@@ -399,6 +405,7 @@ def main() -> int:
     manifest_path = output_dir / "manifest.json"
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    remove_appledouble_sidecars(output_dir)
     return 0
 
 
