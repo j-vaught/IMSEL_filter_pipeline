@@ -142,13 +142,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, default=Path("outputs/nms_gmm_examples"))
     parser.add_argument("--max-side", type=int, default=192)
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--preset", choices=("default", "aquatic"), default="aquatic")
     parser.add_argument("--half-widths", default="3,7,11")
     parser.add_argument("--domains", default="auto")
     parser.add_argument("--np-count", type=int, default=15)
     parser.add_argument("--order", type=int, default=4)
     parser.add_argument("--orientations", type=int, default=36)
-    parser.add_argument("--high-quantile", type=float, default=0.90)
-    parser.add_argument("--low-ratio", type=float, default=0.40)
+    parser.add_argument("--high-quantile", type=float, default=None)
+    parser.add_argument("--low-ratio", type=float, default=None)
+    parser.add_argument("--no-link-gaps", action="store_true")
+    parser.add_argument("--max-link-gap", type=int, default=None)
+    parser.add_argument("--link-candidate-ratio", type=float, default=None)
+    parser.add_argument("--min-component-size", type=int, default=None)
     return parser
 
 
@@ -165,15 +170,30 @@ def main() -> int:
         raise SystemExit(f"No input images found in {args.input_dir}")
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    config = NMSGMMConfig(
-        half_widths=_parse_int_tuple(args.half_widths),
-        domains=args.domains,
-        np_count=args.np_count,
-        order=args.order,
-        n_orientations=args.orientations,
-        high_quantile=args.high_quantile,
-        low_ratio=args.low_ratio,
-    )
+    overrides = {
+        "half_widths": _parse_int_tuple(args.half_widths),
+        "domains": args.domains,
+        "np_count": args.np_count,
+        "order": args.order,
+        "n_orientations": args.orientations,
+    }
+    if args.high_quantile is not None:
+        overrides["high_quantile"] = args.high_quantile
+    if args.low_ratio is not None:
+        overrides["low_ratio"] = args.low_ratio
+    if args.no_link_gaps:
+        overrides["link_gaps"] = False
+    if args.max_link_gap is not None:
+        overrides["max_link_gap"] = args.max_link_gap
+    if args.link_candidate_ratio is not None:
+        overrides["link_candidate_ratio"] = args.link_candidate_ratio
+    if args.min_component_size is not None:
+        overrides["min_component_size"] = args.min_component_size
+
+    if args.preset == "aquatic":
+        config = NMSGMMConfig.aquatic(**overrides)
+    else:
+        config = NMSGMMConfig(**overrides)
 
     summary = {
         "config": {
@@ -186,6 +206,10 @@ def main() -> int:
             "nms_directions": config.nms_directions,
             "high_quantile": config.high_quantile,
             "low_ratio": config.low_ratio,
+            "link_gaps": config.link_gaps,
+            "max_link_gap": config.max_link_gap,
+            "link_candidate_ratio": config.link_candidate_ratio,
+            "min_component_size": config.min_component_size,
             "max_side": args.max_side,
         },
         "results": [],

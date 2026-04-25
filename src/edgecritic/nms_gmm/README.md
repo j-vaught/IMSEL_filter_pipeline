@@ -32,3 +32,11 @@ PYTHONPATH=src python -m edgecritic.nms_gmm.cli input.png edges.png --save-nms n
 
 The core package depends only on NumPy and SciPy. The CLI loads and saves images
 with `imageio`, which is imported lazily so the library API stays lightweight.
+
+For low-contrast aquatic scenes with strong water texture, use the stricter
+continuity-oriented preset.
+
+```python
+config = NMSGMMConfig.aquatic()
+result = detect_edges(image, config=config)
+```

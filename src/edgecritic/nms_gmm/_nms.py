@@ -119,3 +119,88 @@ def hysteresis_threshold(
     strong_labels = np.unique(labels[strong])
     strong_labels = strong_labels[strong_labels != 0]
     return np.isin(labels, strong_labels)
+
+
+def remove_small_components(edges: np.ndarray, min_size: int = 8) -> np.ndarray:
+    """Remove connected edge components smaller than ``min_size`` pixels."""
+    edge_mask = np.asarray(edges, dtype=bool)
+    if min_size <= 1 or not np.any(edge_mask):
+        return edge_mask.copy()
+
+    labels, count = ndimage.label(edge_mask, structure=np.ones((3, 3), dtype=bool))
+    if count == 0:
+        return edge_mask.copy()
+
+    sizes = np.bincount(labels.ravel())
+    keep = sizes >= int(min_size)
+    keep[0] = False
+    return keep[labels]
+
+
+def _line_footprint(theta: float, max_gap: int) -> np.ndarray:
+    """Build a straight binary footprint for directional gap closing."""
+    radius = int(max_gap)
+    coords = []
+    for step in range(-radius, radius + 1):
+        dx = int(round(step * np.cos(theta)))
+        dy = int(round(step * np.sin(theta)))
+        coords.append((dy, dx))
+
+    coords = np.array(sorted(set(coords)), dtype=np.int32)
+    min_y, min_x = np.min(coords, axis=0)
+    max_y, max_x = np.max(coords, axis=0)
+    footprint = np.zeros((max_y - min_y + 1, max_x - min_x + 1), dtype=bool)
+    footprint[coords[:, 0] - min_y, coords[:, 1] - min_x] = True
+    return footprint
+
+
+def link_short_gaps(
+    edges: np.ndarray,
+    angle: np.ndarray,
+    candidate: np.ndarray | None = None,
+    max_gap: int = 3,
+    n_directions: int = 8,
+    iterations: int = 1,
+) -> np.ndarray:
+    """Link short gaps along the local edge tangent direction.
+
+    The gradient angle is normal to the edge, so the closing direction is
+    rotated by 90 degrees. Linking is constrained to candidate pixels to avoid
+    filling large low-evidence regions.
+    """
+    linked = np.asarray(edges, dtype=bool).copy()
+    if max_gap <= 0 or not np.any(linked):
+        return linked
+
+    theta = np.asarray(angle, dtype=np.float64) % np.pi
+    if theta.shape != linked.shape:
+        raise ValueError("angle must have the same shape as edges")
+
+    if candidate is None:
+        candidate_mask = np.ones_like(linked, dtype=bool)
+    else:
+        candidate_mask = np.asarray(candidate, dtype=bool)
+        if candidate_mask.shape != linked.shape:
+            raise ValueError("candidate must have the same shape as edges")
+
+    tangent = (theta + np.pi / 2.0) % np.pi
+    bin_width = np.pi / int(n_directions)
+    direction_index = np.rint(tangent / bin_width).astype(np.int64) % int(n_directions)
+
+    for _ in range(max(1, int(iterations))):
+        grown = linked.copy()
+        for index in range(int(n_directions)):
+            direction_mask = direction_index == index
+            if not np.any(linked & direction_mask):
+                continue
+            footprint = _line_footprint(index * bin_width, max_gap=max_gap)
+            closed = ndimage.binary_closing(
+                linked & direction_mask,
+                structure=footprint,
+            )
+            grown |= closed & candidate_mask & direction_mask
+        if np.array_equal(grown, linked):
+            break
+        linked = grown
+
+    return linked

@@ -23,6 +23,8 @@ from edgecritic.nms_gmm._nms import (
     automatic_hysteresis_thresholds,
     enhanced_nonmax_suppression,
     hysteresis_threshold,
+    link_short_gaps,
+    remove_small_components,
 )
 from edgecritic.nms_gmm._pipeline import (
     GradientStackResult,
@@ -58,7 +60,9 @@ __all__ = [
     "fuse_gradient_stack_gmm",
     "hysteresis_threshold",
     "line_filter_response_stack",
+    "link_short_gaps",
     "nms_gmm_edges",
+    "remove_small_components",
     "spline_orientation",
     "spline_orientation_map",
     "weighted_orientation_histogram",

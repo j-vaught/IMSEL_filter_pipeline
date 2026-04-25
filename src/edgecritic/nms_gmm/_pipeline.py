@@ -14,6 +14,8 @@ from edgecritic.nms_gmm._nms import (
     automatic_hysteresis_thresholds,
     enhanced_nonmax_suppression,
     hysteresis_threshold,
+    link_short_gaps,
+    remove_small_components,
 )
 from edgecritic.nms_gmm._spline import spline_orientation_map
 
@@ -40,8 +42,33 @@ class NMSGMMConfig:
     low_threshold: float | None = None
     high_quantile: float = 0.90
     low_ratio: float = 0.40
+    link_gaps: bool = False
+    max_link_gap: int = 3
+    link_candidate_ratio: float = 0.75
+    link_iterations: int = 1
+    min_component_size: int = 0
     mode: str = "reflect"
     suppress_border: bool = True
+
+    @classmethod
+    def aquatic(cls, **overrides) -> "NMSGMMConfig":
+        """Preset for low-contrast aquatic scenes with textured water."""
+        values = {
+            "half_widths": (3, 7, 11),
+            "domains": "auto",
+            "np_count": 15,
+            "order": 4,
+            "n_orientations": 36,
+            "high_quantile": 0.95,
+            "low_ratio": 0.40,
+            "link_gaps": True,
+            "max_link_gap": 6,
+            "link_candidate_ratio": 0.60,
+            "link_iterations": 1,
+            "min_component_size": 12,
+        }
+        values.update(overrides)
+        return cls(**values)
 
 
 @dataclass(frozen=True)
@@ -168,6 +195,20 @@ def detect_edges(
 
     high, low = _resolve_thresholds(nms, cfg)
     edges = hysteresis_threshold(nms, low_threshold=low, high_threshold=high)
+
+    if cfg.link_gaps:
+        candidate = nms >= low * float(cfg.link_candidate_ratio)
+        edges = link_short_gaps(
+            edges,
+            fusion.angle,
+            candidate=candidate,
+            max_gap=cfg.max_link_gap,
+            n_directions=cfg.nms_directions,
+            iterations=cfg.link_iterations,
+        )
+
+    if cfg.min_component_size > 1:
+        edges = remove_small_components(edges, min_size=cfg.min_component_size)
 
     if cfg.suppress_border and stack.border > 0:
         b = stack.border

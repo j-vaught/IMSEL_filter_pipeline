@@ -6,6 +6,8 @@ from edgecritic.nms_gmm import (
     enhanced_nonmax_suppression,
     extract_domains,
     fit_weighted_two_gaussian,
+    link_short_gaps,
+    remove_small_components,
     weighted_orientation_histogram,
 )
 
@@ -69,3 +71,21 @@ def test_detect_edges_smoke_on_step_image():
     assert result.magnitude_stack is not None
     assert result.angle_stack is not None
     assert result.edges[:, 12:16].sum() > 0
+
+
+def test_postprocessing_removes_small_components_and_links_gap():
+    edges = np.zeros((9, 11), dtype=bool)
+    edges[4, 2:5] = True
+    edges[4, 7:10] = True
+    edges[1, 1] = True
+    angle = np.full(edges.shape, np.pi / 2.0)
+    candidate = np.zeros_like(edges)
+    candidate[4, 2:10] = True
+    candidate[1, 1] = True
+
+    linked = link_short_gaps(edges, angle, candidate=candidate, max_gap=3)
+    cleaned = remove_small_components(linked, min_size=4)
+
+    assert linked[4, 5]
+    assert linked[4, 6]
+    assert not cleaned[1, 1]
