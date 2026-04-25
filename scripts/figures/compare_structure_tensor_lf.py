@@ -146,8 +146,27 @@ def _lf_spline(image: np.ndarray, half_width: int, np_count: int, order: int, n_
     return result, time.perf_counter() - start
 
 
-def _plot_panel(case: ImageCase, lf, tensor, diff: np.ndarray, output_path: Path, title: str) -> None:
-    fig, axes = plt.subplots(2, 3, figsize=(9.2, 5.8), dpi=180)
+def _edge_disagreement_rgb(lf_edges: np.ndarray, tensor_edges: np.ndarray) -> np.ndarray:
+    lf_mask = np.asarray(lf_edges, dtype=bool)
+    tensor_mask = np.asarray(tensor_edges, dtype=bool)
+    rgb = np.ones((*lf_mask.shape, 3), dtype=np.float64)
+    rgb[lf_mask & tensor_mask] = np.array([0.0, 0.0, 0.0])
+    rgb[lf_mask & ~tensor_mask] = np.array([204.0, 46.0, 64.0]) / 255.0
+    rgb[~lf_mask & tensor_mask] = np.array([70.0, 106.0, 159.0]) / 255.0
+    return rgb
+
+
+def _plot_panel(
+    case: ImageCase,
+    lf,
+    tensor,
+    diff: np.ndarray,
+    lf_edges: np.ndarray,
+    tensor_edges: np.ndarray,
+    output_path: Path,
+    title: str,
+) -> None:
+    fig, axes = plt.subplots(3, 3, figsize=(9.2, 8.4), dpi=180)
     fig.patch.set_facecolor("white")
 
     panels = [
@@ -157,6 +176,9 @@ def _plot_panel(case: ImageCase, lf, tensor, diff: np.ndarray, output_path: Path
         ("LF orientation", _angle_rgb(lf.angle, lf.magnitude), None),
         ("Tensor orientation", _angle_rgb(tensor.orientation, tensor.magnitude_b), None),
         ("|angle diff| deg", diff, "magma"),
+        ("LF final edges", lf_edges, "gray"),
+        ("Tensor final edges", tensor_edges, "gray"),
+        ("Edge disagreement", _edge_disagreement_rgb(lf_edges, tensor_edges), None),
     ]
     for ax, (label, data, cmap) in zip(axes.ravel(), panels):
         ax.imshow(data, cmap=cmap)
@@ -209,7 +231,9 @@ def _compare_one(
             tensor_seconds = time.perf_counter() - start
 
             diff = _axial_diff_deg(tensor.orientation, lf.angle)
+            tangent_diff = _axial_diff_deg((tensor.orientation + np.pi / 2.0) % np.pi, lf.angle)
             gated_diff = diff[gate]
+            gated_tangent_diff = tangent_diff[gate]
             corr_a = _pearson(lf.magnitude[gate], tensor.magnitude_a[gate])
             corr_b = _pearson(lf.magnitude[gate], tensor.magnitude_b[gate])
             tensor_edges = _auto_edges(tensor.magnitude_b, tensor.orientation, high_quantile=high_quantile)
@@ -221,20 +245,30 @@ def _compare_one(
                 lf,
                 tensor,
                 diff,
+                lf_edges,
+                tensor_edges,
                 case_dir / f"{label}_panel.png",
                 f"{case.name}: {weight_type}, radius={radius}",
             )
+
+            convention = "gradient"
+            if float(np.mean(gated_tangent_diff)) < float(np.mean(gated_diff)):
+                convention = "tangent"
 
             results["sweeps"].append(
                 {
                     "radius": radius,
                     "weight_type": weight_type,
+                    "gate_pixels": int(np.sum(gate)),
                     "tensor_seconds": tensor_seconds,
                     "speedup_vs_lf": lf_seconds / max(tensor_seconds, 1e-12),
                     "mean_angle_error_deg": float(np.mean(gated_diff)),
                     "median_angle_error_deg": float(np.median(gated_diff)),
                     "p90_angle_error_deg": float(np.percentile(gated_diff, 90)),
                     "frac_over_5deg": float(np.mean(gated_diff > 5.0)),
+                    "mean_tangent_convention_error_deg": float(np.mean(gated_tangent_diff)),
+                    "median_tangent_convention_error_deg": float(np.median(gated_tangent_diff)),
+                    "best_orientation_convention": convention,
                     "pearson_magnitude_a": corr_a,
                     "pearson_magnitude_b": corr_b,
                     "edge_f1_vs_lf": edge_agreement["f1"],
