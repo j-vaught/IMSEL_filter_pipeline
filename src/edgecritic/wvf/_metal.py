@@ -99,6 +99,7 @@ def metal_backend_available() -> bool:
 def wvf_radius_gradients_metal(
     image: np.ndarray,
     kernels: WVFRadiusKernels,
+    output_dtype: np.dtype | type = np.float64,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Compute isotropic WVF ``Gx`` and ``Gy`` using the Rust/Metal backend."""
     img = np.ascontiguousarray(image, dtype=np.float32)
@@ -132,4 +133,9 @@ def wvf_radius_gradients_metal(
     if status != 0:
         raise MetalBackendError(error_buffer.value.decode("utf-8", errors="replace"))
 
-    return out_x.reshape(img.shape).astype(np.float64), out_y.reshape(img.shape).astype(np.float64)
+    dtype = np.dtype(output_dtype)
+    gx = out_x.reshape(img.shape)
+    gy = out_y.reshape(img.shape)
+    if dtype == np.dtype(np.float32):
+        return gx, gy
+    return gx.astype(dtype), gy.astype(dtype)
