@@ -72,6 +72,45 @@ PALETTES = {
             "#BCBCBC",
         ],
     },
+    "low_contrast_cool_colors": {
+        "background": "#9EADAE",
+        "layers": [
+            "#8FA2A8",
+            "#A8B7B6",
+            "#93A9B5",
+            "#B0B4A2",
+            "#8799A4",
+            "#AEB1B8",
+            "#98A7A0",
+            "#A9B8AA",
+        ],
+    },
+    "low_contrast_warm_colors": {
+        "background": "#B9AFA4",
+        "layers": [
+            "#A89991",
+            "#C0B1A4",
+            "#B1A08E",
+            "#C4B8A9",
+            "#A89185",
+            "#BCA69C",
+            "#B7AC91",
+            "#AFA2A0",
+        ],
+    },
+    "low_contrast_mixed_chroma": {
+        "background": "#A9ACA0",
+        "layers": [
+            "#96A6A0",
+            "#B6AA9F",
+            "#A4A2B3",
+            "#B2B896",
+            "#9BA5B7",
+            "#B7A1AA",
+            "#AAB28F",
+            "#A0B3AD",
+        ],
+    },
     "warm_cool_midtones": {
         "background": BRAND["sandstorm"],
         "layers": [
