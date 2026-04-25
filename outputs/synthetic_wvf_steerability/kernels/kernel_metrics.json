@@ -1,0 +1,110 @@
+{
+  "radius": 25,
+  "angle_deg": 23.5,
+  "orders": [
+    2,
+    4
+  ],
+  "support_size": 1960,
+  "signed_color_limit": 0.0002510470493290646,
+  "order_difference_color_limit": 0.00033273304834883295,
+  "max_direct_steered_abs_kernel_error": 2.710505431213761e-20,
+  "metrics": [
+    {
+      "name": "Gx",
+      "order": 2,
+      "radius": 25,
+      "support_size": 1960,
+      "sum_weights": -1.0842021724855044e-18,
+      "max_abs_weight": 8.168599901976798e-05,
+      "l1_norm": 0.06799542558405486,
+      "l2_norm": 0.0018076061409473903,
+      "first_moment_x": 0.9999999999999993,
+      "first_moment_y": 8.118505867571457e-16
+    },
+    {
+      "name": "Gy",
+      "order": 2,
+      "radius": 25,
+      "support_size": 1960,
+      "sum_weights": 1.3877787807814457e-17,
+      "max_abs_weight": 8.168599901976835e-05,
+      "l1_norm": 0.06799542558405487,
+      "l2_norm": 0.0018076061409473907,
+      "first_moment_x": -1.1709383462843448e-15,
+      "first_moment_y": 0.9999999999999998
+    },
+    {
+      "name": "direct 23.5 deg",
+      "order": 2,
+      "radius": 25,
+      "support_size": 1960,
+      "sum_weights": 5.204170427930421e-18,
+      "max_abs_weight": 8.1034750098741e-05,
+      "l1_norm": 0.06794563516539645,
+      "l2_norm": 0.0018076061409473903,
+      "first_moment_x": 0.9170600743851229,
+      "first_moment_y": 0.39874906892524686
+    },
+    {
+      "name": "steered 23.5 deg",
+      "order": 2,
+      "radius": 25,
+      "support_size": 1960,
+      "sum_weights": 5.204170427930421e-18,
+      "max_abs_weight": 8.1034750098741e-05,
+      "l1_norm": 0.06794563516539645,
+      "l2_norm": 0.00180760614094739,
+      "first_moment_x": 0.9170600743851229,
+      "first_moment_y": 0.39874906892524686
+    },
+    {
+      "name": "Gx",
+      "order": 4,
+      "radius": 25,
+      "support_size": 1960,
+      "sum_weights": -5.204170427930421e-18,
+      "max_abs_weight": 0.0002510470493290646,
+      "l1_norm": 0.1955014136223708,
+      "l2_norm": 0.0054209607690868505,
+      "first_moment_x": 1.0000000000000193,
+      "first_moment_y": -3.094746681142624e-15
+    },
+    {
+      "name": "Gy",
+      "order": 4,
+      "radius": 25,
+      "support_size": 1960,
+      "sum_weights": -2.7755575615628914e-17,
+      "max_abs_weight": 0.0002510470493290646,
+      "l1_norm": 0.1955014136223709,
+      "l2_norm": 0.0054209607690868505,
+      "first_moment_x": 7.21471493658754e-15,
+      "first_moment_y": 1.000000000000019
+    },
+    {
+      "name": "direct 23.5 deg",
+      "order": 4,
+      "radius": 25,
+      "support_size": 1960,
+      "sum_weights": -1.734723475976807e-17,
+      "max_abs_weight": 0.00024552006642146457,
+      "l1_norm": 0.1955160953975073,
+      "l2_norm": 0.005420960769086858,
+      "first_moment_x": 0.9170600743851448,
+      "first_moment_y": 0.3987490689252511
+    },
+    {
+      "name": "steered 23.5 deg",
+      "order": 4,
+      "radius": 25,
+      "support_size": 1960,
+      "sum_weights": -1.734723475976807e-17,
+      "max_abs_weight": 0.00024552006642146457,
+      "l1_norm": 0.1955160953975073,
+      "l2_norm": 0.005420960769086858,
+      "first_moment_x": 0.9170600743851448,
+      "first_moment_y": 0.3987490689252511
+    }
+  ]
+}
