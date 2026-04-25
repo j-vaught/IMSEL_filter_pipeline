@@ -53,3 +53,31 @@ def test_radius_component_metal_matches_cpu_when_available():
 
     assert np.allclose(metal[0], cpu[0], rtol=2e-5, atol=2e-5)
     assert np.allclose(metal[1], cpu[1], rtol=2e-5, atol=2e-5)
+
+
+@pytest.mark.parametrize("radius,order", [(2, 1), (3, 2), (5, 4)])
+def test_radius_component_metal_matches_cpu_across_supported_orders(radius, order):
+    if not metal_backend_available():
+        pytest.skip("Metal backend is unavailable")
+
+    rng = np.random.default_rng(1000 + radius * 10 + order)
+    image = rng.normal(size=(37, 41)).astype(np.float32)
+    cpu = wvf_component_gradients(
+        image,
+        radius=radius,
+        order=order,
+        backend="cpu",
+        output_dtype=np.float32,
+    )
+    metal = wvf_component_gradients(
+        image,
+        radius=radius,
+        order=order,
+        backend="metal",
+        output_dtype=np.float32,
+    )
+
+    assert metal[0].dtype == np.float32
+    assert metal[1].dtype == np.float32
+    assert np.allclose(metal[0], cpu[0], rtol=2e-5, atol=2e-5)
+    assert np.allclose(metal[1], cpu[1], rtol=2e-5, atol=2e-5)
