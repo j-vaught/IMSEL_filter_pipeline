@@ -97,13 +97,14 @@ def blend(a: tuple[int, int, int], b: tuple[int, int, int], t: np.ndarray) -> np
 def signed_kernel_image(
     kernel: np.ndarray,
     support_mask: np.ndarray,
-    limit: float,
     cell: int,
     grid: bool,
 ) -> Image.Image:
-    scaled = np.clip(kernel / max(limit, 1e-30), -1.0, 1.0)
-    positive = np.clip(scaled, 0.0, 1.0)
-    negative = np.clip(-scaled, 0.0, 1.0)
+    support_values = kernel[support_mask]
+    positive_limit = max(float(np.max(support_values)), 1e-30)
+    negative_limit = max(abs(float(np.min(support_values))), 1e-30)
+    positive = np.clip(kernel / positive_limit, 0.0, 1.0)
+    negative = np.clip(-kernel / negative_limit, 0.0, 1.0)
     rgb = np.zeros((*kernel.shape, 3), dtype=np.float32)
     zero = np.asarray(BRAND["white"], dtype=np.float32)
     pos_rgb = blend(BRAND["white"], BRAND["garnet"], positive)
@@ -132,6 +133,11 @@ def abs_kernel_image(kernel: np.ndarray, support_mask: np.ndarray, limit: float,
     rgb = np.where(support_mask[..., None], rgb, np.asarray(BRAND["black"], dtype=np.float32))
     image = Image.fromarray(np.clip(rgb, 0, 255).astype(np.uint8), mode="RGB")
     return image.resize((kernel.shape[1] * cell, kernel.shape[0] * cell), Image.Resampling.NEAREST)
+
+
+def signed_scale_detail(kernel: np.ndarray, support_mask: np.ndarray) -> str:
+    support_values = kernel[support_mask]
+    return f"min {np.min(support_values):.2e} max {np.max(support_values):.2e}"
 
 
 def add_tile_label(tile: Image.Image, title: str, detail: str) -> Image.Image:
@@ -189,7 +195,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=Path("outputs/synthetic_wvf_steerability/kernels"))
     parser.add_argument("--radius", type=int, default=25)
-    parser.add_argument("--orders", type=parse_int_list, default=[2, 4])
+    parser.add_argument("--orders", type=parse_int_list, default=[2, 4, 6, 8])
     parser.add_argument("--angle-deg", type=float, default=23.5)
     parser.add_argument("--cell", type=int, default=8)
     parser.add_argument("--no-grid", action="store_true")
@@ -222,11 +228,6 @@ def main() -> int:
         )
 
     signed_names = ["Gx", "Gy", f"direct {args.angle_deg:g} deg", f"steered {args.angle_deg:g} deg"]
-    signed_limit = max(float(np.max(np.abs(by_order[order][name]))) for order in args.orders for name in signed_names)
-    diff_limit = max(
-        float(np.max(np.abs(by_order[args.orders[-1]][name] - by_order[args.orders[0]][name])))
-        for name in signed_names[:3]
-    )
     steer_diff_limit = max(
         float(np.max(by_order[order]["abs direct-steered"])) for order in args.orders
     )
@@ -236,8 +237,7 @@ def main() -> int:
         tiles: list[tuple[str, str, Image.Image]] = []
         for name in signed_names:
             values = by_order[order][name]
-            detail = f"max |w| {np.max(np.abs(values)):.2e}"
-            tiles.append((name, detail, signed_kernel_image(values, mask, signed_limit, args.cell, not args.no_grid)))
+            tiles.append((name, signed_scale_detail(values, mask), signed_kernel_image(values, mask, args.cell, not args.no_grid)))
         steer_abs = by_order[order]["abs direct-steered"]
         detail = f"max {np.max(steer_abs):.2e}"
         tiles.append(("abs direct-steered", detail, abs_kernel_image(steer_abs, mask, max(steer_diff_limit, 1e-30), args.cell)))
@@ -250,16 +250,22 @@ def main() -> int:
     )
 
     if len(args.orders) >= 2:
-        low_order = args.orders[0]
-        high_order = args.orders[-1]
-        diff_tiles: list[tuple[str, str, Image.Image]] = []
-        for name in signed_names[:3]:
-            values = by_order[high_order][name] - by_order[low_order][name]
-            detail = f"max |delta| {np.max(np.abs(values)):.2e}"
-            diff_tiles.append((f"d{high_order} - d{low_order} {name}", detail, signed_kernel_image(values, mask, diff_limit, args.cell, not args.no_grid)))
+        diff_rows: list[tuple[str, list[tuple[str, str, Image.Image]]]] = []
+        for low_order, high_order in zip(args.orders[:-1], args.orders[1:]):
+            diff_tiles: list[tuple[str, str, Image.Image]] = []
+            for name in signed_names[:3]:
+                values = by_order[high_order][name] - by_order[low_order][name]
+                diff_tiles.append(
+                    (
+                        f"{name}",
+                        signed_scale_detail(values, mask),
+                        signed_kernel_image(values, mask, args.cell, not args.no_grid),
+                    )
+                )
+            diff_rows.append((f"d{high_order}-d{low_order}", diff_tiles))
         make_sheet(
-            args.output_dir / f"wvf_kernel_d{high_order}_minus_d{low_order}_r{args.radius}.png",
-            [(f"d{high_order}-d{low_order}", diff_tiles)],
+            args.output_dir / f"wvf_kernel_order_differences_r{args.radius}.png",
+            diff_rows,
             title=f"WVF kernel order difference. radius={args.radius}",
         )
 
@@ -268,8 +274,7 @@ def main() -> int:
         "angle_deg": args.angle_deg,
         "orders": args.orders,
         "support_size": build_wvf_radius_kernels(args.radius, args.orders[0]).support_size,
-        "signed_color_limit": signed_limit,
-        "order_difference_color_limit": diff_limit,
+        "color_scaling": "each signed panel uses its own support min/max",
         "max_direct_steered_abs_kernel_error": steer_diff_limit,
         "metrics": [asdict(row) for row in metric_rows],
     }
