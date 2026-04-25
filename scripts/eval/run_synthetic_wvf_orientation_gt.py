@@ -9,12 +9,16 @@ import math
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+import matplotlib
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from scipy import ndimage
 
 from edgecritic.wvf import wvf_component_gradients
 from edgecritic.wvf._metal import metal_backend_available
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 
 
 BRAND = {
@@ -28,6 +32,13 @@ BRAND = {
     "rose": (204, 46, 64),
     "atlantic": (70, 106, 159),
     "honeycomb": (164, 145, 55),
+}
+
+PLOT_COLORS = {
+    "steerable_atan2": "#73000A",
+    "brute": "#466A9F",
+    "grid": "#ECECEC",
+    "text": "#000000",
 }
 
 
@@ -367,6 +378,98 @@ def write_metrics(output_dir: Path, metrics: list[OrientationMetric]) -> None:
         writer.writerows(metric_dicts)
 
 
+def update_histogram(
+    histograms: dict[tuple[int, int, str, str], np.ndarray],
+    bins: np.ndarray,
+    order: int,
+    size: int,
+    mask_name: str,
+    estimator: str,
+    values: np.ndarray,
+) -> None:
+    counts, _ = np.histogram(values, bins=bins)
+    key = (order, size, mask_name, estimator)
+    if key not in histograms:
+        histograms[key] = np.zeros(len(bins) - 1, dtype=np.int64)
+    histograms[key] += counts.astype(np.int64)
+
+
+def normalized_counts(histograms: dict[tuple[int, int, str, str], np.ndarray], key: tuple[int, int, str, str]) -> np.ndarray:
+    counts = histograms.get(key)
+    if counts is None:
+        return np.zeros(0, dtype=np.float64)
+    total = int(np.sum(counts))
+    if total == 0:
+        return counts.astype(np.float64)
+    return counts.astype(np.float64) / float(total)
+
+
+def make_histogram_grid(
+    output_path: Path,
+    histograms: dict[tuple[int, int, str, str], np.ndarray],
+    bins: np.ndarray,
+    orders: list[int],
+    sizes: list[int],
+    mask_name: str,
+    brute_estimator: str,
+) -> None:
+    centers = 0.5 * (bins[:-1] + bins[1:])
+    fig, axes = plt.subplots(
+        len(orders),
+        len(sizes),
+        figsize=(4.6 * len(sizes), 3.1 * len(orders)),
+        squeeze=False,
+        sharex=True,
+        sharey=True,
+    )
+    for row, order in enumerate(orders):
+        for col, size in enumerate(sizes):
+            ax = axes[row][col]
+            steer = normalized_counts(histograms, (order, size, mask_name, "steerable_atan2"))
+            brute = normalized_counts(histograms, (order, size, mask_name, brute_estimator))
+            if steer.size:
+                ax.step(
+                    centers,
+                    steer,
+                    where="mid",
+                    color=PLOT_COLORS["steerable_atan2"],
+                    linewidth=1.8,
+                    label="steerable atan2",
+                )
+            if brute.size:
+                ax.step(
+                    centers,
+                    brute,
+                    where="mid",
+                    color=PLOT_COLORS["brute"],
+                    linewidth=1.8,
+                    label=brute_estimator.replace("_", " "),
+                )
+            ax.set_yscale("log")
+            ax.set_xlim(0.0, 90.0)
+            ax.grid(True, color=PLOT_COLORS["grid"], linewidth=0.7)
+            ax.set_title(f"d={order}, {size}px", fontsize=10)
+            ax.tick_params(colors=PLOT_COLORS["text"], labelsize=8)
+            for spine in ax.spines.values():
+                spine.set_color(PLOT_COLORS["text"])
+            if row == len(orders) - 1:
+                ax.set_xlabel("unsigned orientation error (deg)", fontsize=9)
+            if col == 0:
+                ax.set_ylabel("fraction of pixels", fontsize=9)
+            if row == 0 and col == 0:
+                ax.legend(frameon=False, fontsize=8)
+
+    fig.suptitle(
+        f"GT orientation-error histogram. mask={mask_name}. all palettes.",
+        fontsize=13,
+        color=PLOT_COLORS["text"],
+    )
+    fig.tight_layout(rect=(0.0, 0.0, 1.0, 0.975))
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, dpi=180)
+    plt.close(fig)
+
+
 def summarize(metrics: list[OrientationMetric]) -> dict[str, object]:
     summary_rows = []
     for order in sorted({metric.order for metric in metrics}):
@@ -422,10 +525,13 @@ def main() -> int:
     image_specs = [item for item in manifest["images"] if int(item["size"]) in set(args.sizes)]
 
     metrics: list[OrientationMetric] = []
+    hist_bins = np.linspace(0.0, 90.0, 181)
+    histograms: dict[tuple[int, int, str, str], np.ndarray] = {}
     figure_rows: dict[int, list[tuple[str, list[Image.Image]]]] = {order: [] for order in args.orders}
     preview_palettes = {"dark_light_steps", "low_contrast_mixed_chroma", "garnet_atlantic_grass"}
     preview_size = min(args.sizes)
     brute_preview_samples = max(args.sample_counts)
+    brute_hist_estimator = f"brute_{brute_preview_samples}"
 
     for spec in image_specs:
         image_path = Path(str(spec["path"]))
@@ -460,6 +566,15 @@ def main() -> int:
                         strength,
                     )
                 )
+                update_histogram(
+                    histograms,
+                    hist_bins,
+                    order,
+                    int(spec["size"]),
+                    mask_name,
+                    "steerable_atan2",
+                    steer_error[mask],
+                )
 
             brute_errors: dict[int, np.ndarray] = {}
             for sample_count in args.sample_counts:
@@ -481,6 +596,16 @@ def main() -> int:
                             strength,
                         )
                     )
+                    if sample_count == brute_preview_samples:
+                        update_histogram(
+                            histograms,
+                            hist_bins,
+                            order,
+                            int(spec["size"]),
+                            mask_name,
+                            f"brute_{sample_count}",
+                            brute_error[mask],
+                        )
                     metrics.append(
                         metric_from_error(
                             spec,
@@ -548,11 +673,23 @@ def main() -> int:
             tile_size=args.tile_size,
         )
 
+    for mask_name in masks:
+        make_histogram_grid(
+            args.output_dir / "figures" / f"orientation_error_hist_{mask_name}_{brute_hist_estimator}.png",
+            histograms,
+            hist_bins,
+            args.orders,
+            args.sizes,
+            mask_name,
+            brute_hist_estimator,
+        )
+
     readme = (
         "# Synthetic WVF orientation ground-truth comparison\n\n"
         "This run compares closed-form steerable WVF orientation against brute sampled directional-search orientation and analytic synthetic-shape ground truth.\n\n"
         "`steerable_atan2` uses `atan2(Gy, Gx)`. `brute_N` quantizes the same steerable direction onto `N` sampled orientations in `[0, pi)`, which is equivalent to rotating the isotropic WVF directional filter bank after the direct-vs-steered kernel equivalence has been established.\n\n"
-        "Primary metrics use the `smooth` boundary mask, which excludes polygon vertices and square corners by `vertex_exclude_px` because corner orientation is not single-valued.\n"
+        "Primary metrics use the `smooth` boundary mask, which excludes polygon vertices and square corners by `vertex_exclude_px` because corner orientation is not single-valued.\n\n"
+        "The histogram figures overlay steerable orientation error and the densest brute-grid error. The `all` histogram uses every GT-labeled boundary pixel, including corners and vertices. Pixels away from shape boundaries are not included because they do not have a defined GT edge orientation.\n"
     )
     (args.output_dir / "README.md").write_text(readme, encoding="utf-8")
     remove_appledouble_sidecars(args.output_dir)
