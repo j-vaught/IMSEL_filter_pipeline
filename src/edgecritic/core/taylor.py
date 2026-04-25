@@ -1,10 +1,26 @@
-"""Taylor expansion design matrix and neighborhood utilities.
+"""Taylor expansion design matrix and neighborhood utilities."""
 
-These are the shared mathematical building blocks used by both
-WVF and LF implementations on both CPU and GPU backends.
-"""
+import math
 
 import numpy as np
+
+
+def _taylor_exponents(order):
+    """Return WVF Taylor exponents through ``order`` with stable ordering."""
+    if order < 0:
+        raise ValueError("order must be nonnegative")
+
+    exponents = [(0, 0)]
+    if order >= 1:
+        exponents.extend([(1, 0), (0, 1)])
+
+    for degree in range(2, order + 1):
+        exponents.append((degree, 0))
+        exponents.append((0, degree))
+        for px in range(degree - 1, 0, -1):
+            exponents.append((px, degree - px))
+
+    return exponents
 
 
 def build_taylor_matrix(coords, order=4):
@@ -18,6 +34,10 @@ def build_taylor_matrix(coords, order=4):
       f, f_x, f_y, f_xx/2, f_yy/2, f_xy, f_xxx/6, f_yyy/6, f_xxy/2,
       f_xyy/2, f_xxxx/24, f_yyyy/24, f_xxxy/6, f_xxyy/4, f_xyyy/6
 
+    Higher orders follow the same convention. Each monomial is scaled by
+    ``1 / (p! q!)`` so the unknown coefficient corresponds to the derivative
+    ``d^(p+q) f / dx^p dy^q``.
+
     Parameters
     ----------
     coords : ndarray, shape (Np, 2)
@@ -30,41 +50,14 @@ def build_taylor_matrix(coords, order=4):
     A : ndarray, shape (Np, num_coefficients)
         Design matrix for the least-squares system.
     """
+    d = int(order)
     x = coords[:, 0]
     y = coords[:, 1]
-    n = len(x)
 
-    columns = [np.ones(n)]  # f^0 (constant term)
-
-    if order >= 1:
-        columns.append(x)                          # f_x * x
-        columns.append(y)                          # f_y * y
-
-    if order >= 2:
-        columns.append(x**2 / 2)                   # f_xx * x^2/2
-        columns.append(y**2 / 2)                   # f_yy * y^2/2
-        columns.append(x * y)                      # f_xy * xy
-
-    if order >= 3:
-        columns.append(x**3 / 6)                   # f_xxx * x^3/6
-        columns.append(y**3 / 6)                   # f_yyy * y^3/6
-        columns.append(x**2 * y / 2)               # f_xxy * x^2*y/2
-        columns.append(x * y**2 / 2)               # f_xyy * x*y^2/2
-
-    if order >= 4:
-        columns.append(x**4 / 24)                  # f_xxxx * x^4/24
-        columns.append(y**4 / 24)                  # f_yyyy * y^4/24
-        columns.append(x**3 * y / 6)               # f_xxxy * x^3*y/6
-        columns.append(x**2 * y**2 / 4)            # f_xxyy * x^2*y^2/4
-        columns.append(x * y**3 / 6)               # f_xyyy * x*y^3/6
-
-    if order >= 5:
-        columns.append(x**5 / 120)
-        columns.append(y**5 / 120)
-        columns.append(x**4 * y / 24)
-        columns.append(x**3 * y**2 / 12)
-        columns.append(x**2 * y**3 / 12)
-        columns.append(x * y**4 / 24)
+    columns = []
+    for px, py in _taylor_exponents(d):
+        scale = math.factorial(px) * math.factorial(py)
+        columns.append((x**px) * (y**py) / scale)
 
     A = np.column_stack(columns)
     return A
