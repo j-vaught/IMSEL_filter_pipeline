@@ -43,7 +43,7 @@ def _library_path() -> Path:
 
     target_dir = _target_dir()
     dylib = target_dir / "release" / "libedgecritic_metal.dylib"
-    if dylib.exists():
+    if dylib.exists() and not _needs_rebuild(dylib):
         return dylib
 
     env = dict(os.environ)
@@ -62,6 +62,15 @@ def _library_path() -> Path:
     if not dylib.exists():
         raise MetalBackendError(f"Rust/Metal build succeeded but {dylib} was not produced")
     return dylib
+
+
+def _needs_rebuild(dylib: Path) -> bool:
+    dylib_mtime = dylib.stat().st_mtime
+    manifest = _crate_manifest()
+    crate_root = manifest.parent
+    build_inputs = [manifest, crate_root / "Cargo.lock"]
+    build_inputs.extend((crate_root / "src").rglob("*.rs"))
+    return any(path.exists() and path.stat().st_mtime > dylib_mtime for path in build_inputs)
 
 
 @lru_cache(maxsize=1)
