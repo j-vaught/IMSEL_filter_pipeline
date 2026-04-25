@@ -45,6 +45,45 @@
         "#BCBCBC"
       ]
     },
+    "low_contrast_cool_colors": {
+      "background": "#9EADAE",
+      "layers": [
+        "#8FA2A8",
+        "#A8B7B6",
+        "#93A9B5",
+        "#B0B4A2",
+        "#8799A4",
+        "#AEB1B8",
+        "#98A7A0",
+        "#A9B8AA"
+      ]
+    },
+    "low_contrast_warm_colors": {
+      "background": "#B9AFA4",
+      "layers": [
+        "#A89991",
+        "#C0B1A4",
+        "#B1A08E",
+        "#C4B8A9",
+        "#A89185",
+        "#BCA69C",
+        "#B7AC91",
+        "#AFA2A0"
+      ]
+    },
+    "low_contrast_mixed_chroma": {
+      "background": "#A9ACA0",
+      "layers": [
+        "#96A6A0",
+        "#B6AA9F",
+        "#A4A2B3",
+        "#B2B896",
+        "#9BA5B7",
+        "#B7A1AA",
+        "#AAB28F",
+        "#A0B3AD"
+      ]
+    },
     "warm_cool_midtones": {
       "background": "#FFF2E3",
       "layers": [
@@ -254,6 +293,189 @@
           "height": 50.0,
           "rotation_deg": 0.0,
           "color": "#D2D2D2"
+        }
+      ]
+    },
+    {
+      "path": "example_images/synthetic_nested_shapes/clean/1024/nested_star_square_oval_low_contrast_cool_colors_1024.png",
+      "size": 1024,
+      "palette": "low_contrast_cool_colors",
+      "layers": [
+        {
+          "shape": "star",
+          "center_x": 512.0,
+          "center_y": 512.0,
+          "width": 839.68,
+          "height": 839.68,
+          "rotation_deg": 0.0,
+          "color": "#8FA2A8"
+        },
+        {
+          "shape": "square",
+          "center_x": 512.0,
+          "center_y": 512.0,
+          "width": 344.26879999999994,
+          "height": 344.26879999999994,
+          "rotation_deg": 0.0,
+          "color": "#A8B7B6"
+        },
+        {
+          "shape": "oval",
+          "center_x": 512.0,
+          "center_y": 512.0,
+          "width": 290.83828223999996,
+          "height": 227.21740799999998,
+          "rotation_deg": 0.0,
+          "color": "#93A9B5"
+        },
+        {
+          "shape": "star",
+          "center_x": 512.0,
+          "center_y": 512.0,
+          "width": 177.22957824,
+          "height": 177.22957824,
+          "rotation_deg": 18.0,
+          "color": "#B0B4A2"
+        },
+        {
+          "shape": "square",
+          "center_x": 512.0,
+          "center_y": 512.0,
+          "width": 72.6641270784,
+          "height": 72.6641270784,
+          "rotation_deg": 0.0,
+          "color": "#8799A4"
+        },
+        {
+          "shape": "oval",
+          "center_x": 512.0,
+          "center_y": 512.0,
+          "width": 64.0,
+          "height": 50.0,
+          "rotation_deg": 0.0,
+          "color": "#AEB1B8"
+        }
+      ]
+    },
+    {
+      "path": "example_images/synthetic_nested_shapes/clean/1024/nested_star_square_oval_low_contrast_warm_colors_1024.png",
+      "size": 1024,
+      "palette": "low_contrast_warm_colors",
+      "layers": [
+        {
+          "shape": "star",
+          "center_x": 512.0,
+          "center_y": 512.0,
+          "width": 839.68,
+          "height": 839.68,
+          "rotation_deg": 0.0,
+          "color": "#A89991"
+        },
+        {
+          "shape": "square",
+          "center_x": 512.0,
+          "center_y": 512.0,
+          "width": 344.26879999999994,
+          "height": 344.26879999999994,
+          "rotation_deg": 0.0,
+          "color": "#C0B1A4"
+        },
+        {
+          "shape": "oval",
+          "center_x": 512.0,
+          "center_y": 512.0,
+          "width": 290.83828223999996,
+          "height": 227.21740799999998,
+          "rotation_deg": 0.0,
+          "color": "#B1A08E"
+        },
+        {
+          "shape": "star",
+          "center_x": 512.0,
+          "center_y": 512.0,
+          "width": 177.22957824,
+          "height": 177.22957824,
+          "rotation_deg": 18.0,
+          "color": "#C4B8A9"
+        },
+        {
+          "shape": "square",
+          "center_x": 512.0,
+          "center_y": 512.0,
+          "width": 72.6641270784,
+          "height": 72.6641270784,
+          "rotation_deg": 0.0,
+          "color": "#A89185"
+        },
+        {
+          "shape": "oval",
+          "center_x": 512.0,
+          "center_y": 512.0,
+          "width": 64.0,
+          "height": 50.0,
+          "rotation_deg": 0.0,
+          "color": "#BCA69C"
+        }
+      ]
+    },
+    {
+      "path": "example_images/synthetic_nested_shapes/clean/1024/nested_star_square_oval_low_contrast_mixed_chroma_1024.png",
+      "size": 1024,
+      "palette": "low_contrast_mixed_chroma",
+      "layers": [
+        {
+          "shape": "star",
+          "center_x": 512.0,
+          "center_y": 512.0,
+          "width": 839.68,
+          "height": 839.68,
+          "rotation_deg": 0.0,
+          "color": "#96A6A0"
+        },
+        {
+          "shape": "square",
+          "center_x": 512.0,
+          "center_y": 512.0,
+          "width": 344.26879999999994,
+          "height": 344.26879999999994,
+          "rotation_deg": 0.0,
+          "color": "#B6AA9F"
+        },
+        {
+          "shape": "oval",
+          "center_x": 512.0,
+          "center_y": 512.0,
+          "width": 290.83828223999996,
+          "height": 227.21740799999998,
+          "rotation_deg": 0.0,
+          "color": "#A4A2B3"
+        },
+        {
+          "shape": "star",
+          "center_x": 512.0,
+          "center_y": 512.0,
+          "width": 177.22957824,
+          "height": 177.22957824,
+          "rotation_deg": 18.0,
+          "color": "#B2B896"
+        },
+        {
+          "shape": "square",
+          "center_x": 512.0,
+          "center_y": 512.0,
+          "width": 72.6641270784,
+          "height": 72.6641270784,
+          "rotation_deg": 0.0,
+          "color": "#9BA5B7"
+        },
+        {
+          "shape": "oval",
+          "center_x": 512.0,
+          "center_y": 512.0,
+          "width": 64.0,
+          "height": 50.0,
+          "rotation_deg": 0.0,
+          "color": "#B7A1AA"
         }
       ]
     },
@@ -525,6 +747,216 @@
           "height": 74.81498523992065,
           "rotation_deg": 18.0,
           "color": "#909090"
+        }
+      ]
+    },
+    {
+      "path": "example_images/synthetic_nested_shapes/clean/2048/nested_star_square_oval_low_contrast_cool_colors_2048.png",
+      "size": 2048,
+      "palette": "low_contrast_cool_colors",
+      "layers": [
+        {
+          "shape": "star",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 1679.36,
+          "height": 1679.36,
+          "rotation_deg": 0.0,
+          "color": "#8FA2A8"
+        },
+        {
+          "shape": "square",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 688.5375999999999,
+          "height": 688.5375999999999,
+          "rotation_deg": 0.0,
+          "color": "#A8B7B6"
+        },
+        {
+          "shape": "oval",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 581.6765644799999,
+          "height": 454.43481599999996,
+          "rotation_deg": 0.0,
+          "color": "#93A9B5"
+        },
+        {
+          "shape": "star",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 354.45915648,
+          "height": 354.45915648,
+          "rotation_deg": 18.0,
+          "color": "#B0B4A2"
+        },
+        {
+          "shape": "square",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 145.3282541568,
+          "height": 145.3282541568,
+          "rotation_deg": 0.0,
+          "color": "#8799A4"
+        },
+        {
+          "shape": "oval",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 122.77330911166464,
+          "height": 95.916647743488,
+          "rotation_deg": 0.0,
+          "color": "#AEB1B8"
+        },
+        {
+          "shape": "star",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 74.81498523992065,
+          "height": 74.81498523992065,
+          "rotation_deg": 18.0,
+          "color": "#98A7A0"
+        }
+      ]
+    },
+    {
+      "path": "example_images/synthetic_nested_shapes/clean/2048/nested_star_square_oval_low_contrast_warm_colors_2048.png",
+      "size": 2048,
+      "palette": "low_contrast_warm_colors",
+      "layers": [
+        {
+          "shape": "star",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 1679.36,
+          "height": 1679.36,
+          "rotation_deg": 0.0,
+          "color": "#A89991"
+        },
+        {
+          "shape": "square",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 688.5375999999999,
+          "height": 688.5375999999999,
+          "rotation_deg": 0.0,
+          "color": "#C0B1A4"
+        },
+        {
+          "shape": "oval",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 581.6765644799999,
+          "height": 454.43481599999996,
+          "rotation_deg": 0.0,
+          "color": "#B1A08E"
+        },
+        {
+          "shape": "star",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 354.45915648,
+          "height": 354.45915648,
+          "rotation_deg": 18.0,
+          "color": "#C4B8A9"
+        },
+        {
+          "shape": "square",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 145.3282541568,
+          "height": 145.3282541568,
+          "rotation_deg": 0.0,
+          "color": "#A89185"
+        },
+        {
+          "shape": "oval",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 122.77330911166464,
+          "height": 95.916647743488,
+          "rotation_deg": 0.0,
+          "color": "#BCA69C"
+        },
+        {
+          "shape": "star",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 74.81498523992065,
+          "height": 74.81498523992065,
+          "rotation_deg": 18.0,
+          "color": "#B7AC91"
+        }
+      ]
+    },
+    {
+      "path": "example_images/synthetic_nested_shapes/clean/2048/nested_star_square_oval_low_contrast_mixed_chroma_2048.png",
+      "size": 2048,
+      "palette": "low_contrast_mixed_chroma",
+      "layers": [
+        {
+          "shape": "star",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 1679.36,
+          "height": 1679.36,
+          "rotation_deg": 0.0,
+          "color": "#96A6A0"
+        },
+        {
+          "shape": "square",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 688.5375999999999,
+          "height": 688.5375999999999,
+          "rotation_deg": 0.0,
+          "color": "#B6AA9F"
+        },
+        {
+          "shape": "oval",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 581.6765644799999,
+          "height": 454.43481599999996,
+          "rotation_deg": 0.0,
+          "color": "#A4A2B3"
+        },
+        {
+          "shape": "star",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 354.45915648,
+          "height": 354.45915648,
+          "rotation_deg": 18.0,
+          "color": "#B2B896"
+        },
+        {
+          "shape": "square",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 145.3282541568,
+          "height": 145.3282541568,
+          "rotation_deg": 0.0,
+          "color": "#9BA5B7"
+        },
+        {
+          "shape": "oval",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 122.77330911166464,
+          "height": 95.916647743488,
+          "rotation_deg": 0.0,
+          "color": "#B7A1AA"
+        },
+        {
+          "shape": "star",
+          "center_x": 1024.0,
+          "center_y": 1024.0,
+          "width": 74.81498523992065,
+          "height": 74.81498523992065,
+          "rotation_deg": 18.0,
+          "color": "#AAB28F"
         }
       ]
     },
@@ -832,6 +1264,243 @@
           "height": 61.348287896734924,
           "rotation_deg": 0.0,
           "color": "#BCBCBC"
+        }
+      ]
+    },
+    {
+      "path": "example_images/synthetic_nested_shapes/clean/4096/nested_star_square_oval_low_contrast_cool_colors_4096.png",
+      "size": 4096,
+      "palette": "low_contrast_cool_colors",
+      "layers": [
+        {
+          "shape": "star",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 3358.72,
+          "height": 3358.72,
+          "rotation_deg": 0.0,
+          "color": "#8FA2A8"
+        },
+        {
+          "shape": "square",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 1377.0751999999998,
+          "height": 1377.0751999999998,
+          "rotation_deg": 0.0,
+          "color": "#A8B7B6"
+        },
+        {
+          "shape": "oval",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 1163.3531289599998,
+          "height": 908.8696319999999,
+          "rotation_deg": 0.0,
+          "color": "#93A9B5"
+        },
+        {
+          "shape": "star",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 708.91831296,
+          "height": 708.91831296,
+          "rotation_deg": 18.0,
+          "color": "#B0B4A2"
+        },
+        {
+          "shape": "square",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 290.6565083136,
+          "height": 290.6565083136,
+          "rotation_deg": 0.0,
+          "color": "#8799A4"
+        },
+        {
+          "shape": "oval",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 245.5466182233293,
+          "height": 191.833295486976,
+          "rotation_deg": 0.0,
+          "color": "#AEB1B8"
+        },
+        {
+          "shape": "star",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 149.6299704798413,
+          "height": 149.6299704798413,
+          "rotation_deg": 18.0,
+          "color": "#98A7A0"
+        },
+        {
+          "shape": "square",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 61.348287896734924,
+          "height": 61.348287896734924,
+          "rotation_deg": 0.0,
+          "color": "#A9B8AA"
+        }
+      ]
+    },
+    {
+      "path": "example_images/synthetic_nested_shapes/clean/4096/nested_star_square_oval_low_contrast_warm_colors_4096.png",
+      "size": 4096,
+      "palette": "low_contrast_warm_colors",
+      "layers": [
+        {
+          "shape": "star",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 3358.72,
+          "height": 3358.72,
+          "rotation_deg": 0.0,
+          "color": "#A89991"
+        },
+        {
+          "shape": "square",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 1377.0751999999998,
+          "height": 1377.0751999999998,
+          "rotation_deg": 0.0,
+          "color": "#C0B1A4"
+        },
+        {
+          "shape": "oval",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 1163.3531289599998,
+          "height": 908.8696319999999,
+          "rotation_deg": 0.0,
+          "color": "#B1A08E"
+        },
+        {
+          "shape": "star",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 708.91831296,
+          "height": 708.91831296,
+          "rotation_deg": 18.0,
+          "color": "#C4B8A9"
+        },
+        {
+          "shape": "square",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 290.6565083136,
+          "height": 290.6565083136,
+          "rotation_deg": 0.0,
+          "color": "#A89185"
+        },
+        {
+          "shape": "oval",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 245.5466182233293,
+          "height": 191.833295486976,
+          "rotation_deg": 0.0,
+          "color": "#BCA69C"
+        },
+        {
+          "shape": "star",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 149.6299704798413,
+          "height": 149.6299704798413,
+          "rotation_deg": 18.0,
+          "color": "#B7AC91"
+        },
+        {
+          "shape": "square",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 61.348287896734924,
+          "height": 61.348287896734924,
+          "rotation_deg": 0.0,
+          "color": "#AFA2A0"
+        }
+      ]
+    },
+    {
+      "path": "example_images/synthetic_nested_shapes/clean/4096/nested_star_square_oval_low_contrast_mixed_chroma_4096.png",
+      "size": 4096,
+      "palette": "low_contrast_mixed_chroma",
+      "layers": [
+        {
+          "shape": "star",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 3358.72,
+          "height": 3358.72,
+          "rotation_deg": 0.0,
+          "color": "#96A6A0"
+        },
+        {
+          "shape": "square",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 1377.0751999999998,
+          "height": 1377.0751999999998,
+          "rotation_deg": 0.0,
+          "color": "#B6AA9F"
+        },
+        {
+          "shape": "oval",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 1163.3531289599998,
+          "height": 908.8696319999999,
+          "rotation_deg": 0.0,
+          "color": "#A4A2B3"
+        },
+        {
+          "shape": "star",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 708.91831296,
+          "height": 708.91831296,
+          "rotation_deg": 18.0,
+          "color": "#B2B896"
+        },
+        {
+          "shape": "square",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 290.6565083136,
+          "height": 290.6565083136,
+          "rotation_deg": 0.0,
+          "color": "#9BA5B7"
+        },
+        {
+          "shape": "oval",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 245.5466182233293,
+          "height": 191.833295486976,
+          "rotation_deg": 0.0,
+          "color": "#B7A1AA"
+        },
+        {
+          "shape": "star",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 149.6299704798413,
+          "height": 149.6299704798413,
+          "rotation_deg": 18.0,
+          "color": "#AAB28F"
+        },
+        {
+          "shape": "square",
+          "center_x": 2048.0,
+          "center_y": 2048.0,
+          "width": 61.348287896734924,
+          "height": 61.348287896734924,
+          "rotation_deg": 0.0,
+          "color": "#A0B3AD"
         }
       ]
     },
