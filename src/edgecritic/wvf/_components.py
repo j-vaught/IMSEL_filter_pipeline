@@ -32,6 +32,7 @@ def wvf_component_gradients(
     order: int = 4,
     backend: str = "auto",
     mode: str = "reflect",
+    output_dtype: np.dtype | type = np.float64,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Compute isotropic WVF ``Gx`` and ``Gy`` from an integer disk radius.
 
@@ -47,9 +48,15 @@ def wvf_component_gradients(
             raise ValueError("Metal backend currently supports mode='reflect' only")
         from edgecritic.wvf._metal import wvf_radius_gradients_metal
 
-        return wvf_radius_gradients_metal(image, kernels)
+        return wvf_radius_gradients_metal(image, kernels, output_dtype=output_dtype)
 
-    return wvf_radius_gradients_cpu(image, radius=radius, order=order, mode=mode)
+    return wvf_radius_gradients_cpu(
+        image,
+        radius=radius,
+        order=order,
+        mode=mode,
+        output_dtype=output_dtype,
+    )
 
 
 def wvf_component_backend(backend: str = "auto") -> str:
