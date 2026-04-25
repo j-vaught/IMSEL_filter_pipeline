@@ -27,4 +27,4 @@ The direct directional kernel and the steered kernel agree to about `1e-20` in c
 - `summary.json` gives the aggregate result.
 - `metrics.csv` and `metrics.json` give per-image metrics.
 - `figures/` contains contact sheets for d=2 and d=4 at each image size.
-- `kernels/` contains visualizations of the actual d=2 and d=4 WVF kernels used for `Gx`, `Gy`, and the 23.5 degree directional response.
+- `kernels/` contains visualizations of the actual d=2, d=4, d=6, and d=8 WVF kernels used for `Gx`, `Gy`, and the 23.5 degree directional response. Signed kernel panels use their own per-filter support min/max color scale.
