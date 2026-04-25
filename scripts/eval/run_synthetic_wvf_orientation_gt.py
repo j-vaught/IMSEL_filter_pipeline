@@ -413,7 +413,7 @@ def make_histogram_grid(
     mask_name: str,
     brute_estimator: str,
 ) -> None:
-    centers = 0.5 * (bins[:-1] + bins[1:])
+    centers = np.sqrt(bins[:-1] * bins[1:])
     fig, axes = plt.subplots(
         len(orders),
         len(sizes),
@@ -445,7 +445,8 @@ def make_histogram_grid(
                     linewidth=1.8,
                     label=brute_estimator.replace("_", " "),
                 )
-            ax.set_xlim(0.0, 90.0)
+            ax.set_xscale("log")
+            ax.set_xlim(float(bins[0]), float(bins[-1]))
             ax.grid(True, color=PLOT_COLORS["grid"], linewidth=0.7)
             ax.set_title(f"d={order}, {size}px", fontsize=10)
             ax.tick_params(colors=PLOT_COLORS["text"], labelsize=8)
@@ -459,7 +460,7 @@ def make_histogram_grid(
                 ax.legend(frameon=False, fontsize=8)
 
     fig.suptitle(
-        f"GT orientation-error histogram. mask={mask_name}. all palettes.",
+        f"GT orientation-error histogram. mask={mask_name}. log x-axis. all palettes.",
         fontsize=13,
         color=PLOT_COLORS["text"],
     )
@@ -524,7 +525,7 @@ def main() -> int:
     image_specs = [item for item in manifest["images"] if int(item["size"]) in set(args.sizes)]
 
     metrics: list[OrientationMetric] = []
-    hist_bins = np.linspace(0.0, 90.0, 181)
+    hist_bins = np.geomspace(1e-3, 90.0, 181)
     histograms: dict[tuple[int, int, str, str], np.ndarray] = {}
     figure_rows: dict[int, list[tuple[str, list[Image.Image]]]] = {order: [] for order in args.orders}
     preview_palettes = {"dark_light_steps", "low_contrast_mixed_chroma", "garnet_atlantic_grass"}
