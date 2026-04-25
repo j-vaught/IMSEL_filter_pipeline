@@ -1,0 +1,19 @@
+{
+  "radius": 25,
+  "angle_deg": 23.5,
+  "backend": "metal",
+  "orders": [
+    2,
+    4
+  ],
+  "sizes": [
+    1024,
+    2048,
+    4096
+  ],
+  "n_images": 21,
+  "max_response_abs_error": 1.5832483768463135e-07,
+  "max_response_relative_error": 3.107222884897734e-05,
+  "min_response_correlation": 0.9999999997169764,
+  "max_kernel_abs_error": 2.710505431213761e-20
+}
