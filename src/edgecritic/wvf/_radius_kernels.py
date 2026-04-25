@@ -88,6 +88,7 @@ def wvf_radius_gradients_cpu(
     radius: int,
     order: int = 4,
     mode: str = "reflect",
+    output_dtype: np.dtype | type = np.float64,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Compute isotropic WVF derivative components on CPU."""
     img = np.asarray(image, dtype=np.float64)
@@ -97,4 +98,7 @@ def wvf_radius_gradients_cpu(
     kernels = build_wvf_radius_kernels(radius=radius, order=order)
     gx = ndimage.correlate(img, kernels.kernel_x, mode=mode)
     gy = ndimage.correlate(img, kernels.kernel_y, mode=mode)
-    return gx, gy
+    dtype = np.dtype(output_dtype)
+    if dtype == np.dtype(np.float64):
+        return gx, gy
+    return gx.astype(dtype), gy.astype(dtype)
