@@ -69,7 +69,7 @@ $ <eq:normal>
 The normal derivative of the same fitted polynomial is
 
 $
-  D_"n,theta" I(x)
+  D_(n, theta) I(x)
     =
   n_theta dot
   mat(delim: "[",
@@ -121,10 +121,10 @@ Then the standard LF response is
 $
   R_"std"(x, theta)
     =
-  sum_(j=-m)^m w_j D_"n,theta" I(x + q_j(theta)).
+  sum_(j=-m)^m w_j D_(n, theta) I(x + q_j(theta)).
 $ <eq:standard-response>
 
-This is the formulation that appears expensive. It appears to call for an orientation-indexed WVF normal derivative estimator $D_"n,theta"$ at each virtual point $x + q_j(theta)$. The next step is simply to substitute the isotropic identity from @eq:directional-derivative into @eq:standard-response.
+This is the formulation that appears expensive. It appears to call for an orientation-indexed WVF normal derivative estimator $D_(n, theta)$ at each virtual point $x + q_j(theta)$. The next step is simply to substitute the isotropic identity from @eq:directional-derivative into @eq:standard-response.
 
 = The Isotropic-WVF LF Rewrite <sec:rewrite>
 
@@ -206,7 +206,7 @@ The standard and isotropic forms are summarized in @tab:standard-vs-isotropic. B
     table.hline(stroke: 0.8pt),
     table.header([*View*], [*Expression*], [*Interpretation*]),
     table.hline(stroke: 0.5pt),
-    [Standard LF], [$sum_j w_j D_"n,theta" I(x + q_j(theta))$], [Evaluate the WVF normal derivative along the candidate line.],
+    [Standard LF], [$sum_j w_j D_(n, theta) I(x + q_j(theta))$], [Evaluate the WVF normal derivative along the candidate line.],
     [Isotropic-WVF LF], [$-sin theta S_theta[G_x](x) + cos theta S_theta[G_y](x)$], [Compute one fixed $G_x/G_y$ pair, then line-smooth and project onto the line normal.],
     [Structure tensor], [$n_theta^top J(x) n_theta$], [Square the derivative fields and maximize local second-moment energy. This is related but not the same LF response.],
     table.hline(stroke: 0.8pt),
