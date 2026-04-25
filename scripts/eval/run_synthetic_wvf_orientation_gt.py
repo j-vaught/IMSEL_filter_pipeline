@@ -445,7 +445,6 @@ def make_histogram_grid(
                     linewidth=1.8,
                     label=brute_estimator.replace("_", " "),
                 )
-            ax.set_yscale("log")
             ax.set_xlim(0.0, 90.0)
             ax.grid(True, color=PLOT_COLORS["grid"], linewidth=0.7)
             ax.set_title(f"d={order}, {size}px", fontsize=10)
