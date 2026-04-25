@@ -1,0 +1,55 @@
+{
+  "config": {
+    "half_widths": [
+      3,
+      7,
+      11
+    ],
+    "domains": "auto",
+    "np_count": 15,
+    "order": 4,
+    "n_orientations": 36,
+    "gmm_bins": 36,
+    "nms_directions": 8,
+    "high_quantile": 0.9,
+    "low_ratio": 0.4,
+    "max_side": 4096
+  },
+  "results": [
+    {
+      "input": "example_images/Screenshot 2026-04-24 at 11.34.34\u202fPM.png",
+      "output_dir": "outputs/nms_gmm_examples_fullres/01_screenshot_2026_04_24_at_11_34_34_pm",
+      "original_size": [
+        734,
+        713
+      ],
+      "preview_shape": [
+        713,
+        734,
+        3
+      ],
+      "seconds": 629.536481707939,
+      "edge_pixels": 16893,
+      "edge_fraction": 0.032279083276327905,
+      "low_threshold": 0.0277965235277743,
+      "high_threshold": 0.06949130881943574,
+      "labels": [
+        "gray:lf_m3",
+        "gray:lf_m7",
+        "gray:lf_m11",
+        "red:lf_m3",
+        "red:lf_m7",
+        "red:lf_m11",
+        "green:lf_m3",
+        "green:lf_m7",
+        "green:lf_m11",
+        "blue:lf_m3",
+        "blue:lf_m7",
+        "blue:lf_m11",
+        "hue:lf_m3",
+        "hue:lf_m7",
+        "hue:lf_m11"
+      ]
+    }
+  ]
+}
