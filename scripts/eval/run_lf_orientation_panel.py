@@ -41,7 +41,6 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap
 
 from edgecritic.wvf._radius_kernels import wvf_radius_gradients_cpu
 
@@ -158,12 +157,11 @@ def main() -> None:
         rows, cols, figsize=(3.2 * cols, 3.2 * rows), squeeze=False)
 
     vmax = float(np.percentile(response_stack, args.clip_percentile))
-    cmap = LinearSegmentedColormap.from_list(
-        "neutral_gray", ["#ECECEC", "#363636"])
 
     for k in range(args.n_orientations):
         ax = axes[k // cols, k % cols]
-        ax.imshow(response_stack[..., k], cmap=cmap, vmin=0.0, vmax=vmax)
+        ax.imshow(response_stack[..., k], cmap="gray_r",
+                  vmin=0.0, vmax=vmax)
         deg = np.degrees(angles[k])
         ax.set_title(rf"$\theta = {deg:.1f}^\circ$", fontsize=12)
         ax.set_xticks([])
