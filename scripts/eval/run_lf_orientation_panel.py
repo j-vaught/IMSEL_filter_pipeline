@@ -119,6 +119,12 @@ def main() -> None:
     parser.add_argument(
         "--clip-percentile", type=float, default=99.5,
         help="Percentile for the global vmax of the heatmap colorbar.")
+    parser.add_argument(
+        "--crop-size", type=int, default=0,
+        help=("If > 0, crop the rendered panel and the input thumbnail "
+              "to a square of this size centered on the image. The WVF "
+              "and LF are still computed on the full image so the crop "
+              "is free of boundary artifacts."))
     args = parser.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -151,16 +157,33 @@ def main() -> None:
     np.save(args.out_dir / f"lf_response_stack_n{args.n_orientations}.npy",
             response_stack)
 
+    crop_label = ""
+    image_for_thumb = image
+    stack_for_render = response_stack
+    if args.crop_size > 0:
+        c = args.crop_size
+        cy = h // 2
+        cx = w // 2
+        y0 = max(0, cy - c // 2)
+        x0 = max(0, cx - c // 2)
+        y1 = min(h, y0 + c)
+        x1 = min(w, x0 + c)
+        stack_for_render = response_stack[y0:y1, x0:x1, :]
+        image_for_thumb = image[y0:y1, x0:x1]
+        crop_label = f"_crop{c}"
+        print(f"Cropping render to {y1 - y0} x {x1 - x0} centered "
+              f"at ({cy}, {cx})")
+
     rows = 2
     cols = (args.n_orientations + rows - 1) // rows
     fig, axes = plt.subplots(
         rows, cols, figsize=(3.2 * cols, 3.2 * rows), squeeze=False)
 
-    vmax = float(np.percentile(response_stack, args.clip_percentile))
+    vmax = float(np.percentile(stack_for_render, args.clip_percentile))
 
     for k in range(args.n_orientations):
         ax = axes[k // cols, k % cols]
-        ax.imshow(response_stack[..., k], cmap="gray_r",
+        ax.imshow(stack_for_render[..., k], cmap="gray_r",
                   vmin=0.0, vmax=vmax)
         deg = np.degrees(angles[k])
         ax.set_title(rf"$\theta = {deg:.1f}^\circ$", fontsize=12)
@@ -171,16 +194,17 @@ def main() -> None:
         axes[k // cols, k % cols].axis("off")
 
     plt.tight_layout()
-    panel_path = args.out_dir / f"lf_orientations_n{args.n_orientations}.png"
+    panel_path = (args.out_dir
+                  / f"lf_orientations_n{args.n_orientations}{crop_label}.png")
     plt.savefig(panel_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     print(f"Saved {panel_path}")
 
     fig2, ax2 = plt.subplots(figsize=(5, 5))
-    ax2.imshow(image, cmap="gray")
+    ax2.imshow(image_for_thumb, cmap="gray")
     ax2.axis("off")
-    ax2.set_title(args.image.name, fontsize=10)
-    input_path = args.out_dir / "input.png"
+    ax2.set_title(args.image.name + crop_label, fontsize=10)
+    input_path = args.out_dir / f"input{crop_label}.png"
     plt.savefig(input_path, dpi=150, bbox_inches="tight")
     plt.close(fig2)
     print(f"Saved {input_path}")
