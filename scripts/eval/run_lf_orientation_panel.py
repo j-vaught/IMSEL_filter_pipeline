@@ -41,8 +41,95 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
+from scipy.interpolate import CubicSpline
+from scipy.signal import find_peaks
 
 from edgecritic.wvf._radius_kernels import wvf_radius_gradients_cpu
+
+
+def find_two_peaks(angles_deg: np.ndarray, response: np.ndarray,
+                   min_separation_frac: float = 0.125
+                   ) -> np.ndarray:
+    """Return the two highest local-maximum indices in ``response``.
+
+    ``angles_deg`` is the corresponding orientation grid in degrees on
+    [0, 180); ``min_separation_frac`` is the minimum peak separation as
+    a fraction of the array length (defaults to 1/8 = 22.5 deg of
+    angular separation for any N).
+    """
+    n = len(response)
+    distance = max(1, int(min_separation_frac * n))
+    peaks, _ = find_peaks(response, distance=distance)
+    if len(peaks) < 2:
+        # Fallback: pad with the global max not already in peaks.
+        order = np.argsort(-response)
+        return np.sort(order[:2])
+    heights = response[peaks]
+    top2 = peaks[np.argsort(-heights)[:2]]
+    return np.sort(top2)
+
+
+def spline_peak_angles(angles: np.ndarray, response: np.ndarray,
+                       k_dense: int = 10000) -> tuple[np.ndarray,
+                                                       np.ndarray,
+                                                       np.ndarray]:
+    """Fit a periodic cubic spline of period pi and return the two
+    interpolated peak angles (in radians on [0, pi)). Also returns the
+    dense angle/response arrays for plotting if desired.
+    """
+    x = np.concatenate([angles, [np.pi]])
+    y = np.concatenate([response, [response[0]]])
+    cs = CubicSpline(x, y, bc_type="periodic")
+    dense_a = np.linspace(0, np.pi, k_dense, endpoint=False)
+    dense_r = cs(dense_a)
+    peak_idx = find_two_peaks(np.degrees(dense_a), dense_r)
+    return dense_a[peak_idx], dense_a, dense_r
+
+
+def parabolic_peak_angles(angles: np.ndarray, response: np.ndarray
+                          ) -> np.ndarray:
+    """For each of the two highest discrete peaks, fit a parabola
+    through (k-1, k, k+1) and return the interpolated peak angles in
+    radians on [0, pi). Uses periodic indexing.
+    """
+    n = len(response)
+    peak_idx = find_two_peaks(np.degrees(angles), response)
+    delta = np.pi / n
+    out = []
+    for k in peak_idx:
+        rm = response[(k - 1) % n]
+        rk = response[k]
+        rp = response[(k + 1) % n]
+        denom = rm - 2.0 * rk + rp
+        if abs(denom) < 1e-12:
+            offset = 0.0
+        else:
+            offset = 0.5 * (rm - rp) / denom
+        offset = max(-1.0, min(1.0, offset))
+        out.append(((k + offset) * delta) % np.pi)
+    return np.sort(np.array(out))
+
+
+def pair_to_gt(estimated_deg: np.ndarray,
+               gt_deg: np.ndarray) -> np.ndarray:
+    """Pair each estimated peak with its closest GT (modulo 180 deg)
+    and return the absolute angular errors in degrees."""
+    errs = []
+    used = set()
+    for est in estimated_deg:
+        best = None
+        best_err = float("inf")
+        for i, gt in enumerate(gt_deg):
+            if i in used:
+                continue
+            diff = abs((est - gt + 90.0) % 180.0 - 90.0)
+            if diff < best_err:
+                best_err = diff
+                best = i
+        if best is not None:
+            used.add(best)
+            errs.append(best_err)
+    return np.array(errs)
 
 
 def lf_response_at_orientation(
@@ -309,6 +396,66 @@ def main() -> None:
         plt.savefig(curve_path, dpi=150, bbox_inches="tight")
         plt.close(fig3)
         print(f"Saved {curve_path}")
+
+        if gt_angles_deg:
+            gt_arr = np.sort(np.array(gt_angles_deg) % 180.0)
+            print()
+            print("Peak-interpolation comparison vs GT angles "
+                  f"{gt_arr.tolist()} deg:")
+            print(f"{'N':>5}  "
+                  f"{'spline_p1':>10} {'spline_p2':>10}  "
+                  f"{'parab_p1':>10} {'parab_p2':>10}  "
+                  f"{'spline_err1':>11} {'spline_err2':>11}  "
+                  f"{'parab_err1':>11} {'parab_err2':>11}")
+            spline_errs_per_n = []
+            parab_errs_per_n = []
+            spline_peak_log = []
+            parab_peak_log = []
+            for n, ang, resp in curves:
+                sp_pks_rad, _, _ = spline_peak_angles(ang, resp)
+                pa_pks_rad = parabolic_peak_angles(ang, resp)
+                sp_pks_deg = np.sort(np.degrees(sp_pks_rad))
+                pa_pks_deg = np.sort(np.degrees(pa_pks_rad))
+                sp_err = pair_to_gt(sp_pks_deg, gt_arr)
+                pa_err = pair_to_gt(pa_pks_deg, gt_arr)
+                spline_peak_log.append(sp_pks_deg)
+                parab_peak_log.append(pa_pks_deg)
+                spline_errs_per_n.append(sp_err)
+                parab_errs_per_n.append(pa_err)
+                print(f"{n:>5}  "
+                      f"{sp_pks_deg[0]:>10.3f} {sp_pks_deg[1]:>10.3f}  "
+                      f"{pa_pks_deg[0]:>10.3f} {pa_pks_deg[1]:>10.3f}  "
+                      f"{sp_err[0]:>11.3f} {sp_err[1]:>11.3f}  "
+                      f"{pa_err[0]:>11.3f} {pa_err[1]:>11.3f}")
+
+            spline_errs_per_n = np.array(spline_errs_per_n)
+            parab_errs_per_n = np.array(parab_errs_per_n)
+            n_arr = np.array([n for n, _, _ in curves])
+            sp_mean = spline_errs_per_n.mean(axis=1)
+            pa_mean = parab_errs_per_n.mean(axis=1)
+
+            fig5, ax5 = plt.subplots(figsize=(6, 4.2))
+            ax5.plot(n_arr, sp_mean, marker="o", color="#466A9F",
+                     label="periodic cubic spline")
+            ax5.plot(n_arr, pa_mean, marker="s", color="#cc2e40",
+                     label="parabolic interpolation")
+            ax5.set_xscale("log", base=2)
+            ax5.set_yscale("log")
+            ax5.set_xlabel("orientation samples N")
+            ax5.set_ylabel("mean |angular error| (deg)")
+            ax5.set_title(
+                f"Peak interpolation accuracy at pixel ({px}, {py})")
+            ax5.set_xticks(n_arr)
+            ax5.get_xaxis().set_major_formatter(
+                plt.matplotlib.ticker.ScalarFormatter())
+            ax5.grid(True, which="both", alpha=0.3)
+            ax5.legend(loc="upper right", fontsize=9)
+            plt.tight_layout()
+            err_path = (args.out_dir
+                        / f"pixel_peak_error_x{px}_y{py}_multi_{n_label}.png")
+            plt.savefig(err_path, dpi=150, bbox_inches="tight")
+            plt.close(fig5)
+            print(f"Saved {err_path}")
 
         # Also save a small input thumbnail with the pixel marked.
         fig4, ax4 = plt.subplots(figsize=(5, 5))
