@@ -132,8 +132,13 @@ def main() -> None:
               "theta) at that pixel, sampled at --pixel-n-orientations "
               "candidate orientations on [0, pi)."))
     parser.add_argument(
-        "--pixel-n-orientations", type=int, default=64,
-        help="Number of orientations sampled for the single-pixel curve.")
+        "--multi-n-orientations", type=str, default="8,16,32,64,128",
+        help=("Comma-separated list of orientation counts to overlay "
+              "in the single-pixel curve plot."))
+    parser.add_argument(
+        "--gt-angles", type=str, default="",
+        help=("Comma-separated ground-truth tangent angles in degrees "
+              "(modulo 180) to mark with vertical lines on the curve."))
     args = parser.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -220,21 +225,22 @@ def main() -> None:
 
     if args.pixel is not None:
         px, py = (int(v.strip()) for v in args.pixel.split(","))
-        n_fine = args.pixel_n_orientations
-        fine_angles = np.linspace(0, np.pi, n_fine, endpoint=False)
-        print(f"Single-pixel curve at (x={px}, y={py}) over "
-              f"{n_fine} orientations")
+        n_list = [int(v.strip()) for v in
+                  args.multi_n_orientations.split(",") if v.strip()]
+        gt_angles_deg = [float(v.strip()) for v in
+                         args.gt_angles.split(",") if v.strip()]
+        print(f"Single-pixel curves at (x={px}, y={py}) for "
+              f"orientation counts {n_list}")
 
-        responses = np.zeros(n_fine, dtype=np.float64)
-        for k, theta in enumerate(fine_angles):
+        sigma_g = args.half_width / 2.0
+        j_offsets = np.arange(-args.half_width, args.half_width + 1)
+        weights = np.exp(-0.5 * (j_offsets / sigma_g) ** 2)
+
+        def response_at(theta: float) -> float:
             cos_t = np.cos(theta)
             sin_t = np.sin(theta)
             max_trig = max(abs(cos_t), abs(sin_t))
             step = 1.0 / max_trig if max_trig > 0 else 1.0
-            sigma = args.half_width / 2.0
-            j_offsets = np.arange(-args.half_width, args.half_width + 1)
-            weights = np.exp(-0.5 * (j_offsets / sigma) ** 2)
-
             acc = 0.0
             wsum = 0.0
             for w_j, j in zip(weights, j_offsets):
@@ -246,35 +252,60 @@ def main() -> None:
                     g_perp = -sin_t * g_x[yy, xx] + cos_t * g_y[yy, xx]
                     acc += w_j * g_perp
                     wsum += w_j
-            responses[k] = abs(acc / wsum) if wsum > 0 else 0.0
+            return abs(acc / wsum) if wsum > 0 else 0.0
 
-        fig3, (ax_lin, ax_pol) = plt.subplots(
-            1, 2, figsize=(10, 4.5),
-            subplot_kw={"aspect": "auto"})
+        # Compute one response curve per N, sharing colors.
+        cmap_n = plt.get_cmap("viridis")
+        curves: list[tuple[int, np.ndarray, np.ndarray]] = []
+        for idx, n in enumerate(n_list):
+            angles_n = np.linspace(0, np.pi, n, endpoint=False)
+            resp = np.array([response_at(t) for t in angles_n])
+            curves.append((n, angles_n, resp))
 
-        ax_lin.plot(np.degrees(fine_angles), responses,
-                    color="#363636", linewidth=1.5)
+        fig3, (ax_lin, ax_pol_holder) = plt.subplots(
+            1, 2, figsize=(11, 4.8))
+        ax_pol_holder.remove()
+        ax_pol = fig3.add_subplot(1, 2, 2, projection="polar")
+
+        for idx, (n, ang, resp) in enumerate(curves):
+            color = cmap_n(idx / max(1, len(curves) - 1))
+            ax_lin.plot(np.degrees(ang), resp, marker="o",
+                        markersize=3, linewidth=1.4,
+                        color=color, label=f"N = {n}")
+            full_a = np.concatenate([ang, ang + np.pi])
+            full_r = np.concatenate([resp, resp])
+            ax_pol.plot(full_a, full_r, marker="o",
+                        markersize=2, linewidth=1.2, color=color)
+
+        for gt in gt_angles_deg:
+            ax_lin.axvline(gt % 180, color="#cc2e40",
+                           linestyle="--", linewidth=1.1, alpha=0.8,
+                           label="GT" if gt == gt_angles_deg[0] else None)
+            theta_rad = np.radians(gt % 180)
+            ax_pol.plot([theta_rad, theta_rad],
+                        [0, max(r.max() for _, _, r in curves)],
+                        color="#cc2e40", linestyle="--",
+                        linewidth=1.1, alpha=0.8)
+            ax_pol.plot([theta_rad + np.pi, theta_rad + np.pi],
+                        [0, max(r.max() for _, _, r in curves)],
+                        color="#cc2e40", linestyle="--",
+                        linewidth=1.1, alpha=0.8)
+
         ax_lin.set_xlabel(r"orientation $\theta$ (deg)")
         ax_lin.set_ylabel(r"$|L_\theta|$")
-        ax_lin.set_title(f"Pixel ({px}, {py}) response curve")
+        ax_lin.set_title(f"Pixel ({px}, {py}) response curves")
         ax_lin.set_xlim(0, 180)
         ax_lin.grid(True, alpha=0.3)
+        ax_lin.legend(loc="lower center", fontsize=9, ncol=3)
 
-        ax_pol.remove()
-        ax_pol = fig3.add_subplot(1, 2, 2, projection="polar")
-        # Plot on full circle by mirroring [0, pi) to [pi, 2pi).
-        full_angles = np.concatenate([fine_angles,
-                                      fine_angles + np.pi])
-        full_responses = np.concatenate([responses, responses])
-        ax_pol.plot(full_angles, full_responses,
-                    color="#363636", linewidth=1.5)
         ax_pol.set_theta_zero_location("E")
-        ax_pol.set_theta_direction(-1)  # clockwise to match image y-down
+        ax_pol.set_theta_direction(-1)
         ax_pol.set_title("Polar view (mirrored to full circle)")
 
         plt.tight_layout()
+        n_label = "_".join(str(n) for n in n_list)
         curve_path = (args.out_dir
-                      / f"pixel_response_x{px}_y{py}_n{n_fine}.png")
+                      / f"pixel_response_x{px}_y{py}_multi_{n_label}.png")
         plt.savefig(curve_path, dpi=150, bbox_inches="tight")
         plt.close(fig3)
         print(f"Saved {curve_path}")
