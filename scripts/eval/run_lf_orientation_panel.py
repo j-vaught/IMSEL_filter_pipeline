@@ -125,6 +125,15 @@ def main() -> None:
               "to a square of this size centered on the image. The WVF "
               "and LF are still computed on the full image so the crop "
               "is free of boundary artifacts."))
+    parser.add_argument(
+        "--pixel", type=str, default=None,
+        help=("'x,y' image-coordinate pair. If provided, also produce "
+              "a single-pixel orientation-response curve (|L_theta| vs "
+              "theta) at that pixel, sampled at --pixel-n-orientations "
+              "candidate orientations on [0, pi)."))
+    parser.add_argument(
+        "--pixel-n-orientations", type=int, default=64,
+        help="Number of orientations sampled for the single-pixel curve.")
     args = parser.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -208,6 +217,91 @@ def main() -> None:
     plt.savefig(input_path, dpi=150, bbox_inches="tight")
     plt.close(fig2)
     print(f"Saved {input_path}")
+
+    if args.pixel is not None:
+        px, py = (int(v.strip()) for v in args.pixel.split(","))
+        n_fine = args.pixel_n_orientations
+        fine_angles = np.linspace(0, np.pi, n_fine, endpoint=False)
+        print(f"Single-pixel curve at (x={px}, y={py}) over "
+              f"{n_fine} orientations")
+
+        responses = np.zeros(n_fine, dtype=np.float64)
+        for k, theta in enumerate(fine_angles):
+            cos_t = np.cos(theta)
+            sin_t = np.sin(theta)
+            max_trig = max(abs(cos_t), abs(sin_t))
+            step = 1.0 / max_trig if max_trig > 0 else 1.0
+            sigma = args.half_width / 2.0
+            j_offsets = np.arange(-args.half_width, args.half_width + 1)
+            weights = np.exp(-0.5 * (j_offsets / sigma) ** 2)
+
+            acc = 0.0
+            wsum = 0.0
+            for w_j, j in zip(weights, j_offsets):
+                ix = int(round(j * step * cos_t))
+                iy = int(round(j * step * sin_t))
+                yy = py + iy
+                xx = px + ix
+                if 0 <= yy < h and 0 <= xx < w:
+                    g_perp = -sin_t * g_x[yy, xx] + cos_t * g_y[yy, xx]
+                    acc += w_j * g_perp
+                    wsum += w_j
+            responses[k] = abs(acc / wsum) if wsum > 0 else 0.0
+
+        fig3, (ax_lin, ax_pol) = plt.subplots(
+            1, 2, figsize=(10, 4.5),
+            subplot_kw={"aspect": "auto"})
+
+        ax_lin.plot(np.degrees(fine_angles), responses,
+                    color="#363636", linewidth=1.5)
+        ax_lin.set_xlabel(r"orientation $\theta$ (deg)")
+        ax_lin.set_ylabel(r"$|L_\theta|$")
+        ax_lin.set_title(f"Pixel ({px}, {py}) response curve")
+        ax_lin.set_xlim(0, 180)
+        ax_lin.grid(True, alpha=0.3)
+
+        ax_pol.remove()
+        ax_pol = fig3.add_subplot(1, 2, 2, projection="polar")
+        # Plot on full circle by mirroring [0, pi) to [pi, 2pi).
+        full_angles = np.concatenate([fine_angles,
+                                      fine_angles + np.pi])
+        full_responses = np.concatenate([responses, responses])
+        ax_pol.plot(full_angles, full_responses,
+                    color="#363636", linewidth=1.5)
+        ax_pol.set_theta_zero_location("E")
+        ax_pol.set_theta_direction(-1)  # clockwise to match image y-down
+        ax_pol.set_title("Polar view (mirrored to full circle)")
+
+        plt.tight_layout()
+        curve_path = (args.out_dir
+                      / f"pixel_response_x{px}_y{py}_n{n_fine}.png")
+        plt.savefig(curve_path, dpi=150, bbox_inches="tight")
+        plt.close(fig3)
+        print(f"Saved {curve_path}")
+
+        # Also save a small input thumbnail with the pixel marked.
+        fig4, ax4 = plt.subplots(figsize=(5, 5))
+        ax4.imshow(image_for_thumb, cmap="gray")
+        if args.crop_size > 0:
+            c = args.crop_size
+            cy = h // 2
+            cx = w // 2
+            y0 = max(0, cy - c // 2)
+            x0 = max(0, cx - c // 2)
+            mark_x = px - x0
+            mark_y = py - y0
+        else:
+            mark_x = px
+            mark_y = py
+        ax4.scatter([mark_x], [mark_y], s=80, c="#cc2e40",
+                    marker="o", edgecolors="#363636", linewidths=1.0)
+        ax4.set_title(f"Pixel ({px}, {py}){crop_label}")
+        ax4.axis("off")
+        marked_path = (args.out_dir
+                       / f"input_marked_x{px}_y{py}{crop_label}.png")
+        plt.savefig(marked_path, dpi=150, bbox_inches="tight")
+        plt.close(fig4)
+        print(f"Saved {marked_path}")
 
 
 if __name__ == "__main__":
