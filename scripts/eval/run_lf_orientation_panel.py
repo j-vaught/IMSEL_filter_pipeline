@@ -47,53 +47,46 @@ from scipy.signal import find_peaks
 from edgecritic.wvf._radius_kernels import wvf_radius_gradients_cpu
 
 
-def find_two_peaks(angles_deg: np.ndarray, response: np.ndarray,
-                   min_separation_frac: float = 0.125
-                   ) -> np.ndarray:
-    """Return the two highest local-maximum indices in ``response``.
-
-    ``angles_deg`` is the corresponding orientation grid in degrees on
-    [0, 180); ``min_separation_frac`` is the minimum peak separation as
-    a fraction of the array length (defaults to 1/8 = 22.5 deg of
-    angular separation for any N).
+def find_n_peaks(response: np.ndarray, n_peaks: int,
+                 min_separation_frac: float = 0.125) -> np.ndarray:
+    """Return the indices of the ``n_peaks`` highest local maxima of
+    ``response``, sorted in ascending index order. Falls back to the
+    top-N raw values if scipy.signal.find_peaks returns fewer than
+    ``n_peaks`` candidates.
     """
     n = len(response)
     distance = max(1, int(min_separation_frac * n))
     peaks, _ = find_peaks(response, distance=distance)
-    if len(peaks) < 2:
-        # Fallback: pad with the global max not already in peaks.
+    if len(peaks) < n_peaks:
         order = np.argsort(-response)
-        return np.sort(order[:2])
+        return np.sort(order[:n_peaks])
     heights = response[peaks]
-    top2 = peaks[np.argsort(-heights)[:2]]
-    return np.sort(top2)
+    top = peaks[np.argsort(-heights)[:n_peaks]]
+    return np.sort(top)
 
 
 def spline_peak_angles(angles: np.ndarray, response: np.ndarray,
+                       n_peaks: int = 2,
                        k_dense: int = 10000) -> tuple[np.ndarray,
                                                        np.ndarray,
                                                        np.ndarray]:
-    """Fit a periodic cubic spline of period pi and return the two
-    interpolated peak angles (in radians on [0, pi)). Also returns the
-    dense angle/response arrays for plotting if desired.
-    """
+    """Fit a periodic cubic spline of period pi and return the
+    interpolated angles of the top ``n_peaks`` local maxima."""
     x = np.concatenate([angles, [np.pi]])
     y = np.concatenate([response, [response[0]]])
     cs = CubicSpline(x, y, bc_type="periodic")
     dense_a = np.linspace(0, np.pi, k_dense, endpoint=False)
     dense_r = cs(dense_a)
-    peak_idx = find_two_peaks(np.degrees(dense_a), dense_r)
+    peak_idx = find_n_peaks(dense_r, n_peaks)
     return dense_a[peak_idx], dense_a, dense_r
 
 
-def parabolic_peak_angles(angles: np.ndarray, response: np.ndarray
-                          ) -> np.ndarray:
-    """For each of the two highest discrete peaks, fit a parabola
-    through (k-1, k, k+1) and return the interpolated peak angles in
-    radians on [0, pi). Uses periodic indexing.
-    """
+def parabolic_peak_angles(angles: np.ndarray, response: np.ndarray,
+                          n_peaks: int = 2) -> np.ndarray:
+    """Return parabola-refined angles of the top ``n_peaks`` discrete
+    local maxima, in radians on [0, pi)."""
     n = len(response)
-    peak_idx = find_two_peaks(np.degrees(angles), response)
+    peak_idx = find_n_peaks(response, n_peaks)
     delta = np.pi / n
     out = []
     for k in peak_idx:
@@ -399,34 +392,38 @@ def main() -> None:
 
         if gt_angles_deg:
             gt_arr = np.sort(np.array(gt_angles_deg) % 180.0)
+            n_peaks = len(gt_arr)
             print()
             print("Peak-interpolation comparison vs GT angles "
                   f"{gt_arr.tolist()} deg:")
-            print(f"{'N':>5}  "
-                  f"{'spline_p1':>10} {'spline_p2':>10}  "
-                  f"{'parab_p1':>10} {'parab_p2':>10}  "
-                  f"{'spline_err1':>11} {'spline_err2':>11}  "
-                  f"{'parab_err1':>11} {'parab_err2':>11}")
+            header_pks = "  ".join(
+                f"{name + '_p' + str(i+1):>10}"
+                for name in ("spline", "parab")
+                for i in range(n_peaks))
+            header_errs = "  ".join(
+                f"{name + '_err' + str(i+1):>11}"
+                for name in ("spline", "parab")
+                for i in range(n_peaks))
+            print(f"{'N':>5}  {header_pks}  {header_errs}")
+
             spline_errs_per_n = []
             parab_errs_per_n = []
-            spline_peak_log = []
-            parab_peak_log = []
             for n, ang, resp in curves:
-                sp_pks_rad, _, _ = spline_peak_angles(ang, resp)
-                pa_pks_rad = parabolic_peak_angles(ang, resp)
+                sp_pks_rad, _, _ = spline_peak_angles(
+                    ang, resp, n_peaks=n_peaks)
+                pa_pks_rad = parabolic_peak_angles(
+                    ang, resp, n_peaks=n_peaks)
                 sp_pks_deg = np.sort(np.degrees(sp_pks_rad))
                 pa_pks_deg = np.sort(np.degrees(pa_pks_rad))
                 sp_err = pair_to_gt(sp_pks_deg, gt_arr)
                 pa_err = pair_to_gt(pa_pks_deg, gt_arr)
-                spline_peak_log.append(sp_pks_deg)
-                parab_peak_log.append(pa_pks_deg)
                 spline_errs_per_n.append(sp_err)
                 parab_errs_per_n.append(pa_err)
-                print(f"{n:>5}  "
-                      f"{sp_pks_deg[0]:>10.3f} {sp_pks_deg[1]:>10.3f}  "
-                      f"{pa_pks_deg[0]:>10.3f} {pa_pks_deg[1]:>10.3f}  "
-                      f"{sp_err[0]:>11.3f} {sp_err[1]:>11.3f}  "
-                      f"{pa_err[0]:>11.3f} {pa_err[1]:>11.3f}")
+                pk_str = "  ".join(f"{v:>10.3f}" for v in
+                                    list(sp_pks_deg) + list(pa_pks_deg))
+                err_str = "  ".join(f"{v:>11.3f}" for v in
+                                     list(sp_err) + list(pa_err))
+                print(f"{n:>5}  {pk_str}  {err_str}")
 
             spline_errs_per_n = np.array(spline_errs_per_n)
             parab_errs_per_n = np.array(parab_errs_per_n)
