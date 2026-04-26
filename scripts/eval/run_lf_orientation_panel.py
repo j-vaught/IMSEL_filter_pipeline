@@ -35,6 +35,7 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import json
 import time
 from pathlib import Path
 
@@ -219,6 +220,11 @@ def main() -> None:
         "--gt-angles", type=str, default="",
         help=("Comma-separated ground-truth tangent angles in degrees "
               "(modulo 180) to mark with vertical lines on the curve."))
+    parser.add_argument(
+        "--export-data", type=str, default=None,
+        help=("If set, also export raw image and curve data to this "
+              "directory in formats friendly to CeTZ figure code "
+              "(PNGs for heatmaps, JSON for curves and metadata)."))
     args = parser.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -302,6 +308,71 @@ def main() -> None:
     plt.savefig(input_path, dpi=150, bbox_inches="tight")
     plt.close(fig2)
     print(f"Saved {input_path}")
+
+    # ---- Raw-data export for downstream CeTZ figures. ----
+    export_dir: Path | None = None
+    if args.export_data is not None:
+        export_dir = Path(args.export_data)
+        export_dir.mkdir(parents=True, exist_ok=True)
+
+        # 1. Cropped input as a raw 8-bit grayscale PNG (no axes / titles).
+        thumb_arr = image_for_thumb.astype(np.float64)
+        tmin = float(thumb_arr.min())
+        tmax = float(thumb_arr.max())
+        if tmax > tmin:
+            thumb_u8 = ((thumb_arr - tmin) / (tmax - tmin) * 255.0
+                        ).clip(0, 255).astype(np.uint8)
+        else:
+            thumb_u8 = np.zeros_like(thumb_arr, dtype=np.uint8)
+        Image.fromarray(thumb_u8, mode="L").save(
+            export_dir / "input_crop.png")
+
+        # 2. Per-orientation response maps as raw uint8 PNGs, normalized
+        #    by the same global vmax used for the panel render so the
+        #    eight images share an identical color scale.
+        resp_dir = export_dir / "responses"
+        resp_dir.mkdir(parents=True, exist_ok=True)
+        for k in range(args.n_orientations):
+            r = stack_for_render[..., k].astype(np.float64)
+            if vmax > 0:
+                r_u8 = (np.clip(r / vmax, 0.0, 1.0) * 255.0
+                        ).astype(np.uint8)
+            else:
+                r_u8 = np.zeros_like(r, dtype=np.uint8)
+            deg = float(np.degrees(angles[k]))
+            Image.fromarray(r_u8, mode="L").save(
+                resp_dir / f"L_theta_{k:02d}_deg{deg:05.1f}.png")
+
+        # 3. Manifest with everything a downstream figure script needs.
+        manifest = {
+            "source_image": str(args.image),
+            "image_shape": [int(h), int(w)],
+            "radius": int(args.radius),
+            "order": int(args.order),
+            "half_width": int(args.half_width),
+            "n_orientations": int(args.n_orientations),
+            "orientation_angles_deg": [float(np.degrees(a))
+                                       for a in angles],
+            "clip_percentile": float(args.clip_percentile),
+            "vmax": float(vmax),
+            "crop_size": int(args.crop_size),
+            "crop_origin_xy": (
+                [int(max(0, w // 2 - args.crop_size // 2)),
+                 int(max(0, h // 2 - args.crop_size // 2))]
+                if args.crop_size > 0 else None),
+            "input_thumb_minmax": [tmin, tmax],
+            "files": {
+                "input_crop": "input_crop.png",
+                "responses": [
+                    f"responses/L_theta_{k:02d}_deg"
+                    f"{float(np.degrees(angles[k])):05.1f}.png"
+                    for k in range(args.n_orientations)
+                ],
+            },
+        }
+        with open(export_dir / "manifest.json", "w") as f:
+            json.dump(manifest, f, indent=2)
+        print(f"Exported raw image data to {export_dir}")
 
     if args.pixel is not None:
         px, py = (int(v.strip()) for v in args.pixel.split(","))
@@ -390,6 +461,26 @@ def main() -> None:
         plt.close(fig3)
         print(f"Saved {curve_path}")
 
+        if export_dir is not None:
+            curves_payload = {
+                "pixel_xy": [int(px), int(py)],
+                "half_width": int(args.half_width),
+                "gt_angles_deg": list(gt_angles_deg),
+                "curves": [
+                    {
+                        "n_orientations": int(n),
+                        "angles_deg": [float(np.degrees(a))
+                                       for a in ang],
+                        "response": [float(v) for v in resp],
+                    }
+                    for (n, ang, resp) in curves
+                ],
+            }
+            with open(export_dir / "pixel_response_curves.json", "w") as f:
+                json.dump(curves_payload, f, indent=2)
+            print(f"Exported pixel response curves to "
+                  f"{export_dir / 'pixel_response_curves.json'}")
+
         if gt_angles_deg:
             gt_arr = np.sort(np.array(gt_angles_deg) % 180.0)
             n_peaks = len(gt_arr)
@@ -453,6 +544,39 @@ def main() -> None:
             plt.savefig(err_path, dpi=150, bbox_inches="tight")
             plt.close(fig5)
             print(f"Saved {err_path}")
+
+            if export_dir is not None:
+                # Re-run the peak analysis to capture per-N peak angles
+                # (the printed loop above did not retain them).
+                peak_rows = []
+                for (n, ang, resp), sp_err, pa_err in zip(
+                        curves, spline_errs_per_n, parab_errs_per_n):
+                    sp_pks_rad, dense_a, dense_r = spline_peak_angles(
+                        ang, resp, n_peaks=n_peaks)
+                    pa_pks_rad = parabolic_peak_angles(
+                        ang, resp, n_peaks=n_peaks)
+                    peak_rows.append({
+                        "n_orientations": int(n),
+                        "spline_peaks_deg": [float(v) for v in
+                                             np.sort(np.degrees(sp_pks_rad))],
+                        "parabolic_peaks_deg": [float(v) for v in
+                                                np.sort(np.degrees(pa_pks_rad))],
+                        "spline_errors_deg": [float(v) for v in sp_err],
+                        "parabolic_errors_deg": [float(v) for v in pa_err],
+                        "spline_dense_angles_deg": [float(np.degrees(a))
+                                                    for a in dense_a],
+                        "spline_dense_response": [float(v) for v in dense_r],
+                    })
+                peaks_payload = {
+                    "pixel_xy": [int(px), int(py)],
+                    "gt_angles_deg": [float(v) for v in gt_arr.tolist()],
+                    "n_peaks": int(n_peaks),
+                    "rows": peak_rows,
+                }
+                with open(export_dir / "pixel_peak_analysis.json", "w") as f:
+                    json.dump(peaks_payload, f, indent=2)
+                print(f"Exported peak analysis to "
+                      f"{export_dir / 'pixel_peak_analysis.json'}")
 
         # Also save a small input thumbnail with the pixel marked.
         fig4, ax4 = plt.subplots(figsize=(5, 5))
