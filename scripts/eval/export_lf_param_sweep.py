@@ -96,6 +96,10 @@ def main() -> None:
     parser.add_argument("--clip-percentile", type=float, default=99.5)
     parser.add_argument("--crop-size", type=int, default=0,
                         help="Optional centered square crop of this side.")
+    parser.add_argument("--full-grid", action="store_true",
+                        help=("Sweep the full Cartesian product of "
+                              "(r-values x d-values x m-values) instead "
+                              "of the 3-row axis-only sweep."))
     args = parser.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -109,11 +113,15 @@ def main() -> None:
     d_vals = [int(v) for v in args.d_values.split(",") if v.strip()]
     m_vals = [int(v) for v in args.m_values.split(",") if v.strip()]
 
-    sweeps = [
-        ("d", [(args.fixed_r, d, args.fixed_m) for d in d_vals]),
-        ("r", [(r, args.fixed_d, args.fixed_m) for r in r_vals]),
-        ("m", [(args.fixed_r, args.fixed_d, m) for m in m_vals]),
-    ]
+    if args.full_grid:
+        combos = [(r, d, m) for r in r_vals for d in d_vals for m in m_vals]
+        sweeps = [("full", combos)]
+    else:
+        sweeps = [
+            ("d", [(args.fixed_r, d, args.fixed_m) for d in d_vals]),
+            ("r", [(r, args.fixed_d, args.fixed_m) for r in r_vals]),
+            ("m", [(args.fixed_r, args.fixed_d, m) for m in m_vals]),
+        ]
 
     grad_cache: dict[tuple[int, int], tuple[np.ndarray, np.ndarray]] = {}
     responses: dict[tuple[int, int, int], np.ndarray] = {}
