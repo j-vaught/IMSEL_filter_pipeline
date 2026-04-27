@@ -48,6 +48,8 @@ from sklearn.mixture import GaussianMixture
 from edgecritic.wvf._radius_kernels import (
     wvf_radius_gradients_cpu, build_wvf_radius_kernels)
 
+from cgmm_vmm import vmm_fuse, theta_M_to_phi_w
+
 try:
     from edgecritic.wvf._metal import (
         wvf_radius_gradients_metal, metal_backend_available)
@@ -368,32 +370,49 @@ def evaluate(label, channels, sample_pixels, gt_tangent_at_samples,
             col += 1
             print(f"    m={m:>3}: {time.perf_counter()-t1:.1f}s")
 
-    print(f"  [{label}] fitting c-GMM (2-comp and 3-comp)...")
-    t0 = time.perf_counter()
+    return primary_t, primary_m
+
+
+# ---- per-pixel sklearn GMM fit (parallel via ProcessPoolExecutor) ----
+
+def _fit_gmm_one_pixel(args):
+    ths, mgs, gt, K = args
+    if mgs.sum() <= 1e-9:
+        return float("nan")
+    return unsigned_angle_error_deg(
+        cgmm_signal_theta(ths, mgs, n_components=K), gt)
+
+
+def fit_gmm_errors(primary_t, primary_m, gt_tangent_at, K, label):
+    N = primary_t.shape[0]
     n_workers = min(os.cpu_count() or 1, 12)
     chunk = max(1, N // (n_workers * 4))
     args_list = [
-        (primary_t[i], primary_m[i], gt_tangent_at_samples[i])
+        (primary_t[i], primary_m[i], gt_tangent_at[i], K)
         for i in range(N)
     ]
+    t0 = time.perf_counter()
     with ProcessPoolExecutor(max_workers=n_workers) as pool:
-        results = list(pool.map(_fit_one_pixel, args_list, chunksize=chunk))
-    err_2 = np.asarray([r[0] for r in results])
-    err_3 = np.asarray([r[1] for r in results])
-    print(f"  [{label}] c-GMM fits ({n_workers} workers): "
-          f"{time.perf_counter()-t0:.1f}s")
-    return err_2, err_3
+        errs = list(pool.map(_fit_gmm_one_pixel, args_list, chunksize=chunk))
+    elapsed = time.perf_counter() - t0
+    print(f"  [{label}] GMM K={K} fit ({n_workers} workers): {elapsed:.1f}s")
+    return np.asarray(errs), elapsed
 
 
-def _fit_one_pixel(args):
-    ths, mgs, gt = args
-    if mgs.sum() <= 1e-9:
-        return (float("nan"), float("nan"))
-    e2 = unsigned_angle_error_deg(
-        cgmm_signal_theta(ths, mgs, n_components=2), gt)
-    e3 = unsigned_angle_error_deg(
-        cgmm_signal_theta(ths, mgs, n_components=3), gt)
-    return (e2, e3)
+# ---- vMM fit (one batched call across all P pixels) ----
+
+def fit_vmm_errors(primary_t, primary_m, gt_tangent_at, K, label,
+                   n_iters=30, tau_M_rel=0.10, rho=0.40, select="pi"):
+    phi, w, _ = theta_M_to_phi_w(primary_t, primary_m)
+    t0 = time.perf_counter()
+    out = vmm_fuse(phi, w, K=K, n_iters=n_iters,
+                   tau_M_rel=tau_M_rel, rho=rho, select=select)
+    elapsed = time.perf_counter() - t0
+    theta_est_deg = np.degrees(out["theta_fused"]) % 180.0
+    errs = unsigned_angle_error_deg(theta_est_deg, gt_tangent_at)
+    print(f"  [{label}] vMM K={K} fit (batched, select={select}): "
+          f"{elapsed:.2f}s")
+    return errs, elapsed
 
 
 PCTS = (50, 90, 99, 99.9, 99.99, 99.999)
@@ -429,6 +448,21 @@ def main():
     p.add_argument("--edge-band-px", type=int, default=0)
     p.add_argument("--vertex-exclude-px", type=int, default=24)
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--methods", default="gmm,vmm",
+                   help="comma list of methods to evaluate (gmm | vmm)")
+    p.add_argument("--Ks", default="2,3",
+                   help="comma list of component counts to evaluate")
+    p.add_argument("--vmm-tau-M-rel", type=float, default=0.10,
+                   help="secondary suppression: M_sec must exceed "
+                        "tau_M_rel * M_signal (default 0.10)")
+    p.add_argument("--vmm-rho", type=float, default=0.40,
+                   help="secondary suppression: pi_sec / pi_signal "
+                        "must exceed rho (default 0.40)")
+    p.add_argument("--vmm-n-iters", type=int, default=30)
+    p.add_argument("--vmm-select", default="pi", choices=["pi", "pi_kappa"],
+                   help="component selection rule for vMM signal "
+                        "(default 'pi' per spec; 'pi_kappa' is robust "
+                        "against split-cluster instability at K>=3)")
     p.add_argument("--out", required=True, type=Path)
     args = p.parse_args()
 
@@ -456,46 +490,70 @@ def main():
     gt_tangent_at = np.degrees((gt_normal_at + math.pi / 2.0) % math.pi)
 
     m_values = [int(s) for s in args.m_values.split(",") if s.strip()]
+    methods  = [s.strip() for s in args.methods.split(",") if s.strip()]
+    Ks       = [int(s)    for s in args.Ks.split(",")      if s.strip()]
+    for mth in methods:
+        if mth not in ("gmm", "vmm"):
+            raise ValueError(f"unknown method: {mth!r}")
 
     # ---- Clean ----
     print("\n========== CLEAN ==========")
     clean_channels = load_channels_clean(args.clean_rgb)
-    err2_c, err3_c = evaluate("clean", clean_channels, sample_pixels,
-                               gt_tangent_at,
-                               m_values, args.n_orientations,
-                               args.r, args.d)
+    primary_t_c, primary_m_c = evaluate("clean", clean_channels,
+                                        sample_pixels, gt_tangent_at,
+                                        m_values, args.n_orientations,
+                                        args.r, args.d)
 
     # ---- Noisy ----
     print("\n========== NOISY ==========")
     noisy_channels = load_channels_noisy(args.noisy_dir)
-    err2_n, err3_n = evaluate("noisy", noisy_channels, sample_pixels,
-                               gt_tangent_at,
-                               m_values, args.n_orientations,
-                               args.r, args.d)
+    primary_t_n, primary_m_n = evaluate("noisy", noisy_channels,
+                                        sample_pixels, gt_tangent_at,
+                                        m_values, args.n_orientations,
+                                        args.r, args.d)
 
-    rows = [
-        summarise("clean / 2-comp", err2_c),
-        summarise("clean / 3-comp", err3_c),
-        summarise("noisy / 2-comp", err2_n),
-        summarise("noisy / 3-comp", err3_n),
-    ]
+    # ---- Fit each (method, K) on both conditions ----
+    rows = []
+    timings = {}
+    for cond, primary_t, primary_m in (
+            ("clean", primary_t_c, primary_m_c),
+            ("noisy", primary_t_n, primary_m_n),
+    ):
+        for mth in methods:
+            for K in Ks:
+                tag = f"{cond} / {mth} K={K}"
+                if mth == "gmm":
+                    errs, t = fit_gmm_errors(primary_t, primary_m,
+                                             gt_tangent_at, K, tag)
+                else:
+                    errs, t = fit_vmm_errors(primary_t, primary_m,
+                                             gt_tangent_at, K, tag,
+                                             n_iters=args.vmm_n_iters,
+                                             tau_M_rel=args.vmm_tau_M_rel,
+                                             rho=args.vmm_rho,
+                                             select=args.vmm_select)
+                rows.append(summarise(tag, errs))
+                timings[tag] = t
 
     print("\n=========================================================")
     print(f"Image-wide c-GMM evaluation @ smooth-edge pixels (n={len(ys)})")
     print(f"r={args.r}  d={args.d}  m={args.m_values}  "
           f"n_orientations={args.n_orientations}")
     print("=========================================================")
-    hdr = (f"{'condition':<18} {'mean':>7} {'p50':>7} {'p90':>7} "
-           f"{'p99':>7} {'p99.9':>7} {'p99.99':>7} {'p99.999':>8} "
-           f"{'max':>7} {'n':>8}")
+    hdr = (f"{'condition':<22} {'mean':>7} {'p50':>7} {'p90':>7} "
+           f"{'p99':>7} {'p99.9':>7} {'p99.99':>8} {'p99.999':>8} "
+           f"{'max':>7} {'n':>8} {'fit_s':>7}")
     print(hdr)
     print("-" * len(hdr))
     for r in rows:
-        print(f"{r['name']:<18} {r['mean']:>7.3f} {r['p50']:>7.3f} "
+        t = timings.get(r["name"], float("nan"))
+        print(f"{r['name']:<22} {r['mean']:>7.3f} {r['p50']:>7.3f} "
               f"{r['p90']:>7.3f} {r['p99']:>7.3f} "
-              f"{r['p99.9']:>7.3f} {r['p99.99']:>7.3f} "
-              f"{r['p99.999']:>8.3f} {r['max']:>7.3f} {r['n']:>8d}")
-    print("(degrees, unsigned line-orientation error vs GT tangent)")
+              f"{r['p99.9']:>7.3f} {r['p99.99']:>8.3f} "
+              f"{r['p99.999']:>8.3f} {r['max']:>7.3f} "
+              f"{r['n']:>8d} {t:>7.2f}")
+    print("(degrees, unsigned line-orientation error vs GT tangent; "
+          "fit_s = wall-clock for the c-GMM step only)")
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with open(args.out, "w") as f:
@@ -510,8 +568,14 @@ def main():
                 "seed": args.seed,
                 "image_key": args.image_key,
                 "size": args.size,
+                "methods": methods,
+                "Ks": Ks,
+                "vmm_tau_M_rel": args.vmm_tau_M_rel,
+                "vmm_rho": args.vmm_rho,
+                "vmm_n_iters": args.vmm_n_iters,
             },
             "results": rows,
+            "timings_seconds": timings,
         }, f, indent=2)
     print(f"\nWrote {args.out}")
 
