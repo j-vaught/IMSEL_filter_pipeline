@@ -107,8 +107,18 @@ class VMMResult:
 
 def vmm_em(phi, w, K,
            n_iters=30, init_kappa=4.0, kappa_max=700.0, eps=1e-12,
-           record_log_lik=False):
-    """Vectorised weighted vM mixture EM, fixed iterations."""
+           hard_seed=False, hard_em=False, record_log_lik=False):
+    """Vectorised weighted vM mixture EM, fixed iterations.
+
+    hard_seed: if True, at iter 0 use one-hot responsibilities based on
+        nearest-mu (circular distance) rather than soft vM densities.
+        Breaks the symmetry when init_kappa is too low to discriminate
+        closely-spaced clusters via soft assignment. From iter 1 onward,
+        normal soft EM continues.
+    hard_em: if True, every iteration uses one-hot responsibilities
+        (i.e., this becomes a weighted k-means on the circle, equivalent
+        to vM mixture EM in the kappa->infinity limit).
+    """
     phi = np.asarray(phi, dtype=np.float64)
     w   = np.asarray(w,   dtype=np.float64)
     P, N = phi.shape
@@ -121,23 +131,35 @@ def vmm_em(phi, w, K,
 
     log_lik_trace = []
 
-    for _ in range(n_iters):
+    for it in range(n_iters):
         # E-step
-        cos_diff = np.cos(phi[:, None, :] - mu[:, :, None])      # (P, K, N)
-        log_norm = log_I0_safe(kappa) + log_2pi                   # (P, K)
-        log_pi   = np.log(np.maximum(pi, eps))                    # (P, K)
-        log_unnorm = (log_pi[:, :, None]
-                      + kappa[:, :, None] * cos_diff
-                      - log_norm[:, :, None])                     # (P, K, N)
-        m_max = np.max(log_unnorm, axis=1, keepdims=True)
-        e_un  = np.exp(log_unnorm - m_max)
-        gamma = e_un / np.maximum(e_un.sum(axis=1, keepdims=True), eps)
+        if hard_em or (hard_seed and it == 0):
+            d = circular_distance(phi[:, None, :], mu[:, :, None])  # (P, K, N)
+            hard_idx = np.argmin(d, axis=1)                          # (P, N)
+            gamma = np.zeros((P, K, N), dtype=np.float64)
+            pp = np.arange(P)[:, None]
+            nn = np.arange(N)[None, :]
+            gamma[pp, hard_idx, nn] = 1.0
+        else:
+            cos_diff = np.cos(phi[:, None, :] - mu[:, :, None])  # (P, K, N)
+            log_norm = log_I0_safe(kappa) + log_2pi               # (P, K)
+            log_pi   = np.log(np.maximum(pi, eps))                # (P, K)
+            log_unnorm = (log_pi[:, :, None]
+                          + kappa[:, :, None] * cos_diff
+                          - log_norm[:, :, None])                  # (P, K, N)
+            m_max = np.max(log_unnorm, axis=1, keepdims=True)
+            e_un  = np.exp(log_unnorm - m_max)
+            gamma = e_un / np.maximum(e_un.sum(axis=1, keepdims=True), eps)
 
         if record_log_lik:
-            log_marg = m_max[:, 0, :] + np.log(
-                np.maximum(e_un.sum(axis=1), eps))
-            ll = (w * log_marg).sum(axis=1)
-            log_lik_trace.append(ll.copy())
+            if hard_em or (hard_seed and it == 0):
+                # Hard E-step: no soft log-marginals available; push NaN.
+                log_lik_trace.append(np.full(P, np.nan))
+            else:
+                log_marg = m_max[:, 0, :] + np.log(
+                    np.maximum(e_un.sum(axis=1), eps))
+                ll = (w * log_marg).sum(axis=1)
+                log_lik_trace.append(ll.copy())
 
         # M-step
         w_gamma = w[:, None, :] * gamma                           # (P, K, N)
@@ -241,7 +263,8 @@ def theta_M_to_phi_w(theta_deg, M, v=None):
 # Fusion
 # ---------------------------------------------------------------------------
 
-def vmm_fuse(phi, w, K=3, n_iters=30,
+def vmm_fuse(phi, w, K=3, n_iters=30, init_kappa=4.0,
+             hard_seed=False, hard_em=False,
              tau_M_rel=0.10, rho=0.40, select="pi"):
     """Fit weighted vM mixture per pixel and select primary/secondary.
 
@@ -290,7 +313,9 @@ def vmm_fuse(phi, w, K=3, n_iters=30,
                     M_fused_sec=M_fused_sec, v_fused=v_fused,
                     mu=mu_full, kappa=kappa_full, pi=pi_full, W=W_full)
 
-    res = vmm_em(phi[valid], w[valid], K=K, n_iters=n_iters)
+    res = vmm_em(phi[valid], w[valid], K=K,
+                 n_iters=n_iters, init_kappa=init_kappa,
+                 hard_seed=hard_seed, hard_em=hard_em)
     Pv  = int(valid.sum())
     pi  = res.pi
     mu  = res.mu

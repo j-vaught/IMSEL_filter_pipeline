@@ -402,10 +402,13 @@ def fit_gmm_errors(primary_t, primary_m, gt_tangent_at, K, label):
 # ---- vMM fit (one batched call across all P pixels) ----
 
 def fit_vmm_errors(primary_t, primary_m, gt_tangent_at, K, label,
-                   n_iters=30, tau_M_rel=0.10, rho=0.40, select="pi"):
+                   n_iters=30, init_kappa=4.0,
+                   hard_seed=False, hard_em=False,
+                   tau_M_rel=0.10, rho=0.40, select="pi"):
     phi, w, _ = theta_M_to_phi_w(primary_t, primary_m)
     t0 = time.perf_counter()
-    out = vmm_fuse(phi, w, K=K, n_iters=n_iters,
+    out = vmm_fuse(phi, w, K=K, n_iters=n_iters, init_kappa=init_kappa,
+                   hard_seed=hard_seed, hard_em=hard_em,
                    tau_M_rel=tau_M_rel, rho=rho, select=select)
     elapsed = time.perf_counter() - t0
     theta_est_deg = np.degrees(out["theta_fused"]) % 180.0
@@ -459,6 +462,17 @@ def main():
                    help="secondary suppression: pi_sec / pi_signal "
                         "must exceed rho (default 0.40)")
     p.add_argument("--vmm-n-iters", type=int, default=30)
+    p.add_argument("--vmm-init-kappa", type=float, default=4.0,
+                   help="initial concentration for all components "
+                        "(spec=4.0; higher values help discriminate "
+                        "closely-spaced clusters at iter 0)")
+    p.add_argument("--vmm-hard-seed", action="store_true",
+                   help="use hard k-means assignment at iter 0 to break "
+                        "the symmetric-collapse failure on tight unimodal "
+                        "data; continues with soft EM thereafter")
+    p.add_argument("--vmm-hard-em", action="store_true",
+                   help="use hard k-means at every iteration "
+                        "(equivalent to vMM EM in the kappa->infty limit)")
     p.add_argument("--vmm-select", default="pi", choices=["pi", "pi_kappa"],
                    help="component selection rule for vMM signal "
                         "(default 'pi' per spec; 'pi_kappa' is robust "
@@ -529,6 +543,9 @@ def main():
                     errs, t = fit_vmm_errors(primary_t, primary_m,
                                              gt_tangent_at, K, tag,
                                              n_iters=args.vmm_n_iters,
+                                             init_kappa=args.vmm_init_kappa,
+                                             hard_seed=args.vmm_hard_seed,
+                                             hard_em=args.vmm_hard_em,
                                              tau_M_rel=args.vmm_tau_M_rel,
                                              rho=args.vmm_rho,
                                              select=args.vmm_select)
