@@ -23,7 +23,19 @@ import streamlit as st
 from PIL import Image
 from matplotlib.patches import Circle, Rectangle
 
-from edgecritic.wvf._radius_kernels import wvf_radius_gradients_cpu
+from edgecritic.wvf._radius_kernels import (
+    wvf_radius_gradients_cpu, build_wvf_radius_kernels)
+
+# Try to load the Metal GPU backend (Apple Silicon). Fall back to CPU
+# silently if the Rust dylib hasn't been built or Metal isn't
+# available.
+try:
+    from edgecritic.wvf._metal import (
+        wvf_radius_gradients_metal, metal_backend_available)
+    _METAL_OK = metal_backend_available()
+except Exception:
+    wvf_radius_gradients_metal = None
+    _METAL_OK = False
 
 
 # ----- Image registry --------------------------------------------------
@@ -47,9 +59,12 @@ def load_image(path_str: str) -> np.ndarray:
 
 
 @st.cache_data(show_spinner=False)
-def compute_wvf(path_str: str, r: int, d: int) -> tuple[np.ndarray,
-                                                          np.ndarray]:
+def compute_wvf(path_str: str, r: int, d: int,
+                use_gpu: bool = True) -> tuple[np.ndarray, np.ndarray]:
     img = load_image(path_str)
+    if use_gpu and _METAL_OK:
+        kernels = build_wvf_radius_kernels(radius=r, order=d)
+        return wvf_radius_gradients_metal(img, kernels)
     return wvf_radius_gradients_cpu(img, radius=r, order=d)
 
 
@@ -99,6 +114,11 @@ def lf_curve_at_pixel(g_x, g_y, px, py, n_orient, m):
 # ----- Streamlit UI ----------------------------------------------------
 st.set_page_config(page_title="LF orientation demo", layout="wide")
 st.title("LF orientation demo")
+if _METAL_OK:
+    st.caption("WVF backend: **Metal (GPU)**")
+else:
+    st.caption("WVF backend: CPU "
+                "(Metal dylib unavailable - fallback)")
 
 with st.sidebar:
     st.header("Inputs")
@@ -135,8 +155,10 @@ with st.sidebar:
                                         value=45, step=1)
 
 # Compute
-with st.spinner("computing WVF gradients …"):
-    g_x, g_y = compute_wvf(str(image_path), r, d)
+with st.spinner(
+        f"computing WVF gradients "
+        f"({'GPU/Metal' if _METAL_OK else 'CPU'}) …"):
+    g_x, g_y = compute_wvf(str(image_path), int(r), int(d))
 
 theta_rad_demo = np.radians(demo_orientation)
 angles, response = lf_curve_at_pixel(g_x, g_y, px, py, n_orient, m)
