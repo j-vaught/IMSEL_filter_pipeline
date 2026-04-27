@@ -95,7 +95,11 @@ def main() -> None:
     parser.add_argument("--n-orientations", type=int, default=16)
     parser.add_argument("--clip-percentile", type=float, default=99.5)
     parser.add_argument("--crop-size", type=int, default=0,
-                        help="Optional centered square crop of this side.")
+                        help="Optional square crop of this side.")
+    parser.add_argument("--crop-cx", type=int, default=None,
+                        help="Crop center x; defaults to image center.")
+    parser.add_argument("--crop-cy", type=int, default=None,
+                        help="Crop center y; defaults to image center.")
     parser.add_argument("--full-grid", action="store_true",
                         help=("Sweep the full Cartesian product of "
                               "(r-values x d-values x m-values) instead "
@@ -144,17 +148,21 @@ def main() -> None:
                   f"({time.perf_counter() - t0:.1f}s)")
             responses[(r, d, m)] = mag
 
-    # Optional centered crop applied uniformly to all maps.
+    # Optional crop applied uniformly to all maps.
+    crop_origin_xy = None
     if args.crop_size > 0:
         c = args.crop_size
-        cy, cx = h // 2, w // 2
+        cy = args.crop_cy if args.crop_cy is not None else h // 2
+        cx = args.crop_cx if args.crop_cx is not None else w // 2
         y0 = max(0, cy - c // 2)
         x0 = max(0, cx - c // 2)
         y1 = min(h, y0 + c)
         x1 = min(w, x0 + c)
         for k in list(responses.keys()):
             responses[k] = responses[k][y0:y1, x0:x1]
-        print(f"Cropped to {y1 - y0} x {x1 - x0} centered on the image.")
+        crop_origin_xy = [int(x0), int(y0)]
+        print(f"Cropped to {y1 - y0} x {x1 - x0} at origin "
+              f"(x={x0}, y={y0}).")
 
     # Global vmax for cross-panel comparability.
     vmax = max(float(np.percentile(mag, args.clip_percentile))
@@ -184,6 +192,7 @@ def main() -> None:
         "n_orientations": args.n_orientations,
         "vmax": vmax,
         "crop_size": int(args.crop_size),
+        "crop_origin_xy": crop_origin_xy,
         "convention": "gray_r (high response = dark)",
     }
     with open(args.out_dir / "manifest.json", "w") as f:

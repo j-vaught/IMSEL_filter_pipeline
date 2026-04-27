@@ -32,9 +32,16 @@ from edgecritic.evaluation.metrics import compute_ods_ois
 _FNAME_RX = re.compile(r"edge_r(\d+)_d(\d+)_m(\d+)\.png")
 
 
-def derive_gt(rgb_path: Path) -> np.ndarray:
-    """Boolean GT edge map: any pixel adjacent to a different color."""
+def derive_gt(rgb_path: Path,
+              crop_origin: tuple[int, int] | None = None,
+              crop_size: int = 0) -> np.ndarray:
+    """Boolean GT edge map: any pixel adjacent to a different color.
+    Optionally crops the RGB to the same region as the sweep maps so
+    GT and prediction share an identical pixel grid."""
     arr = np.asarray(Image.open(rgb_path).convert("RGB"))
+    if crop_size > 0 and crop_origin is not None:
+        x0, y0 = crop_origin
+        arr = arr[y0:y0 + crop_size, x0:x0 + crop_size]
     diff_x = np.any(arr[:, 1:] != arr[:, :-1], axis=-1)
     diff_y = np.any(arr[1:, :] != arr[:-1, :], axis=-1)
     edges = np.zeros(arr.shape[:2], dtype=bool)
@@ -61,9 +68,21 @@ def main() -> None:
                         help="Pixel tolerance for ODS edge matching.")
     args = parser.parse_args()
 
-    gt = derive_gt(args.rgb)
+    # If the sweep was cropped, mirror the crop on the GT.
+    manifest_path = args.sweep_dir / "manifest.json"
+    crop_origin = None
+    crop_size = 0
+    if manifest_path.exists():
+        m = json.loads(manifest_path.read_text())
+        crop_size = int(m.get("crop_size", 0))
+        crop_origin = m.get("crop_origin_xy")
+        if crop_origin is not None:
+            crop_origin = tuple(crop_origin)
+    gt = derive_gt(args.rgb, crop_origin=crop_origin, crop_size=crop_size)
     print(f"GT image: {args.rgb.name}, "
-          f"{int(gt.sum()):,} edge pixels in {gt.shape}")
+          f"{int(gt.sum()):,} edge pixels in {gt.shape}"
+          + (f" (cropped to {crop_size}x{crop_size} "
+             f"at origin {crop_origin})" if crop_size > 0 else ""))
 
     rows = []
     for png in sorted(args.sweep_dir.glob("edge_*.png")):
