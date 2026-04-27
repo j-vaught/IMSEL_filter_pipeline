@@ -81,8 +81,8 @@ def main() -> None:
 
     out = {"cases": []}
     for label, prefix in CASES:
-        all_thetas = []
-        all_mags = []
+        primary_t, primary_m = [], []
+        secondary_t, secondary_m = [], []
         pixel_xy = None
         for ch in ("L", "R", "G", "B"):
             path = args.data_dir / f"{prefix}_{ch}.json"
@@ -93,36 +93,63 @@ def main() -> None:
             if pixel_xy is None:
                 pixel_xy = v["pixel_xy"]
             for m_str, row in v["by_m"].items():
-                all_thetas.append(row["theta_hat"])
-                all_mags.append(row["M_hat"])
-                # Include the secondary peak too so corner pixels expose
-                # both tangent directions in the configuration stack.
+                primary_t.append(row["theta_hat"])
+                primary_m.append(row["M_hat"])
                 if (row["theta_sec"] == row["theta_sec"]
                         and row["M_sec"] > 0.0):
-                    all_thetas.append(row["theta_sec"])
-                    all_mags.append(row["M_sec"])
-        thetas = np.asarray(all_thetas)
-        mags = np.asarray(all_mags)
-        components = cgmm_fit(thetas, mags)
+                    secondary_t.append(row["theta_sec"])
+                    secondary_m.append(row["M_sec"])
 
-        samples = [
+        # Two independent c-GMMs, each 2-component (signal + noise).
+        primary_components = cgmm_fit(
+            np.asarray(primary_t), np.asarray(primary_m))
+        secondary_components = cgmm_fit(
+            np.asarray(secondary_t), np.asarray(secondary_m))
+
+        # Within each c-GMM, label the more-concentrated component as
+        # "signal" and the diffuse one as "noise".
+        def annotate(components):
+            if len(components) == 0:
+                return components
+            ranked = sorted(components, key=lambda c: -c["R"])
+            ranked[0]["role"] = "signal"
+            for c in ranked[1:]:
+                c["role"] = "noise"
+            return ranked
+
+        primary_components = annotate(primary_components)
+        secondary_components = annotate(secondary_components)
+
+        primary_samples = [
             {"theta": float(t), "M": float(m),
-             "phi": float(2 * np.radians(t))}
-            for t, m in zip(thetas, mags)
+             "phi": float(2 * np.radians(t)),
+             "stream": "primary"}
+            for t, m in zip(primary_t, primary_m)
         ]
+        secondary_samples = [
+            {"theta": float(t), "M": float(m),
+             "phi": float(2 * np.radians(t)),
+             "stream": "secondary"}
+            for t, m in zip(secondary_t, secondary_m)
+        ]
+
         out["cases"].append({
             "label": label,
             "pixel_xy": pixel_xy,
-            "samples": samples,
-            "components": components,
+            "primary_samples": primary_samples,
+            "secondary_samples": secondary_samples,
+            "primary_components": primary_components,
+            "secondary_components": secondary_components,
         })
-        n_real = sum(1 for s in samples if s["M"] > 1e-6)
-        print(f"  {label}: {len(samples)} samples ({n_real} non-zero), "
-              f"{len(components)} components")
-        for c in components:
-            print(f"    w={c['weight']:.3f}  "
-                  f"theta_mean={c['theta_mean']:.2f}  "
-                  f"R={c['R']:.3f}")
+        print(f"  {label}: primary {len(primary_samples)} "
+              f"samples, secondary {len(secondary_samples)} samples")
+        for stream, comps in (("primary", primary_components),
+                               ("secondary", secondary_components)):
+            for c in comps:
+                print(f"    {stream:>9}/{c['role']:>6}: "
+                      f"w={c['weight']:.3f}  "
+                      f"theta={c['theta_mean']:.2f}  "
+                      f"R={c['R']:.3f}")
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with open(args.out, "w") as f:
