@@ -33,7 +33,9 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import time
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import numpy as np
@@ -237,33 +239,37 @@ def lf_response_at_pixels(g_x, g_y, px, py, theta, m):
     return np.abs(num / np.maximum(den, 1e-12))
 
 
-def find_two_peaks(angles_rad, response_2d):
-    """Return (theta_hat[N], M_hat[N], theta_sec[N], M_sec[N])."""
+def find_two_peaks(angles_rad, response_2d, dense_n=2000,
+                   min_sep_frac=0.125):
+    """Vectorized periodic-cubic-spline peak finder over rows of
+    response_2d. Returns (theta_hat, M_hat, theta_sec, M_sec)."""
     N, K = response_2d.shape
-    th_hat   = np.zeros(N, dtype=np.float64)
-    M_hat    = np.zeros(N, dtype=np.float64)
-    th_sec   = np.zeros(N, dtype=np.float64)
-    M_sec    = np.zeros(N, dtype=np.float64)
     x = np.concatenate([angles_rad, [math.pi]])
-    dense_a = np.linspace(0, math.pi, 4000, endpoint=False)
-    distance = max(1, int(0.125 * len(dense_a)))
-    for i in range(N):
-        y = np.concatenate([response_2d[i], [response_2d[i, 0]]])
-        cs = CubicSpline(x, y, bc_type="periodic")
-        dy = cs(dense_a)
-        peaks, _ = find_peaks(dy, distance=distance)
-        if len(peaks) < 2:
-            order = np.argsort(-dy)
-            peaks = np.sort(order[:2])
-        heights = dy[peaks]
-        top = peaks[np.argsort(-heights)[:2]]
-        a1 = dense_a[top[0]]; m1 = dy[top[0]]
-        a2 = dense_a[top[1]]; m2 = dy[top[1]]
-        if m1 < m2:
-            a1, a2 = a2, a1
-            m1, m2 = m2, m1
-        th_hat[i] = a1; M_hat[i] = m1
-        th_sec[i] = a2; M_sec[i] = m2
+    y = np.concatenate([response_2d, response_2d[:, :1]], axis=1)
+    cs = CubicSpline(x, y, axis=1, bc_type="periodic")
+    dense_a = np.linspace(0, math.pi, dense_n, endpoint=False)
+    dy = cs(dense_a)            # shape (N, dense_n)
+    left  = np.roll(dy, 1, axis=1)
+    right = np.roll(dy, -1, axis=1)
+    is_peak = (dy >= left) & (dy >= right)
+    masked = np.where(is_peak, dy, -np.inf)
+    primary_idx = np.argmax(masked, axis=1)
+    th_hat = dense_a[primary_idx]
+    M_hat  = dy[np.arange(N), primary_idx]
+    sep = max(1, int(min_sep_frac * dense_n))
+    grid = np.arange(dense_n)
+    d = np.abs(grid[None, :] - primary_idx[:, None])
+    d = np.minimum(d, dense_n - d)
+    masked2 = np.where(d > sep, masked, -np.inf)
+    sec_idx = np.argmax(masked2, axis=1)
+    th_sec = dense_a[sec_idx]
+    M_sec  = dy[np.arange(N), sec_idx]
+    bad = ~np.isfinite(M_sec)
+    if bad.any():
+        flat_dy = np.where(d > sep, dy, -np.inf)
+        sec_idx2 = np.argmax(flat_dy, axis=1)
+        th_sec = np.where(bad, dense_a[sec_idx2], th_sec)
+        M_sec  = np.where(bad, dy[np.arange(N), sec_idx2], M_sec)
     return th_hat, M_hat, th_sec, M_sec
 
 
@@ -363,39 +369,49 @@ def evaluate(label, channels, sample_pixels, gt_tangent_at_samples,
             print(f"    m={m:>3}: {time.perf_counter()-t1:.1f}s")
 
     print(f"  [{label}] fitting c-GMM (2-comp and 3-comp)...")
-    err_2 = np.full(N, np.nan)
-    err_3 = np.full(N, np.nan)
     t0 = time.perf_counter()
-    for i in range(N):
-        ths = primary_t[i]
-        mgs = primary_m[i]
-        if mgs.sum() <= 1e-9:
-            continue
-        gt = gt_tangent_at_samples[i]
-        e2 = unsigned_angle_error_deg(
-            cgmm_signal_theta(ths, mgs, n_components=2), gt)
-        e3 = unsigned_angle_error_deg(
-            cgmm_signal_theta(ths, mgs, n_components=3), gt)
-        err_2[i] = e2
-        err_3[i] = e3
-    print(f"  [{label}] c-GMM fits: {time.perf_counter()-t0:.1f}s")
-
+    n_workers = min(os.cpu_count() or 1, 12)
+    chunk = max(1, N // (n_workers * 4))
+    args_list = [
+        (primary_t[i], primary_m[i], gt_tangent_at_samples[i])
+        for i in range(N)
+    ]
+    with ProcessPoolExecutor(max_workers=n_workers) as pool:
+        results = list(pool.map(_fit_one_pixel, args_list, chunksize=chunk))
+    err_2 = np.asarray([r[0] for r in results])
+    err_3 = np.asarray([r[1] for r in results])
+    print(f"  [{label}] c-GMM fits ({n_workers} workers): "
+          f"{time.perf_counter()-t0:.1f}s")
     return err_2, err_3
+
+
+def _fit_one_pixel(args):
+    ths, mgs, gt = args
+    if mgs.sum() <= 1e-9:
+        return (float("nan"), float("nan"))
+    e2 = unsigned_angle_error_deg(
+        cgmm_signal_theta(ths, mgs, n_components=2), gt)
+    e3 = unsigned_angle_error_deg(
+        cgmm_signal_theta(ths, mgs, n_components=3), gt)
+    return (e2, e3)
+
+
+PCTS = (50, 90, 99, 99.9, 99.99, 99.999)
 
 
 def summarise(name, errs):
     valid = errs[np.isfinite(errs)]
+    out = dict(name=name, n=int(len(valid)),
+               mean=float("nan"), max=float("nan"))
+    for q in PCTS:
+        out[f"p{q}"] = float("nan")
     if len(valid) == 0:
-        return dict(name=name, n=0,
-                    mean=float("nan"), median=float("nan"),
-                    p90=float("nan"), p99=float("nan"))
-    return dict(
-        name=name, n=int(len(valid)),
-        mean=float(np.mean(valid)),
-        median=float(np.median(valid)),
-        p90=float(np.percentile(valid, 90)),
-        p99=float(np.percentile(valid, 99)),
-    )
+        return out
+    out["mean"] = float(np.mean(valid))
+    out["max"]  = float(np.max(valid))
+    for q in PCTS:
+        out[f"p{q}"] = float(np.percentile(valid, q))
+    return out
 
 
 def main():
@@ -469,11 +485,17 @@ def main():
     print(f"r={args.r}  d={args.d}  m={args.m_values}  "
           f"n_orientations={args.n_orientations}")
     print("=========================================================")
-    print(f"{'condition':<18} {'mean':>8} {'median':>8} {'p90':>8} {'p99':>8} {'n':>8}")
+    hdr = (f"{'condition':<18} {'mean':>7} {'p50':>7} {'p90':>7} "
+           f"{'p99':>7} {'p99.9':>7} {'p99.99':>7} {'p99.999':>8} "
+           f"{'max':>7} {'n':>8}")
+    print(hdr)
+    print("-" * len(hdr))
     for r in rows:
-        print(f"{r['name']:<18} {r['mean']:>8.3f} {r['median']:>8.3f} "
-              f"{r['p90']:>8.3f} {r['p99']:>8.3f} {r['n']:>8d}")
-    print("(angles in degrees; mean unsigned line-orientation error vs GT)")
+        print(f"{r['name']:<18} {r['mean']:>7.3f} {r['p50']:>7.3f} "
+              f"{r['p90']:>7.3f} {r['p99']:>7.3f} "
+              f"{r['p99.9']:>7.3f} {r['p99.99']:>7.3f} "
+              f"{r['p99.999']:>8.3f} {r['max']:>7.3f} {r['n']:>8d}")
+    print("(degrees, unsigned line-orientation error vs GT tangent)")
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with open(args.out, "w") as f:
