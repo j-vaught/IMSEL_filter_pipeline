@@ -178,14 +178,15 @@ def vmm_em(phi, w, K,
     return out
 
 
-def vmm_em_with_trace(phi, w, K, n_iters=30):
+def vmm_em_with_trace(phi, w, K, n_iters=30,
+                      init_kappa=4.0, hard_seed=False, hard_em=False):
     """Same EM but records the full per-iteration trajectory.  Use only
     on a small set of pixels (memory cost is (n_iters+1) * P * K * N)."""
     phi = np.asarray(phi, dtype=np.float64)
     w   = np.asarray(w,   dtype=np.float64)
     P, N = phi.shape
     mu    = init_centers(phi, w, K)
-    kappa = np.full((P, K), 4.0)
+    kappa = np.full((P, K), init_kappa)
     pi    = np.full((P, K), 1.0 / K)
     cos_phi = np.cos(phi); sin_phi = np.sin(phi)
     log_2pi = np.log(2.0 * np.pi); eps = 1e-12
@@ -197,19 +198,28 @@ def vmm_em_with_trace(phi, w, K, n_iters=30):
     gamma_tr = []
     W_tr     = []
 
-    for _ in range(n_iters):
-        cos_diff = np.cos(phi[:, None, :] - mu[:, :, None])
-        log_norm = log_I0_safe(kappa) + log_2pi
-        log_pi   = np.log(np.maximum(pi, eps))
-        log_unnorm = (log_pi[:, :, None]
-                      + kappa[:, :, None] * cos_diff
-                      - log_norm[:, :, None])
-        m_max = np.max(log_unnorm, axis=1, keepdims=True)
-        e_un  = np.exp(log_unnorm - m_max)
-        gamma = e_un / np.maximum(e_un.sum(axis=1, keepdims=True), eps)
-        log_marg = m_max[:, 0, :] + np.log(np.maximum(e_un.sum(axis=1), eps))
-        ll = (w * log_marg).sum(axis=1)
-        ll_tr.append(ll.copy())
+    for it in range(n_iters):
+        if hard_em or (hard_seed and it == 0):
+            d = circular_distance(phi[:, None, :], mu[:, :, None])
+            hard_idx = np.argmin(d, axis=1)
+            gamma = np.zeros((P, K, N), dtype=np.float64)
+            pp = np.arange(P)[:, None]
+            nn = np.arange(N)[None, :]
+            gamma[pp, hard_idx, nn] = 1.0
+            ll_tr.append(np.full(P, np.nan))
+        else:
+            cos_diff = np.cos(phi[:, None, :] - mu[:, :, None])
+            log_norm = log_I0_safe(kappa) + log_2pi
+            log_pi   = np.log(np.maximum(pi, eps))
+            log_unnorm = (log_pi[:, :, None]
+                          + kappa[:, :, None] * cos_diff
+                          - log_norm[:, :, None])
+            m_max = np.max(log_unnorm, axis=1, keepdims=True)
+            e_un  = np.exp(log_unnorm - m_max)
+            gamma = e_un / np.maximum(e_un.sum(axis=1, keepdims=True), eps)
+            log_marg = m_max[:, 0, :] + np.log(np.maximum(e_un.sum(axis=1), eps))
+            ll = (w * log_marg).sum(axis=1)
+            ll_tr.append(ll.copy())
         gamma_tr.append(gamma.copy())
 
         w_gamma = w[:, None, :] * gamma
@@ -294,8 +304,13 @@ def vmm_fuse(phi, w, K=3, n_iters=30, init_kappa=4.0,
     w   = np.asarray(w,   dtype=np.float64)
     P, N = phi.shape
 
-    W_total = w.sum(axis=1)
-    valid   = W_total > 1e-12
+    # Degenerate-pixel guard: a K-component fit needs at least K
+    # measurements with v_n = 1 AND nonzero magnitude.  If fewer than K
+    # valid configs exist, the fit is statistically meaningless; skip
+    # EM and emit v_fused = 0 with NaN angles.
+    W_total  = w.sum(axis=1)
+    n_active = (w > 1e-12).sum(axis=1)
+    valid    = (W_total > 1e-12) & (n_active >= K)
 
     theta_fused     = np.full(P, np.nan, dtype=np.float64)
     M_fused         = np.zeros(P,         dtype=np.float64)

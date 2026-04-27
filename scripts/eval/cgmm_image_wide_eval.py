@@ -470,9 +470,13 @@ def main():
                    help="use hard k-means assignment at iter 0 to break "
                         "the symmetric-collapse failure on tight unimodal "
                         "data; continues with soft EM thereafter")
-    p.add_argument("--vmm-hard-em", action="store_true",
-                   help="use hard k-means at every iteration "
-                        "(equivalent to vMM EM in the kappa->infty limit)")
+    p.add_argument("--vmm-soft-em", action="store_true",
+                   help="opt-in to soft-EM. Default is hard-EM (weighted "
+                        "k-means on the circle, == vMM EM in the "
+                        "kappa->infty limit), which matches sklearn-GMM "
+                        "accuracy and runs ~18x faster.  Soft EM has a "
+                        "structural ~0.15 deg p50 floor on tight unimodal "
+                        "data due to prior-leakage in responsibilities.")
     p.add_argument("--vmm-select", default="pi", choices=["pi", "pi_kappa"],
                    help="component selection rule for vMM signal "
                         "(default 'pi' per spec; 'pi_kappa' is robust "
@@ -545,7 +549,7 @@ def main():
                                              n_iters=args.vmm_n_iters,
                                              init_kappa=args.vmm_init_kappa,
                                              hard_seed=args.vmm_hard_seed,
-                                             hard_em=args.vmm_hard_em,
+                                             hard_em=(not args.vmm_soft_em),
                                              tau_M_rel=args.vmm_tau_M_rel,
                                              rho=args.vmm_rho,
                                              select=args.vmm_select)
