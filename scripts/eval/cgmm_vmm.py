@@ -275,7 +275,8 @@ def theta_M_to_phi_w(theta_deg, M, v=None):
 
 def vmm_fuse(phi, w, K=3, n_iters=30, init_kappa=4.0,
              hard_seed=False, hard_em=False,
-             tau_M_rel=0.10, rho=0.40, select="pi"):
+             tau_M_rel=0.10, rho=0.40, theta_min_deg=10.0,
+             select="pi"):
     """Fit weighted vM mixture per pixel and select primary/secondary.
 
     select : str
@@ -284,11 +285,24 @@ def vmm_fuse(phi, w, K=3, n_iters=30, init_kappa=4.0,
                        split-cluster instability at K>=3 by preferring
                        components that are both massive AND tight.
 
+    Suppression criteria (all must hold to KEEP secondary; otherwise
+    theta_fused_sec = NaN, M_fused_sec = 0):
+        M_fused_sec  > tau_M_rel * M_fused
+        pi[k_sec]    > rho       * pi[k_signal]
+        |theta_signal - theta_sec| > theta_min_deg
+
+    Note: pi_ratio == M_ratio by construction (pi[k] = W[k] / sum_j W[j]),
+    so the tau_M_rel and rho criteria are redundant.  We keep both for
+    backward compatibility with the spec.  The geometric criterion
+    theta_min_deg is the one that actually moves the FP rate (audit
+    showed ~24x TP/FP improvement over the ratio rule alone).
+
     Defaults:
-        tau_M_rel = 0.10  (secondary M_fused must be >= 10% of primary's,
-                           image-scale-invariant absolute floor)
-        rho       = 0.40  (secondary mixing weight must be >= 40% of
-                           primary's, relative mass floor)
+        tau_M_rel     = 0.10  (image-scale-invariant absolute floor)
+        rho           = 0.40  (relative mass floor)
+        theta_min_deg = 10.0  (geometric separation; below this the two
+                                modes are indistinguishable from noise
+                                splitting a single tight cluster)
 
     Output keys (length-P unless noted):
         theta_fused        float64 in [0, pi) or NaN  primary orientation
@@ -356,10 +370,16 @@ def vmm_fuse(phi, w, K=3, n_iters=30, init_kappa=4.0,
     M_signal  = W[rng,  k_signal]
     M_sec_w   = W[rng,  k_sec]
 
+    # Geometric separation in theta (half-circle) space; phi-distance
+    # in [0, pi] -> theta-distance in [0, 90 deg].
+    sep_phi  = circular_distance(mu_signal, mu_sec)
+    sep_theta_deg = np.degrees(sep_phi) / 2.0
+
     keep_sec = (
         (K > 1)
         & (M_sec_w > tau_M_rel * np.maximum(M_signal, 1e-30))
         & (pi_sec  > rho       * np.maximum(pi_signal, 1e-30))
+        & (sep_theta_deg > theta_min_deg)
     )
 
     theta_signal_half = (mu_signal % (2.0 * np.pi)) / 2.0

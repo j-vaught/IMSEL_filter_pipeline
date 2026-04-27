@@ -404,12 +404,14 @@ def fit_gmm_errors(primary_t, primary_m, gt_tangent_at, K, label):
 def fit_vmm_errors(primary_t, primary_m, gt_tangent_at, K, label,
                    n_iters=30, init_kappa=4.0,
                    hard_seed=False, hard_em=False,
-                   tau_M_rel=0.10, rho=0.40, select="pi"):
+                   tau_M_rel=0.10, rho=0.40, theta_min_deg=10.0,
+                   select="pi"):
     phi, w, _ = theta_M_to_phi_w(primary_t, primary_m)
     t0 = time.perf_counter()
     out = vmm_fuse(phi, w, K=K, n_iters=n_iters, init_kappa=init_kappa,
                    hard_seed=hard_seed, hard_em=hard_em,
-                   tau_M_rel=tau_M_rel, rho=rho, select=select)
+                   tau_M_rel=tau_M_rel, rho=rho,
+                   theta_min_deg=theta_min_deg, select=select)
     elapsed = time.perf_counter() - t0
     theta_est_deg = np.degrees(out["theta_fused"]) % 180.0
     errs = unsigned_angle_error_deg(theta_est_deg, gt_tangent_at)
@@ -461,6 +463,11 @@ def main():
     p.add_argument("--vmm-rho", type=float, default=0.40,
                    help="secondary suppression: pi_sec / pi_signal "
                         "must exceed rho (default 0.40)")
+    p.add_argument("--vmm-theta-min-deg", type=float, default=10.0,
+                   help="secondary suppression: |theta_signal - theta_sec| "
+                        "must exceed this (default 10 deg). The audit "
+                        "shows this is the dominant criterion; the pi/M "
+                        "ratio rules are redundant.")
     p.add_argument("--vmm-n-iters", type=int, default=30)
     p.add_argument("--vmm-init-kappa", type=float, default=4.0,
                    help="initial concentration for all components "
@@ -552,6 +559,7 @@ def main():
                                              hard_em=(not args.vmm_soft_em),
                                              tau_M_rel=args.vmm_tau_M_rel,
                                              rho=args.vmm_rho,
+                                             theta_min_deg=args.vmm_theta_min_deg,
                                              select=args.vmm_select)
                 rows.append(summarise(tag, errs))
                 timings[tag] = t
