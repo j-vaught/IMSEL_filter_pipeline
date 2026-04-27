@@ -106,12 +106,16 @@ def main() -> None:
         secondary_components = cgmm_fit(
             np.asarray(secondary_t), np.asarray(secondary_m))
 
-        # Within each c-GMM, label the more-concentrated component as
-        # "signal" and the diffuse one as "noise".
+        # Within each c-GMM, label the higher-weight component as
+        # "signal" and the lower-weight one as "noise". Weight is the
+        # fraction of total LF magnitude the cluster owns, which is
+        # what "signal" means here. Labelling by R breaks down when
+        # two clusters are near-tied in concentration but split mass
+        # asymmetrically (the corner regime).
         def annotate(components):
             if len(components) == 0:
                 return components
-            ranked = sorted(components, key=lambda c: -c["R"])
+            ranked = sorted(components, key=lambda c: -c["weight"])
             ranked[0]["role"] = "signal"
             for c in ranked[1:]:
                 c["role"] = "noise"
