@@ -327,18 +327,20 @@ def main() -> None:
         Image.fromarray(thumb_u8, mode="L").save(
             export_dir / "input_crop.png")
 
-        # 2. Per-orientation response maps as raw uint8 PNGs, normalized
-        #    by the same global vmax used for the panel render so the
-        #    eight images share an identical color scale.
+        # 2. Per-orientation response maps as uint8 PNGs, normalized by
+        #    the same global vmax. Stored with the gray_r convention
+        #    (high response = dark, low = white) so the PNGs are
+        #    display-ready and match conventional ink-on-paper edge
+        #    visualizations without further processing in figure code.
         resp_dir = export_dir / "responses"
         resp_dir.mkdir(parents=True, exist_ok=True)
         for k in range(args.n_orientations):
             r = stack_for_render[..., k].astype(np.float64)
             if vmax > 0:
-                r_u8 = (np.clip(r / vmax, 0.0, 1.0) * 255.0
-                        ).astype(np.uint8)
+                r_u8 = 255 - (np.clip(r / vmax, 0.0, 1.0) * 255.0
+                              ).astype(np.uint8)
             else:
-                r_u8 = np.zeros_like(r, dtype=np.uint8)
+                r_u8 = np.full(r.shape, 255, dtype=np.uint8)
             deg = float(np.degrees(angles[k]))
             Image.fromarray(r_u8, mode="L").save(
                 resp_dir / f"L_theta_{k:02d}_deg{deg:05.1f}.png")
