@@ -91,6 +91,7 @@ def main():
     out = {
         "config": {"r": args.r, "d": args.d, "m": args.m,
                    "n_orientations": args.n_orientations},
+        "angles_deg": [float(v) for v in np.degrees(angles)],
         "vertices": [],
     }
 
@@ -122,6 +123,7 @@ def main():
                               else float("nan")),
                 "M_sec": (float(peaks_m[1]) if len(peaks_m) > 1
                           else 0.0),
+                "response": [float(v) for v in resp],
             }
             print(f"  ch={ch} v{vi} ({px},{py}): "
                   f"theta_hat={peaks_a[0]:6.2f}  "
