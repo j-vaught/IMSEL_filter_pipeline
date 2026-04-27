@@ -144,13 +144,21 @@ def main():
         edge_ok = valid & ~is_junction
         junc_ok = valid &  is_junction
 
+        # Production-default rule: rho-only (spec) vs rho+theta_min (current).
+        keep_sec_prod = (
+            (M_sec > args.tau_M_rel * np.maximum(M_signal, 1e-30))
+            & (pi_sec > args.rho * np.maximum(pi_signal, 1e-30))
+            & (sep_theta_deg > 10.0)
+        )
+
         def stats_for(mask):
             return dict(
                 n              = int(mask.sum()),
                 ratio_pi_pcts  = percentiles(ratio_pi[mask]),
                 sep_theta_pcts = percentiles(sep_theta_deg[mask]),
                 kappa_sec_pcts = percentiles(kappa_sec[mask]),
-                keep_sec_frac  = float(keep_sec[mask].mean()),
+                keep_sec_spec_only_frac = float(keep_sec[mask].mean()),
+                keep_sec_prod_frac      = float(keep_sec_prod[mask].mean()),
             )
         edge_stats = stats_for(edge_ok)
         junc_stats = stats_for(junc_ok)
@@ -169,11 +177,22 @@ def main():
         print_metric("kappa[k_sec]",                            "kappa_sec_pcts")
 
         print(f"\n  Suppression keep-sec fraction at SPEC defaults "
-              f"(rho={args.rho}, tau_M_rel={args.tau_M_rel}):")
-        print(f"    edges:     {edge_stats['keep_sec_frac']:.4f}  "
-              f"(want low; FP rate)")
-        print(f"    junctions: {junc_stats['keep_sec_frac']:.4f}  "
-              f"(want high; TP rate)")
+              f"(rho={args.rho}, tau_M_rel={args.tau_M_rel}, NO theta_min):")
+        print(f"    edges:     {edge_stats['keep_sec_spec_only_frac']:.4f}  "
+              f"(FP rate; want low)")
+        print(f"    junctions: {junc_stats['keep_sec_spec_only_frac']:.4f}  "
+              f"(TP rate; want high)")
+        print(f"\n  Suppression keep-sec at PRODUCTION defaults "
+              f"(rho={args.rho}, tau_M_rel={args.tau_M_rel}, "
+              f"theta_min_deg=10):")
+        print(f"    edges:     {edge_stats['keep_sec_prod_frac']:.4f}  "
+              f"(FP rate)")
+        print(f"    junctions: {junc_stats['keep_sec_prod_frac']:.4f}  "
+              f"(TP rate)")
+        ej_tp = junc_stats['keep_sec_prod_frac']
+        ej_fp = edge_stats['keep_sec_prod_frac']
+        if ej_fp > 0:
+            print(f"    TP/FP ratio: {ej_tp/ej_fp:.2f}")
 
         # Sweep alternative rules to find a better edge/junction split.
         print(f"\n  Sweep keep-sec under alternative rules:")
