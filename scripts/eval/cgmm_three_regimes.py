@@ -36,7 +36,7 @@ CASES = (
 
 
 def cgmm_fit(thetas_deg: np.ndarray, mags: np.ndarray,
-             n_components: int = 2,
+             n_components: int = 3,
              n_samples: int = 4000,
              random_state: int = 0) -> list[dict]:
     """Magnitude-weighted GMM in doubled-angle unit-circle coords.
