@@ -122,14 +122,17 @@ with st.sidebar:
 
     st.divider()
     st.subheader("Filter")
-    r = st.slider("WVF radius r", 1, 15, 3)
-    d = st.slider("WVF polynomial degree d", 1, 6, 5)
-    m = st.slider("LF half-length m", 0, 15, 2)
-    n_orient = st.select_slider("N orientations",
-                                 options=[8, 16, 32, 64, 128, 256],
-                                 value=64)
-    demo_orientation = st.slider("demo_orientation (deg)",
-                                  0, 179, 45, step=1)
+    r = st.number_input("WVF radius r",
+                         min_value=1, value=3, step=1)
+    d = st.number_input("WVF polynomial degree d",
+                         min_value=1, value=5, step=1)
+    m = st.number_input("LF half-length m",
+                         min_value=0, value=2, step=1)
+    n_orient = st.number_input("N orientations",
+                                min_value=4, value=64, step=1)
+    demo_orientation = st.number_input("demo_orientation (deg)",
+                                        min_value=0, max_value=179,
+                                        value=45, step=1)
 
 # Compute
 with st.spinner("computing WVF gradients …"):
@@ -145,7 +148,9 @@ col1, col2 = st.columns([1, 1])
 
 with col1:
     st.subheader("Image with LF support")
-    crop_half = 80
+    # Adaptive crop so the full LF support is always in view, even at
+    # large m / r. Step factor 1/max(|cos|, |sin|) is at most sqrt(2).
+    crop_half = max(80, int(m * 1.5 + r + 12))
     y0 = max(0, py - crop_half)
     x0 = max(0, px - crop_half)
     y1 = min(H, py + crop_half + 1)
