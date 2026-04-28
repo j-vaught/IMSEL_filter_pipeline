@@ -351,6 +351,8 @@ def evaluate(label, channels, sample_pixels, gt_tangent_at_samples,
 
     primary_t = np.zeros((N, n_ch * n_m), dtype=np.float64)
     primary_m = np.zeros((N, n_ch * n_m), dtype=np.float64)
+    secondary_t = np.zeros((N, n_ch * n_m), dtype=np.float64)
+    secondary_m = np.zeros((N, n_ch * n_m), dtype=np.float64)
 
     col = 0
     for ch_name, img in channels.items():
@@ -364,13 +366,15 @@ def evaluate(label, channels, sample_pixels, gt_tangent_at_samples,
             for k, theta in enumerate(angles):
                 resp[:, k] = lf_response_at_pixels(g_x, g_y, px, py,
                                                    float(theta), int(m))
-            t_p, m_p, _, _ = find_two_peaks(angles, resp)
+            t_p, m_p, t_s, m_s = find_two_peaks(angles, resp)
             primary_t[:, col] = np.degrees(t_p)
             primary_m[:, col] = m_p
+            secondary_t[:, col] = np.degrees(t_s)
+            secondary_m[:, col] = m_s
             col += 1
             print(f"    m={m:>3}: {time.perf_counter()-t1:.1f}s")
 
-    return primary_t, primary_m
+    return primary_t, primary_m, secondary_t, secondary_m
 
 
 # ---- per-pixel sklearn GMM fit (parallel via ProcessPoolExecutor) ----
@@ -521,7 +525,7 @@ def main():
     # ---- Clean ----
     print("\n========== CLEAN ==========")
     clean_channels = load_channels_clean(args.clean_rgb)
-    primary_t_c, primary_m_c = evaluate("clean", clean_channels,
+    primary_t_c, primary_m_c, _, _ = evaluate("clean", clean_channels,
                                         sample_pixels, gt_tangent_at,
                                         m_values, args.n_orientations,
                                         args.r, args.d)
@@ -529,7 +533,7 @@ def main():
     # ---- Noisy ----
     print("\n========== NOISY ==========")
     noisy_channels = load_channels_noisy(args.noisy_dir)
-    primary_t_n, primary_m_n = evaluate("noisy", noisy_channels,
+    primary_t_n, primary_m_n, _, _ = evaluate("noisy", noisy_channels,
                                         sample_pixels, gt_tangent_at,
                                         m_values, args.n_orientations,
                                         args.r, args.d)

@@ -402,3 +402,146 @@ def vmm_fuse(phi, w, K=3, n_iters=30, init_kappa=4.0,
                 theta_fused_sec=theta_fused_sec,
                 M_fused_sec=M_fused_sec, v_fused=v_fused,
                 mu=mu_full, kappa=kappa_full, pi=pi_full, W=W_full)
+
+
+# ---------------------------------------------------------------------------
+# Two-pass fusion (production)
+# ---------------------------------------------------------------------------
+
+def vmm_fuse_two_pass(phi_p, w_p, phi_s, w_s, K=3, n_iters=30,
+                      init_kappa=4.0, hard_seed=False, hard_em=True,
+                      tau_M_rel=0.10, theta_min_deg=10.0):
+    """Two-pass weighted vM mixture fusion per pixel.
+
+    Runs K=3 hard-EM vMM independently on the primary measurement set
+    (phi_p, w_p) and on the secondary measurement set (phi_s, w_s).
+    The two fits do NOT share state, initialization, or components.
+
+    Primary slot  = argmax-pi component of the PRIMARY fit.
+    Secondary slot = argmax-pi component of the SECONDARY fit.
+
+    Suppression rule (BOTH must hold, else theta_sec=NaN, M_sec=0):
+      M_sec / M_primary > tau_M_rel    (absolute weights from each fit)
+      |theta_primary - theta_sec| > theta_min_deg     (geometric)
+
+    Per-pass validity (degenerate-pixel guard):
+      primary_valid   := (sum(w_p) > 1e-12) AND (n_active(w_p) >= K)
+      secondary_valid := primary_valid AND (sum(w_s) > 1e-12) AND (n_active(w_s) >= K)
+      v_fused         := primary_valid
+
+    Inputs:
+      phi_p, phi_s : (P, N) doubled angles in [0, 2*pi)
+      w_p,   w_s   : (P, N) non-negative weights w_n = v_n * M_n
+
+    Output dict (length-P unless noted):
+      theta_primary    float64 [0, pi) or NaN
+      M_primary        float64                primary fit's W[k_primary]
+      theta_sec        float64 [0, pi) or NaN  (NaN if suppressed/invalid)
+      M_sec            float64                 (0 if suppressed/invalid)
+      v_fused          uint8 {0, 1}
+      primary_pi, primary_mu, primary_kappa        (P, K) diagnostics
+      secondary_pi, secondary_mu, secondary_kappa  (P, K) diagnostics
+      keep_secondary_mask    uint8 {0, 1}  pre-NaN-substitution suppression flag
+    """
+    phi_p = np.asarray(phi_p, dtype=np.float64)
+    w_p   = np.asarray(w_p,   dtype=np.float64)
+    phi_s = np.asarray(phi_s, dtype=np.float64)
+    w_s   = np.asarray(w_s,   dtype=np.float64)
+    P, N = phi_p.shape
+    assert phi_s.shape == (P, N) and w_p.shape == (P, N) and w_s.shape == (P, N)
+
+    # ---- per-pass validity ----
+    W_total_p  = w_p.sum(axis=1)
+    n_active_p = (w_p > 1e-12).sum(axis=1)
+    primary_valid = (W_total_p > 1e-12) & (n_active_p >= K)
+
+    W_total_s  = w_s.sum(axis=1)
+    n_active_s = (w_s > 1e-12).sum(axis=1)
+    secondary_valid = (
+        primary_valid
+        & (W_total_s > 1e-12)
+        & (n_active_s >= K)
+    )
+
+    # ---- output buffers ----
+    theta_primary = np.full(P, np.nan, dtype=np.float64)
+    M_primary     = np.zeros(P,        dtype=np.float64)
+    theta_sec     = np.full(P, np.nan, dtype=np.float64)
+    M_sec         = np.zeros(P,        dtype=np.float64)
+    v_fused       = primary_valid.astype(np.uint8)
+
+    primary_pi    = np.full((P, K), np.nan)
+    primary_mu    = np.full((P, K), np.nan)
+    primary_kappa = np.full((P, K), np.nan)
+    secondary_pi    = np.full((P, K), np.nan)
+    secondary_mu    = np.full((P, K), np.nan)
+    secondary_kappa = np.full((P, K), np.nan)
+    keep_secondary_mask = np.zeros(P, dtype=np.uint8)
+
+    # phi-space mu of the primary signal (kept for the geometric test).
+    mu_kp_phi = np.full(P, np.nan, dtype=np.float64)
+
+    # ---- primary pass ----
+    if primary_valid.any():
+        res_p = vmm_em(phi_p[primary_valid], w_p[primary_valid], K=K,
+                       n_iters=n_iters, init_kappa=init_kappa,
+                       hard_seed=hard_seed, hard_em=hard_em)
+        Pv  = int(primary_valid.sum())
+        rng = np.arange(Pv)
+        k_p     = np.argmax(res_p.pi, axis=1)
+        mu_kp_v = res_p.mu[rng, k_p]
+        W_kp    = res_p.W[rng,  k_p]
+
+        theta_primary[primary_valid] = (mu_kp_v % (2.0 * np.pi)) / 2.0
+        M_primary[primary_valid]     = W_kp
+        mu_kp_phi[primary_valid]     = mu_kp_v
+        primary_pi[primary_valid]    = res_p.pi
+        primary_mu[primary_valid]    = res_p.mu
+        primary_kappa[primary_valid] = res_p.kappa
+
+    # ---- secondary pass (only on pixels where BOTH passes are valid) ----
+    if secondary_valid.any():
+        res_s = vmm_em(phi_s[secondary_valid], w_s[secondary_valid], K=K,
+                       n_iters=n_iters, init_kappa=init_kappa,
+                       hard_seed=hard_seed, hard_em=hard_em)
+        Ps  = int(secondary_valid.sum())
+        rng = np.arange(Ps)
+        k_s     = np.argmax(res_s.pi, axis=1)
+        mu_ks_v = res_s.mu[rng, k_s]
+        W_ks    = res_s.W[rng,  k_s]
+
+        secondary_pi[secondary_valid]    = res_s.pi
+        secondary_mu[secondary_valid]    = res_s.mu
+        secondary_kappa[secondary_valid] = res_s.kappa
+
+        # ---- suppression rule: ABSOLUTE mass ratio + geometric separation
+        M_p_at_sec    = M_primary[secondary_valid]
+        mu_kp_at_sec  = mu_kp_phi[secondary_valid]
+
+        mass_ratio = W_ks / np.maximum(M_p_at_sec, 1e-30)
+        mass_ok    = mass_ratio > tau_M_rel
+
+        sep_phi       = circular_distance(mu_kp_at_sec, mu_ks_v)
+        sep_theta_deg = np.degrees(sep_phi) / 2.0
+        sep_ok        = sep_theta_deg > theta_min_deg
+
+        keep = mass_ok & sep_ok
+        theta_s_v = (mu_ks_v % (2.0 * np.pi)) / 2.0
+        theta_sec[secondary_valid] = np.where(keep, theta_s_v, np.nan)
+        M_sec[secondary_valid]     = np.where(keep, W_ks,      0.0)
+        keep_secondary_mask[secondary_valid] = keep.astype(np.uint8)
+
+    return dict(
+        theta_primary       = theta_primary,
+        M_primary           = M_primary,
+        theta_sec           = theta_sec,
+        M_sec               = M_sec,
+        v_fused             = v_fused,
+        primary_pi          = primary_pi,
+        primary_mu          = primary_mu,
+        primary_kappa       = primary_kappa,
+        secondary_pi        = secondary_pi,
+        secondary_mu        = secondary_mu,
+        secondary_kappa     = secondary_kappa,
+        keep_secondary_mask = keep_secondary_mask,
+    )

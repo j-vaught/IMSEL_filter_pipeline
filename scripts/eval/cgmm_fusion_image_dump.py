@@ -86,7 +86,7 @@ def main():
                                  % math.pi).astype(np.float32)
 
     t0 = time.perf_counter()
-    primary_t, primary_m = evaluate(args.condition, channels,
+    primary_t, primary_m, _, _ = evaluate(args.condition, channels,
                                      sample_pixels, gt_tangent_deg,
                                      m_values, args.n_orientations,
                                      args.r, args.d)

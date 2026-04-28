@@ -93,7 +93,7 @@ def main():
     ):
         print(f"\n========== {cond_label} ==========")
         channels = channels_loader(channels_args)
-        primary_t, primary_m = evaluate(
+        primary_t, primary_m, _, _ = evaluate(
             cond_label, channels, all_pix, gt_t,
             m_values, args.n_orientations, args.r, args.d)
         phi, w, _ = theta_M_to_phi_w(primary_t, primary_m)
