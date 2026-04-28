@@ -1,6 +1,6 @@
 use metal::{
-    CommandQueue, CompileOptions, ComputePipelineState, Device, MTLResourceOptions, MTLSize,
-    NSRange,
+    Buffer, CommandQueue, CompileOptions, ComputePipelineState, Device, MTLResourceOptions,
+    MTLSize, NSRange,
 };
 use std::cell::RefCell;
 use std::ffi::c_char;
@@ -896,23 +896,33 @@ kernel void lf_gaussian_scanline_y_major(
     out[params.theta_idx * plane_size + idx] = den > 0.0f ? fabs(num / den) : 0.0f;
 }
 
-inline float recovery_eval_spline(
+inline float recovery_eval_segment(
     threadgroup const float* y,
     threadgroup const float* m,
     constant RecoveryParams& params,
-    uint dense_idx
+    uint seg,
+    float u
 ) {
     const uint k = params.k;
-    const uint seg = uint((ulong(dense_idx) * ulong(k)) / ulong(params.dense_n));
     const uint next = (seg + 1 == k) ? 0 : seg + 1;
-    const float scaled = (float(dense_idx) * float(k)) / float(params.dense_n);
-    const float u = scaled - float(seg);
     const float omt = 1.0f - u;
     const float omt2 = omt * omt;
     const float u2 = u * u;
     return y[seg] * omt + y[next] * u +
         params.h2_over6 *
             (m[seg] * (omt2 * omt - omt) + m[next] * (u2 * u - u));
+}
+
+inline float recovery_eval_spline(
+    threadgroup const float* y,
+    threadgroup const float* m,
+    constant RecoveryParams& params,
+    uint dense_idx
+) {
+    const ulong scaled = ulong(dense_idx) * ulong(params.k);
+    const uint seg = uint(scaled / ulong(params.dense_n));
+    const uint rem = uint(scaled - ulong(seg) * ulong(params.dense_n));
+    return recovery_eval_segment(y, m, params, seg, float(rem) / float(params.dense_n));
 }
 
 kernel void recovery_peaks(
@@ -978,29 +988,50 @@ kernel void recovery_peaks(
     }
 
     const uint dense_last = params.dense_n - 1;
+    const float inv_dense = 1.0f / float(params.dense_n);
     float prev = recovery_eval_spline(y, m, params, dense_last);
-    float curr = recovery_eval_spline(y, m, params, 0);
+    float curr = recovery_eval_segment(y, m, params, 0, 0.0f);
     float primary_value = -INFINITY;
     uint primary_idx = 0;
+    uint seg = 0;
+    uint rem = 0;
     for (uint j = 0; j < params.dense_n; ++j) {
-        const uint next_idx = (j + 1 == params.dense_n) ? 0 : j + 1;
-        const float next_value = recovery_eval_spline(y, m, params, next_idx);
+        uint next_seg = seg;
+        uint next_rem = rem + k;
+        while (next_rem >= params.dense_n) {
+            next_rem -= params.dense_n;
+            next_seg = (next_seg + 1 == k) ? 0 : next_seg + 1;
+        }
+        const float next_value = (j + 1 == params.dense_n)
+            ? recovery_eval_segment(y, m, params, 0, 0.0f)
+            : recovery_eval_segment(y, m, params, next_seg, float(next_rem) * inv_dense);
         if (curr >= prev && curr >= next_value && curr > primary_value) {
             primary_value = curr;
             primary_idx = j;
         }
         prev = curr;
         curr = next_value;
+        seg = next_seg;
+        rem = next_rem;
     }
 
     prev = recovery_eval_spline(y, m, params, dense_last);
-    curr = recovery_eval_spline(y, m, params, 0);
+    curr = recovery_eval_segment(y, m, params, 0, 0.0f);
     float secondary_value = -INFINITY;
     uint secondary_idx = 0;
     bool has_secondary = false;
+    seg = 0;
+    rem = 0;
     for (uint j = 0; j < params.dense_n; ++j) {
-        const uint next_idx = (j + 1 == params.dense_n) ? 0 : j + 1;
-        const float next_value = recovery_eval_spline(y, m, params, next_idx);
+        uint next_seg = seg;
+        uint next_rem = rem + k;
+        while (next_rem >= params.dense_n) {
+            next_rem -= params.dense_n;
+            next_seg = (next_seg + 1 == k) ? 0 : next_seg + 1;
+        }
+        const float next_value = (j + 1 == params.dense_n)
+            ? recovery_eval_segment(y, m, params, 0, 0.0f)
+            : recovery_eval_segment(y, m, params, next_seg, float(next_rem) * inv_dense);
         uint dist = j > primary_idx ? j - primary_idx : primary_idx - j;
         dist = min(dist, params.dense_n - dist);
         if (dist > params.sep && curr >= prev && curr >= next_value && curr > secondary_value) {
@@ -1010,6 +1041,8 @@ kernel void recovery_peaks(
         }
         prev = curr;
         curr = next_value;
+        seg = next_seg;
+        rem = next_rem;
     }
 
     theta_p[row] = float(primary_idx) * params.pi_over_dense;
@@ -1401,6 +1434,7 @@ impl MetalState {
 
 thread_local! {
     static METAL_STATE: RefCell<Option<MetalState>> = RefCell::new(None);
+    static LAST_RECOVERY_RANGE: RefCell<Option<(usize, c_float)>> = RefCell::new(None);
 }
 
 unsafe fn write_error(error_out: *mut c_char, error_len: usize, message: &str) {
@@ -3917,9 +3951,7 @@ unsafe fn run_recover_two_peaks_with_state(
             std::mem::size_of::<c_float>(),
             "recovery reduction output",
         )?;
-        let next_buffer = state
-            .device
-            .new_buffer(next_len as u64, MTLResourceOptions::StorageModePrivate);
+        let next_buffer = state.device.new_buffer(next_len as u64, shared_options);
         let reduce_params = RecoveryReduceParams {
             count: c_uint::try_from(current_count)
                 .map_err(|_| "recovery reduction count is outside uint32 range".to_string())?,
@@ -3960,6 +3992,32 @@ unsafe fn run_recover_two_peaks_with_state(
         current_count = next_count;
     }
 
+    let ref_value_buffer: Option<Buffer> = if row_count > 1 {
+        let current_ref = *(current_buffer.contents() as *const c_float);
+        let mut effective_ref = current_ref;
+        LAST_RECOVERY_RANGE.with(|range_cell| {
+            let mut range_slot = range_cell.borrow_mut();
+            if let Some((last_rows, last_ref)) = *range_slot {
+                if last_rows > row_count {
+                    effective_ref = effective_ref.max(last_ref);
+                }
+                if row_count > last_rows {
+                    *range_slot = Some((row_count, current_ref));
+                }
+            } else {
+                *range_slot = Some((row_count, current_ref));
+            }
+        });
+        Some(state.device.new_buffer_with_data(
+            (&effective_ref as *const c_float).cast(),
+            std::mem::size_of::<c_float>() as u64,
+            shared_options,
+        ))
+    } else {
+        None
+    };
+    let ref_buffer = ref_value_buffer.as_ref().unwrap_or(&current_buffer);
+
     let n_rows_buffer = state.device.new_buffer_with_data(
         (&n_rows as *const c_uint).cast(),
         std::mem::size_of::<c_uint>() as u64,
@@ -3975,7 +4033,7 @@ unsafe fn run_recover_two_peaks_with_state(
     let encoder = command_buffer.new_compute_command_encoder();
     encoder.set_compute_pipeline_state(&state.recovery_validity_pipeline);
     encoder.set_buffer(0, Some(&row_range_buffer), 0);
-    encoder.set_buffer(1, Some(&current_buffer), 0);
+    encoder.set_buffer(1, Some(ref_buffer), 0);
     encoder.set_buffer(2, Some(&v_buffer), 0);
     encoder.set_buffer(3, Some(&n_rows_buffer), 0);
     encoder.set_buffer(4, Some(&tau_validity_buffer), 0);
