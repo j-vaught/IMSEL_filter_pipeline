@@ -121,23 +121,30 @@ def nms_check_vec(M_image, x, y, theta_at_xy,
 # ---------------------------------------------------------------------
 
 def enhanced_nms(theta_primary, M_primary, theta_sec, M_sec, v_fused,
-                 neighborhood=1, angular_fidelity="A8"):
+                 neighborhood=1, angular_fidelity="A8",
+                 corner_method="or"):
     """Run two-orientation NMS on the c-GMM fused output.
 
-    Pixels with v_fused = 0 are skipped (output zero).  Among valid
-    pixels:
-        keep_primary = nms_check(theta_primary, M_primary)
-    If M_sec > 0 (corner pixel):
-        keep_sec = nms_check(theta_sec, M_primary)   # note: M_primary,
-                                                     # not M_sec
-        keep = keep_primary OR keep_sec
-    else:
-        keep = keep_primary
+    Pixels with v_fused = 0 are skipped (output zero).
+
+    corner_method: how to handle pixels where M_sec > 0.
+      'or'       - DEFAULT (per spec): keep if primary OR secondary
+                   check passes.  Both checks compare against M_primary
+                   neighbours.
+      'bypass'   - at every M_sec > 0 pixel, force-keep (skip the NMS
+                   check entirely).  Simplest corner recovery.
+      'sec_mag'  - the secondary check uses M_sec as the magnitude
+                   image being compared, instead of M_primary.  More
+                   permissive on corners because M_sec is zero off the
+                   corner-junction-mask and the secondary check
+                   trivially passes.
 
     Output is M_primary where keep else 0.
     """
+    if corner_method not in ("or", "bypass", "sec_mag"):
+        raise ValueError(f"unknown corner_method: {corner_method!r}")
     M_primary = np.asarray(M_primary, dtype=np.float64)
-    H, W = M_primary.shape
+    M_sec_arr = np.asarray(M_sec,     dtype=np.float64)
     out = np.zeros_like(M_primary)
 
     valid = (v_fused == 1) & np.isfinite(theta_primary) & (M_primary > 0)
@@ -150,19 +157,57 @@ def enhanced_nms(theta_primary, M_primary, theta_sec, M_sec, v_fused,
         neighborhood, angular_fidelity)
 
     sec_present = (
-        (M_sec[ys, xs] > 0)
+        (M_sec_arr[ys, xs] > 0)
         & np.isfinite(theta_sec[ys, xs])
     )
     keep = keep_primary.copy()
-    if sec_present.any():
+
+    if corner_method == "bypass":
+        # Force-keep every flagged corner pixel regardless of any check.
+        keep |= sec_present
+    elif sec_present.any():
         idx = np.where(sec_present)[0]
-        keep_sec = nms_check_vec(
-            M_primary, xs[idx], ys[idx], theta_sec[ys[idx], xs[idx]],
-            neighborhood, angular_fidelity)
+        if corner_method == "or":
+            keep_sec = nms_check_vec(
+                M_primary, xs[idx], ys[idx],
+                theta_sec[ys[idx], xs[idx]],
+                neighborhood, angular_fidelity)
+        else:  # 'sec_mag'
+            keep_sec = nms_check_vec(
+                M_sec_arr, xs[idx], ys[idx],
+                theta_sec[ys[idx], xs[idx]],
+                neighborhood, angular_fidelity)
         keep[idx] = keep[idx] | keep_sec
 
     out[ys[keep], xs[keep]] = M_primary[ys[keep], xs[keep]]
     return out
+
+
+# ---------------------------------------------------------------------
+# Hysteresis post-processing
+# ---------------------------------------------------------------------
+
+def hysteresis(nms_magnitudes, high_thresh, low_thresh):
+    """Canny-style hysteresis: keep pixels above high_thresh as 'strong';
+    keep pixels above low_thresh ('weak') only if they are connected
+    (8-connectivity) to a strong pixel.
+
+    nms_magnitudes : (H, W) float -- NMS output (magnitudes where kept).
+    high_thresh, low_thresh : floats with low <= high.
+
+    Returns a binary mask (H, W) of surviving edges.
+    """
+    from scipy import ndimage
+    strong = nms_magnitudes >= high_thresh
+    weak   = nms_magnitudes >= low_thresh
+    # Label connected components in the weak mask; keep components that
+    # contain at least one strong pixel.
+    labels, _ = ndimage.label(weak, structure=np.ones((3, 3)))
+    if labels.max() == 0:
+        return strong.copy()
+    keep_lbls = np.unique(labels[strong])
+    keep_lbls = keep_lbls[keep_lbls > 0]
+    return np.isin(labels, keep_lbls)
 
 
 # ---------------------------------------------------------------------
