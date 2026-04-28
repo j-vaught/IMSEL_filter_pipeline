@@ -221,3 +221,53 @@ def test_lf_orientation_stack_box_tracks_exact_on_smooth_fields():
 
     assert rel_rmse < 0.2
     assert corr > 0.95
+
+
+def test_lf_orientation_stack_scanline_matches_projection_for_zero_m():
+    _require_metal()
+
+    rng = np.random.default_rng(441)
+    g_x = rng.normal(size=(17, 21)).astype(np.float32)
+    g_y = rng.normal(size=(17, 21)).astype(np.float32)
+
+    exact = lf_orientation_stack_metal(g_x, g_y, m=0, n_orientations=8)
+    scanline = lf_orientation_stack_metal(
+        g_x, g_y, m=0, n_orientations=8, method="scanline"
+    )
+
+    assert np.allclose(scanline, exact, rtol=2e-5, atol=3e-5)
+
+
+def test_lf_orientation_stack_scanline_constant_field_boundary_normalization():
+    _require_metal()
+
+    n_orientations = 16
+    g_x = np.zeros((19, 23), dtype=np.float32)
+    g_y = np.ones((19, 23), dtype=np.float32)
+
+    got = lf_orientation_stack_metal(
+        g_x, g_y, m=12, n_orientations=n_orientations, method="scanline"
+    )
+    expected_values = np.abs(np.cos(np.linspace(0.0, np.pi, n_orientations, endpoint=False)))
+
+    assert np.allclose(got, expected_values[:, None, None], rtol=2e-5, atol=2e-5)
+
+
+def test_lf_orientation_stack_scanline_tracks_exact_on_smooth_fields():
+    _require_metal()
+
+    h, w = 47, 53
+    y, x = np.indices((h, w), dtype=np.float32)
+    g_x = (np.sin(x * 0.11) + 0.5 * np.cos(y * 0.07)).astype(np.float32)
+    g_y = (np.cos(x * 0.05) - 0.4 * np.sin(y * 0.13)).astype(np.float32)
+
+    exact = lf_orientation_stack_metal(g_x, g_y, m=10, n_orientations=12, execution="projected")
+    scanline = lf_orientation_stack_metal(
+        g_x, g_y, m=10, n_orientations=12, method="scanline"
+    )
+    diff = scanline - exact
+    rel_rmse = np.sqrt(np.mean(diff * diff)) / max(float(np.sqrt(np.mean(exact * exact))), 1e-12)
+    corr = np.corrcoef(exact.ravel(), scanline.ravel())[0, 1]
+
+    assert rel_rmse < 0.15
+    assert corr > 0.97

@@ -83,6 +83,18 @@ def _load_lf_library() -> ctypes.CDLL:
             ctypes.c_size_t,
         ]
         lib.edgecritic_metal_lf_orientation_stack_box.restype = ctypes.c_int
+        lib.edgecritic_metal_lf_orientation_stack_scanline.argtypes = [
+            ctypes.POINTER(ctypes.c_float),
+            ctypes.POINTER(ctypes.c_float),
+            ctypes.c_uint,
+            ctypes.c_uint,
+            ctypes.c_uint,
+            ctypes.c_int,
+            ctypes.POINTER(ctypes.c_float),
+            ctypes.POINTER(ctypes.c_char),
+            ctypes.c_size_t,
+        ]
+        lib.edgecritic_metal_lf_orientation_stack_scanline.restype = ctypes.c_int
     except AttributeError as exc:
         raise MetalBackendError("Rust/Metal LF symbols are not available") from exc
     except OSError as exc:
@@ -234,13 +246,13 @@ def lf_orientation_stack_metal(
     equally spaced over ``[0, pi)``.
     """
     method_name = str(method).lower()
-    if method_name not in {"exact", "box"}:
-        raise ValueError("method must be 'exact' or 'box'")
+    if method_name not in {"exact", "box", "scanline"}:
+        raise ValueError("method must be 'exact', 'box', or 'scanline'")
     execution_mode = {"auto": 0, "direct": 1, "projected": 2}.get(str(execution).lower())
     if execution_mode is None:
         raise ValueError("execution must be 'auto', 'direct', or 'projected'")
-    if method_name == "box" and execution_mode != 0:
-        raise ValueError("execution must be 'auto' when method='box'")
+    if method_name in {"box", "scanline"} and execution_mode != 0:
+        raise ValueError("execution must be 'auto' when method is 'box' or 'scanline'")
     if int(n_orientations) <= 0:
         raise ValueError("n_orientations must be positive")
     box_pass_count = int(box_passes)
@@ -280,7 +292,7 @@ def lf_orientation_stack_metal(
             error_buffer,
             ctypes.c_size_t(len(error_buffer)),
         )
-    else:
+    elif method_name == "box":
         status = _load_lf_library().edgecritic_metal_lf_orientation_stack_box(
             gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
             gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
@@ -290,6 +302,18 @@ def lf_orientation_stack_metal(
             _as_int32(int(m), "m"),
             _as_uint32(box_pass_count, "box pass count"),
             _as_int32(box_radius_value, "box radius"),
+            out_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            error_buffer,
+            ctypes.c_size_t(len(error_buffer)),
+        )
+    else:
+        status = _load_lf_library().edgecritic_metal_lf_orientation_stack_scanline(
+            gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            _as_uint32(w, "image width"),
+            _as_uint32(h, "image height"),
+            _as_uint32(n, "orientation count"),
+            _as_int32(int(m), "m"),
             out_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
             error_buffer,
             ctypes.c_size_t(len(error_buffer)),

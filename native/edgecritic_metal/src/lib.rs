@@ -90,6 +90,17 @@ struct LfBoxFinalizeParams {
     uint theta_idx;
 };
 
+struct LfScanlineParams {
+    uint width;
+    uint height;
+    uint n_samples;
+    uint radius;
+    int key_min;
+    uint line_count;
+    uint theta_idx;
+    uint chunk_len;
+};
+
 inline int reflect_index(int value, int limit) {
     if (limit <= 1) {
         return 0;
@@ -585,6 +596,132 @@ kernel void lf_box_finalize(
     const float d = den[idx];
     out[out_idx] = d > 0.0f ? fabs(num[idx] / d) : 0.0f;
 }
+
+kernel void lf_gaussian_scanline_x_major(
+    device const float* g_perp [[buffer(0)]],
+    device const float* weights [[buffer(1)]],
+    device const int* line_offsets [[buffer(2)]],
+    device float* out [[buffer(3)]],
+    constant LfScanlineParams& params [[buffer(4)]],
+    threadgroup float* tile [[threadgroup(0)]],
+    threadgroup float* valid [[threadgroup(1)]],
+    uint2 tid2 [[thread_position_in_threadgroup]],
+    uint2 group_id [[threadgroup_position_in_grid]]
+) {
+    const uint line_id = group_id.y;
+    if (line_id >= params.line_count) {
+        return;
+    }
+
+    const uint chunk_start = group_id.x * params.chunk_len;
+    const int tile_start = int(chunk_start) - int(params.radius);
+    const uint tile_len = params.chunk_len + 2 * params.radius;
+    const int key = int(line_id) + params.key_min;
+    const uint tid = tid2.x;
+
+    for (uint tile_idx = tid; tile_idx < tile_len; tile_idx += params.chunk_len) {
+        const int x = tile_start + int(tile_idx);
+        float value = 0.0f;
+        float is_valid = 0.0f;
+        if (x >= 0 && x < int(params.width)) {
+            const int y = key + line_offsets[uint(x)];
+            if (y >= 0 && y < int(params.height)) {
+                value = g_perp[uint(y) * params.width + uint(x)];
+                is_valid = 1.0f;
+            }
+        }
+        tile[tile_idx] = value;
+        valid[tile_idx] = is_valid;
+    }
+
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    const uint x = chunk_start + tid;
+    if (tid >= params.chunk_len || x >= params.width) {
+        return;
+    }
+
+    const int y = key + line_offsets[x];
+    if (y < 0 || y >= int(params.height)) {
+        return;
+    }
+
+    float num = 0.0f;
+    float den = 0.0f;
+    for (uint sample_idx = 0; sample_idx < params.n_samples; ++sample_idx) {
+        const uint tile_idx = tid + sample_idx;
+        const float w = weights[sample_idx];
+        num += tile[tile_idx] * w;
+        den += valid[tile_idx] * w;
+    }
+
+    const uint plane_size = params.width * params.height;
+    const uint idx = uint(y) * params.width + x;
+    out[params.theta_idx * plane_size + idx] = den > 0.0f ? fabs(num / den) : 0.0f;
+}
+
+kernel void lf_gaussian_scanline_y_major(
+    device const float* g_perp [[buffer(0)]],
+    device const float* weights [[buffer(1)]],
+    device const int* line_offsets [[buffer(2)]],
+    device float* out [[buffer(3)]],
+    constant LfScanlineParams& params [[buffer(4)]],
+    threadgroup float* tile [[threadgroup(0)]],
+    threadgroup float* valid [[threadgroup(1)]],
+    uint2 tid2 [[thread_position_in_threadgroup]],
+    uint2 group_id [[threadgroup_position_in_grid]]
+) {
+    const uint line_id = group_id.y;
+    if (line_id >= params.line_count) {
+        return;
+    }
+
+    const uint chunk_start = group_id.x * params.chunk_len;
+    const int tile_start = int(chunk_start) - int(params.radius);
+    const uint tile_len = params.chunk_len + 2 * params.radius;
+    const int key = int(line_id) + params.key_min;
+    const uint tid = tid2.x;
+
+    for (uint tile_idx = tid; tile_idx < tile_len; tile_idx += params.chunk_len) {
+        const int y = tile_start + int(tile_idx);
+        float value = 0.0f;
+        float is_valid = 0.0f;
+        if (y >= 0 && y < int(params.height)) {
+            const int x = key + line_offsets[uint(y)];
+            if (x >= 0 && x < int(params.width)) {
+                value = g_perp[uint(y) * params.width + uint(x)];
+                is_valid = 1.0f;
+            }
+        }
+        tile[tile_idx] = value;
+        valid[tile_idx] = is_valid;
+    }
+
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    const uint y = chunk_start + tid;
+    if (tid >= params.chunk_len || y >= params.height) {
+        return;
+    }
+
+    const int x = key + line_offsets[y];
+    if (x < 0 || x >= int(params.width)) {
+        return;
+    }
+
+    float num = 0.0f;
+    float den = 0.0f;
+    for (uint sample_idx = 0; sample_idx < params.n_samples; ++sample_idx) {
+        const uint tile_idx = tid + sample_idx;
+        const float w = weights[sample_idx];
+        num += tile[tile_idx] * w;
+        den += valid[tile_idx] * w;
+    }
+
+    const uint plane_size = params.width * params.height;
+    const uint idx = y * params.width + uint(x);
+    out[params.theta_idx * plane_size + idx] = den > 0.0f ? fabs(num / den) : 0.0f;
+}
 "#;
 
 #[repr(C)]
@@ -667,6 +804,18 @@ struct LfBoxFinalizeParams {
     theta_idx: c_uint,
 }
 
+#[repr(C)]
+struct LfScanlineParams {
+    width: c_uint,
+    height: c_uint,
+    n_samples: c_uint,
+    radius: c_uint,
+    key_min: c_int,
+    line_count: c_uint,
+    theta_idx: c_uint,
+    chunk_len: c_uint,
+}
+
 struct MetalState {
     device: Device,
     wvf_pipeline: ComputePipelineState,
@@ -681,6 +830,8 @@ struct MetalState {
     lf_box_x_pipeline: ComputePipelineState,
     lf_box_y_pipeline: ComputePipelineState,
     lf_box_finalize_pipeline: ComputePipelineState,
+    lf_scanline_x_pipeline: ComputePipelineState,
+    lf_scanline_y_pipeline: ComputePipelineState,
     queue: CommandQueue,
 }
 
@@ -780,6 +931,22 @@ impl MetalState {
             .map_err(|err| {
                 format!("failed to create LF box finalize Metal compute pipeline: {err}")
             })?;
+        let lf_scanline_x_function = library
+            .get_function("lf_gaussian_scanline_x_major", None)
+            .map_err(|err| format!("failed to load LF scanline x-major Metal function: {err}"))?;
+        let lf_scanline_x_pipeline = device
+            .new_compute_pipeline_state_with_function(&lf_scanline_x_function)
+            .map_err(|err| {
+                format!("failed to create LF scanline x-major Metal compute pipeline: {err}")
+            })?;
+        let lf_scanline_y_function = library
+            .get_function("lf_gaussian_scanline_y_major", None)
+            .map_err(|err| format!("failed to load LF scanline y-major Metal function: {err}"))?;
+        let lf_scanline_y_pipeline = device
+            .new_compute_pipeline_state_with_function(&lf_scanline_y_function)
+            .map_err(|err| {
+                format!("failed to create LF scanline y-major Metal compute pipeline: {err}")
+            })?;
         let queue = device.new_command_queue();
 
         Ok(Self {
@@ -796,6 +963,8 @@ impl MetalState {
             lf_box_x_pipeline,
             lf_box_y_pipeline,
             lf_box_finalize_pipeline,
+            lf_scanline_x_pipeline,
+            lf_scanline_y_pipeline,
             queue,
         })
     }
@@ -846,7 +1015,11 @@ fn checked_image_pixels(width: c_uint, height: c_uint) -> Result<usize, String> 
 fn threadgroup_1d(pipeline: &ComputePipelineState) -> MTLSize {
     let execution_width = pipeline.thread_execution_width().max(1);
     let max_threads = pipeline.max_total_threads_per_threadgroup().max(1);
-    let mut width = max_threads.min(256);
+    threadgroup_1d_with_cap(execution_width, max_threads, 256)
+}
+
+fn threadgroup_1d_with_cap(execution_width: u64, max_threads: u64, cap: u64) -> MTLSize {
+    let mut width = max_threads.min(cap);
     width = (width / execution_width).max(1) * execution_width;
     MTLSize {
         width,
@@ -1092,6 +1265,25 @@ fn build_lf_stack_tables(
     Ok((
         dx, dy, weights, cos_values, sin_values, n_samples, m_value, weight_sum,
     ))
+}
+
+fn build_lf_gaussian_weights(m: c_int) -> Result<(Vec<c_float>, usize), String> {
+    let m_value = effective_m(m)?;
+    let n_samples = m_value
+        .checked_mul(2)
+        .and_then(|value| value.checked_add(1))
+        .ok_or_else(|| "LF scanline sample count overflowed".to_string())?;
+    let mut weights = Vec::with_capacity(n_samples);
+    if m_value == 0 {
+        weights.push(1.0);
+    } else {
+        let sigma = m_value as f64 / 2.0;
+        for sample_idx in 0..n_samples {
+            let j = sample_idx as isize - m_value as isize;
+            weights.push((-0.5 * (j as f64 / sigma).powi(2)).exp() as c_float);
+        }
+    }
+    Ok((weights, m_value))
 }
 
 fn box_radius_for_m(
@@ -2056,6 +2248,195 @@ unsafe fn run_lf_orientation_stack_projected_with_state(
     Ok(())
 }
 
+unsafe fn run_lf_orientation_stack_scanline_with_state(
+    state: &MetalState,
+    g_x: *const c_float,
+    g_y: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    n_orientations: c_uint,
+    m: c_int,
+    out: *mut c_float,
+) -> Result<(), String> {
+    let total_pixels = checked_image_pixels(width, height)?;
+    let output_count = total_pixels
+        .checked_mul(n_orientations as usize)
+        .ok_or_else(|| "LF scanline output count overflowed".to_string())?;
+    let image_len = checked_len(total_pixels, std::mem::size_of::<c_float>(), "image")?;
+    let out_len = checked_len(
+        output_count,
+        std::mem::size_of::<c_float>(),
+        "LF scanline output",
+    )?;
+    let (weights, m_value) = build_lf_gaussian_weights(m)?;
+    let n_samples = weights.len();
+    let weight_len = checked_len(
+        weights.len(),
+        std::mem::size_of::<c_float>(),
+        "LF scanline weight",
+    )?;
+
+    let shared_options = MTLResourceOptions::StorageModeShared;
+    let gx_buffer = state.device.new_buffer_with_bytes_no_copy(
+        g_x.cast(),
+        image_len as u64,
+        shared_options,
+        None,
+    );
+    let gy_buffer = state.device.new_buffer_with_bytes_no_copy(
+        g_y.cast(),
+        image_len as u64,
+        shared_options,
+        None,
+    );
+    let weights_buffer = state.device.new_buffer_with_bytes_no_copy(
+        weights.as_ptr().cast(),
+        weight_len as u64,
+        shared_options,
+        None,
+    );
+    let out_buffer = state.device.new_buffer_with_bytes_no_copy(
+        out.cast::<std::ffi::c_void>().cast_const(),
+        out_len as u64,
+        shared_options,
+        None,
+    );
+    let g_perp_buffer = state
+        .device
+        .new_buffer(image_len as u64, MTLResourceOptions::StorageModePrivate);
+
+    gx_buffer.did_modify_range(NSRange::new(0, image_len as u64));
+    gy_buffer.did_modify_range(NSRange::new(0, image_len as u64));
+    weights_buffer.did_modify_range(NSRange::new(0, weight_len as u64));
+
+    let image_threads = MTLSize {
+        width: width as u64,
+        height: height as u64,
+        depth: 1,
+    };
+    let project_group = threadgroup_2d(&state.lf_project_pipeline);
+    let scanline_x_group = threadgroup_1d_with_cap(
+        state.lf_scanline_x_pipeline.thread_execution_width().max(1),
+        state
+            .lf_scanline_x_pipeline
+            .max_total_threads_per_threadgroup()
+            .max(1),
+        1024,
+    );
+    let scanline_y_group = threadgroup_1d_with_cap(
+        state.lf_scanline_y_pipeline.thread_execution_width().max(1),
+        state
+            .lf_scanline_y_pipeline
+            .max_total_threads_per_threadgroup()
+            .max(1),
+        1024,
+    );
+
+    for theta_idx in 0..n_orientations as usize {
+        let (line_offsets, x_major, key_min, line_count, cos_t, sin_t) =
+            build_lf_box_line_offsets(width, height, theta_idx, n_orientations as usize)?;
+        let offset_len = checked_len(
+            line_offsets.len(),
+            std::mem::size_of::<c_int>(),
+            "LF scanline line offset",
+        )?;
+        let line_offsets_buffer = state.device.new_buffer_with_bytes_no_copy(
+            line_offsets.as_ptr().cast(),
+            offset_len as u64,
+            shared_options,
+            None,
+        );
+        line_offsets_buffer.did_modify_range(NSRange::new(0, offset_len as u64));
+
+        let seed_params = LfProjectParams {
+            width,
+            height,
+            cos_t,
+            sin_t,
+        };
+        let seed_params_buffer = state.device.new_buffer_with_data(
+            (&seed_params as *const LfProjectParams).cast(),
+            std::mem::size_of::<LfProjectParams>() as u64,
+            shared_options,
+        );
+
+        let group = if x_major {
+            scanline_x_group
+        } else {
+            scanline_y_group
+        };
+        let chunk_len = c_uint::try_from(group.width)
+            .map_err(|_| "LF scanline chunk length is outside uint32 range".to_string())?;
+        let axis_len = if x_major { width } else { height };
+        let n_chunks = axis_len.div_ceil(chunk_len);
+        let tile_len = (chunk_len as usize)
+            .checked_add(
+                m_value
+                    .checked_mul(2)
+                    .ok_or_else(|| "LF scanline tile length overflowed".to_string())?,
+            )
+            .ok_or_else(|| "LF scanline tile length overflowed".to_string())?;
+        let tile_bytes = checked_len(tile_len, std::mem::size_of::<c_float>(), "LF scanline tile")?;
+        let params = LfScanlineParams {
+            width,
+            height,
+            n_samples: c_uint::try_from(n_samples)
+                .map_err(|_| "LF scanline sample count is outside uint32 range".to_string())?,
+            radius: c_uint::try_from(m_value)
+                .map_err(|_| "LF scanline radius is outside uint32 range".to_string())?,
+            key_min,
+            line_count,
+            theta_idx: c_uint::try_from(theta_idx)
+                .map_err(|_| "LF scanline theta index is outside uint32 range".to_string())?,
+            chunk_len,
+        };
+        let params_buffer = state.device.new_buffer_with_data(
+            (&params as *const LfScanlineParams).cast(),
+            std::mem::size_of::<LfScanlineParams>() as u64,
+            shared_options,
+        );
+
+        let command_buffer = state.queue.new_command_buffer();
+        command_buffer.set_label("LF Gaussian scanline orientation stack");
+        let encoder = command_buffer.new_compute_command_encoder();
+        encoder.set_label("LF Gaussian scanline");
+
+        encoder.set_compute_pipeline_state(&state.lf_project_pipeline);
+        encoder.set_buffer(0, Some(&gx_buffer), 0);
+        encoder.set_buffer(1, Some(&gy_buffer), 0);
+        encoder.set_buffer(2, Some(&g_perp_buffer), 0);
+        encoder.set_buffer(3, Some(&seed_params_buffer), 0);
+        encoder.dispatch_threads(image_threads, project_group);
+        encoder.memory_barrier_with_resources(&[g_perp_buffer.as_ref()]);
+
+        if x_major {
+            encoder.set_compute_pipeline_state(&state.lf_scanline_x_pipeline);
+        } else {
+            encoder.set_compute_pipeline_state(&state.lf_scanline_y_pipeline);
+        }
+        encoder.set_buffer(0, Some(&g_perp_buffer), 0);
+        encoder.set_buffer(1, Some(&weights_buffer), 0);
+        encoder.set_buffer(2, Some(&line_offsets_buffer), 0);
+        encoder.set_buffer(3, Some(&out_buffer), 0);
+        encoder.set_buffer(4, Some(&params_buffer), 0);
+        encoder.set_threadgroup_memory_length(0, tile_bytes as u64);
+        encoder.set_threadgroup_memory_length(1, tile_bytes as u64);
+        encoder.dispatch_thread_groups(
+            MTLSize {
+                width: n_chunks as u64,
+                height: line_count as u64,
+                depth: 1,
+            },
+            group,
+        );
+        encoder.end_encoding();
+        command_buffer.commit();
+        command_buffer.wait_until_completed();
+    }
+
+    Ok(())
+}
+
 unsafe fn run_lf_orientation_stack_box_with_state(
     state: &MetalState,
     g_x: *const c_float,
@@ -2309,6 +2690,45 @@ unsafe fn run_lf_orientation_stack(
     })
 }
 
+unsafe fn run_lf_orientation_stack_scanline(
+    g_x: *const c_float,
+    g_y: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    n_orientations: c_uint,
+    m: c_int,
+    out: *mut c_float,
+) -> Result<(), String> {
+    check_ptr(g_x, "g_x")?;
+    check_ptr(g_y, "g_y")?;
+    check_mut_ptr(out, "out")?;
+
+    if width == 0 || height == 0 {
+        return Err("image width and height must be positive".to_string());
+    }
+    if n_orientations == 0 {
+        return Err("n_orientations must be positive".to_string());
+    }
+
+    METAL_STATE.with(|state_cell| {
+        let mut state_slot = state_cell.borrow_mut();
+        if state_slot.is_none() {
+            *state_slot = Some(MetalState::new()?);
+        }
+        let state = state_slot.as_ref().expect("Metal state was initialized");
+        run_lf_orientation_stack_scanline_with_state(
+            state,
+            g_x,
+            g_y,
+            width,
+            height,
+            n_orientations,
+            m,
+            out,
+        )
+    })
+}
+
 unsafe fn run_lf_orientation_stack_box(
     g_x: *const c_float,
     g_y: *const c_float,
@@ -2487,6 +2907,27 @@ pub unsafe extern "C" fn edgecritic_metal_lf_orientation_stack_box(
         box_radius,
         out,
     ) {
+        Ok(()) => 0,
+        Err(message) => {
+            write_error(error_out, error_len, &message);
+            1
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn edgecritic_metal_lf_orientation_stack_scanline(
+    g_x: *const c_float,
+    g_y: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    n_orientations: c_uint,
+    m: c_int,
+    out: *mut c_float,
+    error_out: *mut c_char,
+    error_len: usize,
+) -> c_int {
+    match run_lf_orientation_stack_scanline(g_x, g_y, width, height, n_orientations, m, out) {
         Ok(()) => 0,
         Err(message) => {
             write_error(error_out, error_len, &message);
