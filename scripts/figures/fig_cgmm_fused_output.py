@@ -87,25 +87,25 @@ def main():
 
     fig = plt.figure(figsize=(10.0, 5.6))
     grid = fig.add_gridspec(1, 2, wspace=0.06, left=0.02, right=0.98,
-                            top=0.92, bottom=0.10)
+                            top=0.98, bottom=0.18)
     axl = fig.add_subplot(grid[0, 0])
     axr = fig.add_subplot(grid[0, 1])
 
     axl.imshow(img_p, interpolation="nearest", origin="upper",
                extent=(0, W, H, 0))
-    axl.set_title(r"primary fused orientation $\hat{\theta}_{\mathrm{fused}}$",
-                  fontsize=10, color="#363636")
     axl.set_xticks([]); axl.set_yticks([])
     axl.set_facecolor("black")
     for s in axl.spines.values(): s.set_visible(False)
+    axl.set_xlabel("primary", fontsize=11, color="#363636",
+                   labelpad=8)
 
     axr.imshow(img_s, interpolation="nearest", origin="upper",
                extent=(0, W, H, 0))
-    axr.set_title(r"secondary fused orientation $\hat{\theta}_{\mathrm{fused, sec}}$",
-                  fontsize=10, color="#363636")
     axr.set_xticks([]); axr.set_yticks([])
     axr.set_facecolor("black")
     for s in axr.spines.values(): s.set_visible(False)
+    axr.set_xlabel("secondary", fontsize=11, color="#363636",
+                   labelpad=8)
 
     # Shared colorbar at the bottom showing the orientation->color map.
     cbar_ax = fig.add_axes((0.30, 0.06, 0.40, 0.025))
@@ -117,23 +117,13 @@ def main():
     cbar_ax.set_xticklabels(["0°", "45°", "90°", "135°", "180°"],
                             fontsize=8)
     cbar_ax.tick_params(length=2, color="#363636")
-    cbar_ax.set_xlabel(r"orientation $\theta$ (deg)",
-                       fontsize=9, color="#363636")
     for s in cbar_ax.spines.values(): s.set_color("#363636")
-
-    n_p = int(primary_valid.sum())
-    n_s = int(secondary_valid.sum())
-    axl.text(0.5, -0.07, f"{n_p:,} pixels",
-             transform=axl.transAxes, ha="center",
-             fontsize=8.5, color="#5C5C5C")
-    axr.text(0.5, -0.07,
-             f"{n_s:,} pixels (suppressed elsewhere)",
-             transform=axr.transAxes, ha="center",
-             fontsize=8.5, color="#5C5C5C")
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(args.out, format="pdf", dpi=300, bbox_inches="tight")
-    print(f"wrote {args.out}  primary={n_p}  secondary={n_s}")
+    print(f"wrote {args.out}  "
+          f"primary={int(primary_valid.sum())}  "
+          f"secondary={int(secondary_valid.sum())}")
 
 
 if __name__ == "__main__":
