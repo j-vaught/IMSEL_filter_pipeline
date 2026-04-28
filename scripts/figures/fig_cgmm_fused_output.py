@@ -82,8 +82,10 @@ def main():
 
     img_p = render_orientation_image(np.where(np.isnan(theta_p), 0.0, theta_p),
                                       primary_valid, cmap, dilate_px=6)
+    # Secondary slot is sparse (only ~700 pixels survive suppression);
+    # dilate more so the corner markers are visible at print size.
     img_s = render_orientation_image(np.where(np.isnan(theta_s), 0.0, theta_s),
-                                      secondary_valid, cmap, dilate_px=6)
+                                      secondary_valid, cmap, dilate_px=15)
 
     fig = plt.figure(figsize=(10.0, 5.6))
     grid = fig.add_gridspec(1, 2, wspace=0.06, left=0.02, right=0.98,
