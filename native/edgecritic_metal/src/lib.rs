@@ -8,6 +8,9 @@ use std::os::raw::{c_double, c_float, c_int, c_uint};
 use std::ptr;
 
 const MAX_BATCH_MS: usize = 32;
+const LF_STACK_EXECUTION_AUTO: c_uint = 0;
+const LF_STACK_EXECUTION_DIRECT: c_uint = 1;
+const LF_STACK_EXECUTION_PROJECTED: c_uint = 2;
 
 const SHADER_SOURCE: &str = r#"
 #include <metal_stdlib>
@@ -45,6 +48,22 @@ struct LfStackParams {
     uint height;
     uint n_orientations;
     uint n_samples;
+    uint border;
+    float weight_sum;
+};
+
+struct LfProjectParams {
+    uint width;
+    uint height;
+    float cos_t;
+    float sin_t;
+};
+
+struct LfPlaneParams {
+    uint width;
+    uint height;
+    uint n_samples;
+    uint theta_idx;
     uint border;
     float weight_sum;
 };
@@ -290,6 +309,107 @@ kernel void lf_orientation_stack_boundary(
     const uint out_idx = theta_idx * plane_size + gid.y * params.width + gid.x;
     out[out_idx] = den > 0.0f ? fabs(num / den) : 0.0f;
 }
+
+kernel void lf_project_perp(
+    device const float* g_x [[buffer(0)]],
+    device const float* g_y [[buffer(1)]],
+    device float* g_perp [[buffer(2)]],
+    constant LfProjectParams& params [[buffer(3)]],
+    uint2 gid [[thread_position_in_grid]]
+) {
+    if (gid.x >= params.width || gid.y >= params.height) {
+        return;
+    }
+
+    const uint idx = gid.y * params.width + gid.x;
+    g_perp[idx] = -params.sin_t * g_x[idx] + params.cos_t * g_y[idx];
+}
+
+kernel void lf_orientation_stack_projected_interior(
+    device const float* g_perp [[buffer(0)]],
+    device const int* dx [[buffer(1)]],
+    device const int* dy [[buffer(2)]],
+    device const float* weights [[buffer(3)]],
+    device float* out [[buffer(4)]],
+    constant LfPlaneParams& params [[buffer(5)]],
+    uint2 gid [[thread_position_in_grid]]
+) {
+    if (gid.x >= params.width || gid.y >= params.height) {
+        return;
+    }
+    if (params.border > 0) {
+        if (params.width <= 2 * params.border || params.height <= 2 * params.border) {
+            return;
+        }
+        if (gid.x < params.border || gid.x >= params.width - params.border ||
+            gid.y < params.border || gid.y >= params.height - params.border) {
+            return;
+        }
+    }
+
+    const int x0 = int(gid.x);
+    const int y0 = int(gid.y);
+    const uint theta_offset = params.theta_idx * params.n_samples;
+    float num = 0.0f;
+
+    for (uint sample_idx = 0; sample_idx < params.n_samples; ++sample_idx) {
+        const uint offset_idx = theta_offset + sample_idx;
+        const int x = x0 + dx[offset_idx];
+        const int y = y0 + dy[offset_idx];
+        const uint image_idx = uint(y) * params.width + uint(x);
+        num += g_perp[image_idx] * weights[sample_idx];
+    }
+
+    const uint plane_size = params.width * params.height;
+    const uint out_idx = params.theta_idx * plane_size + gid.y * params.width + gid.x;
+    out[out_idx] = params.weight_sum > 0.0f ? fabs(num / params.weight_sum) : 0.0f;
+}
+
+kernel void lf_orientation_stack_projected_boundary(
+    device const float* g_perp [[buffer(0)]],
+    device const int* dx [[buffer(1)]],
+    device const int* dy [[buffer(2)]],
+    device const float* weights [[buffer(3)]],
+    device float* out [[buffer(4)]],
+    constant LfPlaneParams& params [[buffer(5)]],
+    uint2 gid [[thread_position_in_grid]]
+) {
+    if (gid.x >= params.width || gid.y >= params.height) {
+        return;
+    }
+    if (params.border == 0) {
+        return;
+    }
+    if (params.width > 2 * params.border && params.height > 2 * params.border &&
+        gid.x >= params.border && gid.x < params.width - params.border &&
+        gid.y >= params.border && gid.y < params.height - params.border) {
+        return;
+    }
+
+    const int x0 = int(gid.x);
+    const int y0 = int(gid.y);
+    const uint theta_offset = params.theta_idx * params.n_samples;
+    float num = 0.0f;
+    float den = 0.0f;
+
+    for (uint sample_idx = 0; sample_idx < params.n_samples; ++sample_idx) {
+        const uint offset_idx = theta_offset + sample_idx;
+        const int x = x0 + dx[offset_idx];
+        const int y = y0 + dy[offset_idx];
+        if (x < 0 || y < 0 || x >= int(params.width) || y >= int(params.height)) {
+            continue;
+        }
+
+        const uint image_idx = uint(y) * params.width + uint(x);
+        const float w = weights[sample_idx];
+        num += g_perp[image_idx] * w;
+        den += w;
+    }
+
+    const uint plane_size = params.width * params.height;
+    const uint out_idx = params.theta_idx * plane_size + gid.y * params.width + gid.x;
+    out[out_idx] = den > 0.0f ? fabs(num / den) : 0.0f;
+}
 "#;
 
 #[repr(C)]
@@ -330,6 +450,24 @@ struct LfStackParams {
     weight_sum: c_float,
 }
 
+#[repr(C)]
+struct LfProjectParams {
+    width: c_uint,
+    height: c_uint,
+    cos_t: c_float,
+    sin_t: c_float,
+}
+
+#[repr(C)]
+struct LfPlaneParams {
+    width: c_uint,
+    height: c_uint,
+    n_samples: c_uint,
+    theta_idx: c_uint,
+    border: c_uint,
+    weight_sum: c_float,
+}
+
 struct MetalState {
     device: Device,
     wvf_pipeline: ComputePipelineState,
@@ -337,6 +475,9 @@ struct MetalState {
     lf_batch_pipeline: ComputePipelineState,
     lf_stack_interior_pipeline: ComputePipelineState,
     lf_stack_boundary_pipeline: ComputePipelineState,
+    lf_project_pipeline: ComputePipelineState,
+    lf_projected_interior_pipeline: ComputePipelineState,
+    lf_projected_boundary_pipeline: ComputePipelineState,
     queue: CommandQueue,
 }
 
@@ -382,6 +523,30 @@ impl MetalState {
             .map_err(|err| {
                 format!("failed to create LF stack boundary Metal compute pipeline: {err}")
             })?;
+        let lf_project_function = library
+            .get_function("lf_project_perp", None)
+            .map_err(|err| format!("failed to load LF projection Metal function: {err}"))?;
+        let lf_project_pipeline = device
+            .new_compute_pipeline_state_with_function(&lf_project_function)
+            .map_err(|err| {
+                format!("failed to create LF projection Metal compute pipeline: {err}")
+            })?;
+        let lf_projected_interior_function = library
+            .get_function("lf_orientation_stack_projected_interior", None)
+            .map_err(|err| format!("failed to load LF projected interior Metal function: {err}"))?;
+        let lf_projected_interior_pipeline = device
+            .new_compute_pipeline_state_with_function(&lf_projected_interior_function)
+            .map_err(|err| {
+                format!("failed to create LF projected interior Metal compute pipeline: {err}")
+            })?;
+        let lf_projected_boundary_function = library
+            .get_function("lf_orientation_stack_projected_boundary", None)
+            .map_err(|err| format!("failed to load LF projected boundary Metal function: {err}"))?;
+        let lf_projected_boundary_pipeline = device
+            .new_compute_pipeline_state_with_function(&lf_projected_boundary_function)
+            .map_err(|err| {
+                format!("failed to create LF projected boundary Metal compute pipeline: {err}")
+            })?;
         let queue = device.new_command_queue();
 
         Ok(Self {
@@ -391,6 +556,9 @@ impl MetalState {
             lf_batch_pipeline,
             lf_stack_interior_pipeline,
             lf_stack_boundary_pipeline,
+            lf_project_pipeline,
+            lf_projected_interior_pipeline,
+            lf_projected_boundary_pipeline,
             queue,
         })
     }
@@ -1273,7 +1441,7 @@ unsafe fn run_lf_response_batch(
     })
 }
 
-unsafe fn run_lf_orientation_stack_with_state(
+unsafe fn run_lf_orientation_stack_direct_with_state(
     state: &MetalState,
     g_x: *const c_float,
     g_y: *const c_float,
@@ -1422,6 +1590,162 @@ unsafe fn run_lf_orientation_stack_with_state(
     Ok(())
 }
 
+unsafe fn run_lf_orientation_stack_projected_with_state(
+    state: &MetalState,
+    g_x: *const c_float,
+    g_y: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    n_orientations: c_uint,
+    m: c_int,
+    out: *mut c_float,
+) -> Result<(), String> {
+    let total_pixels = checked_image_pixels(width, height)?;
+    let output_count = total_pixels
+        .checked_mul(n_orientations as usize)
+        .ok_or_else(|| "LF stack output count overflowed".to_string())?;
+    let image_len = checked_len(total_pixels, std::mem::size_of::<c_float>(), "image")?;
+    let out_len = checked_len(
+        output_count,
+        std::mem::size_of::<c_float>(),
+        "LF stack output",
+    )?;
+    let (dx, dy, weights, cos_values, sin_values, n_samples, border, weight_sum) =
+        build_lf_stack_tables(n_orientations, m)?;
+    let offset_len = checked_len(dx.len(), std::mem::size_of::<c_int>(), "LF stack offset")?;
+    let weight_len = checked_len(
+        weights.len(),
+        std::mem::size_of::<c_float>(),
+        "LF stack weight",
+    )?;
+
+    let resource_options = MTLResourceOptions::StorageModeShared;
+    let gx_buffer = state.device.new_buffer_with_bytes_no_copy(
+        g_x.cast(),
+        image_len as u64,
+        resource_options,
+        None,
+    );
+    let gy_buffer = state.device.new_buffer_with_bytes_no_copy(
+        g_y.cast(),
+        image_len as u64,
+        resource_options,
+        None,
+    );
+    let dx_buffer = state.device.new_buffer_with_bytes_no_copy(
+        dx.as_ptr().cast(),
+        offset_len as u64,
+        resource_options,
+        None,
+    );
+    let dy_buffer = state.device.new_buffer_with_bytes_no_copy(
+        dy.as_ptr().cast(),
+        offset_len as u64,
+        resource_options,
+        None,
+    );
+    let weights_buffer = state.device.new_buffer_with_bytes_no_copy(
+        weights.as_ptr().cast(),
+        weight_len as u64,
+        resource_options,
+        None,
+    );
+    let out_buffer = state.device.new_buffer_with_bytes_no_copy(
+        out.cast::<std::ffi::c_void>().cast_const(),
+        out_len as u64,
+        resource_options,
+        None,
+    );
+    let perp_buffer = state
+        .device
+        .new_buffer(image_len as u64, MTLResourceOptions::StorageModePrivate);
+
+    gx_buffer.did_modify_range(NSRange::new(0, image_len as u64));
+    gy_buffer.did_modify_range(NSRange::new(0, image_len as u64));
+    dx_buffer.did_modify_range(NSRange::new(0, offset_len as u64));
+    dy_buffer.did_modify_range(NSRange::new(0, offset_len as u64));
+    weights_buffer.did_modify_range(NSRange::new(0, weight_len as u64));
+
+    let mut project_params_buffers = Vec::with_capacity(n_orientations as usize);
+    let mut plane_params_buffers = Vec::with_capacity(n_orientations as usize);
+    for theta_idx in 0..n_orientations as usize {
+        let project_params = LfProjectParams {
+            width,
+            height,
+            cos_t: cos_values[theta_idx],
+            sin_t: sin_values[theta_idx],
+        };
+        project_params_buffers.push(state.device.new_buffer_with_data(
+            (&project_params as *const LfProjectParams).cast(),
+            std::mem::size_of::<LfProjectParams>() as u64,
+            resource_options,
+        ));
+
+        let plane_params = LfPlaneParams {
+            width,
+            height,
+            n_samples: c_uint::try_from(n_samples)
+                .map_err(|_| "LF stack sample count is outside uint32 range".to_string())?,
+            theta_idx: c_uint::try_from(theta_idx)
+                .map_err(|_| "LF stack theta index is outside uint32 range".to_string())?,
+            border: c_uint::try_from(border)
+                .map_err(|_| "LF stack border is outside uint32 range".to_string())?,
+            weight_sum,
+        };
+        plane_params_buffers.push(state.device.new_buffer_with_data(
+            (&plane_params as *const LfPlaneParams).cast(),
+            std::mem::size_of::<LfPlaneParams>() as u64,
+            resource_options,
+        ));
+    }
+
+    let image_threads = MTLSize {
+        width: width as u64,
+        height: height as u64,
+        depth: 1,
+    };
+    let project_group = threadgroup_2d(&state.lf_project_pipeline);
+    let interior_group = threadgroup_2d(&state.lf_projected_interior_pipeline);
+    let boundary_group = threadgroup_2d(&state.lf_projected_boundary_pipeline);
+
+    let command_buffer = state.queue.new_command_buffer();
+    let encoder = command_buffer.new_compute_command_encoder();
+    for theta_idx in 0..n_orientations as usize {
+        encoder.set_compute_pipeline_state(&state.lf_project_pipeline);
+        encoder.set_buffer(0, Some(&gx_buffer), 0);
+        encoder.set_buffer(1, Some(&gy_buffer), 0);
+        encoder.set_buffer(2, Some(&perp_buffer), 0);
+        encoder.set_buffer(3, Some(&project_params_buffers[theta_idx]), 0);
+        encoder.dispatch_threads(image_threads, project_group);
+        encoder.memory_barrier_with_resources(&[perp_buffer.as_ref()]);
+
+        encoder.set_compute_pipeline_state(&state.lf_projected_interior_pipeline);
+        encoder.set_buffer(0, Some(&perp_buffer), 0);
+        encoder.set_buffer(1, Some(&dx_buffer), 0);
+        encoder.set_buffer(2, Some(&dy_buffer), 0);
+        encoder.set_buffer(3, Some(&weights_buffer), 0);
+        encoder.set_buffer(4, Some(&out_buffer), 0);
+        encoder.set_buffer(5, Some(&plane_params_buffers[theta_idx]), 0);
+        encoder.dispatch_threads(image_threads, interior_group);
+
+        if border > 0 {
+            encoder.set_compute_pipeline_state(&state.lf_projected_boundary_pipeline);
+            encoder.set_buffer(0, Some(&perp_buffer), 0);
+            encoder.set_buffer(1, Some(&dx_buffer), 0);
+            encoder.set_buffer(2, Some(&dy_buffer), 0);
+            encoder.set_buffer(3, Some(&weights_buffer), 0);
+            encoder.set_buffer(4, Some(&out_buffer), 0);
+            encoder.set_buffer(5, Some(&plane_params_buffers[theta_idx]), 0);
+            encoder.dispatch_threads(image_threads, boundary_group);
+        }
+    }
+    encoder.end_encoding();
+    command_buffer.commit();
+    command_buffer.wait_until_completed();
+
+    Ok(())
+}
+
 unsafe fn run_lf_orientation_stack(
     g_x: *const c_float,
     g_y: *const c_float,
@@ -1429,6 +1753,7 @@ unsafe fn run_lf_orientation_stack(
     height: c_uint,
     n_orientations: c_uint,
     m: c_int,
+    execution_mode: c_uint,
     out: *mut c_float,
 ) -> Result<(), String> {
     check_ptr(g_x, "g_x")?;
@@ -1441,6 +1766,26 @@ unsafe fn run_lf_orientation_stack(
     if n_orientations == 0 {
         return Err("n_orientations must be positive".to_string());
     }
+    if !matches!(
+        execution_mode,
+        LF_STACK_EXECUTION_AUTO | LF_STACK_EXECUTION_DIRECT | LF_STACK_EXECUTION_PROJECTED
+    ) {
+        return Err(
+            "LF stack execution mode must be 0 (auto), 1 (direct), or 2 (projected)".to_string(),
+        );
+    }
+
+    let m_value = effective_m(m)?;
+    let total_pixels = checked_image_pixels(width, height)?;
+    let selected_mode = if execution_mode == LF_STACK_EXECUTION_AUTO {
+        if m_value >= 64 && total_pixels >= 262_144 {
+            LF_STACK_EXECUTION_PROJECTED
+        } else {
+            LF_STACK_EXECUTION_DIRECT
+        }
+    } else {
+        execution_mode
+    };
 
     METAL_STATE.with(|state_cell| {
         let mut state_slot = state_cell.borrow_mut();
@@ -1448,7 +1793,29 @@ unsafe fn run_lf_orientation_stack(
             *state_slot = Some(MetalState::new()?);
         }
         let state = state_slot.as_ref().expect("Metal state was initialized");
-        run_lf_orientation_stack_with_state(state, g_x, g_y, width, height, n_orientations, m, out)
+        if selected_mode == LF_STACK_EXECUTION_PROJECTED {
+            run_lf_orientation_stack_projected_with_state(
+                state,
+                g_x,
+                g_y,
+                width,
+                height,
+                n_orientations,
+                m,
+                out,
+            )
+        } else {
+            run_lf_orientation_stack_direct_with_state(
+                state,
+                g_x,
+                g_y,
+                width,
+                height,
+                n_orientations,
+                m,
+                out,
+            )
+        }
     })
 }
 
@@ -1538,11 +1905,21 @@ pub unsafe extern "C" fn edgecritic_metal_lf_orientation_stack(
     height: c_uint,
     n_orientations: c_uint,
     m: c_int,
+    execution_mode: c_uint,
     out: *mut c_float,
     error_out: *mut c_char,
     error_len: usize,
 ) -> c_int {
-    match run_lf_orientation_stack(g_x, g_y, width, height, n_orientations, m, out) {
+    match run_lf_orientation_stack(
+        g_x,
+        g_y,
+        width,
+        height,
+        n_orientations,
+        m,
+        execution_mode,
+        out,
+    ) {
         Ok(()) => 0,
         Err(message) => {
             write_error(error_out, error_len, &message);

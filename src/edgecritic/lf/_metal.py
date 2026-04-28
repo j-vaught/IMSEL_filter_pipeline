@@ -62,6 +62,7 @@ def _load_lf_library() -> ctypes.CDLL:
             ctypes.c_uint,
             ctypes.c_uint,
             ctypes.c_int,
+            ctypes.c_uint,
             ctypes.POINTER(ctypes.c_float),
             ctypes.POINTER(ctypes.c_char),
             ctypes.c_size_t,
@@ -207,6 +208,8 @@ def lf_orientation_stack_metal(
     n_orientations: int = 16,
     output_dtype: np.dtype | type = np.float32,
     method: str = "exact",
+    execution: str = "auto",
+    out: np.ndarray | None = None,
 ) -> np.ndarray:
     """Compute full-frame LF responses for equally spaced orientations.
 
@@ -215,13 +218,25 @@ def lf_orientation_stack_metal(
     """
     if str(method).lower() != "exact":
         raise ValueError("only method='exact' is currently implemented")
+    execution_mode = {"auto": 0, "direct": 1, "projected": 2}.get(str(execution).lower())
+    if execution_mode is None:
+        raise ValueError("execution must be 'auto', 'direct', or 'projected'")
     if int(n_orientations) <= 0:
         raise ValueError("n_orientations must be positive")
 
     gx, gy = _components(g_x, g_y)
     h, w = gx.shape
     n = int(n_orientations)
-    out = np.empty((n, h, w), dtype=np.float32)
+    if out is None:
+        out_arr = np.empty((n, h, w), dtype=np.float32)
+    else:
+        out_arr = np.asarray(out)
+        if out_arr.shape != (n, h, w):
+            raise ValueError("out must have shape (n_orientations, H, W)")
+        if out_arr.dtype != np.dtype(np.float32):
+            raise ValueError("out must have dtype float32")
+        if not out_arr.flags.c_contiguous:
+            raise ValueError("out must be C-contiguous")
     error_buffer = ctypes.create_string_buffer(4096)
     status = _load_lf_library().edgecritic_metal_lf_orientation_stack(
         gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
@@ -230,7 +245,8 @@ def lf_orientation_stack_metal(
         _as_uint32(h, "image height"),
         _as_uint32(n, "orientation count"),
         _as_int32(int(m), "m"),
-        out.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        _as_uint32(execution_mode, "execution mode"),
+        out_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
         error_buffer,
         ctypes.c_size_t(len(error_buffer)),
     )
@@ -239,8 +255,8 @@ def lf_orientation_stack_metal(
 
     dtype = np.dtype(output_dtype)
     if dtype == np.dtype(np.float32):
-        return out
-    return out.astype(dtype)
+        return out_arr
+    return out_arr.astype(dtype)
 
 
 __all__ = [

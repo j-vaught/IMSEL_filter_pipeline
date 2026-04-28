@@ -101,6 +101,23 @@ def test_lf_orientation_stack_metal_matches_sparse_batch_all_pixels():
     assert np.allclose(stack, sparse_stack, rtol=2e-5, atol=3e-5)
 
 
+def test_lf_orientation_stack_projected_matches_direct():
+    _require_metal()
+
+    rng = np.random.default_rng(24601)
+    g_x = rng.normal(size=(23, 29)).astype(np.float32)
+    g_y = rng.normal(size=(23, 29)).astype(np.float32)
+
+    direct = lf_orientation_stack_metal(
+        g_x, g_y, m=7, n_orientations=9, execution="direct"
+    )
+    projected = lf_orientation_stack_metal(
+        g_x, g_y, m=7, n_orientations=9, execution="projected"
+    )
+
+    assert np.allclose(projected, direct, rtol=2e-5, atol=3e-5)
+
+
 def test_lf_orientation_stack_metal_output_dtype_and_validation():
     _require_metal()
 
@@ -111,7 +128,22 @@ def test_lf_orientation_stack_metal_output_dtype_and_validation():
     assert got.dtype == np.float64
     assert got.shape == (4, 5, 6)
 
+    reusable = np.empty((4, 5, 6), dtype=np.float32)
+    reused = lf_orientation_stack_metal(g_x, g_y, m=0, n_orientations=4, out=reusable)
+    assert reused is reusable
+    assert reused.dtype == np.float32
+
     with pytest.raises(ValueError, match="n_orientations"):
         lf_orientation_stack_metal(g_x, g_y, m=0, n_orientations=0)
     with pytest.raises(ValueError, match="method"):
         lf_orientation_stack_metal(g_x, g_y, m=0, n_orientations=4, method="box")
+    with pytest.raises(ValueError, match="execution"):
+        lf_orientation_stack_metal(g_x, g_y, m=0, n_orientations=4, execution="unknown")
+    with pytest.raises(ValueError, match="out"):
+        lf_orientation_stack_metal(
+            g_x,
+            g_y,
+            m=0,
+            n_orientations=4,
+            out=np.empty((4, 5, 6), dtype=np.float64),
+        )
