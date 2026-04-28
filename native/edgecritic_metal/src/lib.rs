@@ -3402,3 +3402,56 @@ pub unsafe extern "C" fn edgecritic_metal_lf_orientation_stack_scanline(
         }
     }
 }
+
+#[no_mangle]
+pub unsafe extern "C" fn edgecritic_metal_recover_two_peaks(
+    angles: *const c_double,
+    response: *const c_float,
+    n_rows: c_uint,
+    k: c_uint,
+    tau_sec_floor: c_float,
+    tau_validity: c_float,
+    dense_n: c_uint,
+    min_sep_frac: c_float,
+    theta_p: *mut c_float,
+    m_p: *mut c_float,
+    theta_s: *mut c_float,
+    m_s: *mut c_float,
+    v: *mut u8,
+    error_out: *mut c_char,
+    error_len: usize,
+) -> c_int {
+    let result = (|| {
+        check_ptr(angles, "angles")?;
+        check_ptr(response, "response")?;
+        check_mut_ptr(theta_p, "theta_p")?;
+        check_mut_ptr(m_p, "m_p")?;
+        check_mut_ptr(theta_s, "theta_s")?;
+        check_mut_ptr(m_s, "m_s")?;
+        check_mut_ptr(v, "v")?;
+        if n_rows == 0 {
+            return Ok(());
+        }
+        if k == 0 {
+            return Err("k must be positive".to_string());
+        }
+        if dense_n == 0 {
+            return Err("dense_n must be positive".to_string());
+        }
+        if !tau_sec_floor.is_finite()
+            || !tau_validity.is_finite()
+            || !min_sep_frac.is_finite()
+        {
+            return Err("recovery tunables must be finite".to_string());
+        }
+        Err("orientation recovery backend is not implemented".to_string())
+    })();
+
+    match result {
+        Ok(()) => 0,
+        Err(message) => {
+            write_error(error_out, error_len, &message);
+            1
+        }
+    }
+}
