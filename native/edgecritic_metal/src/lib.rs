@@ -94,6 +94,7 @@ struct LfBoxMultiParams {
     uint width;
     uint height;
     uint n_ms;
+    uint output_layout;
     int key_min;
     uint line_count;
     uint theta_idx;
@@ -642,9 +643,14 @@ kernel void lf_box_multi_x_major(
         if (y >= 0 && y < int(params.height)) {
             const uint idx = uint(y) * params.width + x;
             for (uint m_idx = 0; m_idx < params.n_ms; ++m_idx) {
-                const uint out_plane = params.theta_idx * params.n_ms + m_idx;
-                out[out_plane * plane_size + idx] =
+                const float value =
                     sum_den[m_idx] > 0.0f ? fabs(sum_num[m_idx] / sum_den[m_idx]) : 0.0f;
+                if (params.output_layout == 0) {
+                    const ulong out_plane = ulong(params.theta_idx) * ulong(params.n_ms) + ulong(m_idx);
+                    out[out_plane * plane_size + ulong(idx)] = value;
+                } else {
+                    out[(ulong(params.theta_idx) * plane_size + ulong(idx)) * ulong(params.n_ms) + ulong(m_idx)] = value;
+                }
             }
         }
 
@@ -686,7 +692,7 @@ kernel void lf_box_multi_y_major(
     }
 
     const int key = int(line_id) + params.key_min;
-    const uint plane_size = params.width * params.height;
+    const ulong plane_size = ulong(params.width) * ulong(params.height);
     float sum_num[MAX_BATCH_MS];
     float sum_den[MAX_BATCH_MS];
 
@@ -709,9 +715,14 @@ kernel void lf_box_multi_y_major(
         if (x >= 0 && x < int(params.width)) {
             const uint idx = y * params.width + uint(x);
             for (uint m_idx = 0; m_idx < params.n_ms; ++m_idx) {
-                const uint out_plane = params.theta_idx * params.n_ms + m_idx;
-                out[out_plane * plane_size + idx] =
+                const float value =
                     sum_den[m_idx] > 0.0f ? fabs(sum_num[m_idx] / sum_den[m_idx]) : 0.0f;
+                if (params.output_layout == 0) {
+                    const ulong out_plane = ulong(params.theta_idx) * ulong(params.n_ms) + ulong(m_idx);
+                    out[out_plane * plane_size + ulong(idx)] = value;
+                } else {
+                    out[(ulong(params.theta_idx) * plane_size + ulong(idx)) * ulong(params.n_ms) + ulong(m_idx)] = value;
+                }
             }
         }
 
@@ -952,6 +963,7 @@ struct LfBoxMultiParams {
     width: c_uint,
     height: c_uint,
     n_ms: c_uint,
+    output_layout: c_uint,
     key_min: c_int,
     line_count: c_uint,
     theta_idx: c_uint,
@@ -2796,11 +2808,17 @@ unsafe fn run_lf_orientation_length_stack_box_with_state(
     g_y: *const c_float,
     width: c_uint,
     height: c_uint,
+    theta_start: c_uint,
     n_orientations: c_uint,
+    total_orientations: c_uint,
     ms: *const c_int,
     n_ms: c_uint,
+    output_layout: c_uint,
     out: *mut c_float,
 ) -> Result<(), String> {
+    if n_orientations == 0 {
+        return Ok(());
+    }
     if n_ms == 0 {
         return Ok(());
     }
@@ -2808,6 +2826,18 @@ unsafe fn run_lf_orientation_length_stack_box_with_state(
         return Err(format!(
             "full-image batched LF supports at most {MAX_BATCH_MS} m values"
         ));
+    }
+    if total_orientations == 0 {
+        return Err("total_orientations must be positive".to_string());
+    }
+    if output_layout > 1 {
+        return Err("output_layout must be 0 (theta_m_yx) or 1 (theta_yx_m)".to_string());
+    }
+    let theta_end = theta_start
+        .checked_add(n_orientations)
+        .ok_or_else(|| "LF box multi orientation range overflowed".to_string())?;
+    if theta_end > total_orientations {
+        return Err("LF box multi orientation range exceeds total_orientations".to_string());
     }
 
     let total_pixels = checked_image_pixels(width, height)?;
@@ -2875,9 +2905,10 @@ unsafe fn run_lf_orientation_length_stack_box_with_state(
     let x_group = threadgroup_1d(&state.lf_box_multi_x_pipeline);
     let y_group = threadgroup_1d(&state.lf_box_multi_y_pipeline);
 
-    for theta_idx in 0..n_orientations as usize {
+    for local_theta_idx in 0..n_orientations as usize {
+        let theta_idx = theta_start as usize + local_theta_idx;
         let (line_offsets, x_major, key_min, line_count, cos_t, sin_t) =
-            build_lf_box_line_offsets(width, height, theta_idx, n_orientations as usize)?;
+            build_lf_box_line_offsets(width, height, theta_idx, total_orientations as usize)?;
         let offset_len = checked_len(
             line_offsets.len(),
             std::mem::size_of::<c_int>(),
@@ -2895,9 +2926,10 @@ unsafe fn run_lf_orientation_length_stack_box_with_state(
             width,
             height,
             n_ms,
+            output_layout,
             key_min,
             line_count,
-            theta_idx: c_uint::try_from(theta_idx)
+            theta_idx: c_uint::try_from(local_theta_idx)
                 .map_err(|_| "LF box multi theta index is outside uint32 range".to_string())?,
         };
         let params_buffer = state.device.new_buffer_with_data(
@@ -3115,9 +3147,12 @@ unsafe fn run_lf_orientation_length_stack_box(
     g_y: *const c_float,
     width: c_uint,
     height: c_uint,
+    theta_start: c_uint,
     n_orientations: c_uint,
+    total_orientations: c_uint,
     ms: *const c_int,
     n_ms: c_uint,
+    output_layout: c_uint,
     out: *mut c_float,
 ) -> Result<(), String> {
     check_ptr(g_x, "g_x")?;
@@ -3130,13 +3165,19 @@ unsafe fn run_lf_orientation_length_stack_box(
     if width == 0 || height == 0 {
         return Err("image width and height must be positive".to_string());
     }
-    if n_orientations == 0 {
-        return Err("n_orientations must be positive".to_string());
-    }
     if n_ms as usize > MAX_BATCH_MS {
         return Err(format!(
             "full-image batched LF supports at most {MAX_BATCH_MS} m values"
         ));
+    }
+    if n_orientations == 0 {
+        return Ok(());
+    }
+    if total_orientations == 0 {
+        return Err("total_orientations must be positive".to_string());
+    }
+    if output_layout > 1 {
+        return Err("output_layout must be 0 (theta_m_yx) or 1 (theta_yx_m)".to_string());
     }
 
     METAL_STATE.with(|state_cell| {
@@ -3151,9 +3192,12 @@ unsafe fn run_lf_orientation_length_stack_box(
             g_y,
             width,
             height,
+            theta_start,
             n_orientations,
+            total_orientations,
             ms,
             n_ms,
+            output_layout,
             out,
         )
     })
@@ -3307,9 +3351,12 @@ pub unsafe extern "C" fn edgecritic_metal_lf_orientation_length_stack_box(
     g_y: *const c_float,
     width: c_uint,
     height: c_uint,
+    theta_start: c_uint,
     n_orientations: c_uint,
+    total_orientations: c_uint,
     ms: *const c_int,
     n_ms: c_uint,
+    output_layout: c_uint,
     out: *mut c_float,
     error_out: *mut c_char,
     error_len: usize,
@@ -3319,9 +3366,12 @@ pub unsafe extern "C" fn edgecritic_metal_lf_orientation_length_stack_box(
         g_y,
         width,
         height,
+        theta_start,
         n_orientations,
+        total_orientations,
         ms,
         n_ms,
+        output_layout,
         out,
     ) {
         Ok(()) => 0,

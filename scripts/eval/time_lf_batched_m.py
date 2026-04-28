@@ -44,6 +44,10 @@ def main():
     p.add_argument("--d", type=int, default=3)
     p.add_argument("--sigma", type=float, default=13.0)
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--output-layout", default="theta_yx_m", choices=["theta_yx_m", "theta_m_yx"])
+    p.add_argument("--orientation-chunk-size", type=int, default=None)
+    p.add_argument("--max-chunk-gb", type=float, default=2.0)
+    p.add_argument("--chunk-pause-s", type=float, default=0.0)
     args = p.parse_args()
 
     ms = np.array([int(s) for s in args.ms.split(",")], dtype=np.int32)
@@ -96,7 +100,13 @@ def main():
                 gx, gy, ms=ms,
                 n_orientations=n_orient,
                 output_dtype=np.float32,
-                method="box")
+                method="box",
+                output_layout=args.output_layout,
+                orientation_chunk_size=args.orientation_chunk_size,
+                max_chunk_bytes=None
+                if args.max_chunk_gb <= 0
+                else int(args.max_chunk_gb * 1024**3),
+                chunk_pause_s=args.chunk_pause_s)
             shape_b = big.shape
             del big
             err_b = None
