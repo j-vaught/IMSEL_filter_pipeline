@@ -17,6 +17,7 @@ _MAX_UINT32 = np.iinfo(np.uint32).max
 _MIN_INT32 = np.iinfo(np.int32).min
 _MAX_INT32 = np.iinfo(np.int32).max
 _MAX_BATCH_MS = 32
+_MAX_BOX_PASSES = 32
 
 
 @lru_cache(maxsize=1)
@@ -68,6 +69,20 @@ def _load_lf_library() -> ctypes.CDLL:
             ctypes.c_size_t,
         ]
         lib.edgecritic_metal_lf_orientation_stack.restype = ctypes.c_int
+        lib.edgecritic_metal_lf_orientation_stack_box.argtypes = [
+            ctypes.POINTER(ctypes.c_float),
+            ctypes.POINTER(ctypes.c_float),
+            ctypes.c_uint,
+            ctypes.c_uint,
+            ctypes.c_uint,
+            ctypes.c_int,
+            ctypes.c_uint,
+            ctypes.c_int,
+            ctypes.POINTER(ctypes.c_float),
+            ctypes.POINTER(ctypes.c_char),
+            ctypes.c_size_t,
+        ]
+        lib.edgecritic_metal_lf_orientation_stack_box.restype = ctypes.c_int
     except AttributeError as exc:
         raise MetalBackendError("Rust/Metal LF symbols are not available") from exc
     except OSError as exc:
@@ -210,19 +225,33 @@ def lf_orientation_stack_metal(
     method: str = "exact",
     execution: str = "auto",
     out: np.ndarray | None = None,
+    box_passes: int = 6,
+    box_radius: int | None = None,
 ) -> np.ndarray:
     """Compute full-frame LF responses for equally spaced orientations.
 
     Returns an array of shape ``(n_orientations, H, W)``. Orientations are
     equally spaced over ``[0, pi)``.
     """
-    if str(method).lower() != "exact":
-        raise ValueError("only method='exact' is currently implemented")
+    method_name = str(method).lower()
+    if method_name not in {"exact", "box"}:
+        raise ValueError("method must be 'exact' or 'box'")
     execution_mode = {"auto": 0, "direct": 1, "projected": 2}.get(str(execution).lower())
     if execution_mode is None:
         raise ValueError("execution must be 'auto', 'direct', or 'projected'")
+    if method_name == "box" and execution_mode != 0:
+        raise ValueError("execution must be 'auto' when method='box'")
     if int(n_orientations) <= 0:
         raise ValueError("n_orientations must be positive")
+    box_pass_count = int(box_passes)
+    if box_pass_count < 1 or box_pass_count > _MAX_BOX_PASSES:
+        raise ValueError(f"box_passes must be between 1 and {_MAX_BOX_PASSES}")
+    if box_radius is None:
+        box_radius_value = -1
+    else:
+        box_radius_value = int(box_radius)
+        if box_radius_value < 0:
+            raise ValueError("box_radius must be non-negative or None")
 
     gx, gy = _components(g_x, g_y)
     h, w = gx.shape
@@ -238,18 +267,33 @@ def lf_orientation_stack_metal(
         if not out_arr.flags.c_contiguous:
             raise ValueError("out must be C-contiguous")
     error_buffer = ctypes.create_string_buffer(4096)
-    status = _load_lf_library().edgecritic_metal_lf_orientation_stack(
-        gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-        gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-        _as_uint32(w, "image width"),
-        _as_uint32(h, "image height"),
-        _as_uint32(n, "orientation count"),
-        _as_int32(int(m), "m"),
-        _as_uint32(execution_mode, "execution mode"),
-        out_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-        error_buffer,
-        ctypes.c_size_t(len(error_buffer)),
-    )
+    if method_name == "exact":
+        status = _load_lf_library().edgecritic_metal_lf_orientation_stack(
+            gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            _as_uint32(w, "image width"),
+            _as_uint32(h, "image height"),
+            _as_uint32(n, "orientation count"),
+            _as_int32(int(m), "m"),
+            _as_uint32(execution_mode, "execution mode"),
+            out_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            error_buffer,
+            ctypes.c_size_t(len(error_buffer)),
+        )
+    else:
+        status = _load_lf_library().edgecritic_metal_lf_orientation_stack_box(
+            gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            _as_uint32(w, "image width"),
+            _as_uint32(h, "image height"),
+            _as_uint32(n, "orientation count"),
+            _as_int32(int(m), "m"),
+            _as_uint32(box_pass_count, "box pass count"),
+            _as_int32(box_radius_value, "box radius"),
+            out_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            error_buffer,
+            ctypes.c_size_t(len(error_buffer)),
+        )
     if status != 0:
         _raise_native_error(error_buffer)
 
