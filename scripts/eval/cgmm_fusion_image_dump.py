@@ -30,7 +30,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from cgmm_vmm import vmm_fuse, theta_M_to_phi_w
+from cgmm_vmm import vmm_fuse_two_pass, theta_M_to_phi_w
 from cgmm_image_wide_eval import (
     build_gt_orientation, find_image_spec, load_channels_clean,
     load_channels_noisy, evaluate)
@@ -49,8 +49,8 @@ def main():
     p.add_argument("--m-values", default="0,5,10,20,30,40,50,60,70,80")
     p.add_argument("--n-orientations", type=int, default=64)
     p.add_argument("--K", type=int, default=3)
-    p.add_argument("--vmm-tau-M-rel", type=float, default=0.10)
-    p.add_argument("--vmm-rho",       type=float, default=0.40)
+    p.add_argument("--vmm-tau-sec-floor", type=float, default=0.40)
+    p.add_argument("--vmm-tau-M-rel",     type=float, default=0.05)
     p.add_argument("--vmm-theta-min-deg", type=float, default=10.0)
     p.add_argument("--vmm-n-iters", type=int, default=30)
     p.add_argument("--vertex-exclude-px", type=int, default=24)
@@ -86,21 +86,23 @@ def main():
                                  % math.pi).astype(np.float32)
 
     t0 = time.perf_counter()
-    primary_t, primary_m, _, _ = evaluate(args.condition, channels,
-                                     sample_pixels, gt_tangent_deg,
-                                     m_values, args.n_orientations,
-                                     args.r, args.d)
-    print(f"LF stage: {time.perf_counter() - t0:.1f}s "
+    primary_t, primary_m, secondary_t, secondary_m = evaluate(
+        args.condition, channels, sample_pixels, gt_tangent_deg,
+        m_values, args.n_orientations, args.r, args.d,
+        tau_sec_floor=args.vmm_tau_sec_floor)
+    print(f"LF + orient.recovery: {time.perf_counter() - t0:.1f}s "
           f"-> primary_t shape {primary_t.shape}")
 
-    phi, w, _ = theta_M_to_phi_w(primary_t, primary_m)
+    phi_p, w_p, _ = theta_M_to_phi_w(primary_t,   primary_m)
+    phi_s, w_s, _ = theta_M_to_phi_w(secondary_t, secondary_m)
     t0 = time.perf_counter()
-    out = vmm_fuse(phi, w, K=args.K, n_iters=args.vmm_n_iters,
-                   hard_em=True,
-                   tau_M_rel=args.vmm_tau_M_rel,
-                   rho=args.vmm_rho,
-                   theta_min_deg=args.vmm_theta_min_deg)
-    print(f"vMM K={args.K} hard-EM fusion: {time.perf_counter()-t0:.2f}s")
+    out = vmm_fuse_two_pass(phi_p, w_p, phi_s, w_s,
+                            K=args.K, n_iters=args.vmm_n_iters,
+                            hard_em=True,
+                            tau_M_rel=args.vmm_tau_M_rel,
+                            theta_min_deg=args.vmm_theta_min_deg)
+    print(f"two-pass vMM K={args.K} fusion: "
+          f"{time.perf_counter()-t0:.2f}s")
 
     # Build full 4096^2 arrays (off-edge pixels stay at sentinels).
     H = W = args.size
@@ -112,14 +114,14 @@ def main():
     suppressed_img     = np.zeros((H, W), dtype=np.uint8)
     is_junction_img    = junction_mask.astype(np.uint8)
 
-    theta_fused_img[ys, xs]     = out["theta_fused"].astype(np.float32)
-    theta_fused_sec_img[ys, xs] = out["theta_fused_sec"].astype(np.float32)
-    M_fused_img[ys, xs]         = out["M_fused"].astype(np.float32)
-    M_fused_sec_img[ys, xs]     = out["M_fused_sec"].astype(np.float32)
+    theta_fused_img[ys, xs]     = out["theta_primary"].astype(np.float32)
+    theta_fused_sec_img[ys, xs] = out["theta_sec"].astype(np.float32)
+    M_fused_img[ys, xs]         = out["M_primary"].astype(np.float32)
+    M_fused_sec_img[ys, xs]     = out["M_sec"].astype(np.float32)
     v_fused_img[ys, xs]         = out["v_fused"]
 
-    # Suppressed = pixel was valid (v_fused=1) but theta_fused_sec is NaN.
-    sec_nan = np.isnan(out["theta_fused_sec"])
+    # Suppressed = pixel was valid (v_fused=1) but theta_sec is NaN.
+    sec_nan = np.isnan(out["theta_sec"])
     suppressed_pixels = (out["v_fused"] == 1) & sec_nan
     suppressed_img[ys, xs] = suppressed_pixels.astype(np.uint8)
 

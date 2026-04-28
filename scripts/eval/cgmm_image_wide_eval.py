@@ -1,20 +1,19 @@
-"""Image-wide c-GMM signal-mode evaluation.
-
-Compares 2-component vs 3-component magnitude-weighted c-GMM at every
-sampled smooth-edge pixel of the synthetic nested-shapes image, on
-clean and noisy variants. Reports unsigned line-orientation error
-versus the analytic ground-truth tangent direction.
+"""Image-wide two-pass vMM signal-mode evaluation.
 
 Pipeline per condition (clean / noisy):
   1. Build GT orientation map and smooth-edge mask from the layer spec.
   2. Subsample N_PIXELS edge pixels from the smooth mask.
-  3. Compute WVF gradients on each channel (Metal if available).
+  3. Compute WVF gradients per channel (Metal if available).
   4. Vectorized LF response per (channel, m, theta) at the subsample.
-  5. Spline-peak primary/secondary per (pixel, channel, m).
-  6. Pool primary samples across (channel, m); fit 2- and 3-component
-     magnitude-weighted c-GMM in (cos phi, sin phi) per pixel.
-  7. Take signal mode (highest mixing weight) -> theta_est.
-  8. Unsigned angle error vs GT tangent.
+  5. §6.3 orientation recovery: spline peak finder with the two-stage
+     sentinel (no-local-max + tau_sec_floor weak-floor), producing the
+     primary and secondary per-config measurement streams.
+  6. Two-pass vMM fusion: independent K=3 hard-EM fits on each stream,
+     primary = argmax-pi component of the primary fit, secondary =
+     argmax-pi of the secondary fit.  Suppression rule:
+        keep_sec = (M_sec/M_primary > tau_M_rel)
+                   AND (|theta_primary - theta_sec| > theta_min_deg)
+  7. Unsigned angle error of theta_primary vs GT tangent.
 
 Usage::
 
@@ -35,20 +34,18 @@ import json
 import math
 import os
 import time
-from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw
 from scipy import ndimage
 from scipy.interpolate import CubicSpline
-from scipy.signal import find_peaks
-from sklearn.mixture import GaussianMixture
 
 from edgecritic.wvf._radius_kernels import (
     wvf_radius_gradients_cpu, build_wvf_radius_kernels)
 
-from cgmm_vmm import vmm_fuse, theta_M_to_phi_w
+from cgmm_vmm import vmm_fuse_two_pass, theta_M_to_phi_w
+from cgmm_orientation_recovery import find_two_peaks as _orec_find_two_peaks
 
 try:
     from edgecritic.wvf._metal import (
@@ -241,72 +238,6 @@ def lf_response_at_pixels(g_x, g_y, px, py, theta, m):
     return np.abs(num / np.maximum(den, 1e-12))
 
 
-def find_two_peaks(angles_rad, response_2d, dense_n=2000,
-                   min_sep_frac=0.125):
-    """Vectorized periodic-cubic-spline peak finder over rows of
-    response_2d. Returns (theta_hat, M_hat, theta_sec, M_sec)."""
-    N, K = response_2d.shape
-    x = np.concatenate([angles_rad, [math.pi]])
-    y = np.concatenate([response_2d, response_2d[:, :1]], axis=1)
-    cs = CubicSpline(x, y, axis=1, bc_type="periodic")
-    dense_a = np.linspace(0, math.pi, dense_n, endpoint=False)
-    dy = cs(dense_a)            # shape (N, dense_n)
-    left  = np.roll(dy, 1, axis=1)
-    right = np.roll(dy, -1, axis=1)
-    is_peak = (dy >= left) & (dy >= right)
-    masked = np.where(is_peak, dy, -np.inf)
-    primary_idx = np.argmax(masked, axis=1)
-    th_hat = dense_a[primary_idx]
-    M_hat  = dy[np.arange(N), primary_idx]
-    sep = max(1, int(min_sep_frac * dense_n))
-    grid = np.arange(dense_n)
-    d = np.abs(grid[None, :] - primary_idx[:, None])
-    d = np.minimum(d, dense_n - d)
-    masked2 = np.where(d > sep, masked, -np.inf)
-    sec_idx = np.argmax(masked2, axis=1)
-    th_sec = dense_a[sec_idx]
-    M_sec  = dy[np.arange(N), sec_idx]
-    bad = ~np.isfinite(M_sec)
-    if bad.any():
-        flat_dy = np.where(d > sep, dy, -np.inf)
-        sec_idx2 = np.argmax(flat_dy, axis=1)
-        th_sec = np.where(bad, dense_a[sec_idx2], th_sec)
-        M_sec  = np.where(bad, dy[np.arange(N), sec_idx2], M_sec)
-    return th_hat, M_hat, th_sec, M_sec
-
-
-# -------------------- c-GMM fit --------------------
-
-def cgmm_signal_theta(thetas_deg, mags, n_components, n_samples=1200,
-                      random_state=0):
-    """Magnitude-weighted GMM in (cos phi, sin phi). Returns the
-    highest-weight component's theta_mean (deg, in [0, 180))."""
-    if mags.sum() <= 1e-9 or len(thetas_deg) == 0:
-        return float("nan")
-    phi = 2 * np.radians(thetas_deg)
-    pts = np.column_stack([np.cos(phi), np.sin(phi)]).astype(np.float64)
-    w = mags / mags.sum()
-    counts = np.round(w * n_samples).astype(int)
-    counts[counts < 1] = 1
-    samples = np.repeat(pts, counts, axis=0)
-    n_eff = min(n_components,
-                int(min(len(np.unique(samples, axis=0)), len(samples))))
-    if n_eff < 1:
-        return float("nan")
-    try:
-        gm = GaussianMixture(n_components=n_eff,
-                             covariance_type="full",
-                             random_state=random_state,
-                             max_iter=80).fit(samples)
-    except Exception:
-        return float("nan")
-    weights = gm.weights_
-    means = gm.means_
-    j = int(np.argmax(weights))
-    phi_mean = float(np.arctan2(means[j, 1], means[j, 0]))
-    return math.degrees(phi_mean / 2.0) % 180.0
-
-
 def unsigned_angle_error_deg(est_deg, gt_deg):
     diff = (est_deg - gt_deg + 90.0) % 180.0 - 90.0
     return np.abs(diff)
@@ -341,7 +272,8 @@ def find_image_spec(manifest_path, image_key, size):
 
 
 def evaluate(label, channels, sample_pixels, gt_tangent_at_samples,
-             m_values, n_orientations, r, d):
+             m_values, n_orientations, r, d,
+             tau_sec_floor=0.40):
     angles = np.linspace(0, math.pi, n_orientations, endpoint=False)
     px = sample_pixels[:, 0].astype(np.int32)
     py = sample_pixels[:, 1].astype(np.int32)
@@ -366,7 +298,8 @@ def evaluate(label, channels, sample_pixels, gt_tangent_at_samples,
             for k, theta in enumerate(angles):
                 resp[:, k] = lf_response_at_pixels(g_x, g_y, px, py,
                                                    float(theta), int(m))
-            t_p, m_p, t_s, m_s = find_two_peaks(angles, resp)
+            t_p, m_p, t_s, m_s = _orec_find_two_peaks(
+                angles, resp, tau_sec_floor=tau_sec_floor)
             primary_t[:, col] = np.degrees(t_p)
             primary_m[:, col] = m_p
             secondary_t[:, col] = np.degrees(t_s)
@@ -377,50 +310,25 @@ def evaluate(label, channels, sample_pixels, gt_tangent_at_samples,
     return primary_t, primary_m, secondary_t, secondary_m
 
 
-# ---- per-pixel sklearn GMM fit (parallel via ProcessPoolExecutor) ----
-
-def _fit_gmm_one_pixel(args):
-    ths, mgs, gt, K = args
-    if mgs.sum() <= 1e-9:
-        return float("nan")
-    return unsigned_angle_error_deg(
-        cgmm_signal_theta(ths, mgs, n_components=K), gt)
-
-
-def fit_gmm_errors(primary_t, primary_m, gt_tangent_at, K, label):
-    N = primary_t.shape[0]
-    n_workers = min(os.cpu_count() or 1, 12)
-    chunk = max(1, N // (n_workers * 4))
-    args_list = [
-        (primary_t[i], primary_m[i], gt_tangent_at[i], K)
-        for i in range(N)
-    ]
-    t0 = time.perf_counter()
-    with ProcessPoolExecutor(max_workers=n_workers) as pool:
-        errs = list(pool.map(_fit_gmm_one_pixel, args_list, chunksize=chunk))
-    elapsed = time.perf_counter() - t0
-    print(f"  [{label}] GMM K={K} fit ({n_workers} workers): {elapsed:.1f}s")
-    return np.asarray(errs), elapsed
-
-
-# ---- vMM fit (one batched call across all P pixels) ----
-
-def fit_vmm_errors(primary_t, primary_m, gt_tangent_at, K, label,
+def fit_vmm_errors(primary_t, primary_m, secondary_t, secondary_m,
+                   gt_tangent_at, K, label,
                    n_iters=30, init_kappa=4.0,
-                   hard_seed=False, hard_em=False,
-                   tau_M_rel=0.30, theta_min_deg=10.0,
-                   select="pi"):
-    phi, w, _ = theta_M_to_phi_w(primary_t, primary_m)
+                   hard_seed=False, hard_em=True,
+                   tau_M_rel=0.05, theta_min_deg=10.0):
+    """Two-pass vMM fusion + primary-orientation error vs GT tangent."""
+    phi_p, w_p, _ = theta_M_to_phi_w(primary_t,   primary_m)
+    phi_s, w_s, _ = theta_M_to_phi_w(secondary_t, secondary_m)
     t0 = time.perf_counter()
-    out = vmm_fuse(phi, w, K=K, n_iters=n_iters, init_kappa=init_kappa,
-                   hard_seed=hard_seed, hard_em=hard_em,
-                   tau_M_rel=tau_M_rel,
-                   theta_min_deg=theta_min_deg, select=select)
+    out = vmm_fuse_two_pass(phi_p, w_p, phi_s, w_s,
+                            K=K, n_iters=n_iters,
+                            init_kappa=init_kappa,
+                            hard_seed=hard_seed, hard_em=hard_em,
+                            tau_M_rel=tau_M_rel,
+                            theta_min_deg=theta_min_deg)
     elapsed = time.perf_counter() - t0
-    theta_est_deg = np.degrees(out["theta_fused"]) % 180.0
+    theta_est_deg = np.degrees(out["theta_primary"]) % 180.0
     errs = unsigned_angle_error_deg(theta_est_deg, gt_tangent_at)
-    print(f"  [{label}] vMM K={K} fit (batched, select={select}): "
-          f"{elapsed:.2f}s")
+    print(f"  [{label}] two-pass vMM K={K} fit: {elapsed:.2f}s")
     return errs, elapsed
 
 
@@ -457,38 +365,32 @@ def main():
     p.add_argument("--edge-band-px", type=int, default=0)
     p.add_argument("--vertex-exclude-px", type=int, default=24)
     p.add_argument("--seed", type=int, default=0)
-    p.add_argument("--methods", default="gmm,vmm",
-                   help="comma list of methods to evaluate (gmm | vmm)")
-    p.add_argument("--Ks", default="2,3",
+    p.add_argument("--Ks", default="3",
                    help="comma list of component counts to evaluate")
-    p.add_argument("--vmm-tau-M-rel", type=float, default=0.10,
-                   help="secondary suppression: M_sec must exceed "
-                        "tau_M_rel * M_signal (default 0.10)")
+    # §6.3 orientation-recovery sentinel
+    p.add_argument("--vmm-tau-sec-floor", type=float, default=0.40,
+                   help="orientation recovery (§6.3): per-config "
+                        "secondary peaks with M_sec/M_hat below this "
+                        "are zeroed before fusion (default 0.40)")
+    # Two-pass fusion suppression rule
+    p.add_argument("--vmm-tau-M-rel", type=float, default=0.05,
+                   help="secondary suppression: M_sec/M_primary "
+                        "must exceed this (default 0.05)")
     p.add_argument("--vmm-theta-min-deg", type=float, default=10.0,
-                   help="secondary suppression: |theta_signal - theta_sec| "
-                        "must exceed this (default 10 deg). The audit "
-                        "shows this is the dominant criterion; the pi/M "
-                        "ratio rules are redundant.")
+                   help="secondary suppression: |theta_primary - theta_sec| "
+                        "must exceed this (default 10 deg)")
+    # vMM EM knobs
     p.add_argument("--vmm-n-iters", type=int, default=30)
     p.add_argument("--vmm-init-kappa", type=float, default=4.0,
-                   help="initial concentration for all components "
-                        "(spec=4.0; higher values help discriminate "
-                        "closely-spaced clusters at iter 0)")
+                   help="initial vM concentration (used by soft EM only; "
+                        "ignored under hard EM)")
     p.add_argument("--vmm-hard-seed", action="store_true",
-                   help="use hard k-means assignment at iter 0 to break "
-                        "the symmetric-collapse failure on tight unimodal "
-                        "data; continues with soft EM thereafter")
+                   help="use hard k-means assignment at iter 0 (soft EM "
+                        "thereafter); diagnostic, not production")
     p.add_argument("--vmm-soft-em", action="store_true",
-                   help="opt-in to soft-EM. Default is hard-EM (weighted "
-                        "k-means on the circle, == vMM EM in the "
-                        "kappa->infty limit), which matches sklearn-GMM "
-                        "accuracy and runs ~18x faster.  Soft EM has a "
-                        "structural ~0.15 deg p50 floor on tight unimodal "
-                        "data due to prior-leakage in responsibilities.")
-    p.add_argument("--vmm-select", default="pi", choices=["pi", "pi_kappa"],
-                   help="component selection rule for vMM signal "
-                        "(default 'pi' per spec; 'pi_kappa' is robust "
-                        "against split-cluster instability at K>=3)")
+                   help="opt-in to soft-EM (hard-EM is production "
+                        "default; soft has a ~0.15 deg p50 floor on tight "
+                        "unimodal data due to prior-leakage)")
     p.add_argument("--out", required=True, type=Path)
     args = p.parse_args()
 
@@ -516,53 +418,44 @@ def main():
     gt_tangent_at = np.degrees((gt_normal_at + math.pi / 2.0) % math.pi)
 
     m_values = [int(s) for s in args.m_values.split(",") if s.strip()]
-    methods  = [s.strip() for s in args.methods.split(",") if s.strip()]
-    Ks       = [int(s)    for s in args.Ks.split(",")      if s.strip()]
-    for mth in methods:
-        if mth not in ("gmm", "vmm"):
-            raise ValueError(f"unknown method: {mth!r}")
+    Ks       = [int(s) for s in args.Ks.split(",")      if s.strip()]
 
     # ---- Clean ----
     print("\n========== CLEAN ==========")
     clean_channels = load_channels_clean(args.clean_rgb)
-    primary_t_c, primary_m_c, _, _ = evaluate("clean", clean_channels,
-                                        sample_pixels, gt_tangent_at,
-                                        m_values, args.n_orientations,
-                                        args.r, args.d)
+    pt_c, pm_c, st_c, sm_c = evaluate("clean", clean_channels,
+                                      sample_pixels, gt_tangent_at,
+                                      m_values, args.n_orientations,
+                                      args.r, args.d,
+                                      tau_sec_floor=args.vmm_tau_sec_floor)
 
     # ---- Noisy ----
     print("\n========== NOISY ==========")
     noisy_channels = load_channels_noisy(args.noisy_dir)
-    primary_t_n, primary_m_n, _, _ = evaluate("noisy", noisy_channels,
-                                        sample_pixels, gt_tangent_at,
-                                        m_values, args.n_orientations,
-                                        args.r, args.d)
+    pt_n, pm_n, st_n, sm_n = evaluate("noisy", noisy_channels,
+                                      sample_pixels, gt_tangent_at,
+                                      m_values, args.n_orientations,
+                                      args.r, args.d,
+                                      tau_sec_floor=args.vmm_tau_sec_floor)
 
-    # ---- Fit each (method, K) on both conditions ----
+    # ---- Two-pass vMM fit per K, per condition ----
     rows = []
     timings = {}
-    for cond, primary_t, primary_m in (
-            ("clean", primary_t_c, primary_m_c),
-            ("noisy", primary_t_n, primary_m_n),
+    for cond, pt, pm, st, sm in (
+            ("clean", pt_c, pm_c, st_c, sm_c),
+            ("noisy", pt_n, pm_n, st_n, sm_n),
     ):
-        for mth in methods:
-            for K in Ks:
-                tag = f"{cond} / {mth} K={K}"
-                if mth == "gmm":
-                    errs, t = fit_gmm_errors(primary_t, primary_m,
-                                             gt_tangent_at, K, tag)
-                else:
-                    errs, t = fit_vmm_errors(primary_t, primary_m,
-                                             gt_tangent_at, K, tag,
-                                             n_iters=args.vmm_n_iters,
-                                             init_kappa=args.vmm_init_kappa,
-                                             hard_seed=args.vmm_hard_seed,
-                                             hard_em=(not args.vmm_soft_em),
-                                             tau_M_rel=args.vmm_tau_M_rel,
-                                             theta_min_deg=args.vmm_theta_min_deg,
-                                             select=args.vmm_select)
-                rows.append(summarise(tag, errs))
-                timings[tag] = t
+        for K in Ks:
+            tag = f"{cond} / vmm K={K}"
+            errs, t = fit_vmm_errors(pt, pm, st, sm, gt_tangent_at, K, tag,
+                                     n_iters=args.vmm_n_iters,
+                                     init_kappa=args.vmm_init_kappa,
+                                     hard_seed=args.vmm_hard_seed,
+                                     hard_em=(not args.vmm_soft_em),
+                                     tau_M_rel=args.vmm_tau_M_rel,
+                                     theta_min_deg=args.vmm_theta_min_deg)
+            rows.append(summarise(tag, errs))
+            timings[tag] = t
 
     print("\n=========================================================")
     print(f"Image-wide c-GMM evaluation @ smooth-edge pixels (n={len(ys)})")
@@ -597,10 +490,12 @@ def main():
                 "seed": args.seed,
                 "image_key": args.image_key,
                 "size": args.size,
-                "methods": methods,
                 "Ks": Ks,
+                "vmm_tau_sec_floor": args.vmm_tau_sec_floor,
                 "vmm_tau_M_rel": args.vmm_tau_M_rel,
+                "vmm_theta_min_deg": args.vmm_theta_min_deg,
                 "vmm_n_iters": args.vmm_n_iters,
+                "architecture": "two-pass+sec-sentinel",
             },
             "results": rows,
             "timings_seconds": timings,

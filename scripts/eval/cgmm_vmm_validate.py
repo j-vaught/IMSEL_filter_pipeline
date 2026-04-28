@@ -1,203 +1,205 @@
-"""Validation harness for the weighted vM mixture EM (cgmm_vmm.py).
+"""Validation harness for the two-pass vMM fusion + §6.3 sentinel.
 
-Runs the five checks from the implementation spec:
+Runs the spec-section-7 checks from the latest brief:
 
-  1. vM density integrates to 1 numerically.
-  2. EM weighted log-likelihood is monotone non-decreasing across iterations
-     on a few real pixels.
-  3. At a clean edge pixel the signal component must have pi > 0.6 and
-     kappa > 5.
-  4. An all-zero pixel (W_total = 0) must short-circuit and emit
-     v_fused = 0 without running EM.
-  5. theta_fused == (mu[k_signal] mod 2*pi) / 2 (consistency between the
-     half-circle output and the doubled-angle internal representation).
-
-Usage::
-
-    PYTHONPATH=src:scripts/eval python3 scripts/eval/cgmm_vmm_validate.py
+  1. tau_sec_floor sentinel actually fires.
+  2. Two distinct fits operate on independent streams.
+  3. Always-A-wins junction case: secondary slot recovered.
+  4. Regular-edge case after §6.3 fix: no spurious secondary slot.
+  5. Degenerate-pixel guard: n_active < K -> v_fused = 0, secondary skipped.
 """
 
 from __future__ import annotations
 
 import math
 import sys
-from pathlib import Path
 
 import numpy as np
 
-from cgmm_vmm import (
-    log_I0_safe, vmm_em, vmm_em_with_trace, vmm_fuse, theta_M_to_phi_w,
-)
-
-
-# -- Real-pixel inputs (3 canonical regimes used elsewhere in the paper) --
-
-REGIMES = [
-    ("edge",   [2106, 2063]),
-    ("corner", [2157, 1711]),
-    ("blank",  [2000, 1000]),
-]
-
-
-def load_real_pixel_streams():
-    """Pull (theta_deg, M) pooled across 4 channels x 10 m for each
-    canonical pixel, from the noisy data dir used for fig_cgmm_three_regimes."""
-    import json
-    base = Path("/Users/user/Documents/New project/cetz_figures/data")
-    out = {}
-    for label, _ in REGIMES:
-        prefix = f"{'corner_v0' if label == 'corner' else label}_m_sweep_4096_noisy"
-        ts, ms = [], []
-        for ch in "LRGB":
-            d = json.loads((base / f"{prefix}_{ch}.json").read_text())
-            v = d["vertices"][0]
-            for _, row in v["by_m"].items():
-                ts.append(row["theta_hat"])
-                ms.append(row["M_hat"])
-        out[label] = (np.asarray(ts), np.asarray(ms))
-    return out
+from cgmm_vmm import vmm_fuse_two_pass, theta_M_to_phi_w
+from cgmm_orientation_recovery import find_two_peaks
 
 
 # -- Check 1 -----------------------------------------------------------
 
-def check_density_integrates_to_one():
-    """sum(vM(grid; mu, kappa)) * (2pi/grid_n) ~ 1 for several kappas."""
-    from scipy.special import ive
-    grid_n = 4096
-    grid = np.linspace(0.0, 2.0 * math.pi, grid_n, endpoint=False)
-    print("\n[1] vM density integrates to 1 numerically:")
-    print(f"    {'kappa':>10} {'integral':>12} {'|err|':>10}")
+def check_sentinel_fires():
+    """Synthetic LF curve with dominant peak at theta=0 (s=1.0) and
+    small bump at theta=pi/2 (s=0.05).  tau_sec_floor=0.30 should
+    suppress; tau_sec_floor=0.01 should retain."""
+    K = 64
+    angles = np.linspace(0.0, math.pi, K, endpoint=False)
+    def gauss(x, mu, sigma=0.05):
+        return np.exp(-((x - mu) ** 2) / (2 * sigma ** 2))
+    resp = (1.00 * gauss(angles, 0.0)
+            + 0.05 * gauss(angles, math.pi / 2)).reshape(1, -1)
+
+    print("\n[1] §6.3 sentinel fires correctly:")
     ok = True
-    for kappa in (0.5, 1.0, 4.0, 16.0, 64.0, 256.0, 1024.0):
-        log_norm = float(log_I0_safe(np.array([kappa]))[0]) + math.log(2 * math.pi)
-        log_dens = kappa * np.cos(grid - 1.234) - log_norm
-        dens = np.exp(log_dens)
-        integral = dens.sum() * (2 * math.pi / grid_n)
-        err = abs(integral - 1.0)
-        ok = ok and err < 1e-4
-        print(f"    {kappa:>10.1f} {integral:>12.8f} {err:>10.2e}")
+    for tau, expect_zero in ((0.30, True), (0.01, False)):
+        _, _, th_sec, M_sec = find_two_peaks(angles, resp,
+                                             tau_sec_floor=tau)
+        zero = (np.isnan(th_sec[0]) and M_sec[0] == 0.0)
+        c = (zero == expect_zero)
+        ok = ok and c
+        print(f"    tau_sec_floor={tau:.2f}  -> "
+              f"theta_sec={th_sec[0]:.4f}, M_sec={M_sec[0]:.4f}  "
+              f"({'zeroed' if zero else 'kept'})  "
+              f"{'OK' if c else 'FAIL'}")
     print(f"    -> {'PASS' if ok else 'FAIL'}")
     return ok
 
 
 # -- Check 2 -----------------------------------------------------------
 
-def check_log_lik_monotone():
-    """N/A under hard-EM (no log-likelihood is computed; the loss is the
-    sum of weighted squared circular distances, which decreases
-    monotonically by construction of k-means).  Reported here under the
-    opt-in soft-EM path for completeness."""
-    streams = load_real_pixel_streams()
-    print("\n[2] Soft-EM log-likelihood monotone non-decreasing "
-          "(opt-in path; hard-EM is the production default):")
-    ok = True
-    for label, _ in REGIMES:
-        ts, ms = streams[label]
-        phi, w, _ = theta_M_to_phi_w(ts[None, :], ms[None, :])
-        _, ll = vmm_em(phi, w, K=3, n_iters=30,
-                       hard_em=False, record_log_lik=True)
-        lls = ll[:, 0]
-        diffs = np.diff(lls)
-        worst_drop = float(diffs.min())
-        cond = worst_drop > -1e-3
-        ok = ok and cond
-        print(f"    {label:<8} ll[0]={lls[0]:>10.3f} ll[-1]={lls[-1]:>10.3f} "
-              f"worst step Δ={worst_drop:>+8.2e} {'OK' if cond else 'FAIL'}")
-    print(f"    -> {'PASS' if ok else 'FAIL'}  "
-          f"(tolerance 1e-3 covers small oscillations on low-SNR pixels)")
-    return ok
-
-
-# -- Check 3 -----------------------------------------------------------
-
-def check_clean_edge_concentration():
-    """At the clean edge pixel, the signal component should be confident:
-    pi > 0.6 (most mass) and kappa > 5 (tight).  Run under the production
-    default (hard-EM)."""
-    streams = load_real_pixel_streams()
-    ts, ms = streams["edge"]
-    phi, w, _ = theta_M_to_phi_w(ts[None, :], ms[None, :])
-    out = vmm_fuse(phi, w, K=3, n_iters=30, hard_em=True)
-    pi = out["pi"][0]
-    kappa = out["kappa"][0]
-    k_signal = int(np.argmax(pi))
-    pi_s = float(pi[k_signal])
-    kappa_s = float(kappa[k_signal])
-    print("\n[3] Clean edge pixel (hard-EM): "
-          "pi[signal] > 0.6 AND kappa[signal] > 5:")
-    print(f"    edge pixel  pi[signal]={pi_s:.3f}  kappa[signal]={kappa_s:.2f}")
-    cond = pi_s > 0.6 and kappa_s > 5.0
+def check_distinct_fits():
+    """Primary stream all theta_n=0deg, secondary stream all theta_n_sec=
+    90deg.  Primary fit signal mu_phi should be ~0; secondary fit signal
+    mu_phi should be ~180 (= doubled-angle of 90deg)."""
+    N = 40
+    prim_t_deg = np.zeros((1, N))
+    prim_m     = np.ones((1, N))
+    sec_t_deg  = np.full((1, N), 90.0)
+    sec_m      = np.ones((1, N))
+    phi_p, w_p, _ = theta_M_to_phi_w(prim_t_deg, prim_m)
+    phi_s, w_s, _ = theta_M_to_phi_w(sec_t_deg,  sec_m)
+    out = vmm_fuse_two_pass(phi_p, w_p, phi_s, w_s, K=3, hard_em=True,
+                            tau_M_rel=0.05, theta_min_deg=10.0)
+    p_mu = (np.degrees(out["primary_mu"][0])
+            [int(np.argmax(out["primary_pi"][0]))]) % 360
+    s_mu = (np.degrees(out["secondary_mu"][0])
+            [int(np.argmax(out["secondary_pi"][0]))]) % 360
+    p_ok = abs(p_mu) < 0.5 or abs(p_mu - 360) < 0.5
+    s_ok = abs(s_mu - 180) < 0.5
+    print("\n[2] Two distinct fits on independent streams:")
+    print(f"    primary  fit signal mu_phi = {p_mu:.2f} deg (expected ~0)")
+    print(f"    secondary fit signal mu_phi = {s_mu:.2f} deg (expected ~180)")
+    cond = p_ok and s_ok
     print(f"    -> {'PASS' if cond else 'FAIL'}")
     return cond
 
 
+# -- Check 3 -----------------------------------------------------------
+
+def check_always_A_wins():
+    """Synthetic always-A-wins junction.  Primary all theta_n=0deg @ M=1,
+    secondary all theta_n_sec=90deg @ M=0.5.  Both slots should be
+    preserved by suppression."""
+    N = 40
+    prim_t = np.zeros((1, N))
+    prim_m = np.ones((1, N))
+    sec_t  = np.full((1, N), 90.0)
+    sec_m  = np.full((1, N), 0.5)
+    phi_p, w_p, _ = theta_M_to_phi_w(prim_t, prim_m)
+    phi_s, w_s, _ = theta_M_to_phi_w(sec_t,  sec_m)
+    out = vmm_fuse_two_pass(phi_p, w_p, phi_s, w_s, K=3, hard_em=True,
+                            tau_M_rel=0.05, theta_min_deg=10.0)
+    tp = float(out["theta_primary"][0])
+    ts = float(out["theta_sec"][0])
+    keep = int(out["keep_secondary_mask"][0])
+    print("\n[3] Always-A-wins junction (synthetic):")
+    print(f"    theta_primary = {math.degrees(tp):.3f} deg "
+          f"(expected ~0)")
+    print(f"    theta_sec    = {math.degrees(ts):.3f} deg "
+          f"(expected ~90)")
+    print(f"    keep_secondary = {keep}  (expected 1)")
+    ok = (abs(math.degrees(tp)) < 0.5
+          and abs(math.degrees(ts) - 90) < 0.5
+          and keep == 1)
+    print(f"    -> {'PASS' if ok else 'FAIL'}")
+    return ok
+
+
 # -- Check 4 -----------------------------------------------------------
 
-def check_degenerate_short_circuit():
-    """Degenerate pixels (n_active < K) must emit v_fused=0 and skip EM."""
-    K = 3
-    print("\n[4] Degenerate pixel guard (n_active < K = {} -> v_fused=0):"
-          .format(K))
-    cases = [
-        ("all zeros (n_active=0)", np.zeros((1, 40))),
-        ("n_active=1",
-         (lambda: (lambda x: (x.__setitem__((0, 5), 5.0) or x))
-                  (np.zeros((1, 40))))()),
-        ("n_active=2",
-         (lambda: (lambda x: (x.__setitem__((0, 5), 5.0)
-                              or x.__setitem__((0, 11), 3.0)
-                              or x))(np.zeros((1, 40))))()),
-    ]
-    boundary = np.zeros((1, 40)); boundary[0, [3, 7, 19]] = [4.0, 5.0, 6.0]
-    cases.append(("n_active=3 (= K, valid)", boundary))
-
-    ok = True
-    for name, w in cases:
-        phi = np.zeros_like(w)
-        out = vmm_fuse(phi, w, K=K, n_iters=30)
-        v = int(out["v_fused"][0])
-        n_active = int((w > 1e-12).sum())
-        expected_v = 1 if n_active >= K else 0
-        c = v == expected_v
-        ok = ok and c
-        print(f"    {name:<28} v_fused={v}  expected={expected_v}  "
-              f"{'OK' if c else 'FAIL'}")
+def check_regular_edge_post_sentinel():
+    """Regular edge: primary all theta=0 deg @ M=1.  Per-config secondary
+    peaks at random angles, all M_sec=0.10.  With tau_sec_floor=0.30
+    these are all zeroed upstream, so the secondary stream has 0 active
+    configs.  The two-pass fusion's degenerate guard then short-circuits
+    the secondary fit; theta_sec must be NaN, M_sec=0."""
+    N = 40
+    prim_t = np.zeros((1, N))
+    prim_m = np.ones((1, N))
+    rng = np.random.default_rng(0)
+    sec_t_raw = rng.uniform(0, 180, size=(1, N))
+    sec_m_raw = np.full((1, N), 0.10)
+    # Apply tau_sec_floor = 0.30 sentinel post-hoc.
+    weak = (sec_m_raw / np.maximum(prim_m, 1e-30)) < 0.30
+    sec_t = np.where(weak, np.nan, sec_t_raw)
+    sec_m = np.where(weak, 0.0,    sec_m_raw)
+    phi_p, w_p, _ = theta_M_to_phi_w(prim_t, prim_m)
+    phi_s, w_s, _ = theta_M_to_phi_w(sec_t,  sec_m)
+    n_active_s = int((w_s > 1e-12).sum())
+    out = vmm_fuse_two_pass(phi_p, w_p, phi_s, w_s, K=3, hard_em=True,
+                            tau_M_rel=0.05, theta_min_deg=10.0)
+    print("\n[4] Regular edge after §6.3 fix (sentinel zeroes secondaries):")
+    print(f"    n_active_sec after sentinel = {n_active_s}  (expected 0)")
+    print(f"    theta_sec = {out['theta_sec'][0]}  (expected NaN)")
+    print(f"    M_sec    = {float(out['M_sec'][0]):.4f}  (expected 0)")
+    print(f"    v_fused  = {int(out['v_fused'][0])}  (expected 1)")
+    ok = (n_active_s == 0
+          and np.isnan(out["theta_sec"][0])
+          and float(out["M_sec"][0]) == 0.0
+          and int(out["v_fused"][0]) == 1)
     print(f"    -> {'PASS' if ok else 'FAIL'}")
     return ok
 
 
 # -- Check 5 -----------------------------------------------------------
 
-def check_doubled_angle_inverse():
-    """theta_fused == (mu[k_signal] mod 2pi) / 2 for a real pixel
-    (under the production hard-EM default)."""
-    streams = load_real_pixel_streams()
-    ts, ms = streams["corner"]
-    phi, w, _ = theta_M_to_phi_w(ts[None, :], ms[None, :])
-    out = vmm_fuse(phi, w, K=3, n_iters=30, hard_em=True)
-    pi = out["pi"][0]
-    k_signal = int(np.argmax(pi))
-    mu_s = float(out["mu"][0, k_signal])
-    th = float(out["theta_fused"][0])
-    expected = (mu_s % (2 * math.pi)) / 2.0
-    err = abs(th - expected)
-    print("\n[5] theta_fused == (mu[k_signal] mod 2pi) / 2:")
-    print(f"    mu[k_signal]={mu_s:.6f}  expected={expected:.6f}  "
-          f"theta_fused={th:.6f}  |Δ|={err:.2e}")
-    cond = err < 1e-9
-    print(f"    -> {'PASS' if cond else 'FAIL'}")
-    return cond
+def check_degenerate_guard():
+    """n_active_p < K  -> v_fused=0, both fits skipped.
+    n_active_p >= K and n_active_s < K  -> v_fused=1, secondary skipped."""
+    N = 40
+    print("\n[5] Per-pass degenerate-pixel guard (K=3):")
+    ok = True
+
+    # Case A: primary invalid (n_active_p = 2 < K = 3).
+    prim_t = np.zeros((1, N))
+    prim_m = np.zeros((1, N)); prim_m[0, :2] = 1.0
+    sec_t  = np.zeros((1, N))
+    sec_m  = np.ones((1, N))
+    phi_p, w_p, _ = theta_M_to_phi_w(prim_t, prim_m)
+    phi_s, w_s, _ = theta_M_to_phi_w(sec_t,  sec_m)
+    out = vmm_fuse_two_pass(phi_p, w_p, phi_s, w_s, K=3, hard_em=True)
+    cond_a = (int(out["v_fused"][0]) == 0
+              and np.isnan(out["theta_primary"][0])
+              and np.isnan(out["theta_sec"][0]))
+    print(f"    primary invalid:    v_fused={int(out['v_fused'][0])}  "
+          f"theta_p={out['theta_primary'][0]}  "
+          f"theta_s={out['theta_sec'][0]}  "
+          f"{'OK' if cond_a else 'FAIL'}")
+    ok = ok and cond_a
+
+    # Case B: primary valid, secondary invalid (n_active_s = 2 < K).
+    prim_t = np.zeros((1, N))
+    prim_m = np.ones((1, N))
+    sec_t  = np.zeros((1, N))
+    sec_m  = np.zeros((1, N)); sec_m[0, :2] = 1.0
+    phi_p, w_p, _ = theta_M_to_phi_w(prim_t, prim_m)
+    phi_s, w_s, _ = theta_M_to_phi_w(sec_t,  sec_m)
+    out = vmm_fuse_two_pass(phi_p, w_p, phi_s, w_s, K=3, hard_em=True)
+    cond_b = (int(out["v_fused"][0]) == 1
+              and np.isnan(out["theta_sec"][0])
+              and float(out["M_sec"][0]) == 0.0)
+    print(f"    secondary invalid:  v_fused={int(out['v_fused'][0])}  "
+          f"theta_s={out['theta_sec'][0]}  "
+          f"M_s={float(out['M_sec'][0]):.4f}  "
+          f"{'OK' if cond_b else 'FAIL'}")
+    ok = ok and cond_b
+    print(f"    -> {'PASS' if ok else 'FAIL'}")
+    return ok
 
 
 # ---------------------------------------------------------------------
 
 def main():
     results = [
-        check_density_integrates_to_one(),
-        check_log_lik_monotone(),
-        check_clean_edge_concentration(),
-        check_degenerate_short_circuit(),
-        check_doubled_angle_inverse(),
+        check_sentinel_fires(),
+        check_distinct_fits(),
+        check_always_A_wins(),
+        check_regular_edge_post_sentinel(),
+        check_degenerate_guard(),
     ]
     print("\n=========================================================")
     print(f"VALIDATION: {sum(results)}/{len(results)} checks passed")
