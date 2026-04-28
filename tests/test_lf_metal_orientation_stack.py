@@ -59,7 +59,9 @@ def test_lf_orientation_stack_metal_matches_reference(m, n_orientations):
     g_x = rng.normal(size=(17, 19)).astype(np.float32)
     g_y = rng.normal(size=(17, 19)).astype(np.float32)
 
-    got = lf_orientation_stack_metal(g_x, g_y, m=m, n_orientations=n_orientations)
+    got = lf_orientation_stack_metal(
+        g_x, g_y, m=m, n_orientations=n_orientations, method="exact"
+    )
     expected = _reference_orientation_stack(g_x, g_y, m=m, n_orientations=n_orientations)
 
     assert got.dtype == np.float32
@@ -74,7 +76,9 @@ def test_lf_orientation_stack_metal_constant_field_boundary_normalization():
     g_x = np.zeros((13, 17), dtype=np.float32)
     g_y = np.ones((13, 17), dtype=np.float32)
 
-    got = lf_orientation_stack_metal(g_x, g_y, m=8, n_orientations=n_orientations)
+    got = lf_orientation_stack_metal(
+        g_x, g_y, m=8, n_orientations=n_orientations, method="exact"
+    )
     expected_values = np.abs(np.cos(np.linspace(0.0, np.pi, n_orientations, endpoint=False)))
 
     assert np.allclose(got, expected_values[:, None, None], rtol=2e-5, atol=2e-5)
@@ -94,7 +98,9 @@ def test_lf_orientation_stack_metal_matches_sparse_batch_all_pixels():
     py = yy.reshape(-1).astype(np.int32)
     thetas = np.linspace(0.0, np.pi, n_orientations, endpoint=False)
 
-    stack = lf_orientation_stack_metal(g_x, g_y, m=m, n_orientations=n_orientations)
+    stack = lf_orientation_stack_metal(
+        g_x, g_y, m=m, n_orientations=n_orientations, method="exact"
+    )
     sparse = lf_response_metal_batch(g_x, g_y, px, py, thetas, np.array([m], dtype=np.int32))
     sparse_stack = sparse[:, 0, :].reshape(n_orientations, h, w)
 
@@ -109,10 +115,10 @@ def test_lf_orientation_stack_projected_matches_direct():
     g_y = rng.normal(size=(23, 29)).astype(np.float32)
 
     direct = lf_orientation_stack_metal(
-        g_x, g_y, m=7, n_orientations=9, execution="direct"
+        g_x, g_y, m=7, n_orientations=9, method="exact", execution="direct"
     )
     projected = lf_orientation_stack_metal(
-        g_x, g_y, m=7, n_orientations=9, execution="projected"
+        g_x, g_y, m=7, n_orientations=9, method="exact", execution="projected"
     )
 
     assert np.allclose(projected, direct, rtol=2e-5, atol=3e-5)
@@ -156,7 +162,7 @@ def test_lf_orientation_stack_box_matches_projection_for_zero_m():
     g_x = rng.normal(size=(17, 21)).astype(np.float32)
     g_y = rng.normal(size=(17, 21)).astype(np.float32)
 
-    exact = lf_orientation_stack_metal(g_x, g_y, m=0, n_orientations=8)
+    exact = lf_orientation_stack_metal(g_x, g_y, m=0, n_orientations=8, method="exact")
     box = lf_orientation_stack_metal(g_x, g_y, m=0, n_orientations=8, method="box")
 
     assert np.allclose(box, exact, rtol=2e-5, atol=3e-5)
@@ -175,6 +181,21 @@ def test_lf_orientation_stack_box_constant_field_boundary_normalization():
     expected_values = np.abs(np.cos(np.linspace(0.0, np.pi, n_orientations, endpoint=False)))
 
     assert np.allclose(got, expected_values[:, None, None], rtol=2e-5, atol=2e-5)
+
+
+def test_lf_orientation_stack_default_uses_one_pass_box():
+    _require_metal()
+
+    rng = np.random.default_rng(452)
+    g_x = rng.normal(size=(13, 15)).astype(np.float32)
+    g_y = rng.normal(size=(13, 15)).astype(np.float32)
+
+    default = lf_orientation_stack_metal(g_x, g_y, m=6, n_orientations=7)
+    box = lf_orientation_stack_metal(
+        g_x, g_y, m=6, n_orientations=7, method="box", box_passes=1
+    )
+
+    assert np.allclose(default, box, rtol=0.0, atol=0.0)
 
 
 def test_lf_orientation_stack_box_reusable_output_and_validation():
@@ -211,7 +232,9 @@ def test_lf_orientation_stack_box_tracks_exact_on_smooth_fields():
     g_x = (np.sin(x * 0.11) + 0.5 * np.cos(y * 0.07)).astype(np.float32)
     g_y = (np.cos(x * 0.05) - 0.4 * np.sin(y * 0.13)).astype(np.float32)
 
-    exact = lf_orientation_stack_metal(g_x, g_y, m=10, n_orientations=12, execution="projected")
+    exact = lf_orientation_stack_metal(
+        g_x, g_y, m=10, n_orientations=12, method="exact", execution="projected"
+    )
     box = lf_orientation_stack_metal(
         g_x, g_y, m=10, n_orientations=12, method="box", box_passes=6
     )
@@ -230,7 +253,7 @@ def test_lf_orientation_stack_scanline_matches_projection_for_zero_m():
     g_x = rng.normal(size=(17, 21)).astype(np.float32)
     g_y = rng.normal(size=(17, 21)).astype(np.float32)
 
-    exact = lf_orientation_stack_metal(g_x, g_y, m=0, n_orientations=8)
+    exact = lf_orientation_stack_metal(g_x, g_y, m=0, n_orientations=8, method="exact")
     scanline = lf_orientation_stack_metal(
         g_x, g_y, m=0, n_orientations=8, method="scanline"
     )
@@ -261,7 +284,9 @@ def test_lf_orientation_stack_scanline_tracks_exact_on_smooth_fields():
     g_x = (np.sin(x * 0.11) + 0.5 * np.cos(y * 0.07)).astype(np.float32)
     g_y = (np.cos(x * 0.05) - 0.4 * np.sin(y * 0.13)).astype(np.float32)
 
-    exact = lf_orientation_stack_metal(g_x, g_y, m=10, n_orientations=12, execution="projected")
+    exact = lf_orientation_stack_metal(
+        g_x, g_y, m=10, n_orientations=12, method="exact", execution="projected"
+    )
     scanline = lf_orientation_stack_metal(
         g_x, g_y, m=10, n_orientations=12, method="scanline"
     )
@@ -271,44 +296,3 @@ def test_lf_orientation_stack_scanline_tracks_exact_on_smooth_fields():
 
     assert rel_rmse < 0.15
     assert corr > 0.97
-
-
-@pytest.mark.parametrize("scanline_lanes", [2, 4, 8])
-def test_lf_orientation_stack_scanline_parallel_matches_scanline(scanline_lanes):
-    _require_metal()
-
-    h, w = 31, 37
-    y, x = np.indices((h, w), dtype=np.float32)
-    g_x = (np.sin(x * 0.17) + 0.3 * np.cos(y * 0.09)).astype(np.float32)
-    g_y = (np.cos(x * 0.08) - 0.2 * np.sin(y * 0.15)).astype(np.float32)
-
-    scanline = lf_orientation_stack_metal(
-        g_x, g_y, m=14, n_orientations=10, method="scanline"
-    )
-    parallel = lf_orientation_stack_metal(
-        g_x,
-        g_y,
-        m=14,
-        n_orientations=10,
-        method="scanline_parallel",
-        scanline_lanes=scanline_lanes,
-    )
-
-    assert np.allclose(parallel, scanline, rtol=5e-5, atol=5e-5)
-
-
-def test_lf_orientation_stack_scanline_parallel_validation():
-    _require_metal()
-
-    g_x = np.zeros((7, 8), dtype=np.float32)
-    g_y = np.ones((7, 8), dtype=np.float32)
-
-    with pytest.raises(ValueError, match="scanline_lanes"):
-        lf_orientation_stack_metal(
-            g_x,
-            g_y,
-            m=5,
-            n_orientations=5,
-            method="scanline_parallel",
-            scanline_lanes=0,
-        )

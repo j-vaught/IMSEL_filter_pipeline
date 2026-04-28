@@ -12,7 +12,6 @@ const LF_STACK_EXECUTION_AUTO: c_uint = 0;
 const LF_STACK_EXECUTION_DIRECT: c_uint = 1;
 const LF_STACK_EXECUTION_PROJECTED: c_uint = 2;
 const MAX_BOX_PASSES: c_uint = 32;
-const MAX_SCANLINE_PARALLEL_LANES: c_uint = 32;
 
 const SHADER_SOURCE: &str = r#"
 #include <metal_stdlib>
@@ -100,7 +99,6 @@ struct LfScanlineParams {
     uint line_count;
     uint theta_idx;
     uint chunk_len;
-    uint lanes;
 };
 
 inline int reflect_index(int value, int limit) {
@@ -724,176 +722,6 @@ kernel void lf_gaussian_scanline_y_major(
     const uint idx = y * params.width + uint(x);
     out[params.theta_idx * plane_size + idx] = den > 0.0f ? fabs(num / den) : 0.0f;
 }
-
-kernel void lf_gaussian_scanline_parallel_x_major(
-    device const float* g_perp [[buffer(0)]],
-    device const float* weights [[buffer(1)]],
-    device const int* line_offsets [[buffer(2)]],
-    device float* out [[buffer(3)]],
-    constant LfScanlineParams& params [[buffer(4)]],
-    threadgroup float* tile [[threadgroup(0)]],
-    threadgroup float* valid [[threadgroup(1)]],
-    threadgroup float* partial_num [[threadgroup(2)]],
-    threadgroup float* partial_den [[threadgroup(3)]],
-    uint2 tid2 [[thread_position_in_threadgroup]],
-    uint2 group_id [[threadgroup_position_in_grid]]
-) {
-    const uint line_id = group_id.y;
-    if (line_id >= params.line_count) {
-        return;
-    }
-
-    const uint tid = tid2.x;
-    const uint lane = tid2.y;
-    const uint chunk_start = group_id.x * params.chunk_len;
-    const int tile_start = int(chunk_start) - int(params.radius);
-    const uint tile_len = params.chunk_len + 2 * params.radius;
-    const uint total_threads = params.chunk_len * params.lanes;
-    const uint flat_tid = lane * params.chunk_len + tid;
-    const int key = int(line_id) + params.key_min;
-
-    for (uint tile_idx = flat_tid; tile_idx < tile_len; tile_idx += total_threads) {
-        const int x = tile_start + int(tile_idx);
-        float value = 0.0f;
-        float is_valid = 0.0f;
-        if (x >= 0 && x < int(params.width)) {
-            const int y = key + line_offsets[uint(x)];
-            if (y >= 0 && y < int(params.height)) {
-                value = g_perp[uint(y) * params.width + uint(x)];
-                is_valid = 1.0f;
-            }
-        }
-        tile[tile_idx] = value;
-        valid[tile_idx] = is_valid;
-    }
-
-    threadgroup_barrier(mem_flags::mem_threadgroup);
-
-    const uint x = chunk_start + tid;
-    bool output_valid = false;
-    uint out_index = 0;
-    if (x < params.width) {
-        const int y = key + line_offsets[x];
-        if (y >= 0 && y < int(params.height)) {
-            const uint plane_size = params.width * params.height;
-            out_index = params.theta_idx * plane_size + uint(y) * params.width + x;
-            output_valid = true;
-        }
-    }
-
-    float num = 0.0f;
-    float den = 0.0f;
-    if (output_valid) {
-        for (uint sample_idx = lane; sample_idx < params.n_samples; sample_idx += params.lanes) {
-            const uint tile_idx = tid + sample_idx;
-            const float w = weights[sample_idx];
-            num += tile[tile_idx] * w;
-            den += valid[tile_idx] * w;
-        }
-    }
-
-    const uint partial_idx = lane * params.chunk_len + tid;
-    partial_num[partial_idx] = num;
-    partial_den[partial_idx] = den;
-
-    threadgroup_barrier(mem_flags::mem_threadgroup);
-
-    if (lane == 0 && output_valid) {
-        float sum_num = 0.0f;
-        float sum_den = 0.0f;
-        for (uint lane_idx = 0; lane_idx < params.lanes; ++lane_idx) {
-            const uint reduce_idx = lane_idx * params.chunk_len + tid;
-            sum_num += partial_num[reduce_idx];
-            sum_den += partial_den[reduce_idx];
-        }
-        out[out_index] = sum_den > 0.0f ? fabs(sum_num / sum_den) : 0.0f;
-    }
-}
-
-kernel void lf_gaussian_scanline_parallel_y_major(
-    device const float* g_perp [[buffer(0)]],
-    device const float* weights [[buffer(1)]],
-    device const int* line_offsets [[buffer(2)]],
-    device float* out [[buffer(3)]],
-    constant LfScanlineParams& params [[buffer(4)]],
-    threadgroup float* tile [[threadgroup(0)]],
-    threadgroup float* valid [[threadgroup(1)]],
-    threadgroup float* partial_num [[threadgroup(2)]],
-    threadgroup float* partial_den [[threadgroup(3)]],
-    uint2 tid2 [[thread_position_in_threadgroup]],
-    uint2 group_id [[threadgroup_position_in_grid]]
-) {
-    const uint line_id = group_id.y;
-    if (line_id >= params.line_count) {
-        return;
-    }
-
-    const uint tid = tid2.x;
-    const uint lane = tid2.y;
-    const uint chunk_start = group_id.x * params.chunk_len;
-    const int tile_start = int(chunk_start) - int(params.radius);
-    const uint tile_len = params.chunk_len + 2 * params.radius;
-    const uint total_threads = params.chunk_len * params.lanes;
-    const uint flat_tid = lane * params.chunk_len + tid;
-    const int key = int(line_id) + params.key_min;
-
-    for (uint tile_idx = flat_tid; tile_idx < tile_len; tile_idx += total_threads) {
-        const int y = tile_start + int(tile_idx);
-        float value = 0.0f;
-        float is_valid = 0.0f;
-        if (y >= 0 && y < int(params.height)) {
-            const int x = key + line_offsets[uint(y)];
-            if (x >= 0 && x < int(params.width)) {
-                value = g_perp[uint(y) * params.width + uint(x)];
-                is_valid = 1.0f;
-            }
-        }
-        tile[tile_idx] = value;
-        valid[tile_idx] = is_valid;
-    }
-
-    threadgroup_barrier(mem_flags::mem_threadgroup);
-
-    const uint y = chunk_start + tid;
-    bool output_valid = false;
-    uint out_index = 0;
-    if (y < params.height) {
-        const int x = key + line_offsets[y];
-        if (x >= 0 && x < int(params.width)) {
-            const uint plane_size = params.width * params.height;
-            out_index = params.theta_idx * plane_size + y * params.width + uint(x);
-            output_valid = true;
-        }
-    }
-
-    float num = 0.0f;
-    float den = 0.0f;
-    if (output_valid) {
-        for (uint sample_idx = lane; sample_idx < params.n_samples; sample_idx += params.lanes) {
-            const uint tile_idx = tid + sample_idx;
-            const float w = weights[sample_idx];
-            num += tile[tile_idx] * w;
-            den += valid[tile_idx] * w;
-        }
-    }
-
-    const uint partial_idx = lane * params.chunk_len + tid;
-    partial_num[partial_idx] = num;
-    partial_den[partial_idx] = den;
-
-    threadgroup_barrier(mem_flags::mem_threadgroup);
-
-    if (lane == 0 && output_valid) {
-        float sum_num = 0.0f;
-        float sum_den = 0.0f;
-        for (uint lane_idx = 0; lane_idx < params.lanes; ++lane_idx) {
-            const uint reduce_idx = lane_idx * params.chunk_len + tid;
-            sum_num += partial_num[reduce_idx];
-            sum_den += partial_den[reduce_idx];
-        }
-        out[out_index] = sum_den > 0.0f ? fabs(sum_num / sum_den) : 0.0f;
-    }
-}
 "#;
 
 #[repr(C)]
@@ -986,7 +814,6 @@ struct LfScanlineParams {
     line_count: c_uint,
     theta_idx: c_uint,
     chunk_len: c_uint,
-    lanes: c_uint,
 }
 
 struct MetalState {
@@ -1005,8 +832,6 @@ struct MetalState {
     lf_box_finalize_pipeline: ComputePipelineState,
     lf_scanline_x_pipeline: ComputePipelineState,
     lf_scanline_y_pipeline: ComputePipelineState,
-    lf_scanline_parallel_x_pipeline: ComputePipelineState,
-    lf_scanline_parallel_y_pipeline: ComputePipelineState,
     queue: CommandQueue,
 }
 
@@ -1122,30 +947,6 @@ impl MetalState {
             .map_err(|err| {
                 format!("failed to create LF scanline y-major Metal compute pipeline: {err}")
             })?;
-        let lf_scanline_parallel_x_function = library
-            .get_function("lf_gaussian_scanline_parallel_x_major", None)
-            .map_err(|err| {
-                format!("failed to load LF parallel scanline x-major Metal function: {err}")
-            })?;
-        let lf_scanline_parallel_x_pipeline = device
-            .new_compute_pipeline_state_with_function(&lf_scanline_parallel_x_function)
-            .map_err(|err| {
-                format!(
-                    "failed to create LF parallel scanline x-major Metal compute pipeline: {err}"
-                )
-            })?;
-        let lf_scanline_parallel_y_function = library
-            .get_function("lf_gaussian_scanline_parallel_y_major", None)
-            .map_err(|err| {
-                format!("failed to load LF parallel scanline y-major Metal function: {err}")
-            })?;
-        let lf_scanline_parallel_y_pipeline = device
-            .new_compute_pipeline_state_with_function(&lf_scanline_parallel_y_function)
-            .map_err(|err| {
-                format!(
-                    "failed to create LF parallel scanline y-major Metal compute pipeline: {err}"
-                )
-            })?;
         let queue = device.new_command_queue();
 
         Ok(Self {
@@ -1164,8 +965,6 @@ impl MetalState {
             lf_box_finalize_pipeline,
             lf_scanline_x_pipeline,
             lf_scanline_y_pipeline,
-            lf_scanline_parallel_x_pipeline,
-            lf_scanline_parallel_y_pipeline,
             queue,
         })
     }
@@ -1239,38 +1038,6 @@ fn threadgroup_2d(pipeline: &ComputePipelineState) -> MTLSize {
         height,
         depth: 1,
     }
-}
-
-fn threadgroup_scanline_parallel(
-    pipeline: &ComputePipelineState,
-    lanes: c_uint,
-) -> Result<MTLSize, String> {
-    if lanes == 0 || lanes > MAX_SCANLINE_PARALLEL_LANES {
-        return Err(format!(
-            "scanline_lanes must be between 1 and {MAX_SCANLINE_PARALLEL_LANES}"
-        ));
-    }
-    let lanes = lanes as u64;
-    let execution_width = pipeline.thread_execution_width().max(1);
-    let max_threads = pipeline.max_total_threads_per_threadgroup().max(1);
-    if lanes > max_threads {
-        return Err("scanline_lanes exceeds the pipeline threadgroup limit".to_string());
-    }
-
-    let mut width = (max_threads / lanes).min(1024).max(1);
-    let rounded = (width / execution_width) * execution_width;
-    if rounded > 0 {
-        width = rounded;
-    }
-    if width.saturating_mul(lanes) > max_threads {
-        width = (max_threads / lanes).max(1);
-    }
-
-    Ok(MTLSize {
-        width,
-        height: lanes,
-        depth: 1,
-    })
 }
 
 fn round_half_to_even(value: f64) -> Result<i32, String> {
@@ -2489,7 +2256,6 @@ unsafe fn run_lf_orientation_stack_scanline_with_state(
     height: c_uint,
     n_orientations: c_uint,
     m: c_int,
-    parallel_lanes: c_uint,
     out: *mut c_float,
 ) -> Result<(), String> {
     let total_pixels = checked_image_pixels(width, height)?;
@@ -2504,15 +2270,6 @@ unsafe fn run_lf_orientation_stack_scanline_with_state(
     )?;
     let (weights, m_value) = build_lf_gaussian_weights(m)?;
     let n_samples = weights.len();
-    if parallel_lanes == 0 || parallel_lanes > MAX_SCANLINE_PARALLEL_LANES {
-        return Err(format!(
-            "scanline_lanes must be between 1 and {MAX_SCANLINE_PARALLEL_LANES}"
-        ));
-    }
-    let n_samples_u32 = c_uint::try_from(n_samples)
-        .map_err(|_| "LF scanline sample count is outside uint32 range".to_string())?;
-    let effective_lanes = parallel_lanes.min(n_samples_u32).max(1);
-    let use_parallel = effective_lanes > 1;
     let weight_len = checked_len(
         weights.len(),
         std::mem::size_of::<c_float>(),
@@ -2558,31 +2315,22 @@ unsafe fn run_lf_orientation_stack_scanline_with_state(
         depth: 1,
     };
     let project_group = threadgroup_2d(&state.lf_project_pipeline);
-    let (scanline_x_group, scanline_y_group) = if use_parallel {
-        (
-            threadgroup_scanline_parallel(&state.lf_scanline_parallel_x_pipeline, effective_lanes)?,
-            threadgroup_scanline_parallel(&state.lf_scanline_parallel_y_pipeline, effective_lanes)?,
-        )
-    } else {
-        (
-            threadgroup_1d_with_cap(
-                state.lf_scanline_x_pipeline.thread_execution_width().max(1),
-                state
-                    .lf_scanline_x_pipeline
-                    .max_total_threads_per_threadgroup()
-                    .max(1),
-                1024,
-            ),
-            threadgroup_1d_with_cap(
-                state.lf_scanline_y_pipeline.thread_execution_width().max(1),
-                state
-                    .lf_scanline_y_pipeline
-                    .max_total_threads_per_threadgroup()
-                    .max(1),
-                1024,
-            ),
-        )
-    };
+    let scanline_x_group = threadgroup_1d_with_cap(
+        state.lf_scanline_x_pipeline.thread_execution_width().max(1),
+        state
+            .lf_scanline_x_pipeline
+            .max_total_threads_per_threadgroup()
+            .max(1),
+        1024,
+    );
+    let scanline_y_group = threadgroup_1d_with_cap(
+        state.lf_scanline_y_pipeline.thread_execution_width().max(1),
+        state
+            .lf_scanline_y_pipeline
+            .max_total_threads_per_threadgroup()
+            .max(1),
+        1024,
+    );
 
     for theta_idx in 0..n_orientations as usize {
         let (line_offsets, x_major, key_min, line_count, cos_t, sin_t) =
@@ -2629,22 +2377,11 @@ unsafe fn run_lf_orientation_stack_scanline_with_state(
             )
             .ok_or_else(|| "LF scanline tile length overflowed".to_string())?;
         let tile_bytes = checked_len(tile_len, std::mem::size_of::<c_float>(), "LF scanline tile")?;
-        let partial_bytes = if use_parallel {
-            let partial_count = (chunk_len as usize)
-                .checked_mul(effective_lanes as usize)
-                .ok_or_else(|| "LF scanline partial length overflowed".to_string())?;
-            Some(checked_len(
-                partial_count,
-                std::mem::size_of::<c_float>(),
-                "LF scanline partial",
-            )?)
-        } else {
-            None
-        };
         let params = LfScanlineParams {
             width,
             height,
-            n_samples: n_samples_u32,
+            n_samples: c_uint::try_from(n_samples)
+                .map_err(|_| "LF scanline sample count is outside uint32 range".to_string())?,
             radius: c_uint::try_from(m_value)
                 .map_err(|_| "LF scanline radius is outside uint32 range".to_string())?,
             key_min,
@@ -2652,7 +2389,6 @@ unsafe fn run_lf_orientation_stack_scanline_with_state(
             theta_idx: c_uint::try_from(theta_idx)
                 .map_err(|_| "LF scanline theta index is outside uint32 range".to_string())?,
             chunk_len,
-            lanes: effective_lanes,
         };
         let params_buffer = state.device.new_buffer_with_data(
             (&params as *const LfScanlineParams).cast(),
@@ -2673,11 +2409,7 @@ unsafe fn run_lf_orientation_stack_scanline_with_state(
         encoder.dispatch_threads(image_threads, project_group);
         encoder.memory_barrier_with_resources(&[g_perp_buffer.as_ref()]);
 
-        if use_parallel && x_major {
-            encoder.set_compute_pipeline_state(&state.lf_scanline_parallel_x_pipeline);
-        } else if use_parallel {
-            encoder.set_compute_pipeline_state(&state.lf_scanline_parallel_y_pipeline);
-        } else if x_major {
+        if x_major {
             encoder.set_compute_pipeline_state(&state.lf_scanline_x_pipeline);
         } else {
             encoder.set_compute_pipeline_state(&state.lf_scanline_y_pipeline);
@@ -2689,10 +2421,6 @@ unsafe fn run_lf_orientation_stack_scanline_with_state(
         encoder.set_buffer(4, Some(&params_buffer), 0);
         encoder.set_threadgroup_memory_length(0, tile_bytes as u64);
         encoder.set_threadgroup_memory_length(1, tile_bytes as u64);
-        if let Some(bytes) = partial_bytes {
-            encoder.set_threadgroup_memory_length(2, bytes as u64);
-            encoder.set_threadgroup_memory_length(3, bytes as u64);
-        }
         encoder.dispatch_thread_groups(
             MTLSize {
                 width: n_chunks as u64,
@@ -2996,53 +2724,6 @@ unsafe fn run_lf_orientation_stack_scanline(
             height,
             n_orientations,
             m,
-            1,
-            out,
-        )
-    })
-}
-
-unsafe fn run_lf_orientation_stack_scanline_parallel(
-    g_x: *const c_float,
-    g_y: *const c_float,
-    width: c_uint,
-    height: c_uint,
-    n_orientations: c_uint,
-    m: c_int,
-    parallel_lanes: c_uint,
-    out: *mut c_float,
-) -> Result<(), String> {
-    check_ptr(g_x, "g_x")?;
-    check_ptr(g_y, "g_y")?;
-    check_mut_ptr(out, "out")?;
-
-    if width == 0 || height == 0 {
-        return Err("image width and height must be positive".to_string());
-    }
-    if n_orientations == 0 {
-        return Err("n_orientations must be positive".to_string());
-    }
-    if parallel_lanes == 0 || parallel_lanes > MAX_SCANLINE_PARALLEL_LANES {
-        return Err(format!(
-            "scanline_lanes must be between 1 and {MAX_SCANLINE_PARALLEL_LANES}"
-        ));
-    }
-
-    METAL_STATE.with(|state_cell| {
-        let mut state_slot = state_cell.borrow_mut();
-        if state_slot.is_none() {
-            *state_slot = Some(MetalState::new()?);
-        }
-        let state = state_slot.as_ref().expect("Metal state was initialized");
-        run_lf_orientation_stack_scanline_with_state(
-            state,
-            g_x,
-            g_y,
-            width,
-            height,
-            n_orientations,
-            m,
-            parallel_lanes,
             out,
         )
     })
@@ -3247,37 +2928,6 @@ pub unsafe extern "C" fn edgecritic_metal_lf_orientation_stack_scanline(
     error_len: usize,
 ) -> c_int {
     match run_lf_orientation_stack_scanline(g_x, g_y, width, height, n_orientations, m, out) {
-        Ok(()) => 0,
-        Err(message) => {
-            write_error(error_out, error_len, &message);
-            1
-        }
-    }
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn edgecritic_metal_lf_orientation_stack_scanline_parallel(
-    g_x: *const c_float,
-    g_y: *const c_float,
-    width: c_uint,
-    height: c_uint,
-    n_orientations: c_uint,
-    m: c_int,
-    parallel_lanes: c_uint,
-    out: *mut c_float,
-    error_out: *mut c_char,
-    error_len: usize,
-) -> c_int {
-    match run_lf_orientation_stack_scanline_parallel(
-        g_x,
-        g_y,
-        width,
-        height,
-        n_orientations,
-        m,
-        parallel_lanes,
-        out,
-    ) {
         Ok(()) => 0,
         Err(message) => {
             write_error(error_out, error_len, &message);

@@ -124,7 +124,6 @@ def main() -> int:
     parser.add_argument("--m-values", type=_parse_int_list, default=[50, 80, 150, 300])
     parser.add_argument("--passes", type=_parse_int_list, default=[1, 2, 3, 4, 5, 6, 8])
     parser.add_argument("--methods", default="box,scanline")
-    parser.add_argument("--scanline-lanes", type=_parse_int_list, default=[8])
     parser.add_argument("--radius-deltas", type=_parse_radius_deltas, default=[None])
     parser.add_argument("--exact-execution", default="auto", choices=["auto", "projected", "direct"])
     parser.add_argument("--input-kind", default="random", choices=["random", "smooth", "mixed", "all"])
@@ -138,7 +137,7 @@ def main() -> int:
         raise SystemExit("Metal backend is unavailable on this machine")
 
     print(
-        "input_kind,method,size,n_orientations,m,passes,radius,lanes,exact_s,method_s,speedup,"
+        "input_kind,method,size,n_orientations,m,passes,radius,exact_s,method_s,speedup,"
         "rel_mae,rel_rmse,max_abs,corr,top1,mean_angle_error_rad,metric_pixels,"
         "exact_checksum,method_checksum",
         flush=True,
@@ -147,11 +146,9 @@ def main() -> int:
     rng = np.random.default_rng(args.seed)
     input_kinds = ["random", "smooth", "mixed"] if args.input_kind == "all" else [args.input_kind]
     methods = [part.strip().lower() for part in args.methods.split(",") if part.strip()]
-    unknown = sorted(set(methods) - {"box", "scanline", "scanline_parallel"})
+    unknown = sorted(set(methods) - {"box", "scanline"})
     if unknown:
         raise SystemExit(f"unknown methods: {', '.join(unknown)}")
-    if any(lanes < 1 or lanes > 32 for lanes in args.scanline_lanes):
-        raise SystemExit("scanline lanes must be between 1 and 32")
     for input_kind in input_kinds:
         for size in args.sizes:
             g_x, g_y = _make_inputs(size, rng, input_kind)
@@ -194,7 +191,7 @@ def main() -> int:
                             box_out.reshape(-1)[:: max(box_out.size // 4096, 1)].sum()
                         )
                         print(
-                            f"{input_kind},scanline,{size},{n_orientations},{m},0,{m},1,"
+                            f"{input_kind},scanline,{size},{n_orientations},{m},0,{m},"
                             f"{exact_s:.6f},{method_s:.6f},{exact_s / method_s:.3f},"
                             f"{values['rel_mae']:.6e},{values['rel_rmse']:.6e},"
                             f"{values['max_abs']:.6e},{values['corr']:.6f},"
@@ -203,38 +200,6 @@ def main() -> int:
                             f"{exact_checksum:.6f},{method_checksum:.6f}",
                             flush=True,
                         )
-
-                    if "scanline_parallel" in methods:
-                        for lanes in args.scanline_lanes:
-
-                            def run_scanline_parallel() -> np.ndarray:
-                                return lf_orientation_stack_metal(
-                                    g_x,
-                                    g_y,
-                                    m=m,
-                                    n_orientations=n_orientations,
-                                    method="scanline_parallel",
-                                    scanline_lanes=lanes,
-                                    out=box_out,
-                                )
-
-                            method_s = _time_min_seconds(
-                                run_scanline_parallel, args.warmup, args.repeat
-                            )
-                            values = _metrics(exact_out, box_out, args.metric_samples)
-                            method_checksum = float(
-                                box_out.reshape(-1)[:: max(box_out.size // 4096, 1)].sum()
-                            )
-                            print(
-                                f"{input_kind},scanline_parallel,{size},{n_orientations},{m},0,{m},{lanes},"
-                                f"{exact_s:.6f},{method_s:.6f},{exact_s / method_s:.3f},"
-                                f"{values['rel_mae']:.6e},{values['rel_rmse']:.6e},"
-                                f"{values['max_abs']:.6e},{values['corr']:.6f},"
-                                f"{values['top1']:.6f},{values['mean_angle_error_rad']:.6e},"
-                                f"{int(values['metric_pixels'])},"
-                                f"{exact_checksum:.6f},{method_checksum:.6f}",
-                                flush=True,
-                            )
 
                     if "box" in methods:
                         for passes in args.passes:
@@ -261,7 +226,7 @@ def main() -> int:
                                     box_out.reshape(-1)[:: max(box_out.size // 4096, 1)].sum()
                                 )
                                 print(
-                                    f"{input_kind},box,{size},{n_orientations},{m},{passes},{reported_radius},0,"
+                                    f"{input_kind},box,{size},{n_orientations},{m},{passes},{reported_radius},"
                                     f"{exact_s:.6f},{method_s:.6f},{exact_s / method_s:.3f},"
                                     f"{values['rel_mae']:.6e},{values['rel_rmse']:.6e},"
                                     f"{values['max_abs']:.6e},{values['corr']:.6f},"
