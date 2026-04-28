@@ -1,0 +1,117 @@
+import numpy as np
+import pytest
+
+from edgecritic.lf._metal import (
+    lf_orientation_stack_metal,
+    lf_response_metal_batch,
+    metal_backend_available,
+)
+
+
+def _require_metal() -> None:
+    if not metal_backend_available():
+        pytest.skip("Metal backend is unavailable")
+
+
+def _reference_orientation_stack(g_x, g_y, m: int, n_orientations: int) -> np.ndarray:
+    gx = np.asarray(g_x, dtype=np.float32)
+    gy = np.asarray(g_y, dtype=np.float32)
+    h, w = gx.shape
+    out = np.empty((n_orientations, h, w), dtype=np.float64)
+    yy, xx = np.indices((h, w))
+
+    for theta_idx, theta in enumerate(np.linspace(0.0, np.pi, n_orientations, endpoint=False)):
+        cos_t = float(np.cos(theta))
+        sin_t = float(np.sin(theta))
+        if m <= 0:
+            out[theta_idx] = np.abs(-sin_t * gx + cos_t * gy)
+            continue
+
+        max_trig = max(abs(cos_t), abs(sin_t))
+        step = 1.0 / max_trig if max_trig > 0 else 1.0
+        j_offsets = np.arange(-m, m + 1)
+        weights = np.exp(-0.5 * (j_offsets / (m / 2.0)) ** 2)
+        ix = np.round(j_offsets * step * cos_t).astype(np.int32)
+        iy = np.round(j_offsets * step * sin_t).astype(np.int32)
+        num = np.zeros((h, w), dtype=np.float64)
+        den = np.zeros((h, w), dtype=np.float64)
+
+        for dx, dy, weight in zip(ix, iy, weights):
+            sample_x = xx + dx
+            sample_y = yy + dy
+            valid = (sample_x >= 0) & (sample_x < w) & (sample_y >= 0) & (sample_y < h)
+            safe_x = np.clip(sample_x, 0, w - 1)
+            safe_y = np.clip(sample_y, 0, h - 1)
+            sample = -sin_t * gx[safe_y, safe_x] + cos_t * gy[safe_y, safe_x]
+            num[valid] += sample[valid] * weight
+            den[valid] += weight
+
+        out[theta_idx] = np.abs(num / np.maximum(den, 1e-12))
+
+    return out
+
+
+@pytest.mark.parametrize("m,n_orientations", [(0, 1), (1, 2), (3, 5), (6, 8)])
+def test_lf_orientation_stack_metal_matches_reference(m, n_orientations):
+    _require_metal()
+
+    rng = np.random.default_rng(5000 + m * 31 + n_orientations)
+    g_x = rng.normal(size=(17, 19)).astype(np.float32)
+    g_y = rng.normal(size=(17, 19)).astype(np.float32)
+
+    got = lf_orientation_stack_metal(g_x, g_y, m=m, n_orientations=n_orientations)
+    expected = _reference_orientation_stack(g_x, g_y, m=m, n_orientations=n_orientations)
+
+    assert got.dtype == np.float32
+    assert got.shape == expected.shape
+    assert np.allclose(got, expected, rtol=2e-5, atol=3e-5)
+
+
+def test_lf_orientation_stack_metal_constant_field_boundary_normalization():
+    _require_metal()
+
+    n_orientations = 16
+    g_x = np.zeros((13, 17), dtype=np.float32)
+    g_y = np.ones((13, 17), dtype=np.float32)
+
+    got = lf_orientation_stack_metal(g_x, g_y, m=8, n_orientations=n_orientations)
+    expected_values = np.abs(np.cos(np.linspace(0.0, np.pi, n_orientations, endpoint=False)))
+
+    assert np.allclose(got, expected_values[:, None, None], rtol=2e-5, atol=2e-5)
+
+
+def test_lf_orientation_stack_metal_matches_sparse_batch_all_pixels():
+    _require_metal()
+
+    rng = np.random.default_rng(987)
+    h, w = 11, 14
+    n_orientations = 7
+    m = 5
+    g_x = rng.normal(size=(h, w)).astype(np.float32)
+    g_y = rng.normal(size=(h, w)).astype(np.float32)
+    yy, xx = np.indices((h, w))
+    px = xx.reshape(-1).astype(np.int32)
+    py = yy.reshape(-1).astype(np.int32)
+    thetas = np.linspace(0.0, np.pi, n_orientations, endpoint=False)
+
+    stack = lf_orientation_stack_metal(g_x, g_y, m=m, n_orientations=n_orientations)
+    sparse = lf_response_metal_batch(g_x, g_y, px, py, thetas, np.array([m], dtype=np.int32))
+    sparse_stack = sparse[:, 0, :].reshape(n_orientations, h, w)
+
+    assert np.allclose(stack, sparse_stack, rtol=2e-5, atol=3e-5)
+
+
+def test_lf_orientation_stack_metal_output_dtype_and_validation():
+    _require_metal()
+
+    g_x = np.zeros((5, 6), dtype=np.float64)
+    g_y = np.ones((5, 6), dtype=np.float64)
+    got = lf_orientation_stack_metal(g_x, g_y, m=0, n_orientations=4, output_dtype=np.float64)
+
+    assert got.dtype == np.float64
+    assert got.shape == (4, 5, 6)
+
+    with pytest.raises(ValueError, match="n_orientations"):
+        lf_orientation_stack_metal(g_x, g_y, m=0, n_orientations=0)
+    with pytest.raises(ValueError, match="method"):
+        lf_orientation_stack_metal(g_x, g_y, m=0, n_orientations=4, method="box")

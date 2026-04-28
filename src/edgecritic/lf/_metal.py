@@ -55,6 +55,18 @@ def _load_lf_library() -> ctypes.CDLL:
             ctypes.c_size_t,
         ]
         lib.edgecritic_metal_lf_response_batch.restype = ctypes.c_int
+        lib.edgecritic_metal_lf_orientation_stack.argtypes = [
+            ctypes.POINTER(ctypes.c_float),
+            ctypes.POINTER(ctypes.c_float),
+            ctypes.c_uint,
+            ctypes.c_uint,
+            ctypes.c_uint,
+            ctypes.c_int,
+            ctypes.POINTER(ctypes.c_float),
+            ctypes.POINTER(ctypes.c_char),
+            ctypes.c_size_t,
+        ]
+        lib.edgecritic_metal_lf_orientation_stack.restype = ctypes.c_int
     except AttributeError as exc:
         raise MetalBackendError("Rust/Metal LF symbols are not available") from exc
     except OSError as exc:
@@ -188,8 +200,52 @@ def lf_response_metal_batch(
     return out.astype(np.float64)
 
 
+def lf_orientation_stack_metal(
+    g_x: np.ndarray,
+    g_y: np.ndarray,
+    m: int,
+    n_orientations: int = 16,
+    output_dtype: np.dtype | type = np.float32,
+    method: str = "exact",
+) -> np.ndarray:
+    """Compute full-frame LF responses for equally spaced orientations.
+
+    Returns an array of shape ``(n_orientations, H, W)``. Orientations are
+    equally spaced over ``[0, pi)``.
+    """
+    if str(method).lower() != "exact":
+        raise ValueError("only method='exact' is currently implemented")
+    if int(n_orientations) <= 0:
+        raise ValueError("n_orientations must be positive")
+
+    gx, gy = _components(g_x, g_y)
+    h, w = gx.shape
+    n = int(n_orientations)
+    out = np.empty((n, h, w), dtype=np.float32)
+    error_buffer = ctypes.create_string_buffer(4096)
+    status = _load_lf_library().edgecritic_metal_lf_orientation_stack(
+        gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        _as_uint32(w, "image width"),
+        _as_uint32(h, "image height"),
+        _as_uint32(n, "orientation count"),
+        _as_int32(int(m), "m"),
+        out.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        error_buffer,
+        ctypes.c_size_t(len(error_buffer)),
+    )
+    if status != 0:
+        _raise_native_error(error_buffer)
+
+    dtype = np.dtype(output_dtype)
+    if dtype == np.dtype(np.float32):
+        return out
+    return out.astype(dtype)
+
+
 __all__ = [
     "MetalBackendError",
+    "lf_orientation_stack_metal",
     "lf_response_metal",
     "lf_response_metal_batch",
     "metal_backend_available",
