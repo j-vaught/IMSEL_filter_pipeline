@@ -271,3 +271,44 @@ def test_lf_orientation_stack_scanline_tracks_exact_on_smooth_fields():
 
     assert rel_rmse < 0.15
     assert corr > 0.97
+
+
+@pytest.mark.parametrize("scanline_lanes", [2, 4, 8])
+def test_lf_orientation_stack_scanline_parallel_matches_scanline(scanline_lanes):
+    _require_metal()
+
+    h, w = 31, 37
+    y, x = np.indices((h, w), dtype=np.float32)
+    g_x = (np.sin(x * 0.17) + 0.3 * np.cos(y * 0.09)).astype(np.float32)
+    g_y = (np.cos(x * 0.08) - 0.2 * np.sin(y * 0.15)).astype(np.float32)
+
+    scanline = lf_orientation_stack_metal(
+        g_x, g_y, m=14, n_orientations=10, method="scanline"
+    )
+    parallel = lf_orientation_stack_metal(
+        g_x,
+        g_y,
+        m=14,
+        n_orientations=10,
+        method="scanline_parallel",
+        scanline_lanes=scanline_lanes,
+    )
+
+    assert np.allclose(parallel, scanline, rtol=5e-5, atol=5e-5)
+
+
+def test_lf_orientation_stack_scanline_parallel_validation():
+    _require_metal()
+
+    g_x = np.zeros((7, 8), dtype=np.float32)
+    g_y = np.ones((7, 8), dtype=np.float32)
+
+    with pytest.raises(ValueError, match="scanline_lanes"):
+        lf_orientation_stack_metal(
+            g_x,
+            g_y,
+            m=5,
+            n_orientations=5,
+            method="scanline_parallel",
+            scanline_lanes=0,
+        )

@@ -18,6 +18,7 @@ _MIN_INT32 = np.iinfo(np.int32).min
 _MAX_INT32 = np.iinfo(np.int32).max
 _MAX_BATCH_MS = 32
 _MAX_BOX_PASSES = 32
+_MAX_SCANLINE_PARALLEL_LANES = 32
 
 
 @lru_cache(maxsize=1)
@@ -95,6 +96,19 @@ def _load_lf_library() -> ctypes.CDLL:
             ctypes.c_size_t,
         ]
         lib.edgecritic_metal_lf_orientation_stack_scanline.restype = ctypes.c_int
+        lib.edgecritic_metal_lf_orientation_stack_scanline_parallel.argtypes = [
+            ctypes.POINTER(ctypes.c_float),
+            ctypes.POINTER(ctypes.c_float),
+            ctypes.c_uint,
+            ctypes.c_uint,
+            ctypes.c_uint,
+            ctypes.c_int,
+            ctypes.c_uint,
+            ctypes.POINTER(ctypes.c_float),
+            ctypes.POINTER(ctypes.c_char),
+            ctypes.c_size_t,
+        ]
+        lib.edgecritic_metal_lf_orientation_stack_scanline_parallel.restype = ctypes.c_int
     except AttributeError as exc:
         raise MetalBackendError("Rust/Metal LF symbols are not available") from exc
     except OSError as exc:
@@ -239,6 +253,7 @@ def lf_orientation_stack_metal(
     out: np.ndarray | None = None,
     box_passes: int = 6,
     box_radius: int | None = None,
+    scanline_lanes: int = 8,
 ) -> np.ndarray:
     """Compute full-frame LF responses for equally spaced orientations.
 
@@ -246,13 +261,15 @@ def lf_orientation_stack_metal(
     equally spaced over ``[0, pi)``.
     """
     method_name = str(method).lower()
-    if method_name not in {"exact", "box", "scanline"}:
-        raise ValueError("method must be 'exact', 'box', or 'scanline'")
+    if method_name not in {"exact", "box", "scanline", "scanline_parallel"}:
+        raise ValueError("method must be 'exact', 'box', 'scanline', or 'scanline_parallel'")
     execution_mode = {"auto": 0, "direct": 1, "projected": 2}.get(str(execution).lower())
     if execution_mode is None:
         raise ValueError("execution must be 'auto', 'direct', or 'projected'")
-    if method_name in {"box", "scanline"} and execution_mode != 0:
-        raise ValueError("execution must be 'auto' when method is 'box' or 'scanline'")
+    if method_name in {"box", "scanline", "scanline_parallel"} and execution_mode != 0:
+        raise ValueError(
+            "execution must be 'auto' when method is 'box', 'scanline', or 'scanline_parallel'"
+        )
     if int(n_orientations) <= 0:
         raise ValueError("n_orientations must be positive")
     box_pass_count = int(box_passes)
@@ -264,6 +281,11 @@ def lf_orientation_stack_metal(
         box_radius_value = int(box_radius)
         if box_radius_value < 0:
             raise ValueError("box_radius must be non-negative or None")
+    scanline_lane_count = int(scanline_lanes)
+    if scanline_lane_count < 1 or scanline_lane_count > _MAX_SCANLINE_PARALLEL_LANES:
+        raise ValueError(
+            f"scanline_lanes must be between 1 and {_MAX_SCANLINE_PARALLEL_LANES}"
+        )
 
     gx, gy = _components(g_x, g_y)
     h, w = gx.shape
@@ -306,7 +328,7 @@ def lf_orientation_stack_metal(
             error_buffer,
             ctypes.c_size_t(len(error_buffer)),
         )
-    else:
+    elif method_name == "scanline":
         status = _load_lf_library().edgecritic_metal_lf_orientation_stack_scanline(
             gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
             gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
@@ -314,6 +336,19 @@ def lf_orientation_stack_metal(
             _as_uint32(h, "image height"),
             _as_uint32(n, "orientation count"),
             _as_int32(int(m), "m"),
+            out_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            error_buffer,
+            ctypes.c_size_t(len(error_buffer)),
+        )
+    else:
+        status = _load_lf_library().edgecritic_metal_lf_orientation_stack_scanline_parallel(
+            gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+            _as_uint32(w, "image width"),
+            _as_uint32(h, "image height"),
+            _as_uint32(n, "orientation count"),
+            _as_int32(int(m), "m"),
+            _as_uint32(scanline_lane_count, "scanline lane count"),
             out_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
             error_buffer,
             ctypes.c_size_t(len(error_buffer)),
