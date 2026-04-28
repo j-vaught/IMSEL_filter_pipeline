@@ -1,0 +1,134 @@
+{
+  "config": {
+    "K": 3,
+    "theta_min_deg": 10.0,
+    "tau_grid": [
+      0.05,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5
+    ],
+    "n_edge_pixels": 2000,
+    "n_junction_pixels": 2000,
+    "vertex_exclude_px": 24,
+    "m_values": [
+      0,
+      5,
+      10,
+      20,
+      30,
+      40,
+      50,
+      60,
+      70,
+      80
+    ],
+    "r": 9,
+    "d": 3,
+    "n_orientations": 64
+  },
+  "results": {
+    "clean": [
+      {
+        "tau_M_rel": 0.05,
+        "edge_FP": 0.007,
+        "junction_TP": 0.97953216374269,
+        "TP_FP": 139.93316624895573,
+        "n_edges": 2000,
+        "n_real_corners": 342
+      },
+      {
+        "tau_M_rel": 0.1,
+        "edge_FP": 0.007,
+        "junction_TP": 0.9619883040935673,
+        "TP_FP": 137.42690058479533,
+        "n_edges": 2000,
+        "n_real_corners": 342
+      },
+      {
+        "tau_M_rel": 0.2,
+        "edge_FP": 0.007,
+        "junction_TP": 0.7309941520467836,
+        "TP_FP": 104.42773600668338,
+        "n_edges": 2000,
+        "n_real_corners": 342
+      },
+      {
+        "tau_M_rel": 0.3,
+        "edge_FP": 0.006,
+        "junction_TP": 0.6491228070175439,
+        "TP_FP": 108.18713450292398,
+        "n_edges": 2000,
+        "n_real_corners": 342
+      },
+      {
+        "tau_M_rel": 0.4,
+        "edge_FP": 0.006,
+        "junction_TP": 0.49415204678362573,
+        "TP_FP": 82.35867446393762,
+        "n_edges": 2000,
+        "n_real_corners": 342
+      },
+      {
+        "tau_M_rel": 0.5,
+        "edge_FP": 0.005,
+        "junction_TP": 0.25146198830409355,
+        "TP_FP": 50.29239766081871,
+        "n_edges": 2000,
+        "n_real_corners": 342
+      }
+    ],
+    "noisy": [
+      {
+        "tau_M_rel": 0.05,
+        "edge_FP": 0.0085,
+        "junction_TP": 0.9664804469273743,
+        "TP_FP": 113.70358199145579,
+        "n_edges": 2000,
+        "n_real_corners": 358
+      },
+      {
+        "tau_M_rel": 0.1,
+        "edge_FP": 0.0085,
+        "junction_TP": 0.9413407821229051,
+        "TP_FP": 110.74597436740059,
+        "n_edges": 2000,
+        "n_real_corners": 358
+      },
+      {
+        "tau_M_rel": 0.2,
+        "edge_FP": 0.0085,
+        "junction_TP": 0.7793296089385475,
+        "TP_FP": 91.68583634571146,
+        "n_edges": 2000,
+        "n_real_corners": 358
+      },
+      {
+        "tau_M_rel": 0.3,
+        "edge_FP": 0.008,
+        "junction_TP": 0.6564245810055865,
+        "TP_FP": 82.05307262569832,
+        "n_edges": 2000,
+        "n_real_corners": 358
+      },
+      {
+        "tau_M_rel": 0.4,
+        "edge_FP": 0.0075,
+        "junction_TP": 0.48044692737430167,
+        "TP_FP": 64.05959031657356,
+        "n_edges": 2000,
+        "n_real_corners": 358
+      },
+      {
+        "tau_M_rel": 0.5,
+        "edge_FP": 0.0075,
+        "junction_TP": 0.2681564245810056,
+        "TP_FP": 35.754189944134076,
+        "n_edges": 2000,
+        "n_real_corners": 358
+      }
+    ]
+  }
+}

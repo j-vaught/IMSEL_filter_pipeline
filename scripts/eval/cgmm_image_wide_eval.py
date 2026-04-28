@@ -404,13 +404,13 @@ def fit_gmm_errors(primary_t, primary_m, gt_tangent_at, K, label):
 def fit_vmm_errors(primary_t, primary_m, gt_tangent_at, K, label,
                    n_iters=30, init_kappa=4.0,
                    hard_seed=False, hard_em=False,
-                   tau_M_rel=0.10, rho=0.40, theta_min_deg=10.0,
+                   tau_M_rel=0.30, theta_min_deg=10.0,
                    select="pi"):
     phi, w, _ = theta_M_to_phi_w(primary_t, primary_m)
     t0 = time.perf_counter()
     out = vmm_fuse(phi, w, K=K, n_iters=n_iters, init_kappa=init_kappa,
                    hard_seed=hard_seed, hard_em=hard_em,
-                   tau_M_rel=tau_M_rel, rho=rho,
+                   tau_M_rel=tau_M_rel,
                    theta_min_deg=theta_min_deg, select=select)
     elapsed = time.perf_counter() - t0
     theta_est_deg = np.degrees(out["theta_fused"]) % 180.0
@@ -460,9 +460,6 @@ def main():
     p.add_argument("--vmm-tau-M-rel", type=float, default=0.10,
                    help="secondary suppression: M_sec must exceed "
                         "tau_M_rel * M_signal (default 0.10)")
-    p.add_argument("--vmm-rho", type=float, default=0.40,
-                   help="secondary suppression: pi_sec / pi_signal "
-                        "must exceed rho (default 0.40)")
     p.add_argument("--vmm-theta-min-deg", type=float, default=10.0,
                    help="secondary suppression: |theta_signal - theta_sec| "
                         "must exceed this (default 10 deg). The audit "
@@ -558,7 +555,6 @@ def main():
                                              hard_seed=args.vmm_hard_seed,
                                              hard_em=(not args.vmm_soft_em),
                                              tau_M_rel=args.vmm_tau_M_rel,
-                                             rho=args.vmm_rho,
                                              theta_min_deg=args.vmm_theta_min_deg,
                                              select=args.vmm_select)
                 rows.append(summarise(tag, errs))
@@ -600,7 +596,6 @@ def main():
                 "methods": methods,
                 "Ks": Ks,
                 "vmm_tau_M_rel": args.vmm_tau_M_rel,
-                "vmm_rho": args.vmm_rho,
                 "vmm_n_iters": args.vmm_n_iters,
             },
             "results": rows,
