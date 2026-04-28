@@ -103,26 +103,26 @@ def main():
                                       secondary_valid, cmap_orient,
                                       dilate_px=15)
 
-    fig = plt.figure(figsize=(8.5, 9.0))
-    gs = fig.add_gridspec(2, 2, wspace=0.04, hspace=0.10,
-                          left=0.02, right=0.98,
-                          top=0.99, bottom=0.04)
+    fig = plt.figure(figsize=(14.0, 4.0))
+    gs = fig.add_gridspec(1, 4, wspace=0.04,
+                          left=0.01, right=0.99,
+                          top=0.99, bottom=0.10)
 
     panels = [
-        (gs[0, 0], img_input,         "(a) input",           None),
-        (gs[0, 1], img_M,             "(b) fused magnitude", None),
-        (gs[1, 0], img_p,             "(c) primary",         None),
-        (gs[1, 1], img_s,             "(d) secondary",       None),
+        (gs[0, 0], img_input, "(a) input"),
+        (gs[0, 1], img_M,     "(b) fused magnitude"),
+        (gs[0, 2], img_p,     "(c) primary"),
+        (gs[0, 3], img_s,     "(d) secondary"),
     ]
 
-    for slot, img, label, _ in panels:
+    for slot, img, label in panels:
         ax = fig.add_subplot(slot)
         ax.imshow(img, interpolation="nearest", origin="upper",
                   extent=(0, W, H, 0))
         ax.set_xticks([]); ax.set_yticks([])
         ax.set_facecolor("black")
         for s in ax.spines.values(): s.set_visible(False)
-        ax.set_xlabel(label, fontsize=11, color="#363636", labelpad=6)
+        ax.set_xlabel(label, fontsize=10, color="#363636", labelpad=4)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(args.out, format="pdf", dpi=300, bbox_inches="tight")
