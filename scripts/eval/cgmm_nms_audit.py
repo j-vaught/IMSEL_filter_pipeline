@@ -66,45 +66,27 @@ def corner_tp_rate(nms_mask, real_corner_mask):
 
 
 def ridge_thickness(nms_mask, theta_primary):
-    """Mean of the maximum perpendicular extent of connected
-    NMS-positive components.
+    """Skeleton-based ridge thickness.
 
-    For each connected component we estimate the local edge tangent
-    direction as the magnitude-weighted circular mean of theta_primary
-    across component pixels (in doubled-angle space).  We then project
-    component pixel coordinates onto the perpendicular direction and
-    return the range (max - min) of the projection.  The mean over all
-    components is the reported thickness.
+    thickness = (# NMS-positive pixels) / (# 1-pixel-wide centerline pixels)
+              = NMS-positive area / centerline length
 
-    A perfectly thinned 1-pixel ridge gives a thickness ~ 0 to 1
-    (range of integer projections of co-linear pixels).  Anything
-    much above 1 indicates under-thinning.
+    The centerline is the morphological skeleton of the NMS-positive
+    mask (skimage.morphology.skeletonize, 8-connected).  A perfectly
+    thinned 1-pixel ridge has thickness ~ 1.0; values > 1 mean
+    under-thinning (the NMS kept N>1 pixels per centerline pixel).
     """
     if not nms_mask.any():
         return float("nan"), 0
-    labels, n_comp = ndimage.label(nms_mask, structure=np.ones((3, 3)))
-    thicknesses = []
-    for cid in range(1, n_comp + 1):
-        ys, xs = np.where(labels == cid)
-        if len(ys) < 2:
-            continue
-        # Mean tangent direction in doubled-angle space.
-        th = theta_primary[ys, xs]
-        # NaN-safe (theta might be invalid in some edge cases).
-        good = np.isfinite(th)
-        if not good.any():
-            continue
-        cos2 = np.cos(2 * th[good]).mean()
-        sin2 = np.sin(2 * th[good]).mean()
-        mu_t = math.atan2(sin2, cos2) / 2.0
-        # Perpendicular unit vector.
-        perp_x = -math.sin(mu_t)
-        perp_y =  math.cos(mu_t)
-        proj = xs.astype(np.float64) * perp_x + ys.astype(np.float64) * perp_y
-        thicknesses.append(float(proj.max() - proj.min()))
-    if not thicknesses:
+    from skimage.morphology import skeletonize
+    sk = skeletonize(nms_mask, method="lee")
+    n_sk = int(sk.sum())
+    if n_sk == 0:
         return float("nan"), 0
-    return float(np.mean(thicknesses)), len(thicknesses)
+    thickness = float(nms_mask.sum() / n_sk)
+    # Component count for diagnostic output.
+    _, n_comp = ndimage.label(nms_mask, structure=np.ones((3, 3)))
+    return thickness, int(n_comp)
 
 
 # ---------------------------------------------------------------------
@@ -121,10 +103,10 @@ VARIANTS = [
 def run_variants(label, dump, gt_edge_mask, real_corner_mask,
                  fid_to_dump_keys):
     """Run all 9 variants on the given dump.  Returns list of dicts."""
-    M_p     = dump["M_primary"]
-    th_p    = dump["theta_primary"]
-    M_s     = dump["M_sec"]
-    th_s    = dump["theta_sec"]
+    M_p     = dump["M_fused"]
+    th_p    = dump["theta_fused"]
+    M_s     = dump["M_fused_sec"]
+    th_s    = dump["theta_fused_sec"]
     v       = dump["v_fused"]
     n_valid = int((v == 1).sum())
     print(f"  [{label}] valid pixels = {n_valid:,}")
@@ -185,7 +167,7 @@ def main():
         # Real-corner mask: junction pixels where the c-GMM kept a
         # secondary slot (i.e., spatially-separated bimodal evidence).
         v = d["v_fused"]
-        sec_kept = (d["M_sec"] > 0) & np.isfinite(d["theta_sec"])
+        sec_kept = (d["M_fused_sec"] > 0) & np.isfinite(d["theta_fused_sec"])
         real_corner_mask = junction_mask & (v == 1) & sec_kept
 
         rows = run_variants(label, d, all_mask, real_corner_mask,
