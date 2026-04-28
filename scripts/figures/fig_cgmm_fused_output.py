@@ -81,8 +81,7 @@ def main():
     secondary_valid = v & ~np.isnan(theta_s) & ~suppr
 
     img_p = render_orientation_image(np.where(np.isnan(theta_p), 0.0, theta_p),
-                                      primary_valid, cmap, dilate_px=3)
-    # Secondary slot is sparse - dilate more so corner markers are visible.
+                                      primary_valid, cmap, dilate_px=6)
     img_s = render_orientation_image(np.where(np.isnan(theta_s), 0.0, theta_s),
                                       secondary_valid, cmap, dilate_px=6)
 
