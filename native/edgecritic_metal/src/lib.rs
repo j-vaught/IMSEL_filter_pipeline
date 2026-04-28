@@ -1197,7 +1197,7 @@ kernel void recovery_peaks(
 
 inline float recovery_eval_segment_private(
     device const float* response,
-    uint row,
+    ulong row_offset,
     thread const float* m,
     constant RecoveryParams& params,
     uint seg,
@@ -1205,12 +1205,8 @@ inline float recovery_eval_segment_private(
 ) {
     const uint k = params.k;
     const uint next = (seg + 1 == k) ? 0 : seg + 1;
-    const float y0 = params.response_layout == 0
-        ? response[ulong(row) * ulong(k) + ulong(seg)]
-        : response[ulong(seg) * ulong(params.plane_size) + ulong(row)];
-    const float y1 = params.response_layout == 0
-        ? response[ulong(row) * ulong(k) + ulong(next)]
-        : response[ulong(next) * ulong(params.plane_size) + ulong(row)];
+    const float y0 = response[row_offset + seg];
+    const float y1 = response[row_offset + next];
     const float omt = 1.0f - u;
     const float omt2 = omt * omt;
     const float u2 = u * u;
@@ -1221,7 +1217,7 @@ inline float recovery_eval_segment_private(
 
 inline float recovery_eval_spline_private(
     device const float* response,
-    uint row,
+    ulong row_offset,
     thread const float* m,
     constant RecoveryParams& params,
     uint dense_idx
@@ -1230,21 +1226,21 @@ inline float recovery_eval_spline_private(
     const uint seg = uint(scaled / ulong(params.dense_n));
     const uint rem = uint(scaled - ulong(seg) * ulong(params.dense_n));
     return recovery_eval_segment_private(
-        response, row, m, params, seg, float(rem) / float(params.dense_n));
+        response, row_offset, m, params, seg, float(rem) / float(params.dense_n));
 }
 
 inline RecoveryPeakCandidate recovery_dense_peak_candidate_private(
     device const float* response,
-    uint row,
+    ulong row_offset,
     thread const float* m,
     constant RecoveryParams& params,
     uint dense_idx
 ) {
     const uint left_idx = dense_idx == 0 ? params.dense_n - 1 : dense_idx - 1;
     const uint right_idx = dense_idx + 1 == params.dense_n ? 0 : dense_idx + 1;
-    const float left_value = recovery_eval_spline_private(response, row, m, params, left_idx);
-    const float center_value = recovery_eval_spline_private(response, row, m, params, dense_idx);
-    const float right_value = recovery_eval_spline_private(response, row, m, params, right_idx);
+    const float left_value = recovery_eval_spline_private(response, row_offset, m, params, left_idx);
+    const float center_value = recovery_eval_spline_private(response, row_offset, m, params, dense_idx);
+    const float right_value = recovery_eval_spline_private(response, row_offset, m, params, right_idx);
     RecoveryPeakCandidate candidate;
     candidate.is_peak = center_value >= left_value && center_value >= right_value;
     candidate.dense_idx = dense_idx;
@@ -1254,7 +1250,7 @@ inline RecoveryPeakCandidate recovery_dense_peak_candidate_private(
 
 inline float recovery_eval_near_segment_private(
     device const float* response,
-    uint row,
+    ulong row_offset,
     thread const float* m,
     constant RecoveryParams& params,
     uint seg_hint,
@@ -1271,7 +1267,7 @@ inline float recovery_eval_near_segment_private(
         seg = (seg + 1 == int(params.k)) ? 0 : seg + 1;
     }
     return recovery_eval_segment_private(
-        response, row, m, params, uint(seg), float(rel) / float(params.dense_n));
+        response, row_offset, m, params, uint(seg), float(rel) / float(params.dense_n));
 }
 
 kernel void recovery_peaks_private(
@@ -1292,14 +1288,13 @@ kernel void recovery_peaks_private(
     }
 
     const uint k = params.k;
+    const ulong row_offset = ulong(row) * ulong(k);
     float m[64];
 
     float ymin = INFINITY;
     float ymax = -INFINITY;
     for (uint i = 0; i < k; ++i) {
-        const float value = params.response_layout == 0
-            ? response[ulong(row) * ulong(k) + ulong(i)]
-            : response[ulong(i) * ulong(params.plane_size) + ulong(row)];
+        const float value = response[row_offset + i];
         ymin = min(ymin, value);
         ymax = max(ymax, value);
     }
@@ -1308,15 +1303,9 @@ kernel void recovery_peaks_private(
     for (uint i = 0; i < k; ++i) {
         const uint prev = (i == 0) ? k - 1 : i - 1;
         const uint next = (i + 1 == k) ? 0 : i + 1;
-        const float y_prev = params.response_layout == 0
-            ? response[ulong(row) * ulong(k) + ulong(prev)]
-            : response[ulong(prev) * ulong(params.plane_size) + ulong(row)];
-        const float y_curr = params.response_layout == 0
-            ? response[ulong(row) * ulong(k) + ulong(i)]
-            : response[ulong(i) * ulong(params.plane_size) + ulong(row)];
-        const float y_next = params.response_layout == 0
-            ? response[ulong(row) * ulong(k) + ulong(next)]
-            : response[ulong(next) * ulong(params.plane_size) + ulong(row)];
+        const float y_prev = response[row_offset + prev];
+        const float y_curr = response[row_offset + i];
+        const float y_next = response[row_offset + next];
         const float rhs = params.rhs_scale * (y_next - 2.0f * y_curr + y_prev);
         if (i == 0) {
             m[i] = rhs * inv_denom[i];
@@ -1344,12 +1333,8 @@ kernel void recovery_peaks_private(
         const uint next = (i + 1 == k) ? 0 : i + 1;
         const float a = 3.0f * params.h2_over6 * (m[next] - m[i]);
         const float b = 6.0f * params.h2_over6 * m[i];
-        const float y_i = params.response_layout == 0
-            ? response[ulong(row) * ulong(k) + ulong(i)]
-            : response[ulong(i) * ulong(params.plane_size) + ulong(row)];
-        const float y_next = params.response_layout == 0
-            ? response[ulong(row) * ulong(k) + ulong(next)]
-            : response[ulong(next) * ulong(params.plane_size) + ulong(row)];
+        const float y_i = response[row_offset + i];
+        const float y_next = response[row_offset + next];
         const float c = y_next - y_i - params.h2_over6 * (2.0f * m[i] + m[next]);
 
         float roots[2];
@@ -1382,12 +1367,12 @@ kernel void recovery_peaks_private(
             const uint base_idx = recovery_dense_floor_idx(params, i, u);
             uint best_idx = base_idx;
             float best_value =
-                recovery_eval_near_segment_private(response, row, m, params, i, base_idx);
+                recovery_eval_near_segment_private(response, row_offset, m, params, i, base_idx);
             for (uint offset = 0; offset < 2; ++offset) {
                 const uint dense_idx =
                     (base_idx + offset >= params.dense_n) ? base_idx + offset - params.dense_n : base_idx + offset;
                 const float value =
-                    recovery_eval_near_segment_private(response, row, m, params, i, dense_idx);
+                    recovery_eval_near_segment_private(response, row_offset, m, params, i, dense_idx);
                 if (value > best_value) {
                     best_value = value;
                     best_idx = dense_idx;
@@ -1410,9 +1395,7 @@ kernel void recovery_peaks_private(
     float primary_value = top_values[0];
     uint primary_idx = top_indices[0];
     if (primary_value == -INFINITY) {
-        primary_value = params.response_layout == 0
-            ? response[ulong(row) * ulong(k)]
-            : response[ulong(row)];
+        primary_value = response[row_offset];
         primary_idx = 0;
     }
 
@@ -1430,6 +1413,247 @@ kernel void recovery_peaks_private(
         if (dist > params.sep) {
             const RecoveryPeakCandidate candidate =
                 recovery_dense_peak_candidate_private(
+                    response, row_offset, m, params, top_indices[pos]);
+            if (candidate.is_peak) {
+                secondary_value = candidate.value;
+                secondary_idx = candidate.dense_idx;
+                has_secondary = true;
+                break;
+            }
+        }
+    }
+
+    theta_p[row] = float(primary_idx) * params.pi_over_dense;
+    m_p[row] = primary_value;
+
+    const float ratio_den = max(primary_value, 1.0e-30f);
+    const bool suppress = !has_secondary || (secondary_value / ratio_den) < params.tau_sec_floor;
+    if (suppress) {
+        theta_s[row] = as_type<float>(0x7fc00000u);
+        m_s[row] = 0.0f;
+    } else {
+        theta_s[row] = float(secondary_idx) * params.pi_over_dense;
+        m_s[row] = secondary_value;
+    }
+}
+
+inline float recovery_eval_segment_stack(
+    device const float* response,
+    uint row,
+    thread const float* m,
+    constant RecoveryParams& params,
+    uint seg,
+    float u
+) {
+    const uint k = params.k;
+    const uint next = (seg + 1 == k) ? 0 : seg + 1;
+    const float y0 = response[ulong(seg) * ulong(params.plane_size) + ulong(row)];
+    const float y1 = response[ulong(next) * ulong(params.plane_size) + ulong(row)];
+    const float omt = 1.0f - u;
+    const float omt2 = omt * omt;
+    const float u2 = u * u;
+    return y0 * omt + y1 * u +
+        params.h2_over6 *
+            (m[seg] * (omt2 * omt - omt) + m[next] * (u2 * u - u));
+}
+
+inline float recovery_eval_spline_stack(
+    device const float* response,
+    uint row,
+    thread const float* m,
+    constant RecoveryParams& params,
+    uint dense_idx
+) {
+    const ulong scaled = ulong(dense_idx) * ulong(params.k);
+    const uint seg = uint(scaled / ulong(params.dense_n));
+    const uint rem = uint(scaled - ulong(seg) * ulong(params.dense_n));
+    return recovery_eval_segment_stack(
+        response, row, m, params, seg, float(rem) / float(params.dense_n));
+}
+
+inline RecoveryPeakCandidate recovery_dense_peak_candidate_stack(
+    device const float* response,
+    uint row,
+    thread const float* m,
+    constant RecoveryParams& params,
+    uint dense_idx
+) {
+    const uint left_idx = dense_idx == 0 ? params.dense_n - 1 : dense_idx - 1;
+    const uint right_idx = dense_idx + 1 == params.dense_n ? 0 : dense_idx + 1;
+    const float left_value = recovery_eval_spline_stack(response, row, m, params, left_idx);
+    const float center_value = recovery_eval_spline_stack(response, row, m, params, dense_idx);
+    const float right_value = recovery_eval_spline_stack(response, row, m, params, right_idx);
+    RecoveryPeakCandidate candidate;
+    candidate.is_peak = center_value >= left_value && center_value >= right_value;
+    candidate.dense_idx = dense_idx;
+    candidate.value = center_value;
+    return candidate;
+}
+
+inline float recovery_eval_near_segment_stack(
+    device const float* response,
+    uint row,
+    thread const float* m,
+    constant RecoveryParams& params,
+    uint seg_hint,
+    uint dense_idx
+) {
+    int seg = int(seg_hint);
+    int rel = int(dense_idx) * int(params.k) - int(seg_hint) * int(params.dense_n);
+    while (rel < 0) {
+        rel += int(params.dense_n);
+        seg = (seg == 0) ? int(params.k) - 1 : seg - 1;
+    }
+    while (rel >= int(params.dense_n)) {
+        rel -= int(params.dense_n);
+        seg = (seg + 1 == int(params.k)) ? 0 : seg + 1;
+    }
+    return recovery_eval_segment_stack(
+        response, row, m, params, uint(seg), float(rel) / float(params.dense_n));
+}
+
+kernel void recovery_peaks_private_stack(
+    device const float* response [[buffer(0)]],
+    device const float* cprime [[buffer(1)]],
+    device const float* inv_denom [[buffer(2)]],
+    device const float* z_solve [[buffer(3)]],
+    device float* theta_p [[buffer(4)]],
+    device float* m_p [[buffer(5)]],
+    device float* theta_s [[buffer(6)]],
+    device float* m_s [[buffer(7)]],
+    device float* row_range [[buffer(8)]],
+    constant RecoveryParams& params [[buffer(9)]],
+    uint row [[thread_position_in_grid]]
+) {
+    if (row >= params.n_rows || params.k > 64) {
+        return;
+    }
+
+    const uint k = params.k;
+    float m[64];
+
+    float ymin = INFINITY;
+    float ymax = -INFINITY;
+    for (uint i = 0; i < k; ++i) {
+        const float value = response[ulong(i) * ulong(params.plane_size) + ulong(row)];
+        ymin = min(ymin, value);
+        ymax = max(ymax, value);
+    }
+    row_range[row] = ymax - ymin;
+
+    for (uint i = 0; i < k; ++i) {
+        const uint prev = (i == 0) ? k - 1 : i - 1;
+        const uint next = (i + 1 == k) ? 0 : i + 1;
+        const float y_prev = response[ulong(prev) * ulong(params.plane_size) + ulong(row)];
+        const float y_curr = response[ulong(i) * ulong(params.plane_size) + ulong(row)];
+        const float y_next = response[ulong(next) * ulong(params.plane_size) + ulong(row)];
+        const float rhs = params.rhs_scale * (y_next - 2.0f * y_curr + y_prev);
+        if (i == 0) {
+            m[i] = rhs * inv_denom[i];
+        } else {
+            m[i] = (rhs - m[i - 1]) * inv_denom[i];
+        }
+    }
+    for (int i = int(k) - 2; i >= 0; --i) {
+        m[uint(i)] = m[uint(i)] - cprime[uint(i)] * m[uint(i) + 1];
+    }
+    const float correction =
+        (m[0] + params.gamma_inv * m[k - 1]) * params.cyclic_denom_inv;
+    for (uint i = 0; i < k; ++i) {
+        m[i] = m[i] - correction * z_solve[i];
+    }
+
+    float top_values[7];
+    uint top_indices[7];
+    for (uint i = 0; i < 7; ++i) {
+        top_values[i] = -INFINITY;
+        top_indices[i] = 0;
+    }
+
+    for (uint i = 0; i < k; ++i) {
+        const uint next = (i + 1 == k) ? 0 : i + 1;
+        const float a = 3.0f * params.h2_over6 * (m[next] - m[i]);
+        const float b = 6.0f * params.h2_over6 * m[i];
+        const float y_i = response[ulong(i) * ulong(params.plane_size) + ulong(row)];
+        const float y_next = response[ulong(next) * ulong(params.plane_size) + ulong(row)];
+        const float c = y_next - y_i - params.h2_over6 * (2.0f * m[i] + m[next]);
+
+        float roots[2];
+        uint n_roots = 0;
+        if (fabs(a) <= 1.0e-20f) {
+            if (fabs(b) > 1.0e-20f) {
+                roots[0] = -c / b;
+                n_roots = 1;
+            }
+        } else {
+            const float disc = b * b - 4.0f * a * c;
+            if (disc >= 0.0f) {
+                const float sqrt_disc = sqrt(disc);
+                const float denom = 2.0f * a;
+                roots[0] = (-b - sqrt_disc) / denom;
+                roots[1] = (-b + sqrt_disc) / denom;
+                n_roots = 2;
+            }
+        }
+
+        for (uint root_idx = 0; root_idx < n_roots; ++root_idx) {
+            const float u = roots[root_idx];
+            if (u <= 0.0f || u >= 1.0f) {
+                continue;
+            }
+            const float second_derivative = m[i] * (1.0f - u) + m[next] * u;
+            if (second_derivative >= 0.0f) {
+                continue;
+            }
+            const uint base_idx = recovery_dense_floor_idx(params, i, u);
+            uint best_idx = base_idx;
+            float best_value =
+                recovery_eval_near_segment_stack(response, row, m, params, i, base_idx);
+            for (uint offset = 0; offset < 2; ++offset) {
+                const uint dense_idx =
+                    (base_idx + offset >= params.dense_n) ? base_idx + offset - params.dense_n : base_idx + offset;
+                const float value =
+                    recovery_eval_near_segment_stack(response, row, m, params, i, dense_idx);
+                if (value > best_value) {
+                    best_value = value;
+                    best_idx = dense_idx;
+                }
+            }
+            for (uint pos = 0; pos < 7; ++pos) {
+                if (best_value > top_values[pos]) {
+                    for (uint shift = 6; shift > pos; --shift) {
+                        top_values[shift] = top_values[shift - 1];
+                        top_indices[shift] = top_indices[shift - 1];
+                    }
+                    top_values[pos] = best_value;
+                    top_indices[pos] = best_idx;
+                    break;
+                }
+            }
+        }
+    }
+
+    float primary_value = top_values[0];
+    uint primary_idx = top_indices[0];
+    if (primary_value == -INFINITY) {
+        primary_value = response[ulong(row)];
+        primary_idx = 0;
+    }
+
+    float secondary_value = -INFINITY;
+    uint secondary_idx = 0;
+    bool has_secondary = false;
+    for (uint pos = 1; pos < 7; ++pos) {
+        if (top_values[pos] == -INFINITY) {
+            break;
+        }
+        uint dist = top_indices[pos] > primary_idx
+            ? top_indices[pos] - primary_idx
+            : primary_idx - top_indices[pos];
+        dist = min(dist, params.dense_n - dist);
+        if (dist > params.sep) {
+            const RecoveryPeakCandidate candidate =
+                recovery_dense_peak_candidate_stack(
                     response, row, m, params, top_indices[pos]);
             if (candidate.is_peak) {
                 secondary_value = candidate.value;
@@ -1646,9 +1870,25 @@ struct MetalState {
     lf_scanline_x_pipeline: ComputePipelineState,
     lf_scanline_y_pipeline: ComputePipelineState,
     recovery_pipeline: ComputePipelineState,
+    recovery_stack_pipeline: ComputePipelineState,
     recovery_reduce_pipeline: ComputePipelineState,
     recovery_validity_pipeline: ComputePipelineState,
     queue: CommandQueue,
+}
+
+struct FusedScratchBuffers {
+    width: c_uint,
+    height: c_uint,
+    n_orientations: c_uint,
+    image_len: usize,
+    stack_len: usize,
+    gx_buffer: Buffer,
+    gy_buffer: Buffer,
+    stack_buffer: Buffer,
+    num_a_buffer: Buffer,
+    num_b_buffer: Buffer,
+    den_a_buffer: Buffer,
+    den_b_buffer: Buffer,
 }
 
 impl MetalState {
@@ -1786,6 +2026,14 @@ impl MetalState {
         let recovery_pipeline = device
             .new_compute_pipeline_state_with_function(&recovery_function)
             .map_err(|err| format!("failed to create recovery Metal compute pipeline: {err}"))?;
+        let recovery_stack_function = library
+            .get_function("recovery_peaks_private_stack", None)
+            .map_err(|err| format!("failed to load stack recovery Metal function: {err}"))?;
+        let recovery_stack_pipeline = device
+            .new_compute_pipeline_state_with_function(&recovery_stack_function)
+            .map_err(|err| {
+                format!("failed to create stack recovery Metal compute pipeline: {err}")
+            })?;
         let recovery_reduce_function = library
             .get_function("recovery_range_reduce", None)
             .map_err(|err| format!("failed to load recovery reduction Metal function: {err}"))?;
@@ -1823,6 +2071,7 @@ impl MetalState {
             lf_scanline_x_pipeline,
             lf_scanline_y_pipeline,
             recovery_pipeline,
+            recovery_stack_pipeline,
             recovery_reduce_pipeline,
             recovery_validity_pipeline,
             queue,
@@ -1833,6 +2082,7 @@ impl MetalState {
 thread_local! {
     static METAL_STATE: RefCell<Option<MetalState>> = RefCell::new(None);
     static LAST_RECOVERY_RANGE: RefCell<Option<(usize, c_float)>> = RefCell::new(None);
+    static FUSED_SCRATCH: RefCell<Option<FusedScratchBuffers>> = RefCell::new(None);
 }
 
 unsafe fn write_error(error_out: *mut c_char, error_len: usize, message: &str) {
@@ -3543,19 +3793,16 @@ unsafe fn run_lf_orientation_stack_box_buffers_with_state(
     box_passes: c_uint,
     box_radius: c_int,
     out_buffer: &Buffer,
+    num_a_buffer: &Buffer,
+    num_b_buffer: &Buffer,
+    den_a_buffer: &Buffer,
+    den_b_buffer: &Buffer,
 ) -> Result<(), String> {
-    let total_pixels = checked_image_pixels(width, height)?;
-    let image_len = checked_len(total_pixels, std::mem::size_of::<c_float>(), "image")?;
     let m_value = effective_m(m)?;
     let radius = box_radius_for_m(m_value, box_passes, box_radius)?;
     let active_passes = if m_value == 0 { 0 } else { box_passes };
 
     let shared_options = MTLResourceOptions::StorageModeShared;
-    let private_options = MTLResourceOptions::StorageModePrivate;
-    let num_a_buffer = state.device.new_buffer(image_len as u64, private_options);
-    let num_b_buffer = state.device.new_buffer(image_len as u64, private_options);
-    let den_a_buffer = state.device.new_buffer(image_len as u64, private_options);
-    let den_b_buffer = state.device.new_buffer(image_len as u64, private_options);
 
     let image_threads = MTLSize {
         width: width as u64,
@@ -3566,6 +3813,11 @@ unsafe fn run_lf_orientation_stack_box_buffers_with_state(
     let x_group = threadgroup_1d(&state.lf_box_x_pipeline);
     let y_group = threadgroup_1d(&state.lf_box_y_pipeline);
     let finalize_group = threadgroup_2d(&state.lf_box_finalize_pipeline);
+    let command_buffer = state.queue.new_command_buffer();
+    command_buffer.set_label("fused LF box orientation stack");
+    let encoder = command_buffer.new_compute_command_encoder();
+    encoder.set_label("fused LF box scanline");
+    let mut retained_buffers: Vec<Buffer> = Vec::with_capacity(n_orientations as usize * 4);
 
     for theta_idx in 0..n_orientations as usize {
         let (line_offsets, x_major, key_min, line_count, cos_t, sin_t) =
@@ -3575,13 +3827,11 @@ unsafe fn run_lf_orientation_stack_box_buffers_with_state(
             std::mem::size_of::<c_int>(),
             "LF box line offset",
         )?;
-        let line_offsets_buffer = state.device.new_buffer_with_bytes_no_copy(
+        let line_offsets_buffer = state.device.new_buffer_with_data(
             line_offsets.as_ptr().cast(),
             offset_len as u64,
             shared_options,
-            None,
         );
-        line_offsets_buffer.did_modify_range(NSRange::new(0, offset_len as u64));
 
         let seed_params = LfBoxSeedParams {
             width,
@@ -3623,17 +3873,16 @@ unsafe fn run_lf_orientation_stack_box_buffers_with_state(
             height: 1,
             depth: 1,
         };
-
-        let command_buffer = state.queue.new_command_buffer();
-        command_buffer.set_label("fused LF box orientation stack");
-        let encoder = command_buffer.new_compute_command_encoder();
-        encoder.set_label("fused LF box scanline");
+        retained_buffers.push(line_offsets_buffer.clone());
+        retained_buffers.push(seed_params_buffer.clone());
+        retained_buffers.push(pass_params_buffer.clone());
+        retained_buffers.push(finalize_params_buffer.clone());
 
         encoder.set_compute_pipeline_state(&state.lf_box_seed_pipeline);
         encoder.set_buffer(0, Some(gx_buffer), 0);
         encoder.set_buffer(1, Some(gy_buffer), 0);
-        encoder.set_buffer(2, Some(&num_a_buffer), 0);
-        encoder.set_buffer(3, Some(&den_a_buffer), 0);
+        encoder.set_buffer(2, Some(num_a_buffer), 0);
+        encoder.set_buffer(3, Some(den_a_buffer), 0);
         encoder.set_buffer(4, Some(&seed_params_buffer), 0);
         encoder.dispatch_threads(image_threads, seed_group);
         encoder.memory_barrier_with_resources(&[num_a_buffer.as_ref(), den_a_buffer.as_ref()]);
@@ -3647,9 +3896,9 @@ unsafe fn run_lf_orientation_stack_box_buffers_with_state(
         let mut read_a = true;
         for _ in 0..active_passes {
             let (src_num, src_den, dst_num, dst_den) = if read_a {
-                (&num_a_buffer, &den_a_buffer, &num_b_buffer, &den_b_buffer)
+                (num_a_buffer, den_a_buffer, num_b_buffer, den_b_buffer)
             } else {
-                (&num_b_buffer, &den_b_buffer, &num_a_buffer, &den_a_buffer)
+                (num_b_buffer, den_b_buffer, num_a_buffer, den_a_buffer)
             };
 
             encoder.set_compute_pipeline_state(pass_pipeline);
@@ -3665,9 +3914,9 @@ unsafe fn run_lf_orientation_stack_box_buffers_with_state(
         }
 
         let (final_num, final_den) = if read_a {
-            (&num_a_buffer, &den_a_buffer)
+            (num_a_buffer, den_a_buffer)
         } else {
-            (&num_b_buffer, &den_b_buffer)
+            (num_b_buffer, den_b_buffer)
         };
         encoder.set_compute_pipeline_state(&state.lf_box_finalize_pipeline);
         encoder.set_buffer(0, Some(final_num), 0);
@@ -3675,10 +3924,10 @@ unsafe fn run_lf_orientation_stack_box_buffers_with_state(
         encoder.set_buffer(2, Some(out_buffer), 0);
         encoder.set_buffer(3, Some(&finalize_params_buffer), 0);
         encoder.dispatch_threads(image_threads, finalize_group);
-        encoder.end_encoding();
-        command_buffer.commit();
-        command_buffer.wait_until_completed();
     }
+    encoder.end_encoding();
+    command_buffer.commit();
+    command_buffer.wait_until_completed();
 
     Ok(())
 }
@@ -4687,10 +4936,15 @@ unsafe fn run_recover_two_peaks_buffer_with_state(
     inv_denom_buffer.did_modify_range(NSRange::new(0, coeff_len as u64));
     z_solve_buffer.did_modify_range(NSRange::new(0, coeff_len as u64));
 
+    let recovery_pipeline = if response_layout == 1 {
+        &state.recovery_stack_pipeline
+    } else {
+        &state.recovery_pipeline
+    };
     let command_buffer = state.queue.new_command_buffer();
     command_buffer.set_label("orientation recovery peaks");
     let encoder = command_buffer.new_compute_command_encoder();
-    encoder.set_compute_pipeline_state(&state.recovery_pipeline);
+    encoder.set_compute_pipeline_state(recovery_pipeline);
     encoder.set_buffer(0, Some(response_buffer), 0);
     encoder.set_buffer(1, Some(&cprime_buffer), 0);
     encoder.set_buffer(2, Some(&inv_denom_buffer), 0);
@@ -4707,7 +4961,7 @@ unsafe fn run_recover_two_peaks_buffer_with_state(
             height: 1,
             depth: 1,
         },
-        threadgroup_1d(&state.recovery_pipeline),
+        threadgroup_1d(recovery_pipeline),
     );
     encoder.end_encoding();
     command_buffer.commit();
@@ -4937,6 +5191,55 @@ unsafe fn run_wvf_lf_recover_with_state(
 
     let shared_options = MTLResourceOptions::StorageModeShared;
     let private_options = MTLResourceOptions::StorageModePrivate;
+    let (
+        gx_buffer,
+        gy_buffer,
+        stack_buffer,
+        num_a_buffer,
+        num_b_buffer,
+        den_a_buffer,
+        den_b_buffer,
+    ) = FUSED_SCRATCH.with(|scratch_cell| {
+        let mut scratch_slot = scratch_cell.borrow_mut();
+        let needs_new = match scratch_slot.as_ref() {
+            Some(scratch) => {
+                scratch.width != width
+                    || scratch.height != height
+                    || scratch.n_orientations != n_orientations
+                    || scratch.image_len != image_len
+                    || scratch.stack_len != stack_len
+            }
+            None => true,
+        };
+        if needs_new {
+            *scratch_slot = Some(FusedScratchBuffers {
+                width,
+                height,
+                n_orientations,
+                image_len,
+                stack_len,
+                gx_buffer: state.device.new_buffer(image_len as u64, private_options),
+                gy_buffer: state.device.new_buffer(image_len as u64, private_options),
+                stack_buffer: state.device.new_buffer(stack_len as u64, private_options),
+                num_a_buffer: state.device.new_buffer(image_len as u64, private_options),
+                num_b_buffer: state.device.new_buffer(image_len as u64, private_options),
+                den_a_buffer: state.device.new_buffer(image_len as u64, private_options),
+                den_b_buffer: state.device.new_buffer(image_len as u64, private_options),
+            });
+        }
+        let scratch = scratch_slot
+            .as_ref()
+            .expect("fused scratch buffers were initialized");
+        (
+            scratch.gx_buffer.clone(),
+            scratch.gy_buffer.clone(),
+            scratch.stack_buffer.clone(),
+            scratch.num_a_buffer.clone(),
+            scratch.num_b_buffer.clone(),
+            scratch.den_a_buffer.clone(),
+            scratch.den_b_buffer.clone(),
+        )
+    });
     let image_buffer = state.device.new_buffer_with_bytes_no_copy(
         image.cast(),
         image_len as u64,
@@ -4967,9 +5270,6 @@ unsafe fn run_wvf_lf_recover_with_state(
         shared_options,
         None,
     );
-    let gx_buffer = state.device.new_buffer(image_len as u64, private_options);
-    let gy_buffer = state.device.new_buffer(image_len as u64, private_options);
-    let stack_buffer = state.device.new_buffer(stack_len as u64, private_options);
     let params = KernelParams {
         width,
         height,
@@ -5022,6 +5322,10 @@ unsafe fn run_wvf_lf_recover_with_state(
         box_passes,
         box_radius,
         &stack_buffer,
+        &num_a_buffer,
+        &num_b_buffer,
+        &den_a_buffer,
+        &den_b_buffer,
     )?;
 
     run_recover_two_peaks_buffer_with_state(
