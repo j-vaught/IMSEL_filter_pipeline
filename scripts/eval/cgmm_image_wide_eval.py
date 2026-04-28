@@ -48,6 +48,14 @@ from cgmm_vmm import vmm_fuse_two_pass, theta_M_to_phi_w
 from cgmm_orientation_recovery import find_two_peaks as _orec_find_two_peaks
 
 try:
+    from edgecritic.lf._metal import (
+        lf_response_metal_batch, metal_backend_available)
+    _METAL_LF_OK = metal_backend_available()
+except Exception:
+    _METAL_LF_OK = False
+    lf_response_metal_batch = None
+
+try:
     from edgecritic.wvf._metal import (
         wvf_radius_gradients_metal, metal_backend_available)
     _METAL_OK = metal_backend_available()
@@ -286,26 +294,47 @@ def evaluate(label, channels, sample_pixels, gt_tangent_at_samples,
     secondary_t = np.zeros((N, n_ch * n_m), dtype=np.float64)
     secondary_m = np.zeros((N, n_ch * n_m), dtype=np.float64)
 
+    m_arr = np.asarray(m_values, dtype=np.int32)
     col = 0
     for ch_name, img in channels.items():
         t0 = time.perf_counter()
         g_x, g_y = compute_wvf(img, r, d)
         print(f"  [{label}] WVF channel {ch_name}: "
               f"{time.perf_counter()-t0:.1f}s")
-        for m in m_values:
+
+        if _METAL_LF_OK:
+            # Single batched Metal call: (T orientations, M m-values, P pixels).
             t1 = time.perf_counter()
-            resp = np.zeros((N, n_orientations), dtype=np.float64)
-            for k, theta in enumerate(angles):
-                resp[:, k] = lf_response_at_pixels(g_x, g_y, px, py,
-                                                   float(theta), int(m))
-            t_p, m_p, t_s, m_s = _orec_find_two_peaks(
-                angles, resp, tau_sec_floor=tau_sec_floor)
-            primary_t[:, col] = np.degrees(t_p)
-            primary_m[:, col] = m_p
-            secondary_t[:, col] = np.degrees(t_s)
-            secondary_m[:, col] = m_s
-            col += 1
-            print(f"    m={m:>3}: {time.perf_counter()-t1:.1f}s")
+            grid = lf_response_metal_batch(
+                g_x.astype(np.float32), g_y.astype(np.float32),
+                px, py, angles, m_arr)
+            print(f"    LF metal batch (T={n_orientations}, M={n_m}): "
+                  f"{time.perf_counter()-t1:.2f}s")
+            for m_idx, m in enumerate(m_values):
+                resp = grid[:, m_idx, :].T.astype(np.float64)  # (P, T)
+                t_p, m_p, t_s, m_s = _orec_find_two_peaks(
+                    angles, resp, tau_sec_floor=tau_sec_floor)
+                primary_t[:, col]   = np.degrees(t_p)
+                primary_m[:, col]   = m_p
+                secondary_t[:, col] = np.degrees(t_s)
+                secondary_m[:, col] = m_s
+                col += 1
+        else:
+            for m in m_values:
+                t1 = time.perf_counter()
+                resp = np.zeros((N, n_orientations), dtype=np.float64)
+                for k, theta in enumerate(angles):
+                    resp[:, k] = lf_response_at_pixels(g_x, g_y, px, py,
+                                                       float(theta),
+                                                       int(m))
+                t_p, m_p, t_s, m_s = _orec_find_two_peaks(
+                    angles, resp, tau_sec_floor=tau_sec_floor)
+                primary_t[:, col]   = np.degrees(t_p)
+                primary_m[:, col]   = m_p
+                secondary_t[:, col] = np.degrees(t_s)
+                secondary_m[:, col] = m_s
+                col += 1
+                print(f"    m={m:>3}: {time.perf_counter()-t1:.1f}s")
 
     return primary_t, primary_m, secondary_t, secondary_m
 
