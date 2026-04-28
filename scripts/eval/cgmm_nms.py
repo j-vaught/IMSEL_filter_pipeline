@@ -141,7 +141,12 @@ def enhanced_nms(theta_primary, M_primary, theta_sec, M_sec, v_fused,
 
     Output is M_primary where keep else 0.
     """
-    if corner_method not in ("or", "bypass", "sec_mag"):
+    if corner_method not in ("or", "bypass", "sec_mag",
+                              "localmax_M_sec",
+                              "localmax_corner_energy",
+                              "localmax_mu_sep",
+                              "localmax_dt",
+                              "localmax_dt_M_sec"):
         raise ValueError(f"unknown corner_method: {corner_method!r}")
     M_primary = np.asarray(M_primary, dtype=np.float64)
     M_sec_arr = np.asarray(M_sec,     dtype=np.float64)
@@ -165,6 +170,34 @@ def enhanced_nms(theta_primary, M_primary, theta_sec, M_sec, v_fused,
     if corner_method == "bypass":
         # Force-keep every flagged corner pixel regardless of any check.
         keep |= sec_present
+    elif corner_method.startswith("localmax_"):
+        # First run the standard OR rule, then UNION-in detected
+        # corner pixels (3x3 local maxima of a corner-localisation
+        # signal) dilated by 2 px for zone coverage.
+        from scipy import ndimage
+        if sec_present.any():
+            idx = np.where(sec_present)[0]
+            keep_sec = nms_check_vec(
+                M_primary, xs[idx], ys[idx],
+                theta_sec[ys[idx], xs[idx]],
+                neighborhood, angular_fidelity)
+            keep[idx] = keep[idx] | keep_sec
+        # Decode signal name and detect.
+        sig_name = corner_method.split("_", 1)[1]
+        sig_lookup = dict(M_sec="M_sec",
+                          corner_energy="corner_energy",
+                          mu_sep="mu_sep_weighted",
+                          dt="distance_transform",
+                          dt_M_sec="dt_x_M_sec")
+        corners_full = detect_corner_pixels(
+            M_primary, M_sec_arr, theta_primary, theta_sec, v_fused,
+            method=sig_lookup[sig_name])
+        # Dilate detected corners by 2 px to recover the immediate
+        # corner zone NMS would otherwise have thinned.
+        corner_zone = ndimage.binary_dilation(corners_full,
+                                              iterations=2)
+        # OR into the per-pixel keep array (operating on the (xs, ys) subset).
+        keep |= corner_zone[ys, xs]
     elif sec_present.any():
         idx = np.where(sec_present)[0]
         if corner_method == "or":
@@ -181,6 +214,71 @@ def enhanced_nms(theta_primary, M_primary, theta_sec, M_sec, v_fused,
 
     out[ys[keep], xs[keep]] = M_primary[ys[keep], xs[keep]]
     return out
+
+
+# ---------------------------------------------------------------------
+# Geometric corner detection (true junction localisation)
+# ---------------------------------------------------------------------
+
+def _half_circle_diff(a, b):
+    """Smallest unsigned line-orientation distance between two angles
+    in [0, pi); result is in [0, pi/2]."""
+    d = np.abs(a - b)
+    return np.minimum(d, np.pi - d)
+
+
+def detect_corner_pixels(M_primary, M_sec, theta_primary, theta_sec,
+                          v_fused, method="corner_energy",
+                          min_distance=15):
+    """Detect TRUE corner pixels (the geometric junction itself).
+
+    Uses skimage.feature.peak_local_max which handles plateaus correctly
+    (one pixel per peak, not the whole plateau).  min_distance is the
+    minimum separation between detected peaks.
+
+    method:
+        'M_sec'             - M_sec alone
+        'corner_energy'     - M_primary * M_sec  (default)
+        'mu_sep_weighted'   - M_sec * |theta_p - theta_s|  (rad)
+        'distance_transform'- distance to boundary of (M_sec>0) blob
+        'dt_x_M_sec'        - distance-transform * M_sec
+    """
+    from scipy import ndimage
+    from skimage.feature import peak_local_max
+
+    M_p = np.asarray(M_primary, dtype=np.float64)
+    M_s = np.asarray(M_sec,     dtype=np.float64)
+    th_p = np.asarray(theta_primary, dtype=np.float64)
+    th_s = np.asarray(theta_sec,     dtype=np.float64)
+
+    valid = (v_fused == 1) & (M_s > 0) & np.isfinite(th_s)
+
+    if method == "M_sec":
+        score = M_s
+    elif method == "corner_energy":
+        score = M_p * M_s
+    elif method == "mu_sep_weighted":
+        th_s_safe = np.where(np.isfinite(th_s), th_s, 0.0)
+        sep = _half_circle_diff(th_p, th_s_safe)
+        score = M_s * sep
+    elif method == "distance_transform":
+        score = ndimage.distance_transform_edt(valid).astype(np.float64)
+    elif method == "dt_x_M_sec":
+        dt = ndimage.distance_transform_edt(valid).astype(np.float64)
+        score = dt * M_s
+    else:
+        raise ValueError(f"unknown corner detector: {method!r}")
+
+    # Mask out invalid regions and find true peaks.
+    score_masked = np.where(valid, score, 0.0)
+    peaks = peak_local_max(score_masked, min_distance=min_distance,
+                           threshold_abs=1e-12,
+                           exclude_border=False)
+    is_corner = np.zeros_like(valid)
+    if len(peaks):
+        is_corner[peaks[:, 0], peaks[:, 1]] = True
+    is_corner &= valid
+    return is_corner
 
 
 # ---------------------------------------------------------------------

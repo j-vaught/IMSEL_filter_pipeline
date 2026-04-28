@@ -38,7 +38,7 @@ def main():
     if args.invert:
         bg, fg = 255, 0
 
-    for nbh in (1, 2, 3):
+    for nbh in (1, 2, 3, 4, 5):
         for fid in ("A8", "A16", "Acont"):
             out = enhanced_nms(th_p, M_p, th_s, M_s, v,
                                neighborhood=nbh, angular_fidelity=fid,

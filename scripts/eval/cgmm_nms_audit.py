@@ -95,7 +95,7 @@ def ridge_thickness(nms_mask, theta_primary):
 
 VARIANTS = [
     (n, fid)
-    for n in (1, 2, 3)
+    for n in (1, 2, 3, 4, 5)
     for fid in ("A8", "A16", "Acont")
 ]
 

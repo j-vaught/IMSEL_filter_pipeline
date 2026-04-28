@@ -121,6 +121,26 @@ def main():
                                           all_mask, real_corner,
                                           th_p, t_sec, n_valid)})
 
+        # --- (e) localmax corner detection (5 score-field variants) ---
+        for sig_label, cm in (
+                ("localmax M_sec",         "localmax_M_sec"),
+                ("localmax M_p*M_s",       "localmax_corner_energy"),
+                ("localmax M_s*musep",     "localmax_mu_sep"),
+                ("localmax dt(M_s>0)",     "localmax_dt"),
+                ("localmax dt*M_s",        "localmax_dt_M_sec"),
+        ):
+            t0 = time.perf_counter()
+            nms_lm = enhanced_nms(th_p, M_p, th_s, M_s, v,
+                                  neighborhood=args.neighborhood,
+                                  angular_fidelity=args.angular_fidelity,
+                                  corner_method=cm)
+            t_lm = time.perf_counter() - t0
+            out_rows.append({"condition": cond_label,
+                             **evaluate_method(sig_label,
+                                              nms_lm > 0,
+                                              all_mask, real_corner,
+                                              th_p, t_lm, n_valid)})
+
         # --- (d) hysteresis post-process on the OR baseline -----------
         # Pick HIGH/LOW thresholds as percentiles of the OR baseline's
         # surviving magnitudes (so the same threshold rule applies in
