@@ -205,16 +205,16 @@ def test_lf_orientation_length_stack_box_matches_loop():
     rng = np.random.default_rng(453)
     g_x = rng.normal(size=(17, 19)).astype(np.float32)
     g_y = rng.normal(size=(17, 19)).astype(np.float32)
-    ms = np.array([0, 4, 9], dtype=np.int32)
+    lf_half_lengths = np.array([0, 4, 9], dtype=np.int32)
     n_orientations = 7
 
     got = lf_orientation_length_stack_metal(
-        g_x, g_y, ms=ms, n_orientations=n_orientations
+        g_x, g_y, lf_half_lengths=lf_half_lengths, n_orientations=n_orientations
     )
 
     assert got.dtype == np.float32
-    assert got.shape == (n_orientations, *g_x.shape, ms.size)
-    for m_idx, m_value in enumerate(ms):
+    assert got.shape == (n_orientations, *g_x.shape, lf_half_lengths.size)
+    for m_idx, m_value in enumerate(lf_half_lengths):
         expected = lf_orientation_stack_metal(
             g_x,
             g_y,
@@ -228,12 +228,12 @@ def test_lf_orientation_length_stack_box_matches_loop():
     legacy = lf_orientation_length_stack_metal(
         g_x,
         g_y,
-        ms=ms,
+        lf_half_lengths=lf_half_lengths,
         n_orientations=n_orientations,
         output_layout="theta_m_yx",
-        orientation_chunk_size=3,
+        max_chunk_bytes=3 * g_x.size * lf_half_lengths.size * np.dtype(np.float32).itemsize,
     )
-    assert legacy.shape == (n_orientations, ms.size, *g_x.shape)
+    assert legacy.shape == (n_orientations, lf_half_lengths.size, *g_x.shape)
     assert np.allclose(np.moveaxis(got, -1, 1), legacy, rtol=0.0, atol=0.0)
 
 
@@ -242,33 +242,50 @@ def test_lf_orientation_length_stack_validation_and_reusable_output():
 
     g_x = np.zeros((5, 6), dtype=np.float32)
     g_y = np.ones((5, 6), dtype=np.float32)
-    ms = np.array([1, 3], dtype=np.int32)
+    lf_half_lengths = np.array([1, 3], dtype=np.int32)
     out = np.empty((4, 5, 6, 2), dtype=np.float32)
 
     reused = lf_orientation_length_stack_metal(
-        g_x, g_y, ms=ms, n_orientations=4, out=out, orientation_chunk_size=2
+        g_x,
+        g_y,
+        lf_half_lengths=lf_half_lengths,
+        n_orientations=4,
+        out=out,
+        max_chunk_bytes=2 * g_x.size * lf_half_lengths.size * np.dtype(np.float32).itemsize,
     )
 
     assert reused is out
     assert np.isfinite(reused).all()
 
     with pytest.raises(ValueError, match="method"):
-        lf_orientation_length_stack_metal(g_x, g_y, ms=ms, n_orientations=4, method="exact")
+        lf_orientation_length_stack_metal(
+            g_x, g_y, lf_half_lengths=lf_half_lengths, n_orientations=4, method="exact"
+        )
     with pytest.raises(ValueError, match="box_passes"):
-        lf_orientation_length_stack_metal(g_x, g_y, ms=ms, n_orientations=4, box_passes=2)
+        lf_orientation_length_stack_metal(
+            g_x, g_y, lf_half_lengths=lf_half_lengths, n_orientations=4, box_passes=2
+        )
     with pytest.raises(ValueError, match="output_layout"):
         lf_orientation_length_stack_metal(
-            g_x, g_y, ms=ms, n_orientations=4, output_layout="unknown"
+            g_x, g_y, lf_half_lengths=lf_half_lengths, n_orientations=4, output_layout="unknown"
         )
-    with pytest.raises(ValueError, match="orientation_chunk_size"):
+    with pytest.raises(ValueError, match="max_chunk_bytes"):
         lf_orientation_length_stack_metal(
-            g_x, g_y, ms=ms, n_orientations=4, orientation_chunk_size=0
+            g_x, g_y, lf_half_lengths=lf_half_lengths, n_orientations=4, max_chunk_bytes=0
         )
-    with pytest.raises(ValueError, match="ms"):
-        lf_orientation_length_stack_metal(g_x, g_y, ms=np.zeros((1, 2), dtype=np.int32))
+    with pytest.raises(ValueError, match="lf_half_lengths"):
+        lf_orientation_length_stack_metal(
+            g_x, g_y, lf_half_lengths=np.zeros((1, 2), dtype=np.int32)
+        )
+    with pytest.raises(TypeError, match="ms"):
+        lf_orientation_length_stack_metal(g_x, g_y, ms=lf_half_lengths)
     with pytest.raises(ValueError, match="out"):
         lf_orientation_length_stack_metal(
-            g_x, g_y, ms=ms, n_orientations=4, out=np.empty((4, 5, 6), dtype=np.float32)
+            g_x,
+            g_y,
+            lf_half_lengths=lf_half_lengths,
+            n_orientations=4,
+            out=np.empty((4, 5, 6), dtype=np.float32),
         )
 
 
@@ -277,18 +294,17 @@ def test_lf_orientation_length_stack_memmap_output(tmp_path):
 
     g_x = np.zeros((5, 6), dtype=np.float32)
     g_y = np.ones((5, 6), dtype=np.float32)
-    ms = np.array([1, 3], dtype=np.int32)
+    lf_half_lengths = np.array([1, 3], dtype=np.int32)
     shape = (4, 5, 6, 2)
     out = np.memmap(tmp_path / "lf_out.dat", dtype=np.float32, mode="w+", shape=shape)
 
     reused = lf_orientation_length_stack_metal(
         g_x,
         g_y,
-        ms=ms,
+        lf_half_lengths=lf_half_lengths,
         n_orientations=4,
         out=out,
-        orientation_chunk_size=2,
-        flush_chunks=True,
+        max_chunk_bytes=2 * g_x.size * lf_half_lengths.size * np.dtype(np.float32).itemsize,
     )
 
     assert reused is out

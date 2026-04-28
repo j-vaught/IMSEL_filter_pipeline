@@ -247,24 +247,22 @@ def lf_response_metal_batch(
 def lf_orientation_length_stack_metal(
     g_x: np.ndarray,
     g_y: np.ndarray,
-    ms: np.ndarray,
+    lf_half_lengths: np.ndarray,
     n_orientations: int = 16,
     output_dtype: np.dtype | type = np.float32,
     method: str = "box",
     out: np.ndarray | None = None,
     box_passes: int = 1,
     output_layout: str = "theta_yx_m",
-    orientation_chunk_size: int | None = None,
     max_chunk_bytes: int | None = 2 * 1024 * 1024 * 1024,
     chunk_pause_s: float = 0.0,
-    flush_chunks: bool = False,
 ) -> np.ndarray:
     """Compute full-frame LF responses for multiple lengths.
 
     The preferred output layout is ``theta_yx_m``, with shape
-    ``(n_orientations, H, W, n_ms)``. The legacy ``theta_m_yx`` layout returns
-    ``(n_orientations, n_ms, H, W)``. The current multi-length full-frame
-    backend supports the one-pass box method.
+    ``(n_orientations, H, W, n_lengths)``. The legacy ``theta_m_yx`` layout
+    returns ``(n_orientations, n_lengths, H, W)``. The current multi-length
+    full-frame backend supports the one-pass box method.
     """
     method_name = str(method).lower()
     if method_name != "box":
@@ -282,50 +280,50 @@ def lf_orientation_length_stack_metal(
         raise ValueError("chunk_pause_s must be non-negative")
 
     gx, gy = _components(g_x, g_y)
-    m_arr = np.ascontiguousarray(ms, dtype=np.int32)
-    if m_arr.ndim != 1:
-        raise ValueError("ms must be a 1-D array")
-    if m_arr.size > _MAX_BATCH_MS:
-        raise ValueError(f"full-image batched LF supports at most {_MAX_BATCH_MS} m values")
-    _as_uint32(m_arr.size, "m count")
+    length_arr = np.ascontiguousarray(lf_half_lengths, dtype=np.int32)
+    if length_arr.ndim != 1:
+        raise ValueError("lf_half_lengths must be a 1-D array")
+    if length_arr.size > _MAX_BATCH_MS:
+        raise ValueError(
+            f"full-image batched LF supports at most {_MAX_BATCH_MS} LF half-lengths"
+        )
+    _as_uint32(length_arr.size, "LF half-length count")
 
     h, w = gx.shape
     n = int(n_orientations)
-    shape = (n, m_arr.size, h, w) if layout_name == "theta_m_yx" else (n, h, w, m_arr.size)
+    shape = (
+        (n, length_arr.size, h, w)
+        if layout_name == "theta_m_yx"
+        else (n, h, w, length_arr.size)
+    )
     if out is None:
         out_arr = np.empty(shape, dtype=np.float32)
     else:
         out_arr = np.asanyarray(out)
         if out_arr.shape != shape:
             if layout_name == "theta_m_yx":
-                expected = "(n_orientations, n_ms, H, W)"
+                expected = "(n_orientations, n_lengths, H, W)"
             else:
-                expected = "(n_orientations, H, W, n_ms)"
+                expected = "(n_orientations, H, W, n_lengths)"
             raise ValueError(f"out must have shape {expected}")
         if out_arr.dtype != np.dtype(np.float32):
             raise ValueError("out must have dtype float32")
         if not out_arr.flags.c_contiguous:
             raise ValueError("out must be C-contiguous")
-    if m_arr.size == 0:
+    if length_arr.size == 0:
         dtype = np.dtype(output_dtype)
         if dtype == np.dtype(np.float32):
             return out_arr
         return out_arr.astype(dtype)
 
-    if orientation_chunk_size is None:
-        if max_chunk_bytes is None:
-            chunk_size = n
-        else:
-            chunk_byte_limit = int(max_chunk_bytes)
-            if chunk_byte_limit <= 0:
-                raise ValueError("max_chunk_bytes must be positive or None")
-            bytes_per_orientation = h * w * m_arr.size * np.dtype(np.float32).itemsize
-            chunk_size = max(1, min(n, chunk_byte_limit // bytes_per_orientation))
+    if max_chunk_bytes is None:
+        chunk_size = n
     else:
-        chunk_size = int(orientation_chunk_size)
-        if chunk_size <= 0:
-            raise ValueError("orientation_chunk_size must be positive or None")
-        chunk_size = min(chunk_size, n)
+        chunk_byte_limit = int(max_chunk_bytes)
+        if chunk_byte_limit <= 0:
+            raise ValueError("max_chunk_bytes must be positive or None")
+        bytes_per_orientation = h * w * length_arr.size * np.dtype(np.float32).itemsize
+        chunk_size = max(1, min(n, chunk_byte_limit // bytes_per_orientation))
 
     error_buffer = ctypes.create_string_buffer(4096)
     lib = _load_lf_library()
@@ -342,8 +340,8 @@ def lf_orientation_length_stack_metal(
             _as_uint32(theta_start, "orientation start"),
             _as_uint32(theta_count, "orientation chunk count"),
             _as_uint32(n, "orientation count"),
-            m_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
-            _as_uint32(m_arr.size, "m count"),
+            length_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
+            _as_uint32(length_arr.size, "LF half-length count"),
             _as_uint32(layout_codes[layout_name], "output layout"),
             out_chunk.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
             error_buffer,
@@ -351,8 +349,6 @@ def lf_orientation_length_stack_metal(
         )
         if status != 0:
             _raise_native_error(error_buffer)
-        if flush_chunks and hasattr(out_arr, "flush"):
-            out_arr.flush()
         if pause_seconds > 0.0 and theta_start + theta_count < n:
             import time
 
