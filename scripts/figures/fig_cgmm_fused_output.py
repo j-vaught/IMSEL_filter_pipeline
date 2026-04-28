@@ -93,7 +93,7 @@ def main():
     secondary_valid = v & ~np.isnan(theta_s) & ~suppr
     M_valid         = v & (M_fused > 0)
 
-    # Panel (a): input RGB image.
+    # Panel (a): input RGB image at full resolution.
     img_input = np.asarray(Image.open(args.source_image).convert("RGB"))
     Image.fromarray(img_input).save(args.out_dir / "panel_a_input.png",
                                     optimize=True)
