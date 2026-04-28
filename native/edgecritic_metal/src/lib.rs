@@ -111,6 +111,25 @@ struct LfScanlineParams {
     uint chunk_len;
 };
 
+struct RecoveryParams {
+    uint n_rows;
+    uint k;
+    uint dense_n;
+    uint sep;
+    float tau_sec_floor;
+    float h;
+    float h2_over6;
+    float rhs_scale;
+    float pi_over_dense;
+    float gamma_inv;
+    float cyclic_denom_inv;
+};
+
+struct RecoveryReduceParams {
+    uint count;
+    uint group_size;
+};
+
 inline int reflect_index(int value, int limit) {
     if (limit <= 1) {
         return 0;
@@ -876,6 +895,182 @@ kernel void lf_gaussian_scanline_y_major(
     const uint idx = y * params.width + uint(x);
     out[params.theta_idx * plane_size + idx] = den > 0.0f ? fabs(num / den) : 0.0f;
 }
+
+inline float recovery_eval_spline(
+    threadgroup const float* y,
+    threadgroup const float* m,
+    constant RecoveryParams& params,
+    uint dense_idx
+) {
+    const uint k = params.k;
+    const uint seg = uint((ulong(dense_idx) * ulong(k)) / ulong(params.dense_n));
+    const uint next = (seg + 1 == k) ? 0 : seg + 1;
+    const float scaled = (float(dense_idx) * float(k)) / float(params.dense_n);
+    const float u = scaled - float(seg);
+    const float omt = 1.0f - u;
+    const float omt2 = omt * omt;
+    const float u2 = u * u;
+    return y[seg] * omt + y[next] * u +
+        params.h2_over6 *
+            (m[seg] * (omt2 * omt - omt) + m[next] * (u2 * u - u));
+}
+
+kernel void recovery_peaks(
+    device const float* response [[buffer(0)]],
+    device const float* cprime [[buffer(1)]],
+    device const float* inv_denom [[buffer(2)]],
+    device const float* z_solve [[buffer(3)]],
+    device float* theta_p [[buffer(4)]],
+    device float* m_p [[buffer(5)]],
+    device float* theta_s [[buffer(6)]],
+    device float* m_s [[buffer(7)]],
+    device float* row_range [[buffer(8)]],
+    constant RecoveryParams& params [[buffer(9)]],
+    threadgroup float* y_scratch [[threadgroup(0)]],
+    threadgroup float* m_scratch [[threadgroup(1)]],
+    uint tid [[thread_position_in_threadgroup]],
+    uint row [[thread_position_in_grid]]
+) {
+    if (row >= params.n_rows) {
+        return;
+    }
+
+    const uint k = params.k;
+    threadgroup float* y = y_scratch + ulong(tid) * ulong(k);
+    threadgroup float* m = m_scratch + ulong(tid) * ulong(k);
+    const ulong row_offset = ulong(row) * ulong(k);
+
+    float ymin = INFINITY;
+    float ymax = -INFINITY;
+    for (uint i = 0; i < k; ++i) {
+        const float value = response[row_offset + i];
+        y[i] = value;
+        ymin = min(ymin, value);
+        ymax = max(ymax, value);
+    }
+    row_range[row] = ymax - ymin;
+
+    if (k == 1) {
+        m[0] = 0.0f;
+    } else if (k == 2) {
+        const float m0 = 6.0f * (y[1] - y[0]) / (params.h * params.h);
+        m[0] = m0;
+        m[1] = -m0;
+    } else {
+        for (uint i = 0; i < k; ++i) {
+            const uint prev = (i == 0) ? k - 1 : i - 1;
+            const uint next = (i + 1 == k) ? 0 : i + 1;
+            const float rhs = params.rhs_scale * (y[next] - 2.0f * y[i] + y[prev]);
+            if (i == 0) {
+                m[i] = rhs * inv_denom[i];
+            } else {
+                m[i] = (rhs - m[i - 1]) * inv_denom[i];
+            }
+        }
+        for (int i = int(k) - 2; i >= 0; --i) {
+            m[uint(i)] = m[uint(i)] - cprime[uint(i)] * m[uint(i) + 1];
+        }
+        const float correction =
+            (m[0] + params.gamma_inv * m[k - 1]) * params.cyclic_denom_inv;
+        for (uint i = 0; i < k; ++i) {
+            m[i] = m[i] - correction * z_solve[i];
+        }
+    }
+
+    const uint dense_last = params.dense_n - 1;
+    float prev = recovery_eval_spline(y, m, params, dense_last);
+    float curr = recovery_eval_spline(y, m, params, 0);
+    float primary_value = -INFINITY;
+    uint primary_idx = 0;
+    for (uint j = 0; j < params.dense_n; ++j) {
+        const uint next_idx = (j + 1 == params.dense_n) ? 0 : j + 1;
+        const float next_value = recovery_eval_spline(y, m, params, next_idx);
+        if (curr >= prev && curr >= next_value && curr > primary_value) {
+            primary_value = curr;
+            primary_idx = j;
+        }
+        prev = curr;
+        curr = next_value;
+    }
+
+    prev = recovery_eval_spline(y, m, params, dense_last);
+    curr = recovery_eval_spline(y, m, params, 0);
+    float secondary_value = -INFINITY;
+    uint secondary_idx = 0;
+    bool has_secondary = false;
+    for (uint j = 0; j < params.dense_n; ++j) {
+        const uint next_idx = (j + 1 == params.dense_n) ? 0 : j + 1;
+        const float next_value = recovery_eval_spline(y, m, params, next_idx);
+        uint dist = j > primary_idx ? j - primary_idx : primary_idx - j;
+        dist = min(dist, params.dense_n - dist);
+        if (dist > params.sep && curr >= prev && curr >= next_value && curr > secondary_value) {
+            secondary_value = curr;
+            secondary_idx = j;
+            has_secondary = true;
+        }
+        prev = curr;
+        curr = next_value;
+    }
+
+    theta_p[row] = float(primary_idx) * params.pi_over_dense;
+    m_p[row] = primary_value;
+
+    const float ratio_den = max(primary_value, 1.0e-30f);
+    const bool suppress = !has_secondary || (secondary_value / ratio_den) < params.tau_sec_floor;
+    if (suppress) {
+        theta_s[row] = as_type<float>(0x7fc00000u);
+        m_s[row] = 0.0f;
+    } else {
+        theta_s[row] = float(secondary_idx) * params.pi_over_dense;
+        m_s[row] = secondary_value;
+    }
+}
+
+kernel void recovery_range_reduce(
+    device const float* input [[buffer(0)]],
+    device float* output [[buffer(1)]],
+    constant RecoveryReduceParams& params [[buffer(2)]],
+    threadgroup float* scratch [[threadgroup(0)]],
+    uint tid [[thread_position_in_threadgroup]],
+    uint group_id [[threadgroup_position_in_grid]]
+) {
+    const uint base = group_id * params.group_size * 2 + tid;
+    float best = 0.0f;
+    if (base < params.count) {
+        best = input[base];
+    }
+    const uint second = base + params.group_size;
+    if (second < params.count) {
+        best = max(best, input[second]);
+    }
+    scratch[tid] = best;
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    for (uint stride = params.group_size >> 1; stride > 0; stride >>= 1) {
+        if (tid < stride) {
+            scratch[tid] = max(scratch[tid], scratch[tid + stride]);
+        }
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+    }
+
+    if (tid == 0) {
+        output[group_id] = scratch[0];
+    }
+}
+
+kernel void recovery_validity_flags(
+    device const float* row_range [[buffer(0)]],
+    device const float* ref_range [[buffer(1)]],
+    device uchar* v [[buffer(2)]],
+    constant uint& n_rows [[buffer(3)]],
+    constant float& tau_validity [[buffer(4)]],
+    uint row [[thread_position_in_grid]]
+) {
+    if (row >= n_rows) {
+        return;
+    }
+    v[row] = row_range[row] > tau_validity * ref_range[0] ? uchar(1) : uchar(0);
+}
 "#;
 
 #[repr(C)]
@@ -981,6 +1176,27 @@ struct LfScanlineParams {
     chunk_len: c_uint,
 }
 
+#[repr(C)]
+struct RecoveryParams {
+    n_rows: c_uint,
+    k: c_uint,
+    dense_n: c_uint,
+    sep: c_uint,
+    tau_sec_floor: c_float,
+    h: c_float,
+    h2_over6: c_float,
+    rhs_scale: c_float,
+    pi_over_dense: c_float,
+    gamma_inv: c_float,
+    cyclic_denom_inv: c_float,
+}
+
+#[repr(C)]
+struct RecoveryReduceParams {
+    count: c_uint,
+    group_size: c_uint,
+}
+
 struct MetalState {
     device: Device,
     wvf_pipeline: ComputePipelineState,
@@ -999,6 +1215,9 @@ struct MetalState {
     lf_box_multi_y_pipeline: ComputePipelineState,
     lf_scanline_x_pipeline: ComputePipelineState,
     lf_scanline_y_pipeline: ComputePipelineState,
+    recovery_pipeline: ComputePipelineState,
+    recovery_reduce_pipeline: ComputePipelineState,
+    recovery_validity_pipeline: ComputePipelineState,
     queue: CommandQueue,
 }
 
@@ -1130,6 +1349,28 @@ impl MetalState {
             .map_err(|err| {
                 format!("failed to create LF scanline y-major Metal compute pipeline: {err}")
             })?;
+        let recovery_function = library
+            .get_function("recovery_peaks", None)
+            .map_err(|err| format!("failed to load recovery Metal function: {err}"))?;
+        let recovery_pipeline = device
+            .new_compute_pipeline_state_with_function(&recovery_function)
+            .map_err(|err| format!("failed to create recovery Metal compute pipeline: {err}"))?;
+        let recovery_reduce_function = library
+            .get_function("recovery_range_reduce", None)
+            .map_err(|err| format!("failed to load recovery reduction Metal function: {err}"))?;
+        let recovery_reduce_pipeline = device
+            .new_compute_pipeline_state_with_function(&recovery_reduce_function)
+            .map_err(|err| {
+                format!("failed to create recovery reduction Metal compute pipeline: {err}")
+            })?;
+        let recovery_validity_function = library
+            .get_function("recovery_validity_flags", None)
+            .map_err(|err| format!("failed to load recovery validity Metal function: {err}"))?;
+        let recovery_validity_pipeline = device
+            .new_compute_pipeline_state_with_function(&recovery_validity_function)
+            .map_err(|err| {
+                format!("failed to create recovery validity Metal compute pipeline: {err}")
+            })?;
         let queue = device.new_command_queue();
 
         Ok(Self {
@@ -1150,6 +1391,9 @@ impl MetalState {
             lf_box_multi_y_pipeline,
             lf_scanline_x_pipeline,
             lf_scanline_y_pipeline,
+            recovery_pipeline,
+            recovery_reduce_pipeline,
+            recovery_validity_pipeline,
             queue,
         })
     }
@@ -1211,6 +1455,36 @@ fn threadgroup_1d_with_cap(execution_width: u64, max_threads: u64, cap: u64) -> 
         height: 1,
         depth: 1,
     }
+}
+
+fn recovery_threadgroup(
+    pipeline: &ComputePipelineState,
+    k: usize,
+    max_threadgroup_memory: u64,
+) -> Result<MTLSize, String> {
+    let bytes_per_thread = k
+        .checked_mul(2)
+        .and_then(|value| value.checked_mul(std::mem::size_of::<c_float>()))
+        .ok_or_else(|| "recovery threadgroup scratch size overflowed".to_string())?;
+    if bytes_per_thread == 0 || bytes_per_thread as u64 > max_threadgroup_memory {
+        return Err("recovery threadgroup scratch exceeds device limit".to_string());
+    }
+
+    let execution_width = pipeline.thread_execution_width().max(1);
+    let max_threads = pipeline.max_total_threads_per_threadgroup().max(1);
+    let memory_cap = max_threadgroup_memory / bytes_per_thread as u64;
+    let cap = max_threads.min(256).min(memory_cap).max(1);
+    let width = if cap >= execution_width {
+        (cap / execution_width).max(1) * execution_width
+    } else {
+        cap
+    };
+
+    Ok(MTLSize {
+        width,
+        height: 1,
+        depth: 1,
+    })
 }
 
 fn threadgroup_2d(pipeline: &ComputePipelineState) -> MTLSize {
@@ -1541,6 +1815,60 @@ fn build_lf_box_line_offsets(
         line_count as c_uint,
         cos_t as c_float,
         sin_t as c_float,
+    ))
+}
+
+fn build_recovery_solver(
+    k: usize,
+) -> Result<(Vec<c_float>, Vec<c_float>, Vec<c_float>, c_float), String> {
+    if k == 0 {
+        return Err("k must be positive".to_string());
+    }
+    if k < 3 {
+        return Ok((vec![0.0; k], vec![0.0; k], vec![0.0; k], 0.0));
+    }
+
+    let gamma = -4.0f64;
+    let gamma_inv = 1.0f64 / gamma;
+    let mut cprime = vec![0.0f64; k];
+    let mut inv_denom = vec![0.0f64; k];
+
+    let first_diag = 4.0 - gamma;
+    inv_denom[0] = 1.0 / first_diag;
+    cprime[0] = inv_denom[0];
+    for i in 1..k {
+        let diag = if i + 1 == k { 4.0 - gamma_inv } else { 4.0 };
+        let denom = diag - cprime[i - 1];
+        if denom.abs() <= f64::EPSILON {
+            return Err("recovery spline solver is singular".to_string());
+        }
+        inv_denom[i] = 1.0 / denom;
+        cprime[i] = if i + 1 == k { 0.0 } else { inv_denom[i] };
+    }
+
+    let mut z = vec![0.0f64; k];
+    z[0] = gamma * inv_denom[0];
+    for i in 1..k {
+        let rhs = if i + 1 == k { 1.0 } else { 0.0 };
+        z[i] = (rhs - z[i - 1]) * inv_denom[i];
+    }
+    for i in (0..k - 1).rev() {
+        z[i] -= cprime[i] * z[i + 1];
+    }
+
+    let cyclic_denom = 1.0 + z[0] + gamma_inv * z[k - 1];
+    if cyclic_denom.abs() <= f64::EPSILON {
+        return Err("recovery cyclic correction is singular".to_string());
+    }
+
+    Ok((
+        cprime.into_iter().map(|value| value as c_float).collect(),
+        inv_denom
+            .into_iter()
+            .map(|value| value as c_float)
+            .collect(),
+        z.into_iter().map(|value| value as c_float).collect(),
+        (1.0 / cyclic_denom) as c_float,
     ))
 }
 
@@ -3403,6 +3731,331 @@ pub unsafe extern "C" fn edgecritic_metal_lf_orientation_stack_scanline(
     }
 }
 
+unsafe fn run_recover_two_peaks_with_state(
+    state: &MetalState,
+    response: *const c_float,
+    n_rows: c_uint,
+    k: c_uint,
+    tau_sec_floor: c_float,
+    tau_validity: c_float,
+    dense_n: c_uint,
+    min_sep_frac: c_float,
+    theta_p: *mut c_float,
+    m_p: *mut c_float,
+    theta_s: *mut c_float,
+    m_s: *mut c_float,
+    v: *mut u8,
+) -> Result<(), String> {
+    if n_rows == 0 {
+        return Ok(());
+    }
+
+    let row_count = n_rows as usize;
+    let k_count = k as usize;
+    let response_count = row_count
+        .checked_mul(k_count)
+        .ok_or_else(|| "recovery response element count overflowed".to_string())?;
+    let response_len = checked_len(
+        response_count,
+        std::mem::size_of::<c_float>(),
+        "recovery response",
+    )?;
+    let out_float_len = checked_len(
+        row_count,
+        std::mem::size_of::<c_float>(),
+        "recovery float output",
+    )?;
+    let out_valid_len = checked_len(row_count, std::mem::size_of::<u8>(), "recovery validity")?;
+
+    let (cprime, inv_denom, z_solve, cyclic_denom_inv) = build_recovery_solver(k_count)?;
+    let coeff_len = checked_len(k_count, std::mem::size_of::<c_float>(), "recovery solver")?;
+
+    let sep_raw = (min_sep_frac as f64 * dense_n as f64).trunc();
+    if sep_raw > c_uint::MAX as f64 {
+        return Err("recovery separation is outside uint32 range".to_string());
+    }
+    let sep = sep_raw.max(1.0) as c_uint;
+    let h = std::f64::consts::PI / k_count as f64;
+    let params = RecoveryParams {
+        n_rows,
+        k,
+        dense_n,
+        sep,
+        tau_sec_floor,
+        h: h as c_float,
+        h2_over6: (h * h / 6.0) as c_float,
+        rhs_scale: (6.0 / (h * h)) as c_float,
+        pi_over_dense: (std::f64::consts::PI / dense_n as f64) as c_float,
+        gamma_inv: -0.25,
+        cyclic_denom_inv,
+    };
+
+    let scratch_budget = (state.device.max_threadgroup_memory_length() as u64).min(32 * 1024);
+    let recovery_group = recovery_threadgroup(&state.recovery_pipeline, k_count, scratch_budget)?;
+    let scratch_len = (recovery_group.width as usize)
+        .checked_mul(k_count)
+        .and_then(|value| value.checked_mul(std::mem::size_of::<c_float>()))
+        .ok_or_else(|| "recovery scratch length overflowed".to_string())?;
+    if scratch_len == 0 {
+        return Err("recovery scratch length must be positive".to_string());
+    }
+
+    let shared_options = MTLResourceOptions::StorageModeShared;
+    let response_buffer = state.device.new_buffer_with_bytes_no_copy(
+        response.cast(),
+        response_len as u64,
+        shared_options,
+        None,
+    );
+    let cprime_buffer = state.device.new_buffer_with_bytes_no_copy(
+        cprime.as_ptr().cast(),
+        coeff_len as u64,
+        shared_options,
+        None,
+    );
+    let inv_denom_buffer = state.device.new_buffer_with_bytes_no_copy(
+        inv_denom.as_ptr().cast(),
+        coeff_len as u64,
+        shared_options,
+        None,
+    );
+    let z_solve_buffer = state.device.new_buffer_with_bytes_no_copy(
+        z_solve.as_ptr().cast(),
+        coeff_len as u64,
+        shared_options,
+        None,
+    );
+    let theta_p_buffer = state.device.new_buffer_with_bytes_no_copy(
+        theta_p.cast::<std::ffi::c_void>().cast_const(),
+        out_float_len as u64,
+        shared_options,
+        None,
+    );
+    let m_p_buffer = state.device.new_buffer_with_bytes_no_copy(
+        m_p.cast::<std::ffi::c_void>().cast_const(),
+        out_float_len as u64,
+        shared_options,
+        None,
+    );
+    let theta_s_buffer = state.device.new_buffer_with_bytes_no_copy(
+        theta_s.cast::<std::ffi::c_void>().cast_const(),
+        out_float_len as u64,
+        shared_options,
+        None,
+    );
+    let m_s_buffer = state.device.new_buffer_with_bytes_no_copy(
+        m_s.cast::<std::ffi::c_void>().cast_const(),
+        out_float_len as u64,
+        shared_options,
+        None,
+    );
+    let v_buffer = state.device.new_buffer_with_bytes_no_copy(
+        v.cast::<std::ffi::c_void>().cast_const(),
+        out_valid_len as u64,
+        shared_options,
+        None,
+    );
+    let row_range_buffer = state
+        .device
+        .new_buffer(out_float_len as u64, MTLResourceOptions::StorageModePrivate);
+    let params_buffer = state.device.new_buffer_with_data(
+        (&params as *const RecoveryParams).cast(),
+        std::mem::size_of::<RecoveryParams>() as u64,
+        shared_options,
+    );
+
+    response_buffer.did_modify_range(NSRange::new(0, response_len as u64));
+    cprime_buffer.did_modify_range(NSRange::new(0, coeff_len as u64));
+    inv_denom_buffer.did_modify_range(NSRange::new(0, coeff_len as u64));
+    z_solve_buffer.did_modify_range(NSRange::new(0, coeff_len as u64));
+
+    let command_buffer = state.queue.new_command_buffer();
+    command_buffer.set_label("orientation recovery peaks");
+    let encoder = command_buffer.new_compute_command_encoder();
+    encoder.set_compute_pipeline_state(&state.recovery_pipeline);
+    encoder.set_buffer(0, Some(&response_buffer), 0);
+    encoder.set_buffer(1, Some(&cprime_buffer), 0);
+    encoder.set_buffer(2, Some(&inv_denom_buffer), 0);
+    encoder.set_buffer(3, Some(&z_solve_buffer), 0);
+    encoder.set_buffer(4, Some(&theta_p_buffer), 0);
+    encoder.set_buffer(5, Some(&m_p_buffer), 0);
+    encoder.set_buffer(6, Some(&theta_s_buffer), 0);
+    encoder.set_buffer(7, Some(&m_s_buffer), 0);
+    encoder.set_buffer(8, Some(&row_range_buffer), 0);
+    encoder.set_buffer(9, Some(&params_buffer), 0);
+    encoder.set_threadgroup_memory_length(0, scratch_len as u64);
+    encoder.set_threadgroup_memory_length(1, scratch_len as u64);
+    encoder.dispatch_threads(
+        MTLSize {
+            width: n_rows as u64,
+            height: 1,
+            depth: 1,
+        },
+        recovery_group,
+    );
+    encoder.end_encoding();
+    command_buffer.commit();
+    command_buffer.wait_until_completed();
+
+    let reduce_group = threadgroup_1d(&state.recovery_reduce_pipeline);
+    let reduce_group_size = reduce_group.width as usize;
+    let reduce_scratch_len = checked_len(
+        reduce_group_size,
+        std::mem::size_of::<c_float>(),
+        "recovery reduction scratch",
+    )?;
+    let mut current_buffer = row_range_buffer.clone();
+    let mut current_count = row_count;
+    let mut reduction_buffers = Vec::new();
+    while current_count > 1 {
+        let items_per_group = reduce_group_size
+            .checked_mul(2)
+            .ok_or_else(|| "recovery reduction group size overflowed".to_string())?;
+        let next_count = current_count.div_ceil(items_per_group);
+        let next_len = checked_len(
+            next_count,
+            std::mem::size_of::<c_float>(),
+            "recovery reduction output",
+        )?;
+        let next_buffer = state
+            .device
+            .new_buffer(next_len as u64, MTLResourceOptions::StorageModePrivate);
+        let reduce_params = RecoveryReduceParams {
+            count: c_uint::try_from(current_count)
+                .map_err(|_| "recovery reduction count is outside uint32 range".to_string())?,
+            group_size: c_uint::try_from(reduce_group_size)
+                .map_err(|_| "recovery reduction group size is outside uint32 range".to_string())?,
+        };
+        let reduce_params_buffer = state.device.new_buffer_with_data(
+            (&reduce_params as *const RecoveryReduceParams).cast(),
+            std::mem::size_of::<RecoveryReduceParams>() as u64,
+            shared_options,
+        );
+
+        let command_buffer = state.queue.new_command_buffer();
+        command_buffer.set_label("orientation recovery range reduction");
+        let encoder = command_buffer.new_compute_command_encoder();
+        encoder.set_compute_pipeline_state(&state.recovery_reduce_pipeline);
+        encoder.set_buffer(0, Some(&current_buffer), 0);
+        encoder.set_buffer(1, Some(&next_buffer), 0);
+        encoder.set_buffer(2, Some(&reduce_params_buffer), 0);
+        encoder.set_threadgroup_memory_length(0, reduce_scratch_len as u64);
+        encoder.dispatch_thread_groups(
+            MTLSize {
+                width: next_count as u64,
+                height: 1,
+                depth: 1,
+            },
+            reduce_group,
+        );
+        encoder.end_encoding();
+        command_buffer.commit();
+        command_buffer.wait_until_completed();
+
+        reduction_buffers.push(next_buffer);
+        current_buffer = reduction_buffers
+            .last()
+            .expect("reduction buffer was pushed")
+            .clone();
+        current_count = next_count;
+    }
+
+    let n_rows_buffer = state.device.new_buffer_with_data(
+        (&n_rows as *const c_uint).cast(),
+        std::mem::size_of::<c_uint>() as u64,
+        shared_options,
+    );
+    let tau_validity_buffer = state.device.new_buffer_with_data(
+        (&tau_validity as *const c_float).cast(),
+        std::mem::size_of::<c_float>() as u64,
+        shared_options,
+    );
+    let command_buffer = state.queue.new_command_buffer();
+    command_buffer.set_label("orientation recovery validity");
+    let encoder = command_buffer.new_compute_command_encoder();
+    encoder.set_compute_pipeline_state(&state.recovery_validity_pipeline);
+    encoder.set_buffer(0, Some(&row_range_buffer), 0);
+    encoder.set_buffer(1, Some(&current_buffer), 0);
+    encoder.set_buffer(2, Some(&v_buffer), 0);
+    encoder.set_buffer(3, Some(&n_rows_buffer), 0);
+    encoder.set_buffer(4, Some(&tau_validity_buffer), 0);
+    encoder.dispatch_threads(
+        MTLSize {
+            width: n_rows as u64,
+            height: 1,
+            depth: 1,
+        },
+        threadgroup_1d(&state.recovery_validity_pipeline),
+    );
+    encoder.end_encoding();
+    command_buffer.commit();
+    command_buffer.wait_until_completed();
+
+    Ok(())
+}
+
+unsafe fn run_recover_two_peaks(
+    angles: *const c_double,
+    response: *const c_float,
+    n_rows: c_uint,
+    k: c_uint,
+    tau_sec_floor: c_float,
+    tau_validity: c_float,
+    dense_n: c_uint,
+    min_sep_frac: c_float,
+    theta_p: *mut c_float,
+    m_p: *mut c_float,
+    theta_s: *mut c_float,
+    m_s: *mut c_float,
+    v: *mut u8,
+) -> Result<(), String> {
+    check_ptr(angles, "angles")?;
+    check_ptr(response, "response")?;
+    check_mut_ptr(theta_p, "theta_p")?;
+    check_mut_ptr(m_p, "m_p")?;
+    check_mut_ptr(theta_s, "theta_s")?;
+    check_mut_ptr(m_s, "m_s")?;
+    check_mut_ptr(v, "v")?;
+    if k == 0 {
+        return Err("k must be positive".to_string());
+    }
+    if dense_n == 0 {
+        return Err("dense_n must be positive".to_string());
+    }
+    if !tau_sec_floor.is_finite() || !tau_validity.is_finite() || !min_sep_frac.is_finite() {
+        return Err("recovery tunables must be finite".to_string());
+    }
+    if n_rows == 0 {
+        return Ok(());
+    }
+    let _ = (n_rows as usize)
+        .checked_mul(k as usize)
+        .ok_or_else(|| "recovery response element count overflowed".to_string())?;
+
+    METAL_STATE.with(|state_cell| {
+        let mut state_slot = state_cell.borrow_mut();
+        if state_slot.is_none() {
+            *state_slot = Some(MetalState::new()?);
+        }
+        let state = state_slot.as_ref().expect("Metal state was initialized");
+        run_recover_two_peaks_with_state(
+            state,
+            response,
+            n_rows,
+            k,
+            tau_sec_floor,
+            tau_validity,
+            dense_n,
+            min_sep_frac,
+            theta_p,
+            m_p,
+            theta_s,
+            m_s,
+            v,
+        )
+    })
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn edgecritic_metal_recover_two_peaks(
     angles: *const c_double,
@@ -3421,33 +4074,21 @@ pub unsafe extern "C" fn edgecritic_metal_recover_two_peaks(
     error_out: *mut c_char,
     error_len: usize,
 ) -> c_int {
-    let result = (|| {
-        check_ptr(angles, "angles")?;
-        check_ptr(response, "response")?;
-        check_mut_ptr(theta_p, "theta_p")?;
-        check_mut_ptr(m_p, "m_p")?;
-        check_mut_ptr(theta_s, "theta_s")?;
-        check_mut_ptr(m_s, "m_s")?;
-        check_mut_ptr(v, "v")?;
-        if n_rows == 0 {
-            return Ok(());
-        }
-        if k == 0 {
-            return Err("k must be positive".to_string());
-        }
-        if dense_n == 0 {
-            return Err("dense_n must be positive".to_string());
-        }
-        if !tau_sec_floor.is_finite()
-            || !tau_validity.is_finite()
-            || !min_sep_frac.is_finite()
-        {
-            return Err("recovery tunables must be finite".to_string());
-        }
-        Err("orientation recovery backend is not implemented".to_string())
-    })();
-
-    match result {
+    match run_recover_two_peaks(
+        angles,
+        response,
+        n_rows,
+        k,
+        tau_sec_floor,
+        tau_validity,
+        dense_n,
+        min_sep_frac,
+        theta_p,
+        m_p,
+        theta_s,
+        m_s,
+        v,
+    ) {
         Ok(()) => 0,
         Err(message) => {
             write_error(error_out, error_len, &message);
