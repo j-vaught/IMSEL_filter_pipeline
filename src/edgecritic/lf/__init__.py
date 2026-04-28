@@ -7,7 +7,7 @@ import numpy as np
 from edgecritic._types import EdgeResult
 from edgecritic.lf._cpu import lf_image as _lf_cpu
 from edgecritic.lf._cpu import line_filter_single_pixel
-from edgecritic.lf._metal import lf_orientation_stack_metal
+from edgecritic.lf._metal import lf_orientation_length_stack_metal, lf_orientation_stack_metal
 
 
 def _select_backend(backend: str) -> str:
@@ -98,4 +98,9 @@ def lf_image(
         )
 
 
-__all__ = ["lf_image", "lf_orientation_stack_metal", "line_filter_single_pixel"]
+__all__ = [
+    "lf_image",
+    "lf_orientation_length_stack_metal",
+    "lf_orientation_stack_metal",
+    "line_filter_single_pixel",
+]

@@ -90,6 +90,15 @@ struct LfBoxFinalizeParams {
     uint theta_idx;
 };
 
+struct LfBoxMultiParams {
+    uint width;
+    uint height;
+    uint n_ms;
+    int key_min;
+    uint line_count;
+    uint theta_idx;
+};
+
 struct LfScanlineParams {
     uint width;
     uint height;
@@ -597,6 +606,140 @@ kernel void lf_box_finalize(
     out[out_idx] = d > 0.0f ? fabs(num[idx] / d) : 0.0f;
 }
 
+kernel void lf_box_multi_x_major(
+    device const float* g_perp [[buffer(0)]],
+    device const uint* radii [[buffer(1)]],
+    device const int* line_offsets [[buffer(2)]],
+    device float* out [[buffer(3)]],
+    constant LfBoxMultiParams& params [[buffer(4)]],
+    uint line_id [[thread_position_in_grid]]
+) {
+    if (line_id >= params.line_count || params.n_ms > MAX_BATCH_MS) {
+        return;
+    }
+
+    const int key = int(line_id) + params.key_min;
+    const uint plane_size = params.width * params.height;
+    float sum_num[MAX_BATCH_MS];
+    float sum_den[MAX_BATCH_MS];
+
+    for (uint m_idx = 0; m_idx < params.n_ms; ++m_idx) {
+        sum_num[m_idx] = 0.0f;
+        sum_den[m_idx] = 0.0f;
+        const uint initial_end = min(radii[m_idx], params.width - 1);
+        for (uint x = 0; x <= initial_end; ++x) {
+            const int y = key + line_offsets[x];
+            if (y >= 0 && y < int(params.height)) {
+                const uint idx = uint(y) * params.width + x;
+                sum_num[m_idx] += g_perp[idx];
+                sum_den[m_idx] += 1.0f;
+            }
+        }
+    }
+
+    for (uint x = 0; x < params.width; ++x) {
+        const int y = key + line_offsets[x];
+        if (y >= 0 && y < int(params.height)) {
+            const uint idx = uint(y) * params.width + x;
+            for (uint m_idx = 0; m_idx < params.n_ms; ++m_idx) {
+                const uint out_plane = params.theta_idx * params.n_ms + m_idx;
+                out[out_plane * plane_size + idx] =
+                    sum_den[m_idx] > 0.0f ? fabs(sum_num[m_idx] / sum_den[m_idx]) : 0.0f;
+            }
+        }
+
+        for (uint m_idx = 0; m_idx < params.n_ms; ++m_idx) {
+            const uint radius = radii[m_idx];
+            const int remove_x = int(x) - int(radius);
+            if (remove_x >= 0) {
+                const int remove_y = key + line_offsets[uint(remove_x)];
+                if (remove_y >= 0 && remove_y < int(params.height)) {
+                    const uint remove_idx = uint(remove_y) * params.width + uint(remove_x);
+                    sum_num[m_idx] -= g_perp[remove_idx];
+                    sum_den[m_idx] -= 1.0f;
+                }
+            }
+
+            const uint add_x = x + radius + 1;
+            if (add_x < params.width) {
+                const int add_y = key + line_offsets[add_x];
+                if (add_y >= 0 && add_y < int(params.height)) {
+                    const uint add_idx = uint(add_y) * params.width + add_x;
+                    sum_num[m_idx] += g_perp[add_idx];
+                    sum_den[m_idx] += 1.0f;
+                }
+            }
+        }
+    }
+}
+
+kernel void lf_box_multi_y_major(
+    device const float* g_perp [[buffer(0)]],
+    device const uint* radii [[buffer(1)]],
+    device const int* line_offsets [[buffer(2)]],
+    device float* out [[buffer(3)]],
+    constant LfBoxMultiParams& params [[buffer(4)]],
+    uint line_id [[thread_position_in_grid]]
+) {
+    if (line_id >= params.line_count || params.n_ms > MAX_BATCH_MS) {
+        return;
+    }
+
+    const int key = int(line_id) + params.key_min;
+    const uint plane_size = params.width * params.height;
+    float sum_num[MAX_BATCH_MS];
+    float sum_den[MAX_BATCH_MS];
+
+    for (uint m_idx = 0; m_idx < params.n_ms; ++m_idx) {
+        sum_num[m_idx] = 0.0f;
+        sum_den[m_idx] = 0.0f;
+        const uint initial_end = min(radii[m_idx], params.height - 1);
+        for (uint y = 0; y <= initial_end; ++y) {
+            const int x = key + line_offsets[y];
+            if (x >= 0 && x < int(params.width)) {
+                const uint idx = y * params.width + uint(x);
+                sum_num[m_idx] += g_perp[idx];
+                sum_den[m_idx] += 1.0f;
+            }
+        }
+    }
+
+    for (uint y = 0; y < params.height; ++y) {
+        const int x = key + line_offsets[y];
+        if (x >= 0 && x < int(params.width)) {
+            const uint idx = y * params.width + uint(x);
+            for (uint m_idx = 0; m_idx < params.n_ms; ++m_idx) {
+                const uint out_plane = params.theta_idx * params.n_ms + m_idx;
+                out[out_plane * plane_size + idx] =
+                    sum_den[m_idx] > 0.0f ? fabs(sum_num[m_idx] / sum_den[m_idx]) : 0.0f;
+            }
+        }
+
+        for (uint m_idx = 0; m_idx < params.n_ms; ++m_idx) {
+            const uint radius = radii[m_idx];
+            const int remove_y = int(y) - int(radius);
+            if (remove_y >= 0) {
+                const int remove_x = key + line_offsets[uint(remove_y)];
+                if (remove_x >= 0 && remove_x < int(params.width)) {
+                    const uint remove_idx = uint(remove_y) * params.width + uint(remove_x);
+                    sum_num[m_idx] -= g_perp[remove_idx];
+                    sum_den[m_idx] -= 1.0f;
+                }
+            }
+
+            const uint add_y = y + radius + 1;
+            if (add_y < params.height) {
+                const int add_x = key + line_offsets[add_y];
+                if (add_x >= 0 && add_x < int(params.width)) {
+                    const uint add_idx = add_y * params.width + uint(add_x);
+                    sum_num[m_idx] += g_perp[add_idx];
+                    sum_den[m_idx] += 1.0f;
+                }
+            }
+        }
+    }
+}
+
 kernel void lf_gaussian_scanline_x_major(
     device const float* g_perp [[buffer(0)]],
     device const float* weights [[buffer(1)]],
@@ -805,6 +948,16 @@ struct LfBoxFinalizeParams {
 }
 
 #[repr(C)]
+struct LfBoxMultiParams {
+    width: c_uint,
+    height: c_uint,
+    n_ms: c_uint,
+    key_min: c_int,
+    line_count: c_uint,
+    theta_idx: c_uint,
+}
+
+#[repr(C)]
 struct LfScanlineParams {
     width: c_uint,
     height: c_uint,
@@ -830,6 +983,8 @@ struct MetalState {
     lf_box_x_pipeline: ComputePipelineState,
     lf_box_y_pipeline: ComputePipelineState,
     lf_box_finalize_pipeline: ComputePipelineState,
+    lf_box_multi_x_pipeline: ComputePipelineState,
+    lf_box_multi_y_pipeline: ComputePipelineState,
     lf_scanline_x_pipeline: ComputePipelineState,
     lf_scanline_y_pipeline: ComputePipelineState,
     queue: CommandQueue,
@@ -931,6 +1086,22 @@ impl MetalState {
             .map_err(|err| {
                 format!("failed to create LF box finalize Metal compute pipeline: {err}")
             })?;
+        let lf_box_multi_x_function = library
+            .get_function("lf_box_multi_x_major", None)
+            .map_err(|err| format!("failed to load LF box multi x-major Metal function: {err}"))?;
+        let lf_box_multi_x_pipeline = device
+            .new_compute_pipeline_state_with_function(&lf_box_multi_x_function)
+            .map_err(|err| {
+                format!("failed to create LF box multi x-major Metal compute pipeline: {err}")
+            })?;
+        let lf_box_multi_y_function = library
+            .get_function("lf_box_multi_y_major", None)
+            .map_err(|err| format!("failed to load LF box multi y-major Metal function: {err}"))?;
+        let lf_box_multi_y_pipeline = device
+            .new_compute_pipeline_state_with_function(&lf_box_multi_y_function)
+            .map_err(|err| {
+                format!("failed to create LF box multi y-major Metal compute pipeline: {err}")
+            })?;
         let lf_scanline_x_function = library
             .get_function("lf_gaussian_scanline_x_major", None)
             .map_err(|err| format!("failed to load LF scanline x-major Metal function: {err}"))?;
@@ -963,6 +1134,8 @@ impl MetalState {
             lf_box_x_pipeline,
             lf_box_y_pipeline,
             lf_box_finalize_pipeline,
+            lf_box_multi_x_pipeline,
+            lf_box_multi_y_pipeline,
             lf_scanline_x_pipeline,
             lf_scanline_y_pipeline,
             queue,
@@ -2617,6 +2790,170 @@ unsafe fn run_lf_orientation_stack_box_with_state(
     Ok(())
 }
 
+unsafe fn run_lf_orientation_length_stack_box_with_state(
+    state: &MetalState,
+    g_x: *const c_float,
+    g_y: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    n_orientations: c_uint,
+    ms: *const c_int,
+    n_ms: c_uint,
+    out: *mut c_float,
+) -> Result<(), String> {
+    if n_ms == 0 {
+        return Ok(());
+    }
+    if n_ms as usize > MAX_BATCH_MS {
+        return Err(format!(
+            "full-image batched LF supports at most {MAX_BATCH_MS} m values"
+        ));
+    }
+
+    let total_pixels = checked_image_pixels(width, height)?;
+    let output_count = total_pixels
+        .checked_mul(n_orientations as usize)
+        .and_then(|value| value.checked_mul(n_ms as usize))
+        .ok_or_else(|| "LF box multi output count overflowed".to_string())?;
+    let image_len = checked_len(total_pixels, std::mem::size_of::<c_float>(), "image")?;
+    let out_len = checked_len(
+        output_count,
+        std::mem::size_of::<c_float>(),
+        "LF box multi output",
+    )?;
+
+    let m_slice = std::slice::from_raw_parts(ms, n_ms as usize);
+    let mut radii = Vec::with_capacity(n_ms as usize);
+    for &m in m_slice {
+        radii.push(box_radius_for_m(effective_m(m)?, 1, -1)?);
+    }
+    let radii_len = checked_len(
+        radii.len(),
+        std::mem::size_of::<c_uint>(),
+        "LF box multi radius",
+    )?;
+
+    let shared_options = MTLResourceOptions::StorageModeShared;
+    let gx_buffer = state.device.new_buffer_with_bytes_no_copy(
+        g_x.cast(),
+        image_len as u64,
+        shared_options,
+        None,
+    );
+    let gy_buffer = state.device.new_buffer_with_bytes_no_copy(
+        g_y.cast(),
+        image_len as u64,
+        shared_options,
+        None,
+    );
+    let radii_buffer = state.device.new_buffer_with_bytes_no_copy(
+        radii.as_ptr().cast(),
+        radii_len as u64,
+        shared_options,
+        None,
+    );
+    let out_buffer = state.device.new_buffer_with_bytes_no_copy(
+        out.cast::<std::ffi::c_void>().cast_const(),
+        out_len as u64,
+        shared_options,
+        None,
+    );
+    let g_perp_buffer = state
+        .device
+        .new_buffer(image_len as u64, MTLResourceOptions::StorageModePrivate);
+
+    gx_buffer.did_modify_range(NSRange::new(0, image_len as u64));
+    gy_buffer.did_modify_range(NSRange::new(0, image_len as u64));
+    radii_buffer.did_modify_range(NSRange::new(0, radii_len as u64));
+
+    let image_threads = MTLSize {
+        width: width as u64,
+        height: height as u64,
+        depth: 1,
+    };
+    let project_group = threadgroup_2d(&state.lf_project_pipeline);
+    let x_group = threadgroup_1d(&state.lf_box_multi_x_pipeline);
+    let y_group = threadgroup_1d(&state.lf_box_multi_y_pipeline);
+
+    for theta_idx in 0..n_orientations as usize {
+        let (line_offsets, x_major, key_min, line_count, cos_t, sin_t) =
+            build_lf_box_line_offsets(width, height, theta_idx, n_orientations as usize)?;
+        let offset_len = checked_len(
+            line_offsets.len(),
+            std::mem::size_of::<c_int>(),
+            "LF box multi line offset",
+        )?;
+        let line_offsets_buffer = state.device.new_buffer_with_bytes_no_copy(
+            line_offsets.as_ptr().cast(),
+            offset_len as u64,
+            shared_options,
+            None,
+        );
+        line_offsets_buffer.did_modify_range(NSRange::new(0, offset_len as u64));
+
+        let params = LfBoxMultiParams {
+            width,
+            height,
+            n_ms,
+            key_min,
+            line_count,
+            theta_idx: c_uint::try_from(theta_idx)
+                .map_err(|_| "LF box multi theta index is outside uint32 range".to_string())?,
+        };
+        let params_buffer = state.device.new_buffer_with_data(
+            (&params as *const LfBoxMultiParams).cast(),
+            std::mem::size_of::<LfBoxMultiParams>() as u64,
+            shared_options,
+        );
+        let project_params = LfProjectParams {
+            width,
+            height,
+            cos_t,
+            sin_t,
+        };
+        let project_params_buffer = state.device.new_buffer_with_data(
+            (&project_params as *const LfProjectParams).cast(),
+            std::mem::size_of::<LfProjectParams>() as u64,
+            shared_options,
+        );
+
+        let line_threads = MTLSize {
+            width: line_count as u64,
+            height: 1,
+            depth: 1,
+        };
+        let command_buffer = state.queue.new_command_buffer();
+        command_buffer.set_label("LF box multi-length orientation stack");
+        let encoder = command_buffer.new_compute_command_encoder();
+        encoder.set_label("LF box multi-length scanline");
+
+        encoder.set_compute_pipeline_state(&state.lf_project_pipeline);
+        encoder.set_buffer(0, Some(&gx_buffer), 0);
+        encoder.set_buffer(1, Some(&gy_buffer), 0);
+        encoder.set_buffer(2, Some(&g_perp_buffer), 0);
+        encoder.set_buffer(3, Some(&project_params_buffer), 0);
+        encoder.dispatch_threads(image_threads, project_group);
+        encoder.memory_barrier_with_resources(&[g_perp_buffer.as_ref()]);
+
+        if x_major {
+            encoder.set_compute_pipeline_state(&state.lf_box_multi_x_pipeline);
+        } else {
+            encoder.set_compute_pipeline_state(&state.lf_box_multi_y_pipeline);
+        }
+        encoder.set_buffer(0, Some(&g_perp_buffer), 0);
+        encoder.set_buffer(1, Some(&radii_buffer), 0);
+        encoder.set_buffer(2, Some(&line_offsets_buffer), 0);
+        encoder.set_buffer(3, Some(&out_buffer), 0);
+        encoder.set_buffer(4, Some(&params_buffer), 0);
+        encoder.dispatch_threads(line_threads, if x_major { x_group } else { y_group });
+        encoder.end_encoding();
+        command_buffer.commit();
+        command_buffer.wait_until_completed();
+    }
+
+    Ok(())
+}
+
 unsafe fn run_lf_orientation_stack(
     g_x: *const c_float,
     g_y: *const c_float,
@@ -2773,6 +3110,55 @@ unsafe fn run_lf_orientation_stack_box(
     })
 }
 
+unsafe fn run_lf_orientation_length_stack_box(
+    g_x: *const c_float,
+    g_y: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    n_orientations: c_uint,
+    ms: *const c_int,
+    n_ms: c_uint,
+    out: *mut c_float,
+) -> Result<(), String> {
+    check_ptr(g_x, "g_x")?;
+    check_ptr(g_y, "g_y")?;
+    check_mut_ptr(out, "out")?;
+    if n_ms > 0 {
+        check_ptr(ms, "ms")?;
+    }
+
+    if width == 0 || height == 0 {
+        return Err("image width and height must be positive".to_string());
+    }
+    if n_orientations == 0 {
+        return Err("n_orientations must be positive".to_string());
+    }
+    if n_ms as usize > MAX_BATCH_MS {
+        return Err(format!(
+            "full-image batched LF supports at most {MAX_BATCH_MS} m values"
+        ));
+    }
+
+    METAL_STATE.with(|state_cell| {
+        let mut state_slot = state_cell.borrow_mut();
+        if state_slot.is_none() {
+            *state_slot = Some(MetalState::new()?);
+        }
+        let state = state_slot.as_ref().expect("Metal state was initialized");
+        run_lf_orientation_length_stack_box_with_state(
+            state,
+            g_x,
+            g_y,
+            width,
+            height,
+            n_orientations,
+            ms,
+            n_ms,
+            out,
+        )
+    })
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn edgecritic_metal_wvf_convolve_pair(
     image: *const c_float,
@@ -2905,6 +3291,37 @@ pub unsafe extern "C" fn edgecritic_metal_lf_orientation_stack_box(
         m,
         box_passes,
         box_radius,
+        out,
+    ) {
+        Ok(()) => 0,
+        Err(message) => {
+            write_error(error_out, error_len, &message);
+            1
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn edgecritic_metal_lf_orientation_length_stack_box(
+    g_x: *const c_float,
+    g_y: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    n_orientations: c_uint,
+    ms: *const c_int,
+    n_ms: c_uint,
+    out: *mut c_float,
+    error_out: *mut c_char,
+    error_len: usize,
+) -> c_int {
+    match run_lf_orientation_length_stack_box(
+        g_x,
+        g_y,
+        width,
+        height,
+        n_orientations,
+        ms,
+        n_ms,
         out,
     ) {
         Ok(()) => 0,

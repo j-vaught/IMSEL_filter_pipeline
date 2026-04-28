@@ -83,6 +83,19 @@ def _load_lf_library() -> ctypes.CDLL:
             ctypes.c_size_t,
         ]
         lib.edgecritic_metal_lf_orientation_stack_box.restype = ctypes.c_int
+        lib.edgecritic_metal_lf_orientation_length_stack_box.argtypes = [
+            ctypes.POINTER(ctypes.c_float),
+            ctypes.POINTER(ctypes.c_float),
+            ctypes.c_uint,
+            ctypes.c_uint,
+            ctypes.c_uint,
+            ctypes.POINTER(ctypes.c_int),
+            ctypes.c_uint,
+            ctypes.POINTER(ctypes.c_float),
+            ctypes.POINTER(ctypes.c_char),
+            ctypes.c_size_t,
+        ]
+        lib.edgecritic_metal_lf_orientation_length_stack_box.restype = ctypes.c_int
         lib.edgecritic_metal_lf_orientation_stack_scanline.argtypes = [
             ctypes.POINTER(ctypes.c_float),
             ctypes.POINTER(ctypes.c_float),
@@ -228,6 +241,78 @@ def lf_response_metal_batch(
     return out.astype(np.float64)
 
 
+def lf_orientation_length_stack_metal(
+    g_x: np.ndarray,
+    g_y: np.ndarray,
+    ms: np.ndarray,
+    n_orientations: int = 16,
+    output_dtype: np.dtype | type = np.float32,
+    method: str = "box",
+    out: np.ndarray | None = None,
+    box_passes: int = 1,
+) -> np.ndarray:
+    """Compute full-frame LF responses for multiple lengths.
+
+    Returns an array of shape ``(n_orientations, n_ms, H, W)``. The current
+    multi-length full-frame backend supports the one-pass box method.
+    """
+    method_name = str(method).lower()
+    if method_name != "box":
+        raise ValueError("multi-length full-frame LF currently supports method='box'")
+    if int(box_passes) != 1:
+        raise ValueError("multi-length full-frame LF currently supports box_passes=1")
+    if int(n_orientations) <= 0:
+        raise ValueError("n_orientations must be positive")
+
+    gx, gy = _components(g_x, g_y)
+    m_arr = np.ascontiguousarray(ms, dtype=np.int32)
+    if m_arr.ndim != 1:
+        raise ValueError("ms must be a 1-D array")
+    if m_arr.size > _MAX_BATCH_MS:
+        raise ValueError(f"full-image batched LF supports at most {_MAX_BATCH_MS} m values")
+    _as_uint32(m_arr.size, "m count")
+
+    h, w = gx.shape
+    n = int(n_orientations)
+    shape = (n, m_arr.size, h, w)
+    if out is None:
+        out_arr = np.empty(shape, dtype=np.float32)
+    else:
+        out_arr = np.asarray(out)
+        if out_arr.shape != shape:
+            raise ValueError("out must have shape (n_orientations, n_ms, H, W)")
+        if out_arr.dtype != np.dtype(np.float32):
+            raise ValueError("out must have dtype float32")
+        if not out_arr.flags.c_contiguous:
+            raise ValueError("out must be C-contiguous")
+    if m_arr.size == 0:
+        dtype = np.dtype(output_dtype)
+        if dtype == np.dtype(np.float32):
+            return out_arr
+        return out_arr.astype(dtype)
+
+    error_buffer = ctypes.create_string_buffer(4096)
+    status = _load_lf_library().edgecritic_metal_lf_orientation_length_stack_box(
+        gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        _as_uint32(w, "image width"),
+        _as_uint32(h, "image height"),
+        _as_uint32(n, "orientation count"),
+        m_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
+        _as_uint32(m_arr.size, "m count"),
+        out_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        error_buffer,
+        ctypes.c_size_t(len(error_buffer)),
+    )
+    if status != 0:
+        _raise_native_error(error_buffer)
+
+    dtype = np.dtype(output_dtype)
+    if dtype == np.dtype(np.float32):
+        return out_arr
+    return out_arr.astype(dtype)
+
+
 def lf_orientation_stack_metal(
     g_x: np.ndarray,
     g_y: np.ndarray,
@@ -329,6 +414,7 @@ def lf_orientation_stack_metal(
 
 __all__ = [
     "MetalBackendError",
+    "lf_orientation_length_stack_metal",
     "lf_orientation_stack_metal",
     "lf_response_metal",
     "lf_response_metal_batch",

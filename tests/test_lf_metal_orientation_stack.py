@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from edgecritic.lf._metal import (
+    lf_orientation_length_stack_metal,
     lf_orientation_stack_metal,
     lf_response_metal_batch,
     metal_backend_available,
@@ -196,6 +197,58 @@ def test_lf_orientation_stack_default_uses_one_pass_box():
     )
 
     assert np.allclose(default, box, rtol=0.0, atol=0.0)
+
+
+def test_lf_orientation_length_stack_box_matches_loop():
+    _require_metal()
+
+    rng = np.random.default_rng(453)
+    g_x = rng.normal(size=(17, 19)).astype(np.float32)
+    g_y = rng.normal(size=(17, 19)).astype(np.float32)
+    ms = np.array([0, 4, 9], dtype=np.int32)
+    n_orientations = 7
+
+    got = lf_orientation_length_stack_metal(
+        g_x, g_y, ms=ms, n_orientations=n_orientations
+    )
+
+    assert got.dtype == np.float32
+    assert got.shape == (n_orientations, ms.size, *g_x.shape)
+    for m_idx, m_value in enumerate(ms):
+        expected = lf_orientation_stack_metal(
+            g_x,
+            g_y,
+            m=int(m_value),
+            n_orientations=n_orientations,
+            method="box",
+            box_passes=1,
+        )
+        assert np.allclose(got[:, m_idx], expected, rtol=5e-5, atol=5e-5)
+
+
+def test_lf_orientation_length_stack_validation_and_reusable_output():
+    _require_metal()
+
+    g_x = np.zeros((5, 6), dtype=np.float32)
+    g_y = np.ones((5, 6), dtype=np.float32)
+    ms = np.array([1, 3], dtype=np.int32)
+    out = np.empty((4, 2, 5, 6), dtype=np.float32)
+
+    reused = lf_orientation_length_stack_metal(g_x, g_y, ms=ms, n_orientations=4, out=out)
+
+    assert reused is out
+    assert np.isfinite(reused).all()
+
+    with pytest.raises(ValueError, match="method"):
+        lf_orientation_length_stack_metal(g_x, g_y, ms=ms, n_orientations=4, method="exact")
+    with pytest.raises(ValueError, match="box_passes"):
+        lf_orientation_length_stack_metal(g_x, g_y, ms=ms, n_orientations=4, box_passes=2)
+    with pytest.raises(ValueError, match="ms"):
+        lf_orientation_length_stack_metal(g_x, g_y, ms=np.zeros((1, 2), dtype=np.int32))
+    with pytest.raises(ValueError, match="out"):
+        lf_orientation_length_stack_metal(
+            g_x, g_y, ms=ms, n_orientations=4, out=np.empty((4, 5, 6), dtype=np.float32)
+        )
 
 
 def test_lf_orientation_stack_box_reusable_output_and_validation():
