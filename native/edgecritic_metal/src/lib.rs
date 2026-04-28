@@ -123,6 +123,8 @@ struct RecoveryParams {
     float pi_over_dense;
     float gamma_inv;
     float cyclic_denom_inv;
+    uint response_layout;
+    uint plane_size;
 };
 
 struct RecoveryReduceParams {
@@ -1195,7 +1197,7 @@ kernel void recovery_peaks(
 
 inline float recovery_eval_segment_private(
     device const float* response,
-    ulong row_offset,
+    uint row,
     thread const float* m,
     constant RecoveryParams& params,
     uint seg,
@@ -1203,8 +1205,12 @@ inline float recovery_eval_segment_private(
 ) {
     const uint k = params.k;
     const uint next = (seg + 1 == k) ? 0 : seg + 1;
-    const float y0 = response[row_offset + seg];
-    const float y1 = response[row_offset + next];
+    const float y0 = params.response_layout == 0
+        ? response[ulong(row) * ulong(k) + ulong(seg)]
+        : response[ulong(seg) * ulong(params.plane_size) + ulong(row)];
+    const float y1 = params.response_layout == 0
+        ? response[ulong(row) * ulong(k) + ulong(next)]
+        : response[ulong(next) * ulong(params.plane_size) + ulong(row)];
     const float omt = 1.0f - u;
     const float omt2 = omt * omt;
     const float u2 = u * u;
@@ -1215,7 +1221,7 @@ inline float recovery_eval_segment_private(
 
 inline float recovery_eval_spline_private(
     device const float* response,
-    ulong row_offset,
+    uint row,
     thread const float* m,
     constant RecoveryParams& params,
     uint dense_idx
@@ -1224,21 +1230,21 @@ inline float recovery_eval_spline_private(
     const uint seg = uint(scaled / ulong(params.dense_n));
     const uint rem = uint(scaled - ulong(seg) * ulong(params.dense_n));
     return recovery_eval_segment_private(
-        response, row_offset, m, params, seg, float(rem) / float(params.dense_n));
+        response, row, m, params, seg, float(rem) / float(params.dense_n));
 }
 
 inline RecoveryPeakCandidate recovery_dense_peak_candidate_private(
     device const float* response,
-    ulong row_offset,
+    uint row,
     thread const float* m,
     constant RecoveryParams& params,
     uint dense_idx
 ) {
     const uint left_idx = dense_idx == 0 ? params.dense_n - 1 : dense_idx - 1;
     const uint right_idx = dense_idx + 1 == params.dense_n ? 0 : dense_idx + 1;
-    const float left_value = recovery_eval_spline_private(response, row_offset, m, params, left_idx);
-    const float center_value = recovery_eval_spline_private(response, row_offset, m, params, dense_idx);
-    const float right_value = recovery_eval_spline_private(response, row_offset, m, params, right_idx);
+    const float left_value = recovery_eval_spline_private(response, row, m, params, left_idx);
+    const float center_value = recovery_eval_spline_private(response, row, m, params, dense_idx);
+    const float right_value = recovery_eval_spline_private(response, row, m, params, right_idx);
     RecoveryPeakCandidate candidate;
     candidate.is_peak = center_value >= left_value && center_value >= right_value;
     candidate.dense_idx = dense_idx;
@@ -1248,7 +1254,7 @@ inline RecoveryPeakCandidate recovery_dense_peak_candidate_private(
 
 inline float recovery_eval_near_segment_private(
     device const float* response,
-    ulong row_offset,
+    uint row,
     thread const float* m,
     constant RecoveryParams& params,
     uint seg_hint,
@@ -1265,7 +1271,7 @@ inline float recovery_eval_near_segment_private(
         seg = (seg + 1 == int(params.k)) ? 0 : seg + 1;
     }
     return recovery_eval_segment_private(
-        response, row_offset, m, params, uint(seg), float(rel) / float(params.dense_n));
+        response, row, m, params, uint(seg), float(rel) / float(params.dense_n));
 }
 
 kernel void recovery_peaks_private(
@@ -1286,13 +1292,14 @@ kernel void recovery_peaks_private(
     }
 
     const uint k = params.k;
-    const ulong row_offset = ulong(row) * ulong(k);
     float m[64];
 
     float ymin = INFINITY;
     float ymax = -INFINITY;
     for (uint i = 0; i < k; ++i) {
-        const float value = response[row_offset + i];
+        const float value = params.response_layout == 0
+            ? response[ulong(row) * ulong(k) + ulong(i)]
+            : response[ulong(i) * ulong(params.plane_size) + ulong(row)];
         ymin = min(ymin, value);
         ymax = max(ymax, value);
     }
@@ -1301,9 +1308,15 @@ kernel void recovery_peaks_private(
     for (uint i = 0; i < k; ++i) {
         const uint prev = (i == 0) ? k - 1 : i - 1;
         const uint next = (i + 1 == k) ? 0 : i + 1;
-        const float y_prev = response[row_offset + prev];
-        const float y_curr = response[row_offset + i];
-        const float y_next = response[row_offset + next];
+        const float y_prev = params.response_layout == 0
+            ? response[ulong(row) * ulong(k) + ulong(prev)]
+            : response[ulong(prev) * ulong(params.plane_size) + ulong(row)];
+        const float y_curr = params.response_layout == 0
+            ? response[ulong(row) * ulong(k) + ulong(i)]
+            : response[ulong(i) * ulong(params.plane_size) + ulong(row)];
+        const float y_next = params.response_layout == 0
+            ? response[ulong(row) * ulong(k) + ulong(next)]
+            : response[ulong(next) * ulong(params.plane_size) + ulong(row)];
         const float rhs = params.rhs_scale * (y_next - 2.0f * y_curr + y_prev);
         if (i == 0) {
             m[i] = rhs * inv_denom[i];
@@ -1331,8 +1344,12 @@ kernel void recovery_peaks_private(
         const uint next = (i + 1 == k) ? 0 : i + 1;
         const float a = 3.0f * params.h2_over6 * (m[next] - m[i]);
         const float b = 6.0f * params.h2_over6 * m[i];
-        const float y_i = response[row_offset + i];
-        const float y_next = response[row_offset + next];
+        const float y_i = params.response_layout == 0
+            ? response[ulong(row) * ulong(k) + ulong(i)]
+            : response[ulong(i) * ulong(params.plane_size) + ulong(row)];
+        const float y_next = params.response_layout == 0
+            ? response[ulong(row) * ulong(k) + ulong(next)]
+            : response[ulong(next) * ulong(params.plane_size) + ulong(row)];
         const float c = y_next - y_i - params.h2_over6 * (2.0f * m[i] + m[next]);
 
         float roots[2];
@@ -1365,12 +1382,12 @@ kernel void recovery_peaks_private(
             const uint base_idx = recovery_dense_floor_idx(params, i, u);
             uint best_idx = base_idx;
             float best_value =
-                recovery_eval_near_segment_private(response, row_offset, m, params, i, base_idx);
+                recovery_eval_near_segment_private(response, row, m, params, i, base_idx);
             for (uint offset = 0; offset < 2; ++offset) {
                 const uint dense_idx =
                     (base_idx + offset >= params.dense_n) ? base_idx + offset - params.dense_n : base_idx + offset;
                 const float value =
-                    recovery_eval_near_segment_private(response, row_offset, m, params, i, dense_idx);
+                    recovery_eval_near_segment_private(response, row, m, params, i, dense_idx);
                 if (value > best_value) {
                     best_value = value;
                     best_idx = dense_idx;
@@ -1393,7 +1410,9 @@ kernel void recovery_peaks_private(
     float primary_value = top_values[0];
     uint primary_idx = top_indices[0];
     if (primary_value == -INFINITY) {
-        primary_value = response[row_offset];
+        primary_value = params.response_layout == 0
+            ? response[ulong(row) * ulong(k)]
+            : response[ulong(row)];
         primary_idx = 0;
     }
 
@@ -1411,7 +1430,7 @@ kernel void recovery_peaks_private(
         if (dist > params.sep) {
             const RecoveryPeakCandidate candidate =
                 recovery_dense_peak_candidate_private(
-                    response, row_offset, m, params, top_indices[pos]);
+                    response, row, m, params, top_indices[pos]);
             if (candidate.is_peak) {
                 secondary_value = candidate.value;
                 secondary_idx = candidate.dense_idx;
@@ -1598,6 +1617,8 @@ struct RecoveryParams {
     pi_over_dense: c_float,
     gamma_inv: c_float,
     cyclic_denom_inv: c_float,
+    response_layout: c_uint,
+    plane_size: c_uint,
 }
 
 #[repr(C)]
@@ -3511,6 +3532,157 @@ unsafe fn run_lf_orientation_stack_box_with_state(
     Ok(())
 }
 
+unsafe fn run_lf_orientation_stack_box_buffers_with_state(
+    state: &MetalState,
+    gx_buffer: &Buffer,
+    gy_buffer: &Buffer,
+    width: c_uint,
+    height: c_uint,
+    n_orientations: c_uint,
+    m: c_int,
+    box_passes: c_uint,
+    box_radius: c_int,
+    out_buffer: &Buffer,
+) -> Result<(), String> {
+    let total_pixels = checked_image_pixels(width, height)?;
+    let image_len = checked_len(total_pixels, std::mem::size_of::<c_float>(), "image")?;
+    let m_value = effective_m(m)?;
+    let radius = box_radius_for_m(m_value, box_passes, box_radius)?;
+    let active_passes = if m_value == 0 { 0 } else { box_passes };
+
+    let shared_options = MTLResourceOptions::StorageModeShared;
+    let private_options = MTLResourceOptions::StorageModePrivate;
+    let num_a_buffer = state.device.new_buffer(image_len as u64, private_options);
+    let num_b_buffer = state.device.new_buffer(image_len as u64, private_options);
+    let den_a_buffer = state.device.new_buffer(image_len as u64, private_options);
+    let den_b_buffer = state.device.new_buffer(image_len as u64, private_options);
+
+    let image_threads = MTLSize {
+        width: width as u64,
+        height: height as u64,
+        depth: 1,
+    };
+    let seed_group = threadgroup_2d(&state.lf_box_seed_pipeline);
+    let x_group = threadgroup_1d(&state.lf_box_x_pipeline);
+    let y_group = threadgroup_1d(&state.lf_box_y_pipeline);
+    let finalize_group = threadgroup_2d(&state.lf_box_finalize_pipeline);
+
+    for theta_idx in 0..n_orientations as usize {
+        let (line_offsets, x_major, key_min, line_count, cos_t, sin_t) =
+            build_lf_box_line_offsets(width, height, theta_idx, n_orientations as usize)?;
+        let offset_len = checked_len(
+            line_offsets.len(),
+            std::mem::size_of::<c_int>(),
+            "LF box line offset",
+        )?;
+        let line_offsets_buffer = state.device.new_buffer_with_bytes_no_copy(
+            line_offsets.as_ptr().cast(),
+            offset_len as u64,
+            shared_options,
+            None,
+        );
+        line_offsets_buffer.did_modify_range(NSRange::new(0, offset_len as u64));
+
+        let seed_params = LfBoxSeedParams {
+            width,
+            height,
+            cos_t,
+            sin_t,
+        };
+        let seed_params_buffer = state.device.new_buffer_with_data(
+            (&seed_params as *const LfBoxSeedParams).cast(),
+            std::mem::size_of::<LfBoxSeedParams>() as u64,
+            shared_options,
+        );
+        let pass_params = LfBoxPassParams {
+            width,
+            height,
+            radius,
+            key_min,
+            line_count,
+        };
+        let pass_params_buffer = state.device.new_buffer_with_data(
+            (&pass_params as *const LfBoxPassParams).cast(),
+            std::mem::size_of::<LfBoxPassParams>() as u64,
+            shared_options,
+        );
+        let finalize_params = LfBoxFinalizeParams {
+            width,
+            height,
+            theta_idx: c_uint::try_from(theta_idx)
+                .map_err(|_| "LF box theta index is outside uint32 range".to_string())?,
+        };
+        let finalize_params_buffer = state.device.new_buffer_with_data(
+            (&finalize_params as *const LfBoxFinalizeParams).cast(),
+            std::mem::size_of::<LfBoxFinalizeParams>() as u64,
+            shared_options,
+        );
+
+        let line_threads = MTLSize {
+            width: line_count as u64,
+            height: 1,
+            depth: 1,
+        };
+
+        let command_buffer = state.queue.new_command_buffer();
+        command_buffer.set_label("fused LF box orientation stack");
+        let encoder = command_buffer.new_compute_command_encoder();
+        encoder.set_label("fused LF box scanline");
+
+        encoder.set_compute_pipeline_state(&state.lf_box_seed_pipeline);
+        encoder.set_buffer(0, Some(gx_buffer), 0);
+        encoder.set_buffer(1, Some(gy_buffer), 0);
+        encoder.set_buffer(2, Some(&num_a_buffer), 0);
+        encoder.set_buffer(3, Some(&den_a_buffer), 0);
+        encoder.set_buffer(4, Some(&seed_params_buffer), 0);
+        encoder.dispatch_threads(image_threads, seed_group);
+        encoder.memory_barrier_with_resources(&[num_a_buffer.as_ref(), den_a_buffer.as_ref()]);
+
+        let pass_pipeline = if x_major {
+            &state.lf_box_x_pipeline
+        } else {
+            &state.lf_box_y_pipeline
+        };
+        let pass_group = if x_major { x_group } else { y_group };
+        let mut read_a = true;
+        for _ in 0..active_passes {
+            let (src_num, src_den, dst_num, dst_den) = if read_a {
+                (&num_a_buffer, &den_a_buffer, &num_b_buffer, &den_b_buffer)
+            } else {
+                (&num_b_buffer, &den_b_buffer, &num_a_buffer, &den_a_buffer)
+            };
+
+            encoder.set_compute_pipeline_state(pass_pipeline);
+            encoder.set_buffer(0, Some(src_num), 0);
+            encoder.set_buffer(1, Some(src_den), 0);
+            encoder.set_buffer(2, Some(dst_num), 0);
+            encoder.set_buffer(3, Some(dst_den), 0);
+            encoder.set_buffer(4, Some(&line_offsets_buffer), 0);
+            encoder.set_buffer(5, Some(&pass_params_buffer), 0);
+            encoder.dispatch_threads(line_threads, pass_group);
+            encoder.memory_barrier_with_resources(&[dst_num.as_ref(), dst_den.as_ref()]);
+            read_a = !read_a;
+        }
+
+        let (final_num, final_den) = if read_a {
+            (&num_a_buffer, &den_a_buffer)
+        } else {
+            (&num_b_buffer, &den_b_buffer)
+        };
+        encoder.set_compute_pipeline_state(&state.lf_box_finalize_pipeline);
+        encoder.set_buffer(0, Some(final_num), 0);
+        encoder.set_buffer(1, Some(final_den), 0);
+        encoder.set_buffer(2, Some(out_buffer), 0);
+        encoder.set_buffer(3, Some(&finalize_params_buffer), 0);
+        encoder.dispatch_threads(image_threads, finalize_group);
+        encoder.end_encoding();
+        command_buffer.commit();
+        command_buffer.wait_until_completed();
+    }
+
+    Ok(())
+}
+
 unsafe fn run_lf_orientation_length_stack_box_with_state(
     state: &MetalState,
     g_x: *const c_float,
@@ -4172,6 +4344,8 @@ unsafe fn run_recover_two_peaks_with_state(
         pi_over_dense: (std::f64::consts::PI / dense_n as f64) as c_float,
         gamma_inv: -0.25,
         cyclic_denom_inv,
+        response_layout: 0,
+        plane_size: n_rows,
     };
 
     let shared_options = MTLResourceOptions::StorageModeShared;
@@ -4390,6 +4564,276 @@ unsafe fn run_recover_two_peaks_with_state(
     Ok(())
 }
 
+unsafe fn run_recover_two_peaks_buffer_with_state(
+    state: &MetalState,
+    response_buffer: &Buffer,
+    n_rows: c_uint,
+    k: c_uint,
+    tau_sec_floor: c_float,
+    tau_validity: c_float,
+    dense_n: c_uint,
+    min_sep_frac: c_float,
+    response_layout: c_uint,
+    plane_size: c_uint,
+    theta_p: *mut c_float,
+    m_p: *mut c_float,
+    theta_s: *mut c_float,
+    m_s: *mut c_float,
+    v: *mut u8,
+) -> Result<(), String> {
+    if n_rows == 0 {
+        return Ok(());
+    }
+
+    let row_count = n_rows as usize;
+    let k_count = k as usize;
+    let out_float_len = checked_len(
+        row_count,
+        std::mem::size_of::<c_float>(),
+        "recovery float output",
+    )?;
+    let out_valid_len = checked_len(row_count, std::mem::size_of::<u8>(), "recovery validity")?;
+
+    if k_count > 64 {
+        return Err("closed-form recovery currently supports at most 64 angles".to_string());
+    }
+    if response_layout > 1 {
+        return Err("recovery response layout must be 0 or 1".to_string());
+    }
+    let (cprime, inv_denom, z_solve, cyclic_denom_inv) = build_recovery_solver(k_count)?;
+    let coeff_len = checked_len(k_count, std::mem::size_of::<c_float>(), "recovery solver")?;
+
+    let sep_raw = (min_sep_frac as f64 * dense_n as f64).trunc();
+    if sep_raw > c_uint::MAX as f64 {
+        return Err("recovery separation is outside uint32 range".to_string());
+    }
+    let sep = sep_raw.max(1.0) as c_uint;
+    let h = std::f64::consts::PI / k_count as f64;
+    let params = RecoveryParams {
+        n_rows,
+        k,
+        dense_n,
+        sep,
+        tau_sec_floor,
+        h: h as c_float,
+        h2_over6: (h * h / 6.0) as c_float,
+        rhs_scale: (6.0 / (h * h)) as c_float,
+        pi_over_dense: (std::f64::consts::PI / dense_n as f64) as c_float,
+        gamma_inv: -0.25,
+        cyclic_denom_inv,
+        response_layout,
+        plane_size,
+    };
+
+    let shared_options = MTLResourceOptions::StorageModeShared;
+    let cprime_buffer = state.device.new_buffer_with_bytes_no_copy(
+        cprime.as_ptr().cast(),
+        coeff_len as u64,
+        shared_options,
+        None,
+    );
+    let inv_denom_buffer = state.device.new_buffer_with_bytes_no_copy(
+        inv_denom.as_ptr().cast(),
+        coeff_len as u64,
+        shared_options,
+        None,
+    );
+    let z_solve_buffer = state.device.new_buffer_with_bytes_no_copy(
+        z_solve.as_ptr().cast(),
+        coeff_len as u64,
+        shared_options,
+        None,
+    );
+    let theta_p_buffer = state.device.new_buffer_with_bytes_no_copy(
+        theta_p.cast::<std::ffi::c_void>().cast_const(),
+        out_float_len as u64,
+        shared_options,
+        None,
+    );
+    let m_p_buffer = state.device.new_buffer_with_bytes_no_copy(
+        m_p.cast::<std::ffi::c_void>().cast_const(),
+        out_float_len as u64,
+        shared_options,
+        None,
+    );
+    let theta_s_buffer = state.device.new_buffer_with_bytes_no_copy(
+        theta_s.cast::<std::ffi::c_void>().cast_const(),
+        out_float_len as u64,
+        shared_options,
+        None,
+    );
+    let m_s_buffer = state.device.new_buffer_with_bytes_no_copy(
+        m_s.cast::<std::ffi::c_void>().cast_const(),
+        out_float_len as u64,
+        shared_options,
+        None,
+    );
+    let v_buffer = state.device.new_buffer_with_bytes_no_copy(
+        v.cast::<std::ffi::c_void>().cast_const(),
+        out_valid_len as u64,
+        shared_options,
+        None,
+    );
+    let row_range_buffer = state
+        .device
+        .new_buffer(out_float_len as u64, MTLResourceOptions::StorageModePrivate);
+    let params_buffer = state.device.new_buffer_with_data(
+        (&params as *const RecoveryParams).cast(),
+        std::mem::size_of::<RecoveryParams>() as u64,
+        shared_options,
+    );
+
+    cprime_buffer.did_modify_range(NSRange::new(0, coeff_len as u64));
+    inv_denom_buffer.did_modify_range(NSRange::new(0, coeff_len as u64));
+    z_solve_buffer.did_modify_range(NSRange::new(0, coeff_len as u64));
+
+    let command_buffer = state.queue.new_command_buffer();
+    command_buffer.set_label("orientation recovery peaks");
+    let encoder = command_buffer.new_compute_command_encoder();
+    encoder.set_compute_pipeline_state(&state.recovery_pipeline);
+    encoder.set_buffer(0, Some(response_buffer), 0);
+    encoder.set_buffer(1, Some(&cprime_buffer), 0);
+    encoder.set_buffer(2, Some(&inv_denom_buffer), 0);
+    encoder.set_buffer(3, Some(&z_solve_buffer), 0);
+    encoder.set_buffer(4, Some(&theta_p_buffer), 0);
+    encoder.set_buffer(5, Some(&m_p_buffer), 0);
+    encoder.set_buffer(6, Some(&theta_s_buffer), 0);
+    encoder.set_buffer(7, Some(&m_s_buffer), 0);
+    encoder.set_buffer(8, Some(&row_range_buffer), 0);
+    encoder.set_buffer(9, Some(&params_buffer), 0);
+    encoder.dispatch_threads(
+        MTLSize {
+            width: n_rows as u64,
+            height: 1,
+            depth: 1,
+        },
+        threadgroup_1d(&state.recovery_pipeline),
+    );
+    encoder.end_encoding();
+    command_buffer.commit();
+    command_buffer.wait_until_completed();
+
+    let reduce_group = threadgroup_1d(&state.recovery_reduce_pipeline);
+    let reduce_group_size = reduce_group.width as usize;
+    let reduce_scratch_len = checked_len(
+        reduce_group_size,
+        std::mem::size_of::<c_float>(),
+        "recovery reduction scratch",
+    )?;
+    let mut current_buffer = row_range_buffer.clone();
+    let mut current_count = row_count;
+    let mut reduction_buffers = Vec::new();
+    while current_count > 1 {
+        let items_per_group = reduce_group_size
+            .checked_mul(2)
+            .ok_or_else(|| "recovery reduction group size overflowed".to_string())?;
+        let next_count = current_count.div_ceil(items_per_group);
+        let next_len = checked_len(
+            next_count,
+            std::mem::size_of::<c_float>(),
+            "recovery reduction output",
+        )?;
+        let next_buffer = state.device.new_buffer(next_len as u64, shared_options);
+        let reduce_params = RecoveryReduceParams {
+            count: c_uint::try_from(current_count)
+                .map_err(|_| "recovery reduction count is outside uint32 range".to_string())?,
+            group_size: c_uint::try_from(reduce_group_size)
+                .map_err(|_| "recovery reduction group size is outside uint32 range".to_string())?,
+        };
+        let reduce_params_buffer = state.device.new_buffer_with_data(
+            (&reduce_params as *const RecoveryReduceParams).cast(),
+            std::mem::size_of::<RecoveryReduceParams>() as u64,
+            shared_options,
+        );
+
+        let command_buffer = state.queue.new_command_buffer();
+        command_buffer.set_label("orientation recovery range reduction");
+        let encoder = command_buffer.new_compute_command_encoder();
+        encoder.set_compute_pipeline_state(&state.recovery_reduce_pipeline);
+        encoder.set_buffer(0, Some(&current_buffer), 0);
+        encoder.set_buffer(1, Some(&next_buffer), 0);
+        encoder.set_buffer(2, Some(&reduce_params_buffer), 0);
+        encoder.set_threadgroup_memory_length(0, reduce_scratch_len as u64);
+        encoder.dispatch_thread_groups(
+            MTLSize {
+                width: next_count as u64,
+                height: 1,
+                depth: 1,
+            },
+            reduce_group,
+        );
+        encoder.end_encoding();
+        command_buffer.commit();
+        command_buffer.wait_until_completed();
+
+        reduction_buffers.push(next_buffer);
+        current_buffer = reduction_buffers
+            .last()
+            .expect("reduction buffer was pushed")
+            .clone();
+        current_count = next_count;
+    }
+
+    let ref_value_buffer: Option<Buffer> = if row_count > 1 {
+        let current_ref = *(current_buffer.contents() as *const c_float);
+        let mut effective_ref = current_ref;
+        LAST_RECOVERY_RANGE.with(|range_cell| {
+            let mut range_slot = range_cell.borrow_mut();
+            if let Some((last_rows, last_ref)) = *range_slot {
+                if last_rows > row_count {
+                    effective_ref = effective_ref.max(last_ref);
+                }
+                if row_count > last_rows {
+                    *range_slot = Some((row_count, current_ref));
+                }
+            } else {
+                *range_slot = Some((row_count, current_ref));
+            }
+        });
+        Some(state.device.new_buffer_with_data(
+            (&effective_ref as *const c_float).cast(),
+            std::mem::size_of::<c_float>() as u64,
+            shared_options,
+        ))
+    } else {
+        None
+    };
+    let ref_buffer = ref_value_buffer.as_ref().unwrap_or(&current_buffer);
+
+    let n_rows_buffer = state.device.new_buffer_with_data(
+        (&n_rows as *const c_uint).cast(),
+        std::mem::size_of::<c_uint>() as u64,
+        shared_options,
+    );
+    let tau_validity_buffer = state.device.new_buffer_with_data(
+        (&tau_validity as *const c_float).cast(),
+        std::mem::size_of::<c_float>() as u64,
+        shared_options,
+    );
+    let command_buffer = state.queue.new_command_buffer();
+    command_buffer.set_label("orientation recovery validity");
+    let encoder = command_buffer.new_compute_command_encoder();
+    encoder.set_compute_pipeline_state(&state.recovery_validity_pipeline);
+    encoder.set_buffer(0, Some(&row_range_buffer), 0);
+    encoder.set_buffer(1, Some(ref_buffer), 0);
+    encoder.set_buffer(2, Some(&v_buffer), 0);
+    encoder.set_buffer(3, Some(&n_rows_buffer), 0);
+    encoder.set_buffer(4, Some(&tau_validity_buffer), 0);
+    encoder.dispatch_threads(
+        MTLSize {
+            width: n_rows as u64,
+            height: 1,
+            depth: 1,
+        },
+        threadgroup_1d(&state.recovery_validity_pipeline),
+    );
+    encoder.end_encoding();
+    command_buffer.commit();
+    command_buffer.wait_until_completed();
+
+    Ok(())
+}
+
 unsafe fn run_recover_two_peaks(
     angles: *const c_double,
     response: *const c_float,
@@ -4452,6 +4896,237 @@ unsafe fn run_recover_two_peaks(
     })
 }
 
+unsafe fn run_wvf_lf_recover_with_state(
+    state: &MetalState,
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    dx: *const c_int,
+    dy: *const c_int,
+    wx: *const c_float,
+    wy: *const c_float,
+    n_offsets: c_uint,
+    lf_half_length: c_int,
+    n_orientations: c_uint,
+    box_passes: c_uint,
+    box_radius: c_int,
+    tau_sec_floor: c_float,
+    tau_validity: c_float,
+    dense_n: c_uint,
+    min_sep_frac: c_float,
+    theta_p: *mut c_float,
+    m_p: *mut c_float,
+    theta_s: *mut c_float,
+    m_s: *mut c_float,
+    v: *mut u8,
+) -> Result<(), String> {
+    let total_pixels = checked_image_pixels(width, height)?;
+    let n_rows = c_uint::try_from(total_pixels)
+        .map_err(|_| "fused pipeline pixel count is outside uint32 range".to_string())?;
+    let stack_count = total_pixels
+        .checked_mul(n_orientations as usize)
+        .ok_or_else(|| "fused LF stack element count overflowed".to_string())?;
+    let image_len = checked_len(total_pixels, std::mem::size_of::<c_float>(), "image")?;
+    let offset_len = checked_len(n_offsets as usize, std::mem::size_of::<c_int>(), "offset")?;
+    let weight_len = checked_len(n_offsets as usize, std::mem::size_of::<c_float>(), "weight")?;
+    let stack_len = checked_len(
+        stack_count,
+        std::mem::size_of::<c_float>(),
+        "fused LF stack",
+    )?;
+
+    let shared_options = MTLResourceOptions::StorageModeShared;
+    let private_options = MTLResourceOptions::StorageModePrivate;
+    let image_buffer = state.device.new_buffer_with_bytes_no_copy(
+        image.cast(),
+        image_len as u64,
+        shared_options,
+        None,
+    );
+    let dx_buffer = state.device.new_buffer_with_bytes_no_copy(
+        dx.cast(),
+        offset_len as u64,
+        shared_options,
+        None,
+    );
+    let dy_buffer = state.device.new_buffer_with_bytes_no_copy(
+        dy.cast(),
+        offset_len as u64,
+        shared_options,
+        None,
+    );
+    let wx_buffer = state.device.new_buffer_with_bytes_no_copy(
+        wx.cast(),
+        weight_len as u64,
+        shared_options,
+        None,
+    );
+    let wy_buffer = state.device.new_buffer_with_bytes_no_copy(
+        wy.cast(),
+        weight_len as u64,
+        shared_options,
+        None,
+    );
+    let gx_buffer = state.device.new_buffer(image_len as u64, private_options);
+    let gy_buffer = state.device.new_buffer(image_len as u64, private_options);
+    let stack_buffer = state.device.new_buffer(stack_len as u64, private_options);
+    let params = KernelParams {
+        width,
+        height,
+        n_offsets,
+    };
+    let params_buffer = state.device.new_buffer_with_data(
+        (&params as *const KernelParams).cast(),
+        std::mem::size_of::<KernelParams>() as u64,
+        shared_options,
+    );
+
+    image_buffer.did_modify_range(NSRange::new(0, image_len as u64));
+    dx_buffer.did_modify_range(NSRange::new(0, offset_len as u64));
+    dy_buffer.did_modify_range(NSRange::new(0, offset_len as u64));
+    wx_buffer.did_modify_range(NSRange::new(0, weight_len as u64));
+    wy_buffer.did_modify_range(NSRange::new(0, weight_len as u64));
+
+    let command_buffer = state.queue.new_command_buffer();
+    command_buffer.set_label("fused WVF gradients");
+    let encoder = command_buffer.new_compute_command_encoder();
+    encoder.set_compute_pipeline_state(&state.wvf_pipeline);
+    encoder.set_buffer(0, Some(&image_buffer), 0);
+    encoder.set_buffer(1, Some(&dx_buffer), 0);
+    encoder.set_buffer(2, Some(&dy_buffer), 0);
+    encoder.set_buffer(3, Some(&wx_buffer), 0);
+    encoder.set_buffer(4, Some(&wy_buffer), 0);
+    encoder.set_buffer(5, Some(&gx_buffer), 0);
+    encoder.set_buffer(6, Some(&gy_buffer), 0);
+    encoder.set_buffer(7, Some(&params_buffer), 0);
+    encoder.dispatch_threads(
+        MTLSize {
+            width: width as u64,
+            height: height as u64,
+            depth: 1,
+        },
+        threadgroup_2d(&state.wvf_pipeline),
+    );
+    encoder.end_encoding();
+    command_buffer.commit();
+    command_buffer.wait_until_completed();
+
+    run_lf_orientation_stack_box_buffers_with_state(
+        state,
+        &gx_buffer,
+        &gy_buffer,
+        width,
+        height,
+        n_orientations,
+        lf_half_length,
+        box_passes,
+        box_radius,
+        &stack_buffer,
+    )?;
+
+    run_recover_two_peaks_buffer_with_state(
+        state,
+        &stack_buffer,
+        n_rows,
+        n_orientations,
+        tau_sec_floor,
+        tau_validity,
+        dense_n,
+        min_sep_frac,
+        1,
+        n_rows,
+        theta_p,
+        m_p,
+        theta_s,
+        m_s,
+        v,
+    )
+}
+
+unsafe fn run_wvf_lf_recover(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    dx: *const c_int,
+    dy: *const c_int,
+    wx: *const c_float,
+    wy: *const c_float,
+    n_offsets: c_uint,
+    lf_half_length: c_int,
+    n_orientations: c_uint,
+    box_passes: c_uint,
+    box_radius: c_int,
+    tau_sec_floor: c_float,
+    tau_validity: c_float,
+    dense_n: c_uint,
+    min_sep_frac: c_float,
+    theta_p: *mut c_float,
+    m_p: *mut c_float,
+    theta_s: *mut c_float,
+    m_s: *mut c_float,
+    v: *mut u8,
+) -> Result<(), String> {
+    check_ptr(image, "image")?;
+    check_ptr(dx, "dx")?;
+    check_ptr(dy, "dy")?;
+    check_ptr(wx, "wx")?;
+    check_ptr(wy, "wy")?;
+    check_mut_ptr(theta_p, "theta_p")?;
+    check_mut_ptr(m_p, "m_p")?;
+    check_mut_ptr(theta_s, "theta_s")?;
+    check_mut_ptr(m_s, "m_s")?;
+    check_mut_ptr(v, "v")?;
+
+    if width == 0 || height == 0 {
+        return Err("image width and height must be positive".to_string());
+    }
+    if n_offsets == 0 {
+        return Err("n_offsets must be positive".to_string());
+    }
+    if n_orientations == 0 {
+        return Err("n_orientations must be positive".to_string());
+    }
+    if dense_n == 0 {
+        return Err("dense_n must be positive".to_string());
+    }
+    if !tau_sec_floor.is_finite() || !tau_validity.is_finite() || !min_sep_frac.is_finite() {
+        return Err("recovery tunables must be finite".to_string());
+    }
+    let _ = box_radius_for_m(effective_m(lf_half_length)?, box_passes, box_radius)?;
+
+    METAL_STATE.with(|state_cell| {
+        let mut state_slot = state_cell.borrow_mut();
+        if state_slot.is_none() {
+            *state_slot = Some(MetalState::new()?);
+        }
+        let state = state_slot.as_ref().expect("Metal state was initialized");
+        run_wvf_lf_recover_with_state(
+            state,
+            image,
+            width,
+            height,
+            dx,
+            dy,
+            wx,
+            wy,
+            n_offsets,
+            lf_half_length,
+            n_orientations,
+            box_passes,
+            box_radius,
+            tau_sec_floor,
+            tau_validity,
+            dense_n,
+            min_sep_frac,
+            theta_p,
+            m_p,
+            theta_s,
+            m_s,
+            v,
+        )
+    })
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn edgecritic_metal_recover_two_peaks(
     angles: *const c_double,
@@ -4475,6 +5150,63 @@ pub unsafe extern "C" fn edgecritic_metal_recover_two_peaks(
         response,
         n_rows,
         k,
+        tau_sec_floor,
+        tau_validity,
+        dense_n,
+        min_sep_frac,
+        theta_p,
+        m_p,
+        theta_s,
+        m_s,
+        v,
+    ) {
+        Ok(()) => 0,
+        Err(message) => {
+            write_error(error_out, error_len, &message);
+            1
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn edgecritic_metal_wvf_lf_recover(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    dx: *const c_int,
+    dy: *const c_int,
+    wx: *const c_float,
+    wy: *const c_float,
+    n_offsets: c_uint,
+    lf_half_length: c_int,
+    n_orientations: c_uint,
+    box_passes: c_uint,
+    box_radius: c_int,
+    tau_sec_floor: c_float,
+    tau_validity: c_float,
+    dense_n: c_uint,
+    min_sep_frac: c_float,
+    theta_p: *mut c_float,
+    m_p: *mut c_float,
+    theta_s: *mut c_float,
+    m_s: *mut c_float,
+    v: *mut u8,
+    error_out: *mut c_char,
+    error_len: usize,
+) -> c_int {
+    match run_wvf_lf_recover(
+        image,
+        width,
+        height,
+        dx,
+        dy,
+        wx,
+        wy,
+        n_offsets,
+        lf_half_length,
+        n_orientations,
+        box_passes,
+        box_radius,
         tau_sec_floor,
         tau_validity,
         dense_n,
