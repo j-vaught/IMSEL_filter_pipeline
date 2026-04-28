@@ -54,6 +54,10 @@ def main():
     p.add_argument("--vmm-theta-min-deg", type=float, default=10.0)
     p.add_argument("--vmm-n-iters", type=int, default=30)
     p.add_argument("--vertex-exclude-px", type=int, default=24)
+    p.add_argument("--dilate-mask-px", type=int, default=0,
+                   help="dilate the all_mask by N pixels before fusion. "
+                        "NMS audits need a multi-pixel ridge to thin; "
+                        "use ~7 to capture the LF ridge width.")
     p.add_argument("--out", required=True, type=Path)
     args = p.parse_args()
 
@@ -69,8 +73,18 @@ def main():
           f"junction={junction_mask.sum():,} "
           f"({time.perf_counter()-t0:.1f}s)")
 
-    # Run fusion at every analytical edge pixel.
-    ys, xs = np.where(all_mask)
+    # Run fusion at every analytical edge pixel; optionally dilate to
+    # capture the LF response ridge width (needed for NMS audits).
+    if args.dilate_mask_px > 0:
+        from scipy import ndimage
+        fusion_mask = ndimage.binary_dilation(
+            all_mask, iterations=args.dilate_mask_px)
+        print(f"dilated fusion mask by {args.dilate_mask_px}px: "
+              f"{int(fusion_mask.sum()):,} pixels "
+              f"(vs {int(all_mask.sum()):,} un-dilated)")
+    else:
+        fusion_mask = all_mask
+    ys, xs = np.where(fusion_mask)
     sample_pixels = np.column_stack([xs, ys])
     print(f"running LF + vMM fusion at {len(ys):,} pixels")
 
