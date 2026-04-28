@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from edgecritic.wvf._radius_kernels import build_wvf_radius_kernels
 from edgecritic.wvf._metal import wvf_radius_gradients_metal
-from edgecritic.lf._metal import lf_orientation_stack_metal
+from edgecritic.lf._metal import lf_stack
 
 
 def add_awgn(rgb_u8, sigma, rng):
@@ -97,14 +97,14 @@ def main():
 
                 for m in ms:
                     t0 = time.perf_counter()
-                    stack = lf_orientation_stack_metal(
-                        gx, gy, m=m,
+                    stack = lf_stack(
+                        gx, gy, lf_half_length=m,
                         n_orientations=args.n_orientations,
                         output_dtype=np.float32,
                         method=args.method)
                     t_lf = time.perf_counter() - t0
                     lf_total += t_lf
-                    print(f"    LF  m={m:>3}  -> {stack.shape}  "
+                    print(f"    LF  lf_half_length={m:>3}  -> {stack.shape}  "
                           f"{t_lf*1000:.0f} ms")
                     del stack
 

@@ -21,7 +21,7 @@ sys.path.insert(0, str(ROOT.parent / "agent_workspaces" / "orientation_recovery_
 
 from edgecritic.wvf._radius_kernels import build_wvf_radius_kernels
 from edgecritic.wvf._metal import wvf_radius_gradients_metal
-from edgecritic.lf._metal import lf_orientation_stack_metal
+from edgecritic.lf._metal import lf_stack
 from reference_impl import find_two_peaks
 
 
@@ -46,15 +46,18 @@ def main():
     r, d, m = 9, 3, 60
     n_orient = 64
     print(f"building WVF (r={r}, d={d}) and LF stack "
-          f"(m={m}, n_orient={n_orient})")
+          f"(lf_half_length={m}, n_orient={n_orient})")
     kernels = build_wvf_radius_kernels(radius=r, order=d)
     gx, gy = wvf_radius_gradients_metal(L, kernels, output_dtype=np.float32)
 
     t0 = time.perf_counter()
-    stack = lf_orientation_stack_metal(gx, gy, m=m,
-                                       n_orientations=n_orient,
-                                       output_dtype=np.float32,
-                                       method="box")
+    stack = lf_stack(
+        gx, gy,
+        lf_half_length=m,
+        n_orientations=n_orient,
+        output_dtype=np.float32,
+        method="box",
+    )
     print(f"  LF stack: {time.perf_counter()-t0:.1f}s, shape {stack.shape}")
 
     # Sample 200,000 random pixels.  Mix of high and low magnitude for

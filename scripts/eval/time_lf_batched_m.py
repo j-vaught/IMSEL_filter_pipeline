@@ -21,8 +21,8 @@ sys.path.insert(0, str(ROOT / "src"))
 from edgecritic.wvf._radius_kernels import build_wvf_radius_kernels
 from edgecritic.wvf._metal import wvf_radius_gradients_metal
 from edgecritic.lf._metal import (
-    lf_orientation_stack_metal,
-    lf_orientation_length_stack_metal,
+    lf_stack,
+    lf_length_stack,
 )
 
 
@@ -87,10 +87,10 @@ def main():
         rss_pre_a = peak_mb()
         t0 = time.perf_counter()
         for m in lf_half_lengths:
-            stack = lf_orientation_stack_metal(
+            stack = lf_stack(
                 gx,
                 gy,
-                m=int(m),
+                lf_half_length=int(m),
                 n_orientations=n_orient,
                 output_dtype=np.float32,
                 method="box",
@@ -103,7 +103,7 @@ def main():
         rss_pre_b = peak_mb()
         t0 = time.perf_counter()
         try:
-            big = lf_orientation_length_stack_metal(
+            big = lf_length_stack(
                 gx,
                 gy,
                 lf_half_lengths=lf_half_lengths,

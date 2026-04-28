@@ -160,15 +160,15 @@ def _raise_native_error(error_buffer: ctypes.Array[ctypes.c_char]) -> None:
     raise MetalBackendError(error_buffer.value.decode("utf-8", errors="replace"))
 
 
-def lf_response_metal(
+def lf_response(
     g_x: np.ndarray,
     g_y: np.ndarray,
     px: np.ndarray,
     py: np.ndarray,
     theta: float,
-    m: int,
+    lf_half_length: int,
 ) -> np.ndarray:
-    """Compute LF response for one ``(theta, m)`` pair using Rust/Metal."""
+    """Compute LF response for one ``(theta, lf_half_length)`` pair."""
     gx, gy = _components(g_x, g_y)
     x, y = _pixel_coords(px, py)
     if x.size == 0:
@@ -186,7 +186,7 @@ def lf_response_metal(
         y.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
         _as_uint32(x.size, "pixel count"),
         ctypes.c_double(float(theta)),
-        _as_int32(int(m), "m"),
+        _as_int32(int(lf_half_length), "LF half-length"),
         out.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
         error_buffer,
         ctypes.c_size_t(len(error_buffer)),
@@ -196,28 +196,28 @@ def lf_response_metal(
     return out.astype(np.float64)
 
 
-def lf_response_metal_batch(
+def lf_response_batch(
     g_x: np.ndarray,
     g_y: np.ndarray,
     px: np.ndarray,
     py: np.ndarray,
     thetas: np.ndarray,
-    ms: np.ndarray,
+    lf_half_lengths: np.ndarray,
 ) -> np.ndarray:
-    """Compute a ``(theta, m, pixel)`` LF response grid using Rust/Metal."""
+    """Compute a ``(theta, LF half-length, pixel)`` response grid."""
     gx, gy = _components(g_x, g_y)
     x, y = _pixel_coords(px, py)
     theta_arr = np.ascontiguousarray(thetas, dtype=np.float64)
-    m_arr = np.ascontiguousarray(ms, dtype=np.int32)
-    if theta_arr.ndim != 1 or m_arr.ndim != 1:
-        raise ValueError("thetas and ms must be 1-D arrays")
-    if m_arr.size > _MAX_BATCH_MS:
-        raise ValueError(f"batched LF supports at most {_MAX_BATCH_MS} m values")
+    length_arr = np.ascontiguousarray(lf_half_lengths, dtype=np.int32)
+    if theta_arr.ndim != 1 or length_arr.ndim != 1:
+        raise ValueError("thetas and lf_half_lengths must be 1-D arrays")
+    if length_arr.size > _MAX_BATCH_MS:
+        raise ValueError(f"batched LF supports at most {_MAX_BATCH_MS} LF half-lengths")
     _as_uint32(theta_arr.size, "theta count")
-    _as_uint32(m_arr.size, "m count")
+    _as_uint32(length_arr.size, "LF half-length count")
 
-    shape = (theta_arr.size, m_arr.size, x.size)
-    if theta_arr.size == 0 or m_arr.size == 0 or x.size == 0:
+    shape = (theta_arr.size, length_arr.size, x.size)
+    if theta_arr.size == 0 or length_arr.size == 0 or x.size == 0:
         return np.empty(shape, dtype=np.float64)
 
     h, w = gx.shape
@@ -233,8 +233,8 @@ def lf_response_metal_batch(
         _as_uint32(x.size, "pixel count"),
         theta_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
         _as_uint32(theta_arr.size, "theta count"),
-        m_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
-        _as_uint32(m_arr.size, "m count"),
+        length_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
+        _as_uint32(length_arr.size, "LF half-length count"),
         out.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
         error_buffer,
         ctypes.c_size_t(len(error_buffer)),
@@ -244,7 +244,7 @@ def lf_response_metal_batch(
     return out.astype(np.float64)
 
 
-def lf_orientation_length_stack_metal(
+def lf_length_stack(
     g_x: np.ndarray,
     g_y: np.ndarray,
     lf_half_lengths: np.ndarray,
@@ -360,10 +360,10 @@ def lf_orientation_length_stack_metal(
     return out_arr.astype(dtype)
 
 
-def lf_orientation_stack_metal(
+def lf_stack(
     g_x: np.ndarray,
     g_y: np.ndarray,
-    m: int,
+    lf_half_length: int,
     n_orientations: int = 16,
     output_dtype: np.dtype | type = np.float32,
     method: str = "box",
@@ -418,7 +418,7 @@ def lf_orientation_stack_metal(
             _as_uint32(w, "image width"),
             _as_uint32(h, "image height"),
             _as_uint32(n, "orientation count"),
-            _as_int32(int(m), "m"),
+            _as_int32(int(lf_half_length), "LF half-length"),
             _as_uint32(execution_mode, "execution mode"),
             out_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
             error_buffer,
@@ -431,7 +431,7 @@ def lf_orientation_stack_metal(
             _as_uint32(w, "image width"),
             _as_uint32(h, "image height"),
             _as_uint32(n, "orientation count"),
-            _as_int32(int(m), "m"),
+            _as_int32(int(lf_half_length), "LF half-length"),
             _as_uint32(box_pass_count, "box pass count"),
             _as_int32(box_radius_value, "box radius"),
             out_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
@@ -445,7 +445,7 @@ def lf_orientation_stack_metal(
             _as_uint32(w, "image width"),
             _as_uint32(h, "image height"),
             _as_uint32(n, "orientation count"),
-            _as_int32(int(m), "m"),
+            _as_int32(int(lf_half_length), "LF half-length"),
             out_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
             error_buffer,
             ctypes.c_size_t(len(error_buffer)),
@@ -459,11 +459,87 @@ def lf_orientation_stack_metal(
     return out_arr.astype(dtype)
 
 
+def lf_response_metal(
+    g_x: np.ndarray,
+    g_y: np.ndarray,
+    px: np.ndarray,
+    py: np.ndarray,
+    theta: float,
+    m: int,
+) -> np.ndarray:
+    return lf_response(g_x, g_y, px, py, theta, lf_half_length=m)
+
+
+def lf_response_metal_batch(
+    g_x: np.ndarray,
+    g_y: np.ndarray,
+    px: np.ndarray,
+    py: np.ndarray,
+    thetas: np.ndarray,
+    ms: np.ndarray,
+) -> np.ndarray:
+    return lf_response_batch(g_x, g_y, px, py, thetas, lf_half_lengths=ms)
+
+
+def lf_orientation_length_stack_metal(
+    g_x: np.ndarray,
+    g_y: np.ndarray,
+    lf_half_lengths: np.ndarray,
+    n_orientations: int = 16,
+    output_dtype: np.dtype | type = np.float32,
+    method: str = "box",
+    out: np.ndarray | None = None,
+    box_passes: int = 1,
+    output_layout: str = "theta_yx_m",
+    max_chunk_bytes: int | None = 2 * 1024 * 1024 * 1024,
+    chunk_pause_s: float = 0.0,
+) -> np.ndarray:
+    return lf_length_stack(
+        g_x,
+        g_y,
+        lf_half_lengths=lf_half_lengths,
+        n_orientations=n_orientations,
+        output_dtype=output_dtype,
+        method=method,
+        out=out,
+        box_passes=box_passes,
+        output_layout=output_layout,
+        max_chunk_bytes=max_chunk_bytes,
+        chunk_pause_s=chunk_pause_s,
+    )
+
+
+def lf_orientation_stack_metal(
+    g_x: np.ndarray,
+    g_y: np.ndarray,
+    m: int,
+    n_orientations: int = 16,
+    output_dtype: np.dtype | type = np.float32,
+    method: str = "box",
+    execution: str = "auto",
+    out: np.ndarray | None = None,
+    box_passes: int = 1,
+    box_radius: int | None = None,
+) -> np.ndarray:
+    return lf_stack(
+        g_x,
+        g_y,
+        lf_half_length=m,
+        n_orientations=n_orientations,
+        output_dtype=output_dtype,
+        method=method,
+        execution=execution,
+        out=out,
+        box_passes=box_passes,
+        box_radius=box_radius,
+    )
+
+
 __all__ = [
     "MetalBackendError",
-    "lf_orientation_length_stack_metal",
-    "lf_orientation_stack_metal",
-    "lf_response_metal",
-    "lf_response_metal_batch",
+    "lf_length_stack",
+    "lf_response",
+    "lf_response_batch",
+    "lf_stack",
     "metal_backend_available",
 ]

@@ -8,7 +8,7 @@ from collections.abc import Callable
 
 import numpy as np
 
-from edgecritic.lf._metal import lf_orientation_stack_metal, metal_backend_available
+from edgecritic.lf._metal import lf_stack, metal_backend_available
 
 
 def _parse_int_list(value: str) -> list[int]:
@@ -159,10 +159,10 @@ def main() -> int:
                 for m in args.m_values:
 
                     def run_exact() -> np.ndarray:
-                        return lf_orientation_stack_metal(
+                        return lf_stack(
                             g_x,
                             g_y,
-                            m=m,
+                            lf_half_length=m,
                             n_orientations=n_orientations,
                             execution=args.exact_execution,
                             out=exact_out,
@@ -176,10 +176,10 @@ def main() -> int:
                     if "scanline" in methods:
 
                         def run_scanline() -> np.ndarray:
-                            return lf_orientation_stack_metal(
+                            return lf_stack(
                                 g_x,
                                 g_y,
-                                m=m,
+                                lf_half_length=m,
                                 n_orientations=n_orientations,
                                 method="scanline",
                                 out=box_out,
@@ -209,10 +209,10 @@ def main() -> int:
                                 reported_radius = auto_radius if radius is None else radius
 
                                 def run_box() -> np.ndarray:
-                                    return lf_orientation_stack_metal(
+                                    return lf_stack(
                                         g_x,
                                         g_y,
-                                        m=m,
+                                        lf_half_length=m,
                                         n_orientations=n_orientations,
                                         method="box",
                                         out=box_out,

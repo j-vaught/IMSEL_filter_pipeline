@@ -130,7 +130,7 @@ def test_correctness_full():
     from PIL import Image
     from edgecritic.wvf._radius_kernels import build_wvf_radius_kernels
     from edgecritic.wvf._metal import wvf_radius_gradients_metal
-    from edgecritic.lf._metal import lf_orientation_stack_metal
+    from edgecritic.lf._metal import lf_stack
 
     img_path = (ROOT / "example_images/synthetic_nested_shapes/clean/4096"
                 / "nested_star_square_oval_low_contrast_mixed_chroma_4096.png")
@@ -143,10 +143,13 @@ def test_correctness_full():
     kernels = build_wvf_radius_kernels(radius=9, order=3)
     gx, gy = wvf_radius_gradients_metal(L, kernels, output_dtype=np.float32)
     n_orient = 64
-    stack = lf_orientation_stack_metal(gx, gy, m=60,
-                                       n_orientations=n_orient,
-                                       output_dtype=np.float32,
-                                       method="box")
+    stack = lf_stack(
+        gx, gy,
+        lf_half_length=60,
+        n_orientations=n_orient,
+        output_dtype=np.float32,
+        method="box",
+    )
     H, W = L.shape
     resp = stack.transpose(1, 2, 0).reshape(H * W, n_orient).copy()
     angles = np.linspace(0, math.pi, n_orient, endpoint=False)
