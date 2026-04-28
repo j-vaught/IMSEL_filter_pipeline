@@ -42,6 +42,9 @@ def main():
     p.add_argument("--neighborhood", type=int, default=4)
     p.add_argument("--angular-fidelity", default="Acont",
                    choices=["A8", "A16", "Acont"])
+    p.add_argument("--crop", type=int, default=0,
+                   help="center crop side (e.g. 512). 0 = full image. "
+                        "Threshold percentile is computed within the crop.")
     args = p.parse_args()
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -54,6 +57,13 @@ def main():
                        neighborhood=args.neighborhood,
                        angular_fidelity=args.angular_fidelity,
                        corner_method="or")
+
+    if args.crop > 0:
+        H, W = out.shape
+        s = args.crop
+        r0, c0 = (H - s) // 2, (W - s) // 2
+        out = out[r0:r0 + s, c0:c0 + s].copy()
+
     kept = out > 0
 
     # 1. raw kept
@@ -81,11 +91,13 @@ def main():
     n_skel_pruned = int(skel_pruned.sum())
 
     tag = f"N{args.neighborhood}_{args.angular_fidelity}"
+    crop_tag = f"_c{args.crop}" if args.crop > 0 else ""
+    pct_tag = f"magpct{args.mag_pct:g}".replace(".", "p")
     paths = {
-        "raw":         args.out_dir / f"binary_{args.label}_{tag}.png",
-        "skel":        args.out_dir / f"binary_skel_{args.label}_{tag}.png",
-        "mag_skel":    args.out_dir / f"binary_skel_magpct{int(args.mag_pct)}_{args.label}_{tag}.png",
-        "prune_skel":  args.out_dir / f"binary_skel_prune{args.min_len}_{args.label}_{tag}.png",
+        "raw":         args.out_dir / f"binary_{args.label}_{tag}{crop_tag}.png",
+        "skel":        args.out_dir / f"binary_skel_{args.label}_{tag}{crop_tag}.png",
+        "mag_skel":    args.out_dir / f"binary_skel_{pct_tag}_{args.label}_{tag}{crop_tag}.png",
+        "prune_skel":  args.out_dir / f"binary_skel_prune{args.min_len}_{args.label}_{tag}{crop_tag}.png",
     }
     save_mask(kept,         paths["raw"])
     save_mask(skel_raw,     paths["skel"])
