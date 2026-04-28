@@ -925,7 +925,350 @@ inline float recovery_eval_spline(
     return recovery_eval_segment(y, m, params, seg, float(rem) / float(params.dense_n));
 }
 
+struct RecoveryPeakCandidate {
+    bool is_peak;
+    uint dense_idx;
+    float value;
+};
+
+inline uint recovery_dense_floor_idx(
+    constant RecoveryParams& params,
+    uint seg,
+    float u
+) {
+    const float dense_pos =
+        (float(seg) + u) * float(params.dense_n) / float(params.k);
+    uint idx = uint(floor(dense_pos));
+    if (idx >= params.dense_n) {
+        idx -= params.dense_n;
+    }
+    return idx;
+}
+
+inline RecoveryPeakCandidate recovery_dense_peak_candidate(
+    threadgroup const float* y,
+    threadgroup const float* m,
+    constant RecoveryParams& params,
+    uint dense_idx
+) {
+    const uint left_idx = dense_idx == 0 ? params.dense_n - 1 : dense_idx - 1;
+    const uint right_idx = dense_idx + 1 == params.dense_n ? 0 : dense_idx + 1;
+    const float left_value = recovery_eval_spline(y, m, params, left_idx);
+    const float center_value = recovery_eval_spline(y, m, params, dense_idx);
+    const float right_value = recovery_eval_spline(y, m, params, right_idx);
+    RecoveryPeakCandidate candidate;
+    candidate.is_peak = center_value >= left_value && center_value >= right_value;
+    candidate.dense_idx = dense_idx;
+    candidate.value = center_value;
+    return candidate;
+}
+
 kernel void recovery_peaks(
+    device const float* response [[buffer(0)]],
+    device const float* solver_inv [[buffer(1)]],
+    device float* theta_p [[buffer(4)]],
+    device float* m_p [[buffer(5)]],
+    device float* theta_s [[buffer(6)]],
+    device float* m_s [[buffer(7)]],
+    device float* row_range [[buffer(8)]],
+    constant RecoveryParams& params [[buffer(9)]],
+    threadgroup float* y_scratch [[threadgroup(0)]],
+    threadgroup float* rhs_scratch [[threadgroup(1)]],
+    threadgroup float* m_scratch [[threadgroup(2)]],
+    threadgroup float* candidate_value [[threadgroup(3)]],
+    threadgroup uint* candidate_idx [[threadgroup(4)]],
+    threadgroup float* primary_value_scratch [[threadgroup(5)]],
+    threadgroup uint* primary_idx_scratch [[threadgroup(6)]],
+    uint2 tid [[thread_position_in_threadgroup]],
+    uint2 gid [[thread_position_in_grid]]
+) {
+    const uint k = params.k;
+    const uint lane = tid.x;
+    const uint row_slot = tid.y;
+    const uint row = gid.y;
+    const bool active = row < params.n_rows && lane < k;
+    const uint scratch_offset = row_slot * k;
+    threadgroup float* y = y_scratch + scratch_offset;
+    threadgroup float* rhs_values = rhs_scratch + scratch_offset;
+    threadgroup float* m = m_scratch + scratch_offset;
+    threadgroup float* cand_value = candidate_value + scratch_offset;
+    threadgroup uint* cand_idx = candidate_idx + scratch_offset;
+    const ulong row_offset = ulong(row) * ulong(k);
+
+    if (active) {
+        y[lane] = response[row_offset + lane];
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    if (active) {
+        const uint prev = (lane == 0) ? k - 1 : lane - 1;
+        const uint next = (lane + 1 == k) ? 0 : lane + 1;
+        rhs_values[lane] = params.rhs_scale * (y[next] - 2.0f * y[lane] + y[prev]);
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    if (active) {
+        float sum = 0.0f;
+        const uint solver_row = lane * k;
+        for (uint j = 0; j < k; ++j) {
+            sum += solver_inv[solver_row + j] * rhs_values[j];
+        }
+        m[lane] = sum;
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    if (active && lane == 0) {
+        float ymin = y[0];
+        float ymax = y[0];
+        for (uint i = 1; i < k; ++i) {
+            ymin = min(ymin, y[i]);
+            ymax = max(ymax, y[i]);
+        }
+        row_range[row] = ymax - ymin;
+    }
+
+    if (active) {
+        const uint i = lane;
+        float best_value = -INFINITY;
+        uint best_idx = 0;
+
+        uint base_idx = recovery_dense_floor_idx(params, i, 0.0f);
+        for (uint offset = 0; offset < 2; ++offset) {
+            const uint dense_idx =
+                (base_idx + offset >= params.dense_n) ? base_idx + offset - params.dense_n : base_idx + offset;
+            const float value = recovery_eval_spline(y, m, params, dense_idx);
+            if (value > best_value) {
+                best_value = value;
+                best_idx = dense_idx;
+            }
+        }
+
+        const uint next = (i + 1 == k) ? 0 : i + 1;
+        const float a = 3.0f * params.h2_over6 * (m[next] - m[i]);
+        const float b = 6.0f * params.h2_over6 * m[i];
+        const float c = y[next] - y[i] - params.h2_over6 * (2.0f * m[i] + m[next]);
+
+        float roots[2];
+        uint n_roots = 0;
+        if (fabs(a) <= 1.0e-20f) {
+            if (fabs(b) > 1.0e-20f) {
+                roots[0] = -c / b;
+                n_roots = 1;
+            }
+        } else {
+            const float disc = b * b - 4.0f * a * c;
+            if (disc >= 0.0f) {
+                const float sqrt_disc = sqrt(disc);
+                const float denom = 2.0f * a;
+                roots[0] = (-b - sqrt_disc) / denom;
+                roots[1] = (-b + sqrt_disc) / denom;
+                n_roots = 2;
+            }
+        }
+
+        for (uint root_idx = 0; root_idx < n_roots; ++root_idx) {
+            const float u = roots[root_idx];
+            if (u <= 0.0f || u >= 1.0f) {
+                continue;
+            }
+            const float second_derivative = m[i] * (1.0f - u) + m[next] * u;
+            if (second_derivative >= 0.0f) {
+                continue;
+            }
+            base_idx = recovery_dense_floor_idx(params, i, u);
+            for (uint offset = 1; offset < 2; ++offset) {
+                const uint dense_idx =
+                    (base_idx + offset >= params.dense_n) ? base_idx + offset - params.dense_n : base_idx + offset;
+                const float value = recovery_eval_spline(y, m, params, dense_idx);
+                if (value > best_value) {
+                    best_value = value;
+                    best_idx = dense_idx;
+                }
+            }
+        }
+
+        cand_value[lane] = best_value;
+        cand_idx[lane] = best_idx;
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    if (active && lane == 0) {
+        float primary_value = cand_value[0];
+        uint primary_idx = cand_idx[0];
+        for (uint i = 1; i < k; ++i) {
+            if (cand_value[i] > primary_value) {
+                primary_value = cand_value[i];
+                primary_idx = cand_idx[i];
+            }
+        }
+        primary_value_scratch[row_slot] = primary_value;
+        primary_idx_scratch[row_slot] = primary_idx;
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    if (active) {
+        const uint i = lane;
+        const uint next = (i + 1 == k) ? 0 : i + 1;
+        const uint primary_idx = primary_idx_scratch[row_slot];
+        float best_value = -INFINITY;
+        uint best_idx = 0;
+
+        const float a = 3.0f * params.h2_over6 * (m[next] - m[i]);
+        const float b = 6.0f * params.h2_over6 * m[i];
+        const float c = y[next] - y[i] - params.h2_over6 * (2.0f * m[i] + m[next]);
+
+        float roots[2];
+        uint n_roots = 0;
+        if (fabs(a) <= 1.0e-20f) {
+            if (fabs(b) > 1.0e-20f) {
+                roots[0] = -c / b;
+                n_roots = 1;
+            }
+        } else {
+            const float disc = b * b - 4.0f * a * c;
+            if (disc >= 0.0f) {
+                const float sqrt_disc = sqrt(disc);
+                const float denom = 2.0f * a;
+                roots[0] = (-b - sqrt_disc) / denom;
+                roots[1] = (-b + sqrt_disc) / denom;
+                n_roots = 2;
+            }
+        }
+
+        for (uint root_idx = 0; root_idx < n_roots; ++root_idx) {
+            const float u = roots[root_idx];
+            if (u <= 0.0f || u >= 1.0f) {
+                continue;
+            }
+            const float second_derivative = m[i] * (1.0f - u) + m[next] * u;
+            if (second_derivative >= 0.0f) {
+                continue;
+            }
+            const uint base_idx = recovery_dense_floor_idx(params, i, u);
+            for (uint offset = 1; offset < 2; ++offset) {
+                const uint dense_idx =
+                    (base_idx + offset >= params.dense_n) ? base_idx + offset - params.dense_n : base_idx + offset;
+                const RecoveryPeakCandidate candidate =
+                    recovery_dense_peak_candidate(y, m, params, dense_idx);
+                uint dist = dense_idx > primary_idx ? dense_idx - primary_idx : primary_idx - dense_idx;
+                dist = min(dist, params.dense_n - dist);
+                if (candidate.is_peak && dist > params.sep && candidate.value > best_value) {
+                    best_value = candidate.value;
+                    best_idx = candidate.dense_idx;
+                }
+            }
+        }
+
+        cand_value[lane] = best_value;
+        cand_idx[lane] = best_idx;
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    if (active && lane == 0) {
+        const float primary_value = primary_value_scratch[row_slot];
+        const uint primary_idx = primary_idx_scratch[row_slot];
+        float secondary_value = -INFINITY;
+        uint secondary_idx = 0;
+        bool has_secondary = false;
+        for (uint i = 0; i < k; ++i) {
+            if (cand_value[i] > secondary_value) {
+                secondary_value = cand_value[i];
+                secondary_idx = cand_idx[i];
+                has_secondary = true;
+            }
+        }
+
+        theta_p[row] = float(primary_idx) * params.pi_over_dense;
+        m_p[row] = primary_value;
+
+        const float ratio_den = max(primary_value, 1.0e-30f);
+        const bool suppress = !has_secondary || (secondary_value / ratio_den) < params.tau_sec_floor;
+        if (suppress) {
+            theta_s[row] = as_type<float>(0x7fc00000u);
+            m_s[row] = 0.0f;
+        } else {
+            theta_s[row] = float(secondary_idx) * params.pi_over_dense;
+            m_s[row] = secondary_value;
+        }
+    }
+}
+
+inline float recovery_eval_segment_private(
+    device const float* response,
+    ulong row_offset,
+    thread const float* m,
+    constant RecoveryParams& params,
+    uint seg,
+    float u
+) {
+    const uint k = params.k;
+    const uint next = (seg + 1 == k) ? 0 : seg + 1;
+    const float y0 = response[row_offset + seg];
+    const float y1 = response[row_offset + next];
+    const float omt = 1.0f - u;
+    const float omt2 = omt * omt;
+    const float u2 = u * u;
+    return y0 * omt + y1 * u +
+        params.h2_over6 *
+            (m[seg] * (omt2 * omt - omt) + m[next] * (u2 * u - u));
+}
+
+inline float recovery_eval_spline_private(
+    device const float* response,
+    ulong row_offset,
+    thread const float* m,
+    constant RecoveryParams& params,
+    uint dense_idx
+) {
+    const ulong scaled = ulong(dense_idx) * ulong(params.k);
+    const uint seg = uint(scaled / ulong(params.dense_n));
+    const uint rem = uint(scaled - ulong(seg) * ulong(params.dense_n));
+    return recovery_eval_segment_private(
+        response, row_offset, m, params, seg, float(rem) / float(params.dense_n));
+}
+
+inline RecoveryPeakCandidate recovery_dense_peak_candidate_private(
+    device const float* response,
+    ulong row_offset,
+    thread const float* m,
+    constant RecoveryParams& params,
+    uint dense_idx
+) {
+    const uint left_idx = dense_idx == 0 ? params.dense_n - 1 : dense_idx - 1;
+    const uint right_idx = dense_idx + 1 == params.dense_n ? 0 : dense_idx + 1;
+    const float left_value = recovery_eval_spline_private(response, row_offset, m, params, left_idx);
+    const float center_value = recovery_eval_spline_private(response, row_offset, m, params, dense_idx);
+    const float right_value = recovery_eval_spline_private(response, row_offset, m, params, right_idx);
+    RecoveryPeakCandidate candidate;
+    candidate.is_peak = center_value >= left_value && center_value >= right_value;
+    candidate.dense_idx = dense_idx;
+    candidate.value = center_value;
+    return candidate;
+}
+
+inline float recovery_eval_near_segment_private(
+    device const float* response,
+    ulong row_offset,
+    thread const float* m,
+    constant RecoveryParams& params,
+    uint seg_hint,
+    uint dense_idx
+) {
+    int seg = int(seg_hint);
+    int rel = int(dense_idx) * int(params.k) - int(seg_hint) * int(params.dense_n);
+    while (rel < 0) {
+        rel += int(params.dense_n);
+        seg = (seg == 0) ? int(params.k) - 1 : seg - 1;
+    }
+    while (rel >= int(params.dense_n)) {
+        rel -= int(params.dense_n);
+        seg = (seg + 1 == int(params.k)) ? 0 : seg + 1;
+    }
+    return recovery_eval_segment_private(
+        response, row_offset, m, params, uint(seg), float(rel) / float(params.dense_n));
+}
+
+kernel void recovery_peaks_private(
     device const float* response [[buffer(0)]],
     device const float* cprime [[buffer(1)]],
     device const float* inv_denom [[buffer(2)]],
@@ -936,113 +1279,146 @@ kernel void recovery_peaks(
     device float* m_s [[buffer(7)]],
     device float* row_range [[buffer(8)]],
     constant RecoveryParams& params [[buffer(9)]],
-    threadgroup float* y_scratch [[threadgroup(0)]],
-    threadgroup float* m_scratch [[threadgroup(1)]],
-    uint tid [[thread_position_in_threadgroup]],
     uint row [[thread_position_in_grid]]
 ) {
-    if (row >= params.n_rows) {
+    if (row >= params.n_rows || params.k > 64) {
         return;
     }
 
     const uint k = params.k;
-    threadgroup float* y = y_scratch + ulong(tid) * ulong(k);
-    threadgroup float* m = m_scratch + ulong(tid) * ulong(k);
     const ulong row_offset = ulong(row) * ulong(k);
+    float m[64];
 
     float ymin = INFINITY;
     float ymax = -INFINITY;
     for (uint i = 0; i < k; ++i) {
         const float value = response[row_offset + i];
-        y[i] = value;
         ymin = min(ymin, value);
         ymax = max(ymax, value);
     }
     row_range[row] = ymax - ymin;
 
-    if (k == 1) {
-        m[0] = 0.0f;
-    } else if (k == 2) {
-        const float m0 = 6.0f * (y[1] - y[0]) / (params.h * params.h);
-        m[0] = m0;
-        m[1] = -m0;
-    } else {
-        for (uint i = 0; i < k; ++i) {
-            const uint prev = (i == 0) ? k - 1 : i - 1;
-            const uint next = (i + 1 == k) ? 0 : i + 1;
-            const float rhs = params.rhs_scale * (y[next] - 2.0f * y[i] + y[prev]);
-            if (i == 0) {
-                m[i] = rhs * inv_denom[i];
-            } else {
-                m[i] = (rhs - m[i - 1]) * inv_denom[i];
+    for (uint i = 0; i < k; ++i) {
+        const uint prev = (i == 0) ? k - 1 : i - 1;
+        const uint next = (i + 1 == k) ? 0 : i + 1;
+        const float y_prev = response[row_offset + prev];
+        const float y_curr = response[row_offset + i];
+        const float y_next = response[row_offset + next];
+        const float rhs = params.rhs_scale * (y_next - 2.0f * y_curr + y_prev);
+        if (i == 0) {
+            m[i] = rhs * inv_denom[i];
+        } else {
+            m[i] = (rhs - m[i - 1]) * inv_denom[i];
+        }
+    }
+    for (int i = int(k) - 2; i >= 0; --i) {
+        m[uint(i)] = m[uint(i)] - cprime[uint(i)] * m[uint(i) + 1];
+    }
+    const float correction =
+        (m[0] + params.gamma_inv * m[k - 1]) * params.cyclic_denom_inv;
+    for (uint i = 0; i < k; ++i) {
+        m[i] = m[i] - correction * z_solve[i];
+    }
+
+    float top_values[7];
+    uint top_indices[7];
+    for (uint i = 0; i < 7; ++i) {
+        top_values[i] = -INFINITY;
+        top_indices[i] = 0;
+    }
+
+    for (uint i = 0; i < k; ++i) {
+        const uint next = (i + 1 == k) ? 0 : i + 1;
+        const float a = 3.0f * params.h2_over6 * (m[next] - m[i]);
+        const float b = 6.0f * params.h2_over6 * m[i];
+        const float y_i = response[row_offset + i];
+        const float y_next = response[row_offset + next];
+        const float c = y_next - y_i - params.h2_over6 * (2.0f * m[i] + m[next]);
+
+        float roots[2];
+        uint n_roots = 0;
+        if (fabs(a) <= 1.0e-20f) {
+            if (fabs(b) > 1.0e-20f) {
+                roots[0] = -c / b;
+                n_roots = 1;
+            }
+        } else {
+            const float disc = b * b - 4.0f * a * c;
+            if (disc >= 0.0f) {
+                const float sqrt_disc = sqrt(disc);
+                const float denom = 2.0f * a;
+                roots[0] = (-b - sqrt_disc) / denom;
+                roots[1] = (-b + sqrt_disc) / denom;
+                n_roots = 2;
             }
         }
-        for (int i = int(k) - 2; i >= 0; --i) {
-            m[uint(i)] = m[uint(i)] - cprime[uint(i)] * m[uint(i) + 1];
-        }
-        const float correction =
-            (m[0] + params.gamma_inv * m[k - 1]) * params.cyclic_denom_inv;
-        for (uint i = 0; i < k; ++i) {
-            m[i] = m[i] - correction * z_solve[i];
+
+        for (uint root_idx = 0; root_idx < n_roots; ++root_idx) {
+            const float u = roots[root_idx];
+            if (u <= 0.0f || u >= 1.0f) {
+                continue;
+            }
+            const float second_derivative = m[i] * (1.0f - u) + m[next] * u;
+            if (second_derivative >= 0.0f) {
+                continue;
+            }
+            const uint base_idx = recovery_dense_floor_idx(params, i, u);
+            uint best_idx = base_idx;
+            float best_value =
+                recovery_eval_near_segment_private(response, row_offset, m, params, i, base_idx);
+            for (uint offset = 0; offset < 2; ++offset) {
+                const uint dense_idx =
+                    (base_idx + offset >= params.dense_n) ? base_idx + offset - params.dense_n : base_idx + offset;
+                const float value =
+                    recovery_eval_near_segment_private(response, row_offset, m, params, i, dense_idx);
+                if (value > best_value) {
+                    best_value = value;
+                    best_idx = dense_idx;
+                }
+            }
+            for (uint pos = 0; pos < 7; ++pos) {
+                if (best_value > top_values[pos]) {
+                    for (uint shift = 6; shift > pos; --shift) {
+                        top_values[shift] = top_values[shift - 1];
+                        top_indices[shift] = top_indices[shift - 1];
+                    }
+                    top_values[pos] = best_value;
+                    top_indices[pos] = best_idx;
+                    break;
+                }
+            }
         }
     }
 
-    const uint dense_last = params.dense_n - 1;
-    const float inv_dense = 1.0f / float(params.dense_n);
-    float prev = recovery_eval_spline(y, m, params, dense_last);
-    float curr = recovery_eval_segment(y, m, params, 0, 0.0f);
-    float primary_value = -INFINITY;
-    uint primary_idx = 0;
-    uint seg = 0;
-    uint rem = 0;
-    for (uint j = 0; j < params.dense_n; ++j) {
-        uint next_seg = seg;
-        uint next_rem = rem + k;
-        while (next_rem >= params.dense_n) {
-            next_rem -= params.dense_n;
-            next_seg = (next_seg + 1 == k) ? 0 : next_seg + 1;
-        }
-        const float next_value = (j + 1 == params.dense_n)
-            ? recovery_eval_segment(y, m, params, 0, 0.0f)
-            : recovery_eval_segment(y, m, params, next_seg, float(next_rem) * inv_dense);
-        if (curr >= prev && curr >= next_value && curr > primary_value) {
-            primary_value = curr;
-            primary_idx = j;
-        }
-        prev = curr;
-        curr = next_value;
-        seg = next_seg;
-        rem = next_rem;
+    float primary_value = top_values[0];
+    uint primary_idx = top_indices[0];
+    if (primary_value == -INFINITY) {
+        primary_value = response[row_offset];
+        primary_idx = 0;
     }
 
-    prev = recovery_eval_spline(y, m, params, dense_last);
-    curr = recovery_eval_segment(y, m, params, 0, 0.0f);
     float secondary_value = -INFINITY;
     uint secondary_idx = 0;
     bool has_secondary = false;
-    seg = 0;
-    rem = 0;
-    for (uint j = 0; j < params.dense_n; ++j) {
-        uint next_seg = seg;
-        uint next_rem = rem + k;
-        while (next_rem >= params.dense_n) {
-            next_rem -= params.dense_n;
-            next_seg = (next_seg + 1 == k) ? 0 : next_seg + 1;
+    for (uint pos = 1; pos < 7; ++pos) {
+        if (top_values[pos] == -INFINITY) {
+            break;
         }
-        const float next_value = (j + 1 == params.dense_n)
-            ? recovery_eval_segment(y, m, params, 0, 0.0f)
-            : recovery_eval_segment(y, m, params, next_seg, float(next_rem) * inv_dense);
-        uint dist = j > primary_idx ? j - primary_idx : primary_idx - j;
+        uint dist = top_indices[pos] > primary_idx
+            ? top_indices[pos] - primary_idx
+            : primary_idx - top_indices[pos];
         dist = min(dist, params.dense_n - dist);
-        if (dist > params.sep && curr >= prev && curr >= next_value && curr > secondary_value) {
-            secondary_value = curr;
-            secondary_idx = j;
-            has_secondary = true;
+        if (dist > params.sep) {
+            const RecoveryPeakCandidate candidate =
+                recovery_dense_peak_candidate_private(
+                    response, row_offset, m, params, top_indices[pos]);
+            if (candidate.is_peak) {
+                secondary_value = candidate.value;
+                secondary_idx = candidate.dense_idx;
+                has_secondary = true;
+                break;
+            }
         }
-        prev = curr;
-        curr = next_value;
-        seg = next_seg;
-        rem = next_rem;
     }
 
     theta_p[row] = float(primary_idx) * params.pi_over_dense;
@@ -1259,6 +1635,7 @@ impl MetalState {
         let device =
             Device::system_default().ok_or_else(|| "no Metal device is available".to_string())?;
         let options = CompileOptions::new();
+        options.set_fast_math_enabled(true);
         let library = device
             .new_library_with_source(SHADER_SOURCE, &options)
             .map_err(|err| format!("failed to compile Metal shader: {err}"))?;
@@ -1383,7 +1760,7 @@ impl MetalState {
                 format!("failed to create LF scanline y-major Metal compute pipeline: {err}")
             })?;
         let recovery_function = library
-            .get_function("recovery_peaks", None)
+            .get_function("recovery_peaks_private", None)
             .map_err(|err| format!("failed to load recovery Metal function: {err}"))?;
         let recovery_pipeline = device
             .new_compute_pipeline_state_with_function(&recovery_function)
@@ -1489,36 +1866,6 @@ fn threadgroup_1d_with_cap(execution_width: u64, max_threads: u64, cap: u64) -> 
         height: 1,
         depth: 1,
     }
-}
-
-fn recovery_threadgroup(
-    pipeline: &ComputePipelineState,
-    k: usize,
-    max_threadgroup_memory: u64,
-) -> Result<MTLSize, String> {
-    let bytes_per_thread = k
-        .checked_mul(2)
-        .and_then(|value| value.checked_mul(std::mem::size_of::<c_float>()))
-        .ok_or_else(|| "recovery threadgroup scratch size overflowed".to_string())?;
-    if bytes_per_thread == 0 || bytes_per_thread as u64 > max_threadgroup_memory {
-        return Err("recovery threadgroup scratch exceeds device limit".to_string());
-    }
-
-    let execution_width = pipeline.thread_execution_width().max(1);
-    let max_threads = pipeline.max_total_threads_per_threadgroup().max(1);
-    let memory_cap = max_threadgroup_memory / bytes_per_thread as u64;
-    let cap = max_threads.min(256).min(memory_cap).max(1);
-    let width = if cap >= execution_width {
-        (cap / execution_width).max(1) * execution_width
-    } else {
-        cap
-    };
-
-    Ok(MTLSize {
-        width,
-        height: 1,
-        depth: 1,
-    })
 }
 
 fn threadgroup_2d(pipeline: &ComputePipelineState) -> MTLSize {
@@ -3801,6 +4148,9 @@ unsafe fn run_recover_two_peaks_with_state(
     )?;
     let out_valid_len = checked_len(row_count, std::mem::size_of::<u8>(), "recovery validity")?;
 
+    if k_count > 64 {
+        return Err("closed-form recovery currently supports at most 64 angles".to_string());
+    }
     let (cprime, inv_denom, z_solve, cyclic_denom_inv) = build_recovery_solver(k_count)?;
     let coeff_len = checked_len(k_count, std::mem::size_of::<c_float>(), "recovery solver")?;
 
@@ -3823,16 +4173,6 @@ unsafe fn run_recover_two_peaks_with_state(
         gamma_inv: -0.25,
         cyclic_denom_inv,
     };
-
-    let scratch_budget = (state.device.max_threadgroup_memory_length() as u64).min(32 * 1024);
-    let recovery_group = recovery_threadgroup(&state.recovery_pipeline, k_count, scratch_budget)?;
-    let scratch_len = (recovery_group.width as usize)
-        .checked_mul(k_count)
-        .and_then(|value| value.checked_mul(std::mem::size_of::<c_float>()))
-        .ok_or_else(|| "recovery scratch length overflowed".to_string())?;
-    if scratch_len == 0 {
-        return Err("recovery scratch length must be positive".to_string());
-    }
 
     let shared_options = MTLResourceOptions::StorageModeShared;
     let response_buffer = state.device.new_buffer_with_bytes_no_copy(
@@ -3917,15 +4257,13 @@ unsafe fn run_recover_two_peaks_with_state(
     encoder.set_buffer(7, Some(&m_s_buffer), 0);
     encoder.set_buffer(8, Some(&row_range_buffer), 0);
     encoder.set_buffer(9, Some(&params_buffer), 0);
-    encoder.set_threadgroup_memory_length(0, scratch_len as u64);
-    encoder.set_threadgroup_memory_length(1, scratch_len as u64);
     encoder.dispatch_threads(
         MTLSize {
             width: n_rows as u64,
             height: 1,
             depth: 1,
         },
-        recovery_group,
+        threadgroup_1d(&state.recovery_pipeline),
     );
     encoder.end_encoding();
     command_buffer.commit();

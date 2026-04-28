@@ -5,11 +5,13 @@ Run from repo root:
     PYTHONPATH=src:agent_workspaces/orientation_recovery_metal \\
         python3 agent_workspaces/orientation_recovery_metal/tests/test_recovery_metal.py
 
-Three tests:
-    1. test_correctness_small  -- 200K-row slab, outputs match reference.
+Four tests:
+    1. test_correctness_small  -- 200K-row response, outputs match reference.
     2. test_correctness_full   -- full 4096x4096 (16.7M rows).
     3. test_speed              -- batched call >= 20x faster than the
                                   numpy reference at 200K rows.
+    4. test_speed_full_image   -- full 4096x4096 recovery under 500 ms
+                                  after warmup.
 """
 
 from __future__ import annotations
@@ -17,6 +19,7 @@ from __future__ import annotations
 import math
 import sys
 import time
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -44,6 +47,37 @@ THETA_TOL_RAD = math.radians(0.5)   # 0.5 deg
 M_TOL_REL     = 5e-3                # 0.5%
 SEC_DISAGREE_FRAC = 1e-3            # <=0.1% rows may disagree on secondary kept-ness
 V_DISAGREE_FRAC   = 1e-3            # <=0.1% rows may disagree on validity flag
+
+
+@lru_cache(maxsize=1)
+def _build_full_image_response():
+    from PIL import Image
+    from edgecritic.wvf._radius_kernels import build_wvf_radius_kernels
+    from edgecritic.wvf._metal import wvf_radius_gradients_metal
+    from edgecritic.lf._metal import lf_stack
+
+    img_path = (ROOT / "example_images/synthetic_nested_shapes/clean/4096"
+                / "nested_star_square_oval_low_contrast_mixed_chroma_4096.png")
+    rng = np.random.default_rng(0)
+    rgb = np.asarray(Image.open(img_path).convert("RGB")).astype(np.float32)
+    rgb_n = np.clip(rgb + rng.normal(0.0, 13.0, rgb.shape).astype(np.float32),
+                    0.0, 255.0)
+    L = (0.2126 * rgb_n[..., 0] + 0.7152 * rgb_n[..., 1]
+         + 0.0722 * rgb_n[..., 2]).astype(np.float32)
+    kernels = build_wvf_radius_kernels(radius=9, order=3)
+    gx, gy = wvf_radius_gradients_metal(L, kernels, output_dtype=np.float32)
+    n_orient = 64
+    stack = lf_stack(
+        gx, gy,
+        lf_half_length=60,
+        n_orientations=n_orient,
+        output_dtype=np.float32,
+        method="box",
+    )
+    H, W = L.shape
+    resp = stack.transpose(1, 2, 0).reshape(H * W, n_orient).copy()
+    angles = np.linspace(0, math.pi, n_orient, endpoint=False)
+    return angles, resp
 
 
 def _check_outputs(angles, response, expected, tag):
@@ -122,37 +156,12 @@ def test_correctness_small():
 
 
 def test_correctness_full():
-    """Build a full 4096x4096 slab, run Metal, compare to scipy ref on
+    """Build a full 4096x4096 response, run Metal, compare to scipy ref on
     a random 500K subset (full reference is too slow to run inside the
     test)."""
     if not METAL_OK:
         raise RuntimeError("Metal recovery backend unavailable")
-    from PIL import Image
-    from edgecritic.wvf._radius_kernels import build_wvf_radius_kernels
-    from edgecritic.wvf._metal import wvf_radius_gradients_metal
-    from edgecritic.lf._metal import lf_stack
-
-    img_path = (ROOT / "example_images/synthetic_nested_shapes/clean/4096"
-                / "nested_star_square_oval_low_contrast_mixed_chroma_4096.png")
-    rng = np.random.default_rng(0)
-    rgb = np.asarray(Image.open(img_path).convert("RGB")).astype(np.float32)
-    rgb_n = np.clip(rgb + rng.normal(0.0, 13.0, rgb.shape).astype(np.float32),
-                    0.0, 255.0)
-    L = (0.2126 * rgb_n[..., 0] + 0.7152 * rgb_n[..., 1]
-         + 0.0722 * rgb_n[..., 2]).astype(np.float32)
-    kernels = build_wvf_radius_kernels(radius=9, order=3)
-    gx, gy = wvf_radius_gradients_metal(L, kernels, output_dtype=np.float32)
-    n_orient = 64
-    stack = lf_stack(
-        gx, gy,
-        lf_half_length=60,
-        n_orientations=n_orient,
-        output_dtype=np.float32,
-        method="box",
-    )
-    H, W = L.shape
-    resp = stack.transpose(1, 2, 0).reshape(H * W, n_orient).copy()
-    angles = np.linspace(0, math.pi, n_orient, endpoint=False)
+    angles, resp = _build_full_image_response()
     print(f"[full]  N={resp.shape[0]:,}  K={resp.shape[1]}")
 
     th_p, M_p, th_s, M_s, v = recover_two_peaks_metal(
@@ -179,6 +188,31 @@ def test_correctness_full():
                                                           # primary/secondary
                                                           # are the real check
                    "full(500K subset)")
+    print("  PASS")
+
+
+def test_speed_full_image():
+    """Full 4096x4096 Metal recovery must complete under 500 ms after warmup."""
+    if not METAL_OK:
+        raise RuntimeError("Metal recovery backend unavailable")
+    angles, resp = _build_full_image_response()
+
+    _ = recover_two_peaks_metal(angles, resp,
+                                tau_sec_floor=0.40,
+                                tau_validity=0.10,
+                                dense_n=500, min_sep_frac=0.125)
+
+    t0 = time.perf_counter()
+    _ = recover_two_peaks_metal(angles, resp,
+                                tau_sec_floor=0.40,
+                                tau_validity=0.10,
+                                dense_n=500, min_sep_frac=0.125)
+    elapsed = time.perf_counter() - t0
+
+    print(f"  full-image recovery: {elapsed*1000:.0f} ms")
+    if elapsed > 0.5:
+        raise AssertionError(
+            f"full-image recovery {elapsed*1000:.0f} ms > 500 ms target")
     print("  PASS")
 
 
@@ -223,6 +257,7 @@ if __name__ == "__main__":
     failed = 0
     for name, fn in [("test_correctness_small", test_correctness_small),
                      ("test_correctness_full",  test_correctness_full),
+                     ("test_speed_full_image",  test_speed_full_image),
                      ("test_speed",             test_speed)]:
         print(f"\n=== {name} ===")
         try:
