@@ -21,13 +21,16 @@ Algorithm
    y[K] := y[0] appended.
 2. Evaluate the spline on a dense grid of dense_n equally spaced angles
    in [0, pi).
-3. Mark dense-grid local maxima (>= both periodic neighbours).
+3. Mark dense-grid local maxima (>= both periodic neighbours). Sample-knot
+   local maxima are included by this dense-grid test.
 4. Primary  = argmax over local maxima.
 5. Secondary candidate = argmax over local maxima at periodic dense
    index distance > min_sep_frac * dense_n from primary.
 6. Suppress secondary (M_s = 0, theta_s = NaN) if there is no such
    candidate, or if M_sec_candidate / M_p < tau_sec_floor.
-7. Validity flag v (per-pixel range rule, eq. validity-range):
+7. Clamp emitted primary and secondary magnitudes to max_k y_k after
+   the suppression decision.
+8. Validity flag v (per-pixel range rule, eq. validity-range):
        R       = max_k y_k - min_k y_k
        R_ref   = max over rows of R     (image-wide reference)
        v       = 1 if R > tau * R_ref else 0
@@ -76,6 +79,8 @@ def find_two_peaks(angles_rad, response_2d,
     M_hat  = dy[np.arange(N), primary_idx]
 
     # ---- secondary peak (non-adjacent, magnitude-floor gated) ----
+    # Dense-grid local maxima already include sample-knot maxima for the
+    # Python reference. The closed-form Metal kernels add those explicitly.
     sep = max(1, int(min_sep_frac * dense_n))
     grid = np.arange(dense_n)
     d = np.abs(grid[None, :] - primary_idx[:, None])
@@ -93,6 +98,12 @@ def find_two_peaks(angles_rad, response_2d,
     suppress = ~has_local_max | weak
     th_sec = np.where(suppress, np.nan, dense_a[sec_idx])
     M_sec  = np.where(suppress, 0.0,    M_sec_raw)
+
+    # Clamp emitted magnitudes so cubic overshoot cannot inflate downstream
+    # fusion weights. The suppression ratio above uses the unclamped values.
+    y_max = response_2d.max(axis=1)
+    M_hat = np.minimum(M_hat, y_max)
+    M_sec = np.minimum(M_sec, y_max)
 
     # ---- per-pixel validity flag (range rule) ----
     R     = response_2d.max(axis=1) - response_2d.min(axis=1)

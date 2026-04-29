@@ -1085,14 +1085,15 @@ kernel void recovery_peaks(
 
         for (uint root_idx = 0; root_idx < n_roots; ++root_idx) {
             const float u = roots[root_idx];
-            if (u <= 0.0f || u >= 1.0f) {
+            if (u < -1.0e-6f || u > 1.0f + 1.0e-6f) {
                 continue;
             }
-            const float second_derivative = m[i] * (1.0f - u) + m[next] * u;
+            const float u_eval = clamp(u, 0.0f, 1.0f);
+            const float second_derivative = m[i] * (1.0f - u_eval) + m[next] * u_eval;
             if (second_derivative >= 0.0f) {
                 continue;
             }
-            base_idx = recovery_dense_floor_idx(params, i, u);
+            base_idx = recovery_dense_floor_idx(params, i, u_eval);
             for (uint offset = 1; offset < 2; ++offset) {
                 const uint dense_idx =
                     (base_idx + offset >= params.dense_n) ? base_idx + offset - params.dense_n : base_idx + offset;
@@ -1130,6 +1131,28 @@ kernel void recovery_peaks(
         float best_value = -INFINITY;
         uint best_idx = 0;
 
+        const uint prev_sample = (i == 0) ? k - 1 : i - 1;
+        const float knot_derivative =
+            y[next] - y[i] - params.h2_over6 * (2.0f * m[i] + m[next]);
+        if (y[i] > y[prev_sample]
+                && y[i] > y[next]
+                && m[i] < 0.0f
+                && fabs(knot_derivative) <= 1.0e-7f) {
+            const uint sample_dense = (i * params.dense_n) / k;
+            for (uint offset = 0; offset < 2; ++offset) {
+                const uint dense_idx =
+                    (sample_dense + offset >= params.dense_n) ? sample_dense + offset - params.dense_n : sample_dense + offset;
+                const RecoveryPeakCandidate candidate =
+                    recovery_dense_peak_candidate(y, m, params, dense_idx);
+                uint dist = dense_idx > primary_idx ? dense_idx - primary_idx : primary_idx - dense_idx;
+                dist = min(dist, params.dense_n - dist);
+                if (candidate.is_peak && dist > params.sep && candidate.value > best_value) {
+                    best_value = candidate.value;
+                    best_idx = candidate.dense_idx;
+                }
+            }
+        }
+
         const float a = 3.0f * params.h2_over6 * (m[next] - m[i]);
         const float b = 6.0f * params.h2_over6 * m[i];
         const float c = y[next] - y[i] - params.h2_over6 * (2.0f * m[i] + m[next]);
@@ -1154,14 +1177,15 @@ kernel void recovery_peaks(
 
         for (uint root_idx = 0; root_idx < n_roots; ++root_idx) {
             const float u = roots[root_idx];
-            if (u <= 0.0f || u >= 1.0f) {
+            if (u < -1.0e-6f || u > 1.0f + 1.0e-6f) {
                 continue;
             }
-            const float second_derivative = m[i] * (1.0f - u) + m[next] * u;
+            const float u_eval = clamp(u, 0.0f, 1.0f);
+            const float second_derivative = m[i] * (1.0f - u_eval) + m[next] * u_eval;
             if (second_derivative >= 0.0f) {
                 continue;
             }
-            const uint base_idx = recovery_dense_floor_idx(params, i, u);
+            const uint base_idx = recovery_dense_floor_idx(params, i, u_eval);
             for (uint offset = 1; offset < 2; ++offset) {
                 const uint dense_idx =
                     (base_idx + offset >= params.dense_n) ? base_idx + offset - params.dense_n : base_idx + offset;
@@ -1195,8 +1219,13 @@ kernel void recovery_peaks(
             }
         }
 
+        float row_max = y[0];
+        for (uint i = 1; i < k; ++i) {
+            row_max = max(row_max, y[i]);
+        }
+
         theta_p[row] = float(primary_idx) * params.pi_over_dense;
-        m_p[row] = primary_value;
+        m_p[row] = min(primary_value, row_max);
 
         const float ratio_den = max(primary_value, 1.0e-30f);
         const bool suppress = !has_secondary || (secondary_value / ratio_den) < params.tau_sec_floor;
@@ -1205,7 +1234,7 @@ kernel void recovery_peaks(
             m_s[row] = 0.0f;
         } else {
             theta_s[row] = float(secondary_idx) * params.pi_over_dense;
-            m_s[row] = secondary_value;
+            m_s[row] = min(secondary_value, row_max);
         }
     }
 }
@@ -1372,14 +1401,15 @@ kernel void recovery_peaks_private(
 
         for (uint root_idx = 0; root_idx < n_roots; ++root_idx) {
             const float u = roots[root_idx];
-            if (u <= 0.0f || u >= 1.0f) {
+            if (u < -1.0e-6f || u > 1.0f + 1.0e-6f) {
                 continue;
             }
-            const float second_derivative = m[i] * (1.0f - u) + m[next] * u;
+            const float u_eval = clamp(u, 0.0f, 1.0f);
+            const float second_derivative = m[i] * (1.0f - u_eval) + m[next] * u_eval;
             if (second_derivative >= 0.0f) {
                 continue;
             }
-            const uint base_idx = recovery_dense_floor_idx(params, i, u);
+            const uint base_idx = recovery_dense_floor_idx(params, i, u_eval);
             uint best_idx = base_idx;
             float best_value =
                 recovery_eval_near_segment_private(response, row_offset, m, params, i, base_idx);
@@ -1417,7 +1447,7 @@ kernel void recovery_peaks_private(
     float secondary_value = -INFINITY;
     uint secondary_idx = 0;
     bool has_secondary = false;
-    for (uint pos = 1; pos < 7; ++pos) {
+    for (uint pos = 0; pos < 7; ++pos) {
         if (top_values[pos] == -INFINITY) {
             break;
         }
@@ -1439,7 +1469,7 @@ kernel void recovery_peaks_private(
     }
 
     theta_p[row] = float(primary_idx) * params.pi_over_dense;
-    m_p[row] = primary_value;
+    m_p[row] = min(primary_value, ymax);
 
     const float ratio_den = max(primary_value, 1.0e-30f);
     const bool suppress = !has_secondary || (secondary_value / ratio_den) < params.tau_sec_floor;
@@ -1448,7 +1478,7 @@ kernel void recovery_peaks_private(
         m_s[row] = 0.0f;
     } else {
         theta_s[row] = float(secondary_idx) * params.pi_over_dense;
-        m_s[row] = secondary_value;
+        m_s[row] = min(secondary_value, ymax);
     }
 }
 
@@ -1613,14 +1643,15 @@ kernel void recovery_peaks_private_stack(
 
         for (uint root_idx = 0; root_idx < n_roots; ++root_idx) {
             const float u = roots[root_idx];
-            if (u <= 0.0f || u >= 1.0f) {
+            if (u < -1.0e-6f || u > 1.0f + 1.0e-6f) {
                 continue;
             }
-            const float second_derivative = m[i] * (1.0f - u) + m[next] * u;
+            const float u_eval = clamp(u, 0.0f, 1.0f);
+            const float second_derivative = m[i] * (1.0f - u_eval) + m[next] * u_eval;
             if (second_derivative >= 0.0f) {
                 continue;
             }
-            const uint base_idx = recovery_dense_floor_idx(params, i, u);
+            const uint base_idx = recovery_dense_floor_idx(params, i, u_eval);
             uint best_idx = base_idx;
             float best_value =
                 recovery_eval_near_segment_stack(response, row, m, params, i, base_idx);
@@ -1658,7 +1689,7 @@ kernel void recovery_peaks_private_stack(
     float secondary_value = -INFINITY;
     uint secondary_idx = 0;
     bool has_secondary = false;
-    for (uint pos = 1; pos < 7; ++pos) {
+    for (uint pos = 0; pos < 7; ++pos) {
         if (top_values[pos] == -INFINITY) {
             break;
         }
@@ -1680,7 +1711,7 @@ kernel void recovery_peaks_private_stack(
     }
 
     theta_p[row] = float(primary_idx) * params.pi_over_dense;
-    m_p[row] = primary_value;
+    m_p[row] = min(primary_value, ymax);
 
     const float ratio_den = max(primary_value, 1.0e-30f);
     const bool suppress = !has_secondary || (secondary_value / ratio_den) < params.tau_sec_floor;
@@ -1689,7 +1720,7 @@ kernel void recovery_peaks_private_stack(
         m_s[row] = 0.0f;
     } else {
         theta_s[row] = float(secondary_idx) * params.pi_over_dense;
-        m_s[row] = secondary_value;
+        m_s[row] = min(secondary_value, ymax);
     }
 }
 

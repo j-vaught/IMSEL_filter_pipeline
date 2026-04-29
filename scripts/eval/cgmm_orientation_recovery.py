@@ -15,7 +15,8 @@ Sentinel logic:
   primary_idx = argmax over local maxima  (always exists, M_hat = peak value)
 
   secondary_idx = argmax over local maxima at distance > min_sep_frac * dense_n
-                  from primary_idx
+                  from primary_idx. Dense-grid local maxima include sample-knot
+                  local maxima.
   if no such local max exists:
       M_sec = 0;  theta_sec = NaN
   else:
@@ -25,6 +26,8 @@ Sentinel logic:
       else:
           theta_sec = candidate angle
           M_sec     = candidate response value
+
+  M_hat and M_sec are clamped to max_k y_k after the suppression decision.
 """
 
 from __future__ import annotations
@@ -73,7 +76,8 @@ def find_two_peaks(angles_rad, response_2d,
     M_hat  = dy[np.arange(N), primary_idx]
 
     # Secondary candidate: largest local maximum at periodic distance
-    # > min_sep_frac * dense_n from primary.
+    # > min_sep_frac * dense_n from primary. Dense-grid local maxima already
+    # include sample-knot maxima for this reference path.
     sep = max(1, int(min_sep_frac * dense_n))
     grid = np.arange(dense_n)
     d = np.abs(grid[None, :] - primary_idx[:, None])
@@ -92,4 +96,10 @@ def find_two_peaks(angles_rad, response_2d,
     suppress = ~has_local_max | weak
     th_sec = np.where(suppress, np.nan, dense_a[sec_idx])
     M_sec  = np.where(suppress, 0.0,    M_sec_raw)
+
+    # Clamp emitted magnitudes while leaving the suppression ratio above on
+    # the raw spline values.
+    y_max = response_2d.max(axis=1)
+    M_hat = np.minimum(M_hat, y_max)
+    M_sec = np.minimum(M_sec, y_max)
     return th_hat, M_hat, th_sec, M_sec
