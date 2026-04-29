@@ -120,14 +120,14 @@ from scipy.special import ive
 def circular_distance(a, b):
     """Smallest absolute distance on the circle.
     Returns values in [0, pi]."""
-    d = (np.asarray(a) - np.asarray(b) + np.pi) % (2.0 * np.pi) - np.pi
-    return np.abs(d)
+    d = np.abs(np.asarray(a) - np.asarray(b))
+    return np.where(d > np.float32(np.pi), np.float32(2.0 * np.pi) - d, d)
 
 
 def inv_A1_banerjee(R):
     """Banerjee 2005 closed-form inverse of A(kappa) = I_1 / I_0 in d=2.
     R in [0, 1-1e-6); R=0 -> kappa=0; R->1 -> kappa->inf."""
-    R = np.clip(np.asarray(R, dtype=np.float64), 0.0, 1.0 - 1e-6)
+    R = np.clip(np.asarray(R, dtype=np.float32), 0.0, 1.0 - 1e-6)
     R2 = R * R
     return (R * (2.0 - R2)) / (1.0 - R2)
 
@@ -135,7 +135,7 @@ def inv_A1_banerjee(R):
 def log_I0_safe(kappa):
     """log I_0(kappa) without overflow.
     Used only on the soft-EM path; production uses hard EM."""
-    kappa = np.maximum(np.asarray(kappa, dtype=np.float64), 0.0)
+    kappa = np.maximum(np.asarray(kappa, dtype=np.float32), 0.0)
     return kappa + np.log(np.maximum(ive(0, kappa), 1e-300))
 
 
@@ -148,10 +148,10 @@ def init_centers(phi, w, K):
         mu[0] = phi[argmax_n w[n]]
         mu[k] = phi[argmax_n w[n] * min_{j<k} circ_dist(phi[n], mu[j])]
     """
-    phi = np.asarray(phi, dtype=np.float64)
-    w   = np.asarray(w,   dtype=np.float64)
+    phi = np.asarray(phi, dtype=np.float32)
+    w   = np.asarray(w,   dtype=np.float32)
     P, N = phi.shape
-    mu = np.zeros((P, K), dtype=np.float64)
+    mu = np.zeros((P, K), dtype=np.float32)
     idx0 = np.argmax(w, axis=1)
     mu[:, 0] = phi[np.arange(P), idx0]
     for k in range(1, K):
@@ -183,12 +183,12 @@ def cgmm_em(phi, w, K,
 
     Production setting: hard_em=True, n_iters=30.
     """
-    phi = np.asarray(phi, dtype=np.float64)
-    w   = np.asarray(w,   dtype=np.float64)
+    phi = np.asarray(phi, dtype=np.float32)
+    w   = np.asarray(w,   dtype=np.float32)
     P, N = phi.shape
     mu    = init_centers(phi, w, K)
-    kappa = np.full((P, K), init_kappa, dtype=np.float64)
-    pi    = np.full((P, K), 1.0 / K,    dtype=np.float64)
+    kappa = np.full((P, K), init_kappa, dtype=np.float32)
+    pi    = np.full((P, K), 1.0 / K,    dtype=np.float32)
     cos_phi = np.cos(phi)
     sin_phi = np.sin(phi)
     log_2pi = np.log(2.0 * np.pi)
@@ -198,7 +198,7 @@ def cgmm_em(phi, w, K,
         if hard_em or (hard_seed and it == 0):
             d = circular_distance(phi[:, None, :], mu[:, :, None])  # (P, K, N)
             hard_idx = np.argmin(d, axis=1)                           # (P, N)
-            gamma = np.zeros((P, K, N), dtype=np.float64)
+            gamma = np.zeros((P, K, N), dtype=np.float32)
             pp = np.arange(P)[:, None]
             nn = np.arange(N)[None, :]
             gamma[pp, hard_idx, nn] = 1.0
@@ -235,14 +235,14 @@ def theta_M_to_phi_w(theta_deg, M, v=None):
     """(theta in [0, 180), M >= 0, v in {0, 1}) -> (phi in [0, 2*pi),
     w = v * M).  NaN-safe.  If v is None it is derived from finiteness
     and M > 0."""
-    theta_deg = np.asarray(theta_deg, dtype=np.float64)
-    M         = np.asarray(M,         dtype=np.float64)
+    theta_deg = np.asarray(theta_deg, dtype=np.float32)
+    M         = np.asarray(M,         dtype=np.float32)
     finite_th = np.isfinite(theta_deg)
     finite_M  = np.isfinite(M)
     if v is None:
-        v_arr = (finite_th & finite_M & (M > 0.0)).astype(np.float64)
+        v_arr = (finite_th & finite_M & (M > 0.0)).astype(np.float32)
     else:
-        v_arr = np.asarray(v, dtype=np.float64)
+        v_arr = np.asarray(v, dtype=np.float32)
     theta_safe = np.where(finite_th, theta_deg, 0.0)
     phi = (2.0 * np.deg2rad(theta_safe)) % (2.0 * np.pi)
     M_safe = np.where(finite_M, np.maximum(M, 0.0), 0.0)
@@ -264,10 +264,10 @@ def cgmm_fuse_two_pass(phi_p, w_p, phi_s, w_s, K=3, n_iters=30,
     component of the primary fit.  Secondary slot = highest pi component
     of the secondary fit.  Suppression rule applied at the end.
     """
-    phi_p = np.asarray(phi_p, dtype=np.float64)
-    w_p   = np.asarray(w_p,   dtype=np.float64)
-    phi_s = np.asarray(phi_s, dtype=np.float64)
-    w_s   = np.asarray(w_s,   dtype=np.float64)
+    phi_p = np.asarray(phi_p, dtype=np.float32)
+    w_p   = np.asarray(w_p,   dtype=np.float32)
+    phi_s = np.asarray(phi_s, dtype=np.float32)
+    w_s   = np.asarray(w_s,   dtype=np.float32)
     P, N = phi_p.shape
     assert phi_s.shape == (P, N) and w_p.shape == (P, N) and w_s.shape == (P, N)
 
@@ -285,21 +285,21 @@ def cgmm_fuse_two_pass(phi_p, w_p, phi_s, w_s, K=3, n_iters=30,
     )
 
     # ---- output buffers ----
-    theta_primary = np.full(P, np.nan, dtype=np.float64)
-    M_primary     = np.zeros(P,        dtype=np.float64)
-    theta_sec     = np.full(P, np.nan, dtype=np.float64)
-    M_sec         = np.zeros(P,        dtype=np.float64)
+    theta_primary = np.full(P, np.nan, dtype=np.float32)
+    M_primary     = np.zeros(P,        dtype=np.float32)
+    theta_sec     = np.full(P, np.nan, dtype=np.float32)
+    M_sec         = np.zeros(P,        dtype=np.float32)
     v_fused       = primary_valid.astype(np.uint8)
 
-    primary_pi    = np.full((P, K), np.nan)
-    primary_mu    = np.full((P, K), np.nan)
-    primary_kappa = np.full((P, K), np.nan)
-    secondary_pi    = np.full((P, K), np.nan)
-    secondary_mu    = np.full((P, K), np.nan)
-    secondary_kappa = np.full((P, K), np.nan)
+    primary_pi    = np.full((P, K), np.nan, dtype=np.float32)
+    primary_mu    = np.full((P, K), np.nan, dtype=np.float32)
+    primary_kappa = np.full((P, K), np.nan, dtype=np.float32)
+    secondary_pi    = np.full((P, K), np.nan, dtype=np.float32)
+    secondary_mu    = np.full((P, K), np.nan, dtype=np.float32)
+    secondary_kappa = np.full((P, K), np.nan, dtype=np.float32)
     keep_secondary_mask = np.zeros(P, dtype=np.uint8)
 
-    mu_kp_phi = np.full(P, np.nan, dtype=np.float64)
+    mu_kp_phi = np.full(P, np.nan, dtype=np.float32)
 
     # ---- primary pass ----
     if primary_valid.any():
