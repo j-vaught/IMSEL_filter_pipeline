@@ -102,6 +102,12 @@ def nms_check_vec(M_image, x, y, theta_at_xy,
     return True if M_image[y, x] >= bilinear-sampled neighbour values
     at +- `neighborhood` units along the gradient direction.
 
+    Out-of-range comparison samples are set to +inf, so a boundary
+    pixel whose ± neighbour falls outside the image automatically
+    fails the local-maximum test on that side.  This excludes the
+    outer band of width `neighborhood` pixels from the NMS output
+    by the test itself, without a separate boundary mask.
+
     M_image  : (H, W) float — magnitude map being thinned
     x, y     : (P,) int     — center pixel coords
     theta_at_xy : (P,) float in [0, pi)
@@ -110,8 +116,10 @@ def nms_check_vec(M_image, x, y, theta_at_xy,
     """
     ox, oy = gradient_offset(theta_at_xy, angular_fidelity)
     n = float(neighborhood)
-    M_plus  = bilinear_sample(M_image, x + n * ox, y + n * oy)
-    M_minus = bilinear_sample(M_image, x - n * ox, y - n * oy)
+    M_plus  = bilinear_sample(M_image, x + n * ox, y + n * oy,
+                              default=np.inf)
+    M_minus = bilinear_sample(M_image, x - n * ox, y - n * oy,
+                              default=np.inf)
     M_center = M_image[y, x]
     return (M_center >= M_plus) & (M_center >= M_minus)
 
