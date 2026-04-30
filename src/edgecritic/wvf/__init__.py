@@ -5,10 +5,15 @@ from __future__ import annotations
 import numpy as np
 
 from edgecritic._types import EdgeResult
-from edgecritic.wvf._components import wvf_component_backend, wvf_component_gradients
-from edgecritic.wvf._cpu import wvf_image as _wvf_cpu
-from edgecritic.wvf._cpu import wvf_single_pixel
-from edgecritic.wvf._radius_kernels import build_wvf_radius_kernels, disk_offsets
+from edgecritic.wvf.components import wvf_component_backend, wvf_component_gradients
+from edgecritic.wvf.reference import wvf_image as _wvf_cpu
+from edgecritic.wvf.reference import wvf_single_pixel
+from edgecritic.wvf.radius import (
+    WVFRadiusKernels,
+    build_wvf_radius_kernels,
+    disk_offsets,
+    wvf_radius_gradients_cpu,
+)
 
 
 def _select_backend(backend: str) -> str:
@@ -71,8 +76,10 @@ def wvf_image(
 __all__ = [
     "build_wvf_radius_kernels",
     "disk_offsets",
+    "WVFRadiusKernels",
     "wvf_component_backend",
     "wvf_component_gradients",
     "wvf_image",
+    "wvf_radius_gradients_cpu",
     "wvf_single_pixel",
 ]

@@ -1,4 +1,4 @@
-"""Image-wide two-pass vMM signal-mode evaluation.
+"""Image-wide two-pass c-GMM signal-mode evaluation.
 
 Pipeline per condition (clean / noisy):
   1. Build GT orientation map and smooth-edge mask from the layer spec.
@@ -8,7 +8,7 @@ Pipeline per condition (clean / noisy):
   5. §6.3 orientation recovery: spline peak finder with the two-stage
      sentinel (no-local-max + tau_sec_floor weak-floor), producing the
      primary and secondary per-config measurement streams.
-  6. Two-pass vMM fusion: independent K=3 hard-EM fits on each stream,
+  6. Two-pass c-GMM fusion: independent K=3 hard-EM fits on each stream,
      primary = argmax-pi component of the primary fit, secondary =
      argmax-pi of the secondary fit.  Suppression rule:
         keep_sec = (M_sec/M_primary > tau_M_rel)
@@ -17,14 +17,14 @@ Pipeline per condition (clean / noisy):
 
 Usage::
 
-    python scripts/eval/cgmm_image_wide_eval.py \\
-        --clean-rgb  example_images/synthetic_nested_shapes/clean/4096/<image>.png \\
+    python -m edgecritic.pipeline.synthetic_eval \\
+        --clean-rgb  <clean-rgb-image> \\
         --noisy-dir  /path/to/cetz_figures/data/color_channels/4096_noisy \\
-        --manifest   example_images/synthetic_nested_shapes/manifest.json \\
+        --manifest   <manifest.json> \\
         --image-key  garnet_atlantic_grass --size 4096 \\
         --r 9 --d 3 --m-values 0,5,10,20,30,40,50,60,70,80 \\
         --n-orientations 64 --n-pixels 2000 --seed 0 \\
-        --out outputs/cgmm_image_wide_eval/result.json
+        --out outputs/pipeline_synthetic_eval/result.json
 """
 
 from __future__ import annotations
@@ -32,23 +32,21 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import os
 import time
 from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageDraw
 from scipy import ndimage
-from scipy.interpolate import CubicSpline
 
-from edgecritic.wvf._radius_kernels import (
+from edgecritic.wvf.radius import (
     wvf_radius_gradients_cpu, build_wvf_radius_kernels)
 
-from cgmm_vmm import vmm_fuse_two_pass, theta_M_to_phi_w
-from cgmm_orientation_recovery import find_two_peaks as _orec_find_two_peaks
+from edgecritic.cgmm.reference import cgmm_fuse_two_pass, theta_M_to_phi_w
+from edgecritic.orientation.reference import find_two_peaks as _orec_find_two_peaks
 
 try:
-    from edgecritic.lf._metal import (
+    from edgecritic.lf.metal import (
         lf_response_metal_batch, metal_backend_available)
     _METAL_LF_OK = metal_backend_available()
 except Exception:
@@ -56,7 +54,7 @@ except Exception:
     lf_response_metal_batch = None
 
 try:
-    from edgecritic.wvf._metal import (
+    from edgecritic.wvf.metal import (
         wvf_radius_gradients_metal, metal_backend_available)
     _METAL_OK = metal_backend_available()
 except Exception:
@@ -313,7 +311,7 @@ def evaluate(label, channels, sample_pixels, gt_tangent_at_samples,
                   f"{time.perf_counter()-t1:.2f}s")
             for m_idx, m in enumerate(m_values):
                 resp = grid[:, m_idx, :].T.astype(np.float64)  # (P, T)
-                t_p, m_p, t_s, m_s = _orec_find_two_peaks(
+                t_p, m_p, t_s, m_s, _ = _orec_find_two_peaks(
                     angles, resp, tau_sec_floor=tau_sec_floor,
                     dense_n=spline_dense_n)
                 primary_t[:, col]   = np.degrees(t_p)
@@ -329,7 +327,7 @@ def evaluate(label, channels, sample_pixels, gt_tangent_at_samples,
                     resp[:, k] = lf_response_at_pixels(g_x, g_y, px, py,
                                                        float(theta),
                                                        int(m))
-                t_p, m_p, t_s, m_s = _orec_find_two_peaks(
+                t_p, m_p, t_s, m_s, _ = _orec_find_two_peaks(
                     angles, resp, tau_sec_floor=tau_sec_floor,
                     dense_n=spline_dense_n)
                 primary_t[:, col]   = np.degrees(t_p)
@@ -342,25 +340,25 @@ def evaluate(label, channels, sample_pixels, gt_tangent_at_samples,
     return primary_t, primary_m, secondary_t, secondary_m
 
 
-def fit_vmm_errors(primary_t, primary_m, secondary_t, secondary_m,
-                   gt_tangent_at, K, label,
-                   n_iters=30, init_kappa=4.0,
-                   hard_seed=False, hard_em=True,
-                   tau_M_rel=0.05, theta_min_deg=10.0):
-    """Two-pass vMM fusion + primary-orientation error vs GT tangent."""
+def fit_cgmm_errors(primary_t, primary_m, secondary_t, secondary_m,
+                    gt_tangent_at, K, label,
+                    n_iters=30, init_kappa=4.0,
+                    hard_seed=False, hard_em=True,
+                    tau_M_rel=0.05, theta_min_deg=10.0):
+    """Two-pass c-GMM fusion + primary-orientation error vs GT tangent."""
     phi_p, w_p, _ = theta_M_to_phi_w(primary_t,   primary_m)
     phi_s, w_s, _ = theta_M_to_phi_w(secondary_t, secondary_m)
     t0 = time.perf_counter()
-    out = vmm_fuse_two_pass(phi_p, w_p, phi_s, w_s,
-                            K=K, n_iters=n_iters,
-                            init_kappa=init_kappa,
-                            hard_seed=hard_seed, hard_em=hard_em,
-                            tau_M_rel=tau_M_rel,
-                            theta_min_deg=theta_min_deg)
+    out = cgmm_fuse_two_pass(phi_p, w_p, phi_s, w_s,
+                             K=K, n_iters=n_iters,
+                             init_kappa=init_kappa,
+                             hard_seed=hard_seed, hard_em=hard_em,
+                             tau_M_rel=tau_M_rel,
+                             theta_min_deg=theta_min_deg)
     elapsed = time.perf_counter() - t0
     theta_est_deg = np.degrees(out["theta_primary"]) % 180.0
     errs = unsigned_angle_error_deg(theta_est_deg, gt_tangent_at)
-    print(f"  [{label}] two-pass vMM K={K} fit: {elapsed:.2f}s")
+    print(f"  [{label}] two-pass c-GMM K={K} fit: {elapsed:.2f}s")
     return errs, elapsed
 
 
@@ -400,26 +398,33 @@ def main():
     p.add_argument("--Ks", default="3",
                    help="comma list of component counts to evaluate")
     # §6.3 orientation-recovery sentinel
-    p.add_argument("--vmm-tau-sec-floor", type=float, default=0.40,
+    p.add_argument("--cgmm-tau-sec-floor", "--vmm-tau-sec-floor",
+                   dest="cgmm_tau_sec_floor", type=float, default=0.40,
                    help="orientation recovery (§6.3): per-config "
                         "secondary peaks with M_sec/M_hat below this "
                         "are zeroed before fusion (default 0.40)")
     # Two-pass fusion suppression rule
-    p.add_argument("--vmm-tau-M-rel", type=float, default=0.05,
+    p.add_argument("--cgmm-tau-M-rel", "--vmm-tau-M-rel",
+                   dest="cgmm_tau_M_rel", type=float, default=0.05,
                    help="secondary suppression: M_sec/M_primary "
                         "must exceed this (default 0.05)")
-    p.add_argument("--vmm-theta-min-deg", type=float, default=10.0,
+    p.add_argument("--cgmm-theta-min-deg", "--vmm-theta-min-deg",
+                   dest="cgmm_theta_min_deg", type=float, default=10.0,
                    help="secondary suppression: |theta_primary - theta_sec| "
                         "must exceed this (default 10 deg)")
-    # vMM EM knobs
-    p.add_argument("--vmm-n-iters", type=int, default=30)
-    p.add_argument("--vmm-init-kappa", type=float, default=4.0,
+    # c-GMM EM knobs
+    p.add_argument("--cgmm-n-iters", "--vmm-n-iters",
+                   dest="cgmm_n_iters", type=int, default=30)
+    p.add_argument("--cgmm-init-kappa", "--vmm-init-kappa",
+                   dest="cgmm_init_kappa", type=float, default=4.0,
                    help="initial vM concentration (used by soft EM only; "
                         "ignored under hard EM)")
-    p.add_argument("--vmm-hard-seed", action="store_true",
+    p.add_argument("--cgmm-hard-seed", "--vmm-hard-seed",
+                   dest="cgmm_hard_seed", action="store_true",
                    help="use hard k-means assignment at iter 0 (soft EM "
                         "thereafter); diagnostic, not production")
-    p.add_argument("--vmm-soft-em", action="store_true",
+    p.add_argument("--cgmm-soft-em", "--vmm-soft-em",
+                   dest="cgmm_soft_em", action="store_true",
                    help="opt-in to soft-EM (hard-EM is production "
                         "default; soft has a ~0.15 deg p50 floor on tight "
                         "unimodal data due to prior-leakage)")
@@ -459,7 +464,7 @@ def main():
                                       sample_pixels, gt_tangent_at,
                                       m_values, args.n_orientations,
                                       args.r, args.d,
-                                      tau_sec_floor=args.vmm_tau_sec_floor)
+                                      tau_sec_floor=args.cgmm_tau_sec_floor)
 
     # ---- Noisy ----
     print("\n========== NOISY ==========")
@@ -468,9 +473,9 @@ def main():
                                       sample_pixels, gt_tangent_at,
                                       m_values, args.n_orientations,
                                       args.r, args.d,
-                                      tau_sec_floor=args.vmm_tau_sec_floor)
+                                      tau_sec_floor=args.cgmm_tau_sec_floor)
 
-    # ---- Two-pass vMM fit per K, per condition ----
+    # ---- Two-pass c-GMM fit per K, per condition ----
     rows = []
     timings = {}
     for cond, pt, pm, st, sm in (
@@ -478,14 +483,14 @@ def main():
             ("noisy", pt_n, pm_n, st_n, sm_n),
     ):
         for K in Ks:
-            tag = f"{cond} / vmm K={K}"
-            errs, t = fit_vmm_errors(pt, pm, st, sm, gt_tangent_at, K, tag,
-                                     n_iters=args.vmm_n_iters,
-                                     init_kappa=args.vmm_init_kappa,
-                                     hard_seed=args.vmm_hard_seed,
-                                     hard_em=(not args.vmm_soft_em),
-                                     tau_M_rel=args.vmm_tau_M_rel,
-                                     theta_min_deg=args.vmm_theta_min_deg)
+            tag = f"{cond} / c-GMM K={K}"
+            errs, t = fit_cgmm_errors(pt, pm, st, sm, gt_tangent_at, K, tag,
+                                      n_iters=args.cgmm_n_iters,
+                                      init_kappa=args.cgmm_init_kappa,
+                                      hard_seed=args.cgmm_hard_seed,
+                                      hard_em=(not args.cgmm_soft_em),
+                                      tau_M_rel=args.cgmm_tau_M_rel,
+                                      theta_min_deg=args.cgmm_theta_min_deg)
             rows.append(summarise(tag, errs))
             timings[tag] = t
 
@@ -523,10 +528,10 @@ def main():
                 "image_key": args.image_key,
                 "size": args.size,
                 "Ks": Ks,
-                "vmm_tau_sec_floor": args.vmm_tau_sec_floor,
-                "vmm_tau_M_rel": args.vmm_tau_M_rel,
-                "vmm_theta_min_deg": args.vmm_theta_min_deg,
-                "vmm_n_iters": args.vmm_n_iters,
+                "cgmm_tau_sec_floor": args.cgmm_tau_sec_floor,
+                "cgmm_tau_M_rel": args.cgmm_tau_M_rel,
+                "cgmm_theta_min_deg": args.cgmm_theta_min_deg,
+                "cgmm_n_iters": args.cgmm_n_iters,
                 "architecture": "two-pass+sec-sentinel",
             },
             "results": rows,

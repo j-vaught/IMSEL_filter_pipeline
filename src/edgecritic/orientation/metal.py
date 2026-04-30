@@ -8,8 +8,8 @@ from functools import lru_cache
 
 import numpy as np
 
-from edgecritic.lf._metal import _as_uint32
-from edgecritic.wvf._metal import (
+from edgecritic.lf.metal import _as_uint32
+from edgecritic.wvf.metal import (
     MetalBackendError,
     _load_library as _load_wvf_library,
 )

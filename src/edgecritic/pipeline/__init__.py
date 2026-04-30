@@ -1,6 +1,6 @@
 """Fused processing pipelines."""
 
-from edgecritic.pipeline._metal import (
+from edgecritic.pipeline.metal import (
     pipeline_backend_available,
     wvf_lf_recover_metal,
 )

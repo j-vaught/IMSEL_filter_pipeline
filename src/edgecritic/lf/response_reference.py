@@ -2,7 +2,7 @@
 
 This is the EXACT operator the Metal implementation must match (within
 1e-4 absolute tolerance).  It is the per-pixel-batch numpy code
-currently used in `scripts/eval/cgmm_image_wide_eval.py`, copied here
+currently used in `edgecritic.pipeline.synthetic_eval`, copied here
 as the source of truth.
 
 NOT performance-critical -- the goal of the Metal port is to be ~10-50x

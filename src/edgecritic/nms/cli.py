@@ -1,4 +1,4 @@
-"""Command line interface for the NMS/GMM edge detector."""
+"""Command line interface for the NMS edge detector."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import argparse
 
 import numpy as np
 
-from edgecritic.nms_gmm._pipeline import NMSGMMConfig, detect_edges
+from edgecritic.nms.pipeline import NMSConfig, detect_edges
 
 
 def _parse_int_tuple(value: str) -> tuple[int, ...]:
@@ -24,7 +24,7 @@ def _to_uint8(image: np.ndarray) -> np.ndarray:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run the edgecritic NMS/GMM edge detector.")
+    parser = argparse.ArgumentParser(description="Run the edgecritic NMS edge detector.")
     parser.add_argument("input", help="Input image path.")
     parser.add_argument("output", help="Output edge-map path.")
     parser.add_argument("--half-widths", default="3,7,11", help="Comma-separated LF half-widths.")
@@ -48,7 +48,7 @@ def main(argv: list[str] | None = None) -> int:
 
     args = build_parser().parse_args(argv)
     image = iio.imread(args.input)
-    config = NMSGMMConfig(
+    config = NMSConfig(
         half_widths=_parse_int_tuple(args.half_widths),
         domains=args.domains,
         np_count=args.np_count,

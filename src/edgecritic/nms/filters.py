@@ -1,4 +1,4 @@
-"""Line Filter response stacks used by the NMS/GMM edge pipeline."""
+"""Line Filter response stacks used by the NMS edge pipeline."""
 
 from __future__ import annotations
 

@@ -10,7 +10,7 @@ from typing import TypedDict
 import numpy as np
 import numpy.typing as npt
 
-from edgecritic.wvf._metal import (
+from edgecritic.wvf.metal import (
     MetalBackendError,
     _load_library as _load_wvf_library,
 )

@@ -1,4 +1,4 @@
-"""Run vMM hard-EM K=3 fusion at every analytical edge pixel of the
+"""Run c-GMM hard-EM K=3 fusion at every analytical edge pixel of the
 synthetic test image and dump per-pixel outputs to .npz.
 
 Runs on all_mask = (smooth_mask | junction_mask). Off-edge pixels are
@@ -14,8 +14,7 @@ Output schema (per pixel of the 4096x4096 grid):
     suppressed         uint8    {0, 1}         1 where v=1 but secondary slot was suppressed
 
 Usage:
-    PYTHONPATH=src:scripts/eval python3 \\
-        scripts/eval/cgmm_fusion_image_dump.py \\
+    python -m edgecritic.pipeline.fusion_image_dump \\
         --clean-rgb <path> --noisy-dir <path> --manifest <path> \\
         --out outputs/cgmm_fusion_dump/<condition>.npz
 """
@@ -30,8 +29,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from cgmm_vmm import vmm_fuse_two_pass, theta_M_to_phi_w
-from cgmm_image_wide_eval import (
+from edgecritic.cgmm.reference import cgmm_fuse_two_pass, theta_M_to_phi_w
+from edgecritic.pipeline.synthetic_eval import (
     build_gt_orientation, find_image_spec, load_channels_clean,
     load_channels_noisy, evaluate)
 
@@ -49,10 +48,14 @@ def main():
     p.add_argument("--m-values", default="0,5,10,20,30,40,50,60,70,80")
     p.add_argument("--n-orientations", type=int, default=64)
     p.add_argument("--K", type=int, default=3)
-    p.add_argument("--vmm-tau-sec-floor", type=float, default=0.40)
-    p.add_argument("--vmm-tau-M-rel",     type=float, default=0.05)
-    p.add_argument("--vmm-theta-min-deg", type=float, default=10.0)
-    p.add_argument("--vmm-n-iters", type=int, default=30)
+    p.add_argument("--cgmm-tau-sec-floor", "--vmm-tau-sec-floor",
+                   dest="cgmm_tau_sec_floor", type=float, default=0.40)
+    p.add_argument("--cgmm-tau-M-rel", "--vmm-tau-M-rel",
+                   dest="cgmm_tau_M_rel", type=float, default=0.05)
+    p.add_argument("--cgmm-theta-min-deg", "--vmm-theta-min-deg",
+                   dest="cgmm_theta_min_deg", type=float, default=10.0)
+    p.add_argument("--cgmm-n-iters", "--vmm-n-iters",
+                   dest="cgmm_n_iters", type=int, default=30)
     p.add_argument("--vertex-exclude-px", type=int, default=24)
     p.add_argument("--dilate-mask-px", type=int, default=0,
                    help="dilate the all_mask by N pixels before fusion. "
@@ -86,7 +89,7 @@ def main():
         fusion_mask = all_mask
     ys, xs = np.where(fusion_mask)
     sample_pixels = np.column_stack([xs, ys])
-    print(f"running LF + vMM fusion at {len(ys):,} pixels")
+    print(f"running LF + c-GMM fusion at {len(ys):,} pixels")
 
     if args.condition == "clean":
         channels = load_channels_clean(args.clean_rgb)
@@ -103,19 +106,19 @@ def main():
     primary_t, primary_m, secondary_t, secondary_m = evaluate(
         args.condition, channels, sample_pixels, gt_tangent_deg,
         m_values, args.n_orientations, args.r, args.d,
-        tau_sec_floor=args.vmm_tau_sec_floor)
+        tau_sec_floor=args.cgmm_tau_sec_floor)
     print(f"LF + orient.recovery: {time.perf_counter() - t0:.1f}s "
           f"-> primary_t shape {primary_t.shape}")
 
     phi_p, w_p, _ = theta_M_to_phi_w(primary_t,   primary_m)
     phi_s, w_s, _ = theta_M_to_phi_w(secondary_t, secondary_m)
     t0 = time.perf_counter()
-    out = vmm_fuse_two_pass(phi_p, w_p, phi_s, w_s,
-                            K=args.K, n_iters=args.vmm_n_iters,
-                            hard_em=True,
-                            tau_M_rel=args.vmm_tau_M_rel,
-                            theta_min_deg=args.vmm_theta_min_deg)
-    print(f"two-pass vMM K={args.K} fusion: "
+    out = cgmm_fuse_two_pass(phi_p, w_p, phi_s, w_s,
+                             K=args.K, n_iters=args.cgmm_n_iters,
+                             hard_em=True,
+                             tau_M_rel=args.cgmm_tau_M_rel,
+                             theta_min_deg=args.cgmm_theta_min_deg)
+    print(f"two-pass c-GMM K={args.K} fusion: "
           f"{time.perf_counter()-t0:.2f}s")
 
     # Build full 4096^2 arrays (off-edge pixels stay at sentinels).

@@ -8,12 +8,12 @@ from functools import lru_cache
 
 import numpy as np
 
-from edgecritic.lf._metal import _as_int32, _as_uint32
-from edgecritic.wvf._metal import (
+from edgecritic.lf.metal import _as_int32, _as_uint32
+from edgecritic.wvf.metal import (
     MetalBackendError,
     _load_library as _load_wvf_library,
 )
-from edgecritic.wvf._radius_kernels import build_wvf_radius_kernels
+from edgecritic.wvf.radius import build_wvf_radius_kernels
 
 
 @lru_cache(maxsize=1)

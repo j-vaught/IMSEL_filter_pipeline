@@ -20,21 +20,14 @@ from __future__ import annotations
 
 import argparse
 import math
-import sys
 import time
 from pathlib import Path
 
 import numpy as np
 from PIL import Image
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT / "scripts" / "eval"))
-sys.path.insert(0, str(ROOT / "agent_workspaces" / "cgmm_metal"))
-
 from edgecritic.pipeline import wvf_lf_recover_metal
-from edgecritic.cgmm._metal import cgmm_fuse_two_pass_metal
-from reference_impl import theta_M_to_phi_w
+from edgecritic.cgmm.metal import cgmm_fuse_two_pass_metal
 
 
 def main():

@@ -1,4 +1,4 @@
-"""Paper-level NMS/GMM edge detection pipeline."""
+"""Paper-level NMS edge detection pipeline."""
 
 from __future__ import annotations
 
@@ -7,22 +7,22 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from edgecritic.nms_gmm._domains import extract_domains
-from edgecritic.nms_gmm._filters import line_filter_response_stack
-from edgecritic.nms_gmm._gmm import GMMFusionResult, fuse_gradient_stack_gmm
-from edgecritic.nms_gmm._nms import (
+from edgecritic.nms.domains import extract_domains
+from edgecritic.nms.filters import line_filter_response_stack
+from edgecritic.nms.histogram_gmm import GMMFusionResult, fuse_gradient_stack_gmm
+from edgecritic.nms.enhanced import (
     automatic_hysteresis_thresholds,
     enhanced_nonmax_suppression,
     hysteresis_threshold,
     link_short_gaps,
     remove_small_components,
 )
-from edgecritic.nms_gmm._spline import spline_orientation_map
+from edgecritic.nms.spline import spline_orientation_map
 
 
 @dataclass(frozen=True)
-class NMSGMMConfig:
-    """Configuration for the multi-scale, multi-domain NMS/GMM pipeline."""
+class NMSConfig:
+    """Configuration for the multi-scale, multi-domain NMS pipeline."""
 
     half_widths: tuple[int, ...] = (3, 7, 11)
     np_count: int = 15
@@ -51,7 +51,7 @@ class NMSGMMConfig:
     suppress_border: bool = True
 
     @classmethod
-    def aquatic(cls, **overrides) -> "NMSGMMConfig":
+    def aquatic(cls, **overrides) -> "NMSConfig":
         """Preset for low-contrast aquatic scenes with textured water."""
         values = {
             "half_widths": (3, 7, 11),
@@ -82,8 +82,8 @@ class GradientStackResult:
 
 
 @dataclass(frozen=True)
-class NMSGMMResult:
-    """Complete edge detection result for the NMS/GMM pipeline."""
+class NMSResult:
+    """Complete edge detection result for the NMS pipeline."""
 
     magnitude: np.ndarray
     angle: np.ndarray
@@ -100,10 +100,10 @@ class NMSGMMResult:
 
 def compute_gradient_stack(
     image: np.ndarray,
-    config: NMSGMMConfig | None = None,
+    config: NMSConfig | None = None,
 ) -> GradientStackResult:
     """Compute LF/spline gradients for each selected scale and domain."""
-    cfg = config or NMSGMMConfig()
+    cfg = config or NMSConfig()
     if not cfg.half_widths:
         raise ValueError("at least one half_width is required")
 
@@ -148,7 +148,7 @@ def compute_gradient_stack(
 
 def _resolve_thresholds(
     nms: np.ndarray,
-    config: NMSGMMConfig,
+    config: NMSConfig,
 ) -> tuple[float, float]:
     if config.high_threshold is None:
         high, low = automatic_hysteresis_thresholds(
@@ -167,11 +167,11 @@ def _resolve_thresholds(
 
 def detect_edges(
     image: np.ndarray,
-    config: NMSGMMConfig | None = None,
+    config: NMSConfig | None = None,
     return_stack: bool = False,
-) -> NMSGMMResult:
+) -> NMSResult:
     """Run the proposed spline-orientation, GMM-fusion, enhanced-NMS method."""
-    cfg = config or NMSGMMConfig()
+    cfg = config or NMSConfig()
     stack = compute_gradient_stack(image, cfg)
 
     fusion = fuse_gradient_stack_gmm(
@@ -221,7 +221,7 @@ def detect_edges(
         edges[:, :b] = False
         edges[:, -b:] = False
 
-    return NMSGMMResult(
+    return NMSResult(
         magnitude=fusion.magnitude,
         angle=fusion.angle,
         nms=nms,
@@ -236,4 +236,4 @@ def detect_edges(
     )
 
 
-nms_gmm_edges = detect_edges
+nms_edges = detect_edges

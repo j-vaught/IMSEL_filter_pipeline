@@ -12,7 +12,7 @@ from pathlib import Path
 
 import numpy as np
 
-from edgecritic.wvf._radius_kernels import WVFRadiusKernels
+from edgecritic.wvf.radius import WVFRadiusKernels
 
 
 class MetalBackendError(RuntimeError):

@@ -15,5 +15,12 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest"]
 
+[project.scripts]
+edgecritic-nms = "edgecritic.nms.cli:main"
+edgecritic-pipeline-full-dump = "edgecritic.pipeline.full_image_dump:main"
+edgecritic-pipeline-fusion-dump = "edgecritic.pipeline.fusion_image_dump:main"
+edgecritic-pipeline-synthetic-eval = "edgecritic.pipeline.synthetic_eval:main"
+edgecritic-pipeline-verify = "edgecritic.pipeline.verify:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]

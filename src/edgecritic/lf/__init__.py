@@ -5,9 +5,15 @@ from __future__ import annotations
 import numpy as np
 
 from edgecritic._types import EdgeResult
-from edgecritic.lf._cpu import lf_image as _lf_cpu
-from edgecritic.lf._cpu import line_filter_single_pixel
-from edgecritic.lf._metal import lf_length_stack, lf_response, lf_response_batch, lf_stack
+from edgecritic.lf.reference import lf_image as _lf_cpu
+from edgecritic.lf.reference import line_filter_single_pixel
+from edgecritic.lf.response_reference import lf_response_at_pixels
+from edgecritic.lf.metal import (
+    lf_length_stack,
+    lf_response,
+    lf_response_batch,
+    lf_stack,
+)
 
 
 def _select_backend(backend: str) -> str:
@@ -82,5 +88,6 @@ __all__ = [
     "lf_response",
     "lf_response_batch",
     "lf_stack",
+    "lf_response_at_pixels",
     "line_filter_single_pixel",
 ]

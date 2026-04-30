@@ -1,4 +1,4 @@
-"""Image-domain extraction for the NMS/GMM edge pipeline."""
+"""Image-domain extraction for the NMS edge pipeline."""
 
 from __future__ import annotations
 

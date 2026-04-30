@@ -6,7 +6,7 @@ import platform
 
 import numpy as np
 
-from edgecritic.wvf._radius_kernels import build_wvf_radius_kernels, wvf_radius_gradients_cpu
+from edgecritic.wvf.radius import build_wvf_radius_kernels, wvf_radius_gradients_cpu
 
 
 def _select_component_backend(backend: str) -> str:
@@ -17,7 +17,7 @@ def _select_component_backend(backend: str) -> str:
         return requested
     if platform.system() == "Darwin":
         try:
-            from edgecritic.wvf._metal import metal_backend_available
+            from edgecritic.wvf.metal import metal_backend_available
 
             if metal_backend_available():
                 return "metal"
@@ -46,7 +46,7 @@ def wvf_component_gradients(
     if chosen == "metal":
         if mode != "reflect":
             raise ValueError("Metal backend currently supports mode='reflect' only")
-        from edgecritic.wvf._metal import wvf_radius_gradients_metal
+        from edgecritic.wvf.metal import wvf_radius_gradients_metal
 
         return wvf_radius_gradients_metal(image, kernels, output_dtype=output_dtype)
 

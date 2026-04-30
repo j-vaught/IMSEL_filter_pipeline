@@ -3,7 +3,7 @@
 import numpy as np
 
 from edgecritic.core.taylor import get_circular_neighbors
-from edgecritic.wvf._cpu import wvf_single_pixel
+from edgecritic.wvf.reference import wvf_single_pixel
 
 
 def line_filter_single_pixel(image, X0, Y0, half_width=7, np_count=15,

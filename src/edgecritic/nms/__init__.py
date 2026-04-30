@@ -1,40 +1,40 @@
-"""NMS/GMM multi-scale, multi-domain edge detection.
+"""NMS multi-scale, multi-domain edge detection.
 
 This package implements the paper pipeline around LF/WVF gradients:
 periodic spline orientation estimation, weighted orientation-histogram
 GMM fusion, enhanced non-maximum suppression, and hysteresis thresholding.
 """
 
-from edgecritic.nms_gmm._domains import as_float_image, extract_domains
-from edgecritic.nms_gmm._filters import (
+from edgecritic.nms.domains import as_float_image, extract_domains
+from edgecritic.nms.filters import (
     LineFilterKernels,
     LineFilterResponses,
     build_line_filter_kernels,
     line_filter_response_stack,
 )
-from edgecritic.nms_gmm._gmm import (
+from edgecritic.nms.histogram_gmm import (
     GMMFusionResult,
     GaussianMixtureFit,
     fit_weighted_two_gaussian,
     fuse_gradient_stack_gmm,
     weighted_orientation_histogram,
 )
-from edgecritic.nms_gmm._nms import (
+from edgecritic.nms.enhanced import (
     automatic_hysteresis_thresholds,
     enhanced_nonmax_suppression,
     hysteresis_threshold,
     link_short_gaps,
     remove_small_components,
 )
-from edgecritic.nms_gmm._pipeline import (
+from edgecritic.nms.pipeline import (
     GradientStackResult,
-    NMSGMMConfig,
-    NMSGMMResult,
+    NMSConfig,
+    NMSResult,
     compute_gradient_stack,
     detect_edges,
-    nms_gmm_edges,
+    nms_edges,
 )
-from edgecritic.nms_gmm._spline import (
+from edgecritic.nms.spline import (
     SplineOrientationResult,
     spline_orientation,
     spline_orientation_map,
@@ -46,8 +46,8 @@ __all__ = [
     "GradientStackResult",
     "LineFilterKernels",
     "LineFilterResponses",
-    "NMSGMMConfig",
-    "NMSGMMResult",
+    "NMSConfig",
+    "NMSResult",
     "SplineOrientationResult",
     "as_float_image",
     "automatic_hysteresis_thresholds",
@@ -61,7 +61,7 @@ __all__ = [
     "hysteresis_threshold",
     "line_filter_response_stack",
     "link_short_gaps",
-    "nms_gmm_edges",
+    "nms_edges",
     "remove_small_components",
     "spline_orientation",
     "spline_orientation_map",

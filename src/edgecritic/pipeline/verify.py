@@ -14,20 +14,17 @@ so we can read the verdict.
 from __future__ import annotations
 
 import math
+import argparse
 import sys
 import time
-from pathlib import Path
 
 import numpy as np
 from PIL import Image
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "src"))
-
-from edgecritic.wvf._radius_kernels import build_wvf_radius_kernels
-from edgecritic.wvf._metal import wvf_radius_gradients_metal
-from edgecritic.lf._metal import lf_stack
-from edgecritic.recovery._metal import recover_two_peaks_metal
+from edgecritic.wvf.radius import build_wvf_radius_kernels
+from edgecritic.wvf.metal import wvf_radius_gradients_metal
+from edgecritic.lf.metal import lf_stack
+from edgecritic.orientation.metal import recover_two_peaks_metal
 from edgecritic.pipeline import wvf_lf_recover_metal, pipeline_backend_available
 
 
@@ -77,20 +74,25 @@ def compare(name, a, b, tol=1e-5):
 
 
 def main():
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--image", required=True,
+                   help="RGB image used for the fused/unfused comparison")
+    p.add_argument("--sigma", type=float, default=13.0,
+                   help="AWGN sigma applied before converting to luminance")
+    args = p.parse_args()
+
     if not pipeline_backend_available():
         print("FATAL: pipeline backend not available")
         sys.exit(1)
 
-    img_path = (ROOT / "example_images/synthetic_nested_shapes/clean/4096"
-                / "nested_star_square_oval_low_contrast_mixed_chroma_4096.png")
     rng = np.random.default_rng(0)
-    rgb = np.asarray(Image.open(img_path).convert("RGB")).astype(np.float32)
-    rgb_n = np.clip(rgb + rng.normal(0.0, 13.0, rgb.shape).astype(np.float32),
+    rgb = np.asarray(Image.open(args.image).convert("RGB")).astype(np.float32)
+    rgb_n = np.clip(rgb + rng.normal(0.0, args.sigma, rgb.shape).astype(np.float32),
                     0.0, 255.0)
     L = (0.2126 * rgb_n[..., 0] + 0.7152 * rgb_n[..., 1]
          + 0.0722 * rgb_n[..., 2]).astype(np.float32)
 
-    print(f"image: {img_path.name}  L shape={L.shape}")
+    print(f"image: {args.image}  L shape={L.shape}")
     n_orient = 64
     angles = np.linspace(0.0, math.pi, n_orient, endpoint=False)
 
