@@ -9,7 +9,7 @@ venv/
 dist/
 build/
 target/
-native/edgecritic_metal/target/
+metal/edgecritic_metal/target/
 *.swp
 *.swo
 .DS_Store

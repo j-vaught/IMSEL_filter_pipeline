@@ -5,20 +5,31 @@ Implementation-only repository for the WVF/LF edge pipeline.
 Kept source areas:
 
 ```text
-native/edgecritic_metal/ Rust/Metal kernels and FFI
-src/edgecritic/          Python implementations and bindings
-papers/                  Paper sources and figures
+metal/edgecritic_metal/ Rust/Metal kernels and FFI
+src/                    Python implementations and bindings
+papers/                 Paper sources and figures
 ```
 
 Python package layout:
 
 ```text
-src/edgecritic/wvf/          WVF reference code, radius kernels, Metal binding
-src/edgecritic/lf/           LF reference code, LF response reference, Metal binding
-src/edgecritic/orientation/  orientation recovery reference and Metal binding
-src/edgecritic/cgmm/         two-pass c-GMM reference and Metal binding
-src/edgecritic/nms/          enhanced NMS and related reference helpers
-src/edgecritic/pipeline/     fused pipeline binding and runnable pipeline helpers
+src/wvf/          WVF reference code, radius kernels, Metal binding
+src/lf/           LF reference code, LF response reference, Metal binding
+src/orientation/  orientation recovery reference and Metal binding
+src/cgmm/         two-pass c-GMM reference and Metal binding
+src/nms/          enhanced NMS and related reference helpers
+src/pipeline/     fused pipeline binding and runnable pipeline helpers
+```
+
+Metal layout:
+
+```text
+metal/edgecritic_metal/src/lib.rs                  Rust FFI and Metal host orchestration
+metal/edgecritic_metal/src/shaders/common.metal    shared Metal structs/helpers
+metal/edgecritic_metal/src/shaders/wvf.metal       WVF kernels
+metal/edgecritic_metal/src/shaders/lf.metal        LF kernels
+metal/edgecritic_metal/src/shaders/orientation.metal orientation recovery kernels
+metal/edgecritic_metal/src/shaders/cgmm.metal      c-GMM kernels
 ```
 
 Installed command-line helpers:
