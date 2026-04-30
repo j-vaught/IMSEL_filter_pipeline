@@ -41,12 +41,13 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+
     try:
         import imageio.v3 as iio
     except ImportError as exc:
         raise SystemExit("The CLI requires imageio. Install it with `pip install imageio`.") from exc
 
-    args = build_parser().parse_args(argv)
     image = iio.imread(args.input)
     config = NMSConfig(
         half_widths=_parse_int_tuple(args.half_widths),
