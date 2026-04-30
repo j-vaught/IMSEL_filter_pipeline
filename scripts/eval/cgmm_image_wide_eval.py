@@ -281,7 +281,8 @@ def find_image_spec(manifest_path, image_key, size):
 
 def evaluate(label, channels, sample_pixels, gt_tangent_at_samples,
              m_values, n_orientations, r, d,
-             tau_sec_floor=0.40):
+             tau_sec_floor=0.40,
+             spline_dense_n=500):
     angles = np.linspace(0, math.pi, n_orientations, endpoint=False)
     px = sample_pixels[:, 0].astype(np.int32)
     py = sample_pixels[:, 1].astype(np.int32)
@@ -313,7 +314,8 @@ def evaluate(label, channels, sample_pixels, gt_tangent_at_samples,
             for m_idx, m in enumerate(m_values):
                 resp = grid[:, m_idx, :].T.astype(np.float64)  # (P, T)
                 t_p, m_p, t_s, m_s = _orec_find_two_peaks(
-                    angles, resp, tau_sec_floor=tau_sec_floor)
+                    angles, resp, tau_sec_floor=tau_sec_floor,
+                    dense_n=spline_dense_n)
                 primary_t[:, col]   = np.degrees(t_p)
                 primary_m[:, col]   = m_p
                 secondary_t[:, col] = np.degrees(t_s)
@@ -328,7 +330,8 @@ def evaluate(label, channels, sample_pixels, gt_tangent_at_samples,
                                                        float(theta),
                                                        int(m))
                 t_p, m_p, t_s, m_s = _orec_find_two_peaks(
-                    angles, resp, tau_sec_floor=tau_sec_floor)
+                    angles, resp, tau_sec_floor=tau_sec_floor,
+                    dense_n=spline_dense_n)
                 primary_t[:, col]   = np.degrees(t_p)
                 primary_m[:, col]   = m_p
                 secondary_t[:, col] = np.degrees(t_s)

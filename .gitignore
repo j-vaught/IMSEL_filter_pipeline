@@ -2,8 +2,14 @@ __pycache__/
 *.pyc
 *.egg-info/
 .eggs/
+.pytest_cache/
+.venv/
+venv/
+.env/
 dist/
 build/
+target/
+native/edgecritic_metal/target/
 *.swp
 *.swo
 .DS_Store

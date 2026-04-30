@@ -1,4 +1,4 @@
-"""Line Filter with automatic backend selection."""
+"""Line Filter CPU reference and Metal response-stack helpers."""
 
 from __future__ import annotations
 
@@ -11,14 +11,8 @@ from edgecritic.lf._metal import lf_length_stack, lf_response, lf_response_batch
 
 
 def _select_backend(backend: str) -> str:
-    if backend != "auto":
-        return backend
-    try:
-        import torch
-        if torch.cuda.is_available():
-            return "cuda"
-    except ImportError:
-        pass
+    if backend not in {"auto", "cpu"}:
+        raise ValueError("lf_image supports backend='auto' or backend='cpu'")
     return "cpu"
 
 
@@ -31,12 +25,13 @@ def lf_image(
     use_weights: bool = True,
     subsample: int = 1,
     backend: str = "auto",
-    device: str = "cuda",
+    device: str = "cpu",
     max_vram_gb: float | None = None,
 ) -> EdgeResult:
     """Apply the Line Filter to an image.
 
-    Automatically selects GPU or CPU backend based on availability.
+    This high-level orientation sweep is the raw Python reference path.
+    Metal LF response and stack helpers are exposed as separate functions.
 
     Parameters
     ----------
@@ -55,47 +50,30 @@ def lf_image(
     subsample : int
         Process every Nth pixel (CPU only).
     backend : str
-        'auto', 'cpu', or 'cuda'.
+        'auto' or 'cpu'.
     device : str
-        PyTorch device (only used when backend='cuda').
+        Reserved for API compatibility.
     max_vram_gb : float, optional
-        Maximum VRAM budget in GB for the CUDA backend. If None,
-        auto-detects from free device memory. Pixels are processed
-        in batches sized to fit within this budget.
+        Reserved for API compatibility.
 
     Returns
     -------
     EdgeResult
         Supports tuple unpacking: ``mag, angle, extra = lf_image(...)``.
     """
-    chosen = _select_backend(backend)
-
-    if chosen == "cuda":
-        from edgecritic.lf._cuda import lf_image_cuda
-
-        mag, angle, cond = lf_image_cuda(
-            image, half_width=half_width, np_count=np_count,
-            order=order, n_orientations=n_orientations, device=device,
-            max_vram_gb=max_vram_gb,
-        )
-        return EdgeResult(
-            gradient_mag=mag,
-            gradient_angle=angle,
-            condition_numbers=cond,
-            backend="cuda",
-        )
-    else:
-        mag, angle, all_grads = _lf_cpu(
-            image, half_width=half_width, np_count=np_count,
-            order=order, n_orientations=n_orientations,
-            use_weights=use_weights, subsample=subsample,
-        )
-        return EdgeResult(
-            gradient_mag=mag,
-            gradient_angle=angle,
-            all_gradients=all_grads,
-            backend="cpu",
-        )
+    _select_backend(backend)
+    _ = device, max_vram_gb
+    mag, angle, all_grads = _lf_cpu(
+        image, half_width=half_width, np_count=np_count,
+        order=order, n_orientations=n_orientations,
+        use_weights=use_weights, subsample=subsample,
+    )
+    return EdgeResult(
+        gradient_mag=mag,
+        gradient_angle=angle,
+        all_gradients=all_grads,
+        backend="cpu",
+    )
 
 
 __all__ = [

@@ -13,10 +13,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-cuda = ["torch>=2.0"]
-viz = ["matplotlib>=3.7"]
-all = ["torch>=2.0", "matplotlib>=3.7"]
-dev = ["pytest", "torch>=2.0", "matplotlib>=3.7"]
+dev = ["pytest"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -1,4 +1,4 @@
-"""Wide View Filter with automatic backend selection."""
+"""Wide View Filter CPU reference and Metal component helpers."""
 
 from __future__ import annotations
 
@@ -12,14 +12,8 @@ from edgecritic.wvf._radius_kernels import build_wvf_radius_kernels, disk_offset
 
 
 def _select_backend(backend: str) -> str:
-    if backend != "auto":
-        return backend
-    try:
-        import torch
-        if torch.cuda.is_available():
-            return "cuda"
-    except ImportError:
-        pass
+    if backend not in {"auto", "cpu"}:
+        raise ValueError("wvf_image supports backend='auto' or backend='cpu'")
     return "cpu"
 
 
@@ -29,12 +23,14 @@ def wvf_image(
     order: int = 4,
     n_orientations: int = 36,
     backend: str = "auto",
-    device: str = "cuda",
+    device: str = "cpu",
     pixel_batch_size: int | None = None,
 ) -> EdgeResult:
     """Apply the Wide View Filter to an image.
 
-    Automatically selects GPU or CPU backend based on availability.
+    This high-level orientation sweep is the raw Python reference path.
+    Metal support for radius-defined gradient components is exposed through
+    ``wvf_component_gradients``.
 
     Parameters
     ----------
@@ -47,50 +43,29 @@ def wvf_image(
     n_orientations : int
         Number of orientations to sweep.
     backend : str
-        'auto', 'cpu', or 'cuda'.
+        'auto' or 'cpu'.
     device : str
-        PyTorch device (only used when backend='cuda').
+        Reserved for API compatibility.
     pixel_batch_size : int, optional
-        If set and using CUDA, process pixels in batches to limit VRAM.
+        Reserved for API compatibility.
 
     Returns
     -------
     EdgeResult
         Supports tuple unpacking: ``mag, angle, cond = wvf_image(...)``.
     """
-    chosen = _select_backend(backend)
-
-    if chosen == "cuda":
-        from edgecritic.wvf._cuda import wvf_image_cuda, wvf_image_cuda_batched
-
-        if pixel_batch_size is not None:
-            mag, angle, cond = wvf_image_cuda_batched(
-                image, np_count=np_count, order=order,
-                n_orientations=n_orientations, device=device,
-                pixel_batch_size=pixel_batch_size,
-            )
-        else:
-            mag, angle, cond = wvf_image_cuda(
-                image, np_count=np_count, order=order,
-                n_orientations=n_orientations, device=device,
-            )
-        return EdgeResult(
-            gradient_mag=mag,
-            gradient_angle=angle,
-            condition_numbers=cond,
-            backend="cuda",
-        )
-    else:
-        mag, angle, cond = _wvf_cpu(
-            image, np_count=np_count, order=order,
-            n_orientations=n_orientations,
-        )
-        return EdgeResult(
-            gradient_mag=mag,
-            gradient_angle=angle,
-            condition_numbers=cond,
-            backend="cpu",
-        )
+    _select_backend(backend)
+    _ = device, pixel_batch_size
+    mag, angle, cond = _wvf_cpu(
+        image, np_count=np_count, order=order,
+        n_orientations=n_orientations,
+    )
+    return EdgeResult(
+        gradient_mag=mag,
+        gradient_angle=angle,
+        condition_numbers=cond,
+        backend="cpu",
+    )
 
 
 __all__ = [
