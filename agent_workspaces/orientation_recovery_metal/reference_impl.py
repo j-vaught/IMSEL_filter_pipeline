@@ -23,24 +23,25 @@ Algorithm
    in [0, pi).
 3. Mark dense-grid local maxima (>= both periodic neighbours). Sample-knot
    local maxima are included by this dense-grid test.
-4. Primary  = argmax over local maxima.
-5. Secondary candidate = argmax over local maxima at periodic dense
-   index distance > min_sep_frac * dense_n from primary.
-6. Suppress secondary (M_s = 0, theta_s = NaN) if there is no such
+4. Primary = argmax over cubic-spline local maxima.
+5. Fit an order-4 doubled-angle trig model to the K samples and evaluate
+   it on the same dense grid.
+6. Secondary candidate = argmax over trig-fit local maxima at periodic
+   dense index distance > min_sep_frac * dense_n from the cubic primary.
+7. Suppress secondary (M_s = 0, theta_s = NaN) if there is no such
    candidate, or if M_sec_candidate / M_p < tau_sec_floor.
-7. Clamp emitted primary and secondary magnitudes to max_k y_k after
+8. Clamp emitted primary and secondary magnitudes to max_k y_k after
    the suppression decision.
-8. Validity flag v (per-pixel range rule, eq. validity-range):
+9. Validity flag v (per-pixel range rule, eq. validity-range):
        R       = max_k y_k - min_k y_k
        R_ref   = max over rows of R     (image-wide reference)
        v       = 1 if R > tau * R_ref else 0
    tau in [0, 1] controls aggressiveness; default tau = 0.10.
 
-The dense-grid peak search is a numerical stand-in for the paper's
-closed-form per-segment quadratic root search. With dense_n = 500 the
-two agree to ~0.36 deg, which is below the orientation noise of the
-LF stage. The Metal port may use either method as long as the
-acceptance test passes.
+The cubic dense-grid primary is the Python reference path. The Metal
+primary may use closed-form per-segment quadratic roots as long as the
+acceptance test passes. The secondary slot is trig-derived in both
+reference and Metal implementations.
 """
 
 from __future__ import annotations
@@ -49,6 +50,21 @@ import math
 
 import numpy as np
 from scipy.interpolate import CubicSpline
+
+
+def _trig_fit_dense(angles_rad, response_2d, dense_a, order=4):
+    cols = [np.ones_like(angles_rad)]
+    for n in range(1, order + 1):
+        cols.append(np.cos(2.0 * n * angles_rad))
+        cols.append(np.sin(2.0 * n * angles_rad))
+    design = np.column_stack(cols)
+    coef = response_2d @ np.linalg.pinv(design).T
+
+    dense_cols = [np.ones_like(dense_a)]
+    for n in range(1, order + 1):
+        dense_cols.append(np.cos(2.0 * n * dense_a))
+        dense_cols.append(np.sin(2.0 * n * dense_a))
+    return coef @ np.column_stack(dense_cols).T
 
 
 def find_two_peaks(angles_rad, response_2d,
@@ -78,19 +94,21 @@ def find_two_peaks(angles_rad, response_2d,
     th_hat = dense_a[primary_idx]
     M_hat  = dy[np.arange(N), primary_idx]
 
-    # ---- secondary peak (non-adjacent, magnitude-floor gated) ----
-    # Dense-grid local maxima already include sample-knot maxima for the
-    # Python reference. The closed-form Metal kernels add those explicitly.
+    # ---- secondary peak from order-4 trig fit ----
     sep = max(1, int(min_sep_frac * dense_n))
     grid = np.arange(dense_n)
     d = np.abs(grid[None, :] - primary_idx[:, None])
     d = np.minimum(d, dense_n - d)
 
-    masked2 = np.where((d > sep) & is_peak, dy, -np.inf)
+    trig_y = _trig_fit_dense(angles_rad, response_2d, dense_a, order=4)
+    trig_left = np.roll(trig_y, 1, axis=1)
+    trig_right = np.roll(trig_y, -1, axis=1)
+    trig_is_peak = (trig_y >= trig_left) & (trig_y >= trig_right)
+    masked2 = np.where((d > sep) & trig_is_peak, trig_y, -np.inf)
     sec_idx = np.argmax(masked2, axis=1)
     sec_max_val = masked2[np.arange(N), sec_idx]
     has_local_max = sec_max_val > -np.inf
-    M_sec_raw = dy[np.arange(N), sec_idx]
+    M_sec_raw = trig_y[np.arange(N), sec_idx]
 
     ratio = M_sec_raw / np.maximum(M_hat, 1e-30)
     weak  = ratio < tau_sec_floor

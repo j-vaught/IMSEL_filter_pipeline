@@ -1,10 +1,10 @@
-"""Spline orientation recovery (§6.3) for the LF response curves.
+"""Hybrid orientation recovery (§6.3) for the LF response curves.
 
 Given a per-pixel response array of shape (N, K) where each row is the
 LF response sampled at K orientations on [0, pi), this module returns
-the per-row primary and secondary peaks via periodic-cubic-spline
-interpolation with a two-stage sentinel that suppresses weak / absent
-secondary peaks.
+the per-row primary peak via periodic-cubic-spline interpolation and
+the secondary peak via an order-4 doubled-angle trig fit, with a
+two-stage sentinel that suppresses weak / absent secondary peaks.
 
 This stage sits UPSTREAM of fusion (cgmm_vmm.py).  The threshold
 tau_sec_floor lives here, not in the fusion stage, because the
@@ -14,9 +14,8 @@ Sentinel logic:
 
   primary_idx = argmax over local maxima  (always exists, M_hat = peak value)
 
-  secondary_idx = argmax over local maxima at distance > min_sep_frac * dense_n
-                  from primary_idx. Dense-grid local maxima include sample-knot
-                  local maxima.
+  secondary_idx = argmax over trig-fit local maxima at distance
+                  > min_sep_frac * dense_n from the cubic primary_idx.
   if no such local max exists:
       M_sec = 0;  theta_sec = NaN
   else:
@@ -38,11 +37,26 @@ import numpy as np
 from scipy.interpolate import CubicSpline
 
 
+def _trig_fit_dense(angles_rad, response_2d, dense_a, order=4):
+    cols = [np.ones_like(angles_rad)]
+    for n in range(1, order + 1):
+        cols.append(np.cos(2.0 * n * angles_rad))
+        cols.append(np.sin(2.0 * n * angles_rad))
+    design = np.column_stack(cols)
+    coef = response_2d @ np.linalg.pinv(design).T
+
+    dense_cols = [np.ones_like(dense_a)]
+    for n in range(1, order + 1):
+        dense_cols.append(np.cos(2.0 * n * dense_a))
+        dense_cols.append(np.sin(2.0 * n * dense_a))
+    return coef @ np.column_stack(dense_cols).T
+
+
 def find_two_peaks(angles_rad, response_2d,
                    tau_sec_floor=0.40,
                    dense_n=2000,
                    min_sep_frac=0.125):
-    """Vectorised spline peak finder over rows of response_2d.
+    """Vectorised hybrid peak finder over rows of response_2d.
 
     Returns
     -------
@@ -75,19 +89,22 @@ def find_two_peaks(angles_rad, response_2d,
     th_hat = dense_a[primary_idx]
     M_hat  = dy[np.arange(N), primary_idx]
 
-    # Secondary candidate: largest local maximum at periodic distance
-    # > min_sep_frac * dense_n from primary. Dense-grid local maxima already
-    # include sample-knot maxima for this reference path.
+    # Secondary candidate: largest trig-fit local maximum at periodic
+    # distance > min_sep_frac * dense_n from the cubic primary.
     sep = max(1, int(min_sep_frac * dense_n))
     grid = np.arange(dense_n)
     d = np.abs(grid[None, :] - primary_idx[:, None])
     d = np.minimum(d, dense_n - d)
 
-    masked2 = np.where((d > sep) & is_peak, dy, -np.inf)
+    trig_y = _trig_fit_dense(angles_rad, response_2d, dense_a, order=4)
+    trig_left = np.roll(trig_y, 1, axis=1)
+    trig_right = np.roll(trig_y, -1, axis=1)
+    trig_is_peak = (trig_y >= trig_left) & (trig_y >= trig_right)
+    masked2 = np.where((d > sep) & trig_is_peak, trig_y, -np.inf)
     sec_idx = np.argmax(masked2, axis=1)
     sec_max_val = masked2[np.arange(N), sec_idx]    # -inf if no local max
     has_local_max = sec_max_val > -np.inf
-    M_sec_raw = dy[np.arange(N), sec_idx]
+    M_sec_raw = trig_y[np.arange(N), sec_idx]
 
     # Magnitude floor (tau_sec_floor).
     ratio = M_sec_raw / np.maximum(M_hat, 1e-30)

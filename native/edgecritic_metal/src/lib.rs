@@ -24,6 +24,8 @@ using namespace metal;
 #define CGMM_PI 3.14159265358979323846f
 #define CGMM_TWO_PI 6.28318530717958647692f
 #define CGMM_KAPPA_MAX 700.0f
+#define RECOVERY_TRIG_ORDER 4
+#define RECOVERY_TRIG_COEFFS 9
 
 struct KernelParams {
     uint width;
@@ -131,6 +133,8 @@ struct RecoveryParams {
     float cyclic_denom_inv;
     uint response_layout;
     uint plane_size;
+    uint trig_order;
+    uint trig_coeffs;
 };
 
 struct RecoveryReduceParams {
@@ -980,6 +984,42 @@ inline RecoveryPeakCandidate recovery_dense_peak_candidate(
     return candidate;
 }
 
+inline float recovery_eval_trig_dense(
+    thread const float* coeff,
+    device const float* trig_dense,
+    constant RecoveryParams& params,
+    uint dense_idx
+) {
+    const uint base = dense_idx * RECOVERY_TRIG_COEFFS;
+    return coeff[0] * trig_dense[base]
+        + coeff[1] * trig_dense[base + 1]
+        + coeff[2] * trig_dense[base + 2]
+        + coeff[3] * trig_dense[base + 3]
+        + coeff[4] * trig_dense[base + 4]
+        + coeff[5] * trig_dense[base + 5]
+        + coeff[6] * trig_dense[base + 6]
+        + coeff[7] * trig_dense[base + 7]
+        + coeff[8] * trig_dense[base + 8];
+}
+
+inline float recovery_eval_trig_dense_threadgroup(
+    threadgroup const float* coeff,
+    device const float* trig_dense,
+    constant RecoveryParams& params,
+    uint dense_idx
+) {
+    const uint base = dense_idx * RECOVERY_TRIG_COEFFS;
+    return coeff[0] * trig_dense[base]
+        + coeff[1] * trig_dense[base + 1]
+        + coeff[2] * trig_dense[base + 2]
+        + coeff[3] * trig_dense[base + 3]
+        + coeff[4] * trig_dense[base + 4]
+        + coeff[5] * trig_dense[base + 5]
+        + coeff[6] * trig_dense[base + 6]
+        + coeff[7] * trig_dense[base + 7]
+        + coeff[8] * trig_dense[base + 8];
+}
+
 kernel void recovery_peaks(
     device const float* response [[buffer(0)]],
     device const float* solver_inv [[buffer(1)]],
@@ -989,6 +1029,8 @@ kernel void recovery_peaks(
     device float* m_s [[buffer(7)]],
     device float* row_range [[buffer(8)]],
     constant RecoveryParams& params [[buffer(9)]],
+    device const float* trig_solver [[buffer(10)]],
+    device const float* trig_dense [[buffer(11)]],
     threadgroup float* y_scratch [[threadgroup(0)]],
     threadgroup float* rhs_scratch [[threadgroup(1)]],
     threadgroup float* m_scratch [[threadgroup(2)]],
@@ -996,6 +1038,7 @@ kernel void recovery_peaks(
     threadgroup uint* candidate_idx [[threadgroup(4)]],
     threadgroup float* primary_value_scratch [[threadgroup(5)]],
     threadgroup uint* primary_idx_scratch [[threadgroup(6)]],
+    threadgroup float* trig_scratch [[threadgroup(7)]],
     uint2 tid [[thread_position_in_threadgroup]],
     uint2 gid [[thread_position_in_grid]]
 ) {
@@ -1010,6 +1053,7 @@ kernel void recovery_peaks(
     threadgroup float* m = m_scratch + scratch_offset;
     threadgroup float* cand_value = candidate_value + scratch_offset;
     threadgroup uint* cand_idx = candidate_idx + scratch_offset;
+    threadgroup float* trig_coeff = trig_scratch + row_slot * RECOVERY_TRIG_COEFFS;
     const ulong row_offset = ulong(row) * ulong(k);
 
     if (active) {
@@ -1125,78 +1169,39 @@ kernel void recovery_peaks(
     threadgroup_barrier(mem_flags::mem_threadgroup);
 
     if (active) {
-        const uint i = lane;
-        const uint next = (i + 1 == k) ? 0 : i + 1;
+        for (uint c_idx = lane; c_idx < params.trig_coeffs; c_idx += k) {
+            float sum = 0.0f;
+            const uint solver_row = c_idx * k;
+            for (uint j = 0; j < k; ++j) {
+                sum += trig_solver[solver_row + j] * y[j];
+            }
+            trig_coeff[c_idx] = sum;
+        }
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    if (active) {
         const uint primary_idx = primary_idx_scratch[row_slot];
         float best_value = -INFINITY;
         uint best_idx = 0;
 
-        const uint prev_sample = (i == 0) ? k - 1 : i - 1;
-        const float knot_derivative =
-            y[next] - y[i] - params.h2_over6 * (2.0f * m[i] + m[next]);
-        if (y[i] > y[prev_sample]
-                && y[i] > y[next]
-                && m[i] < 0.0f
-                && fabs(knot_derivative) <= 1.0e-7f) {
-            const uint sample_dense = (i * params.dense_n) / k;
-            for (uint offset = 0; offset < 2; ++offset) {
-                const uint dense_idx =
-                    (sample_dense + offset >= params.dense_n) ? sample_dense + offset - params.dense_n : sample_dense + offset;
-                const RecoveryPeakCandidate candidate =
-                    recovery_dense_peak_candidate(y, m, params, dense_idx);
-                uint dist = dense_idx > primary_idx ? dense_idx - primary_idx : primary_idx - dense_idx;
-                dist = min(dist, params.dense_n - dist);
-                if (candidate.is_peak && dist > params.sep && candidate.value > best_value) {
-                    best_value = candidate.value;
-                    best_idx = candidate.dense_idx;
-                }
-            }
-        }
-
-        const float a = 3.0f * params.h2_over6 * (m[next] - m[i]);
-        const float b = 6.0f * params.h2_over6 * m[i];
-        const float c = y[next] - y[i] - params.h2_over6 * (2.0f * m[i] + m[next]);
-
-        float roots[2];
-        uint n_roots = 0;
-        if (fabs(a) <= 1.0e-20f) {
-            if (fabs(b) > 1.0e-20f) {
-                roots[0] = -c / b;
-                n_roots = 1;
-            }
-        } else {
-            const float disc = b * b - 4.0f * a * c;
-            if (disc >= 0.0f) {
-                const float sqrt_disc = sqrt(disc);
-                const float denom = 2.0f * a;
-                roots[0] = (-b - sqrt_disc) / denom;
-                roots[1] = (-b + sqrt_disc) / denom;
-                n_roots = 2;
-            }
-        }
-
-        for (uint root_idx = 0; root_idx < n_roots; ++root_idx) {
-            const float u = roots[root_idx];
-            if (u < -1.0e-6f || u > 1.0f + 1.0e-6f) {
-                continue;
-            }
-            const float u_eval = clamp(u, 0.0f, 1.0f);
-            const float second_derivative = m[i] * (1.0f - u_eval) + m[next] * u_eval;
-            if (second_derivative >= 0.0f) {
-                continue;
-            }
-            const uint base_idx = recovery_dense_floor_idx(params, i, u_eval);
-            for (uint offset = 1; offset < 2; ++offset) {
-                const uint dense_idx =
-                    (base_idx + offset >= params.dense_n) ? base_idx + offset - params.dense_n : base_idx + offset;
-                const RecoveryPeakCandidate candidate =
-                    recovery_dense_peak_candidate(y, m, params, dense_idx);
-                uint dist = dense_idx > primary_idx ? dense_idx - primary_idx : primary_idx - dense_idx;
-                dist = min(dist, params.dense_n - dist);
-                if (candidate.is_peak && dist > params.sep && candidate.value > best_value) {
-                    best_value = candidate.value;
-                    best_idx = candidate.dense_idx;
-                }
+        for (uint dense_idx = lane; dense_idx < params.dense_n; dense_idx += k) {
+            const uint left_idx = dense_idx == 0 ? params.dense_n - 1 : dense_idx - 1;
+            const uint right_idx = dense_idx + 1 == params.dense_n ? 0 : dense_idx + 1;
+            const float left_value =
+                recovery_eval_trig_dense_threadgroup(trig_coeff, trig_dense, params, left_idx);
+            const float center_value =
+                recovery_eval_trig_dense_threadgroup(trig_coeff, trig_dense, params, dense_idx);
+            const float right_value =
+                recovery_eval_trig_dense_threadgroup(trig_coeff, trig_dense, params, right_idx);
+            uint dist = dense_idx > primary_idx ? dense_idx - primary_idx : primary_idx - dense_idx;
+            dist = min(dist, params.dense_n - dist);
+            if (center_value >= left_value
+                    && center_value >= right_value
+                    && dist > params.sep
+                    && center_value > best_value) {
+                best_value = center_value;
+                best_idx = dense_idx;
             }
         }
 
@@ -1325,6 +1330,8 @@ kernel void recovery_peaks_private(
     device float* m_s [[buffer(7)]],
     device float* row_range [[buffer(8)]],
     constant RecoveryParams& params [[buffer(9)]],
+    device const float* trig_solver [[buffer(10)]],
+    device const float* trig_dense [[buffer(11)]],
     uint row [[thread_position_in_grid]]
 ) {
     if (row >= params.n_rows || params.k > 64) {
@@ -1444,28 +1451,46 @@ kernel void recovery_peaks_private(
         primary_idx = 0;
     }
 
+    float trig_coeff[RECOVERY_TRIG_COEFFS];
+    for (uint c_idx = 0; c_idx < params.trig_coeffs; ++c_idx) {
+        float sum = 0.0f;
+        const uint solver_row = c_idx * k;
+        for (uint j = 0; j < k; ++j) {
+            sum += trig_solver[solver_row + j] * response[row_offset + j];
+        }
+        trig_coeff[c_idx] = sum;
+    }
+
     float secondary_value = -INFINITY;
     uint secondary_idx = 0;
     bool has_secondary = false;
-    for (uint pos = 0; pos < 7; ++pos) {
-        if (top_values[pos] == -INFINITY) {
-            break;
-        }
-        uint dist = top_indices[pos] > primary_idx
-            ? top_indices[pos] - primary_idx
-            : primary_idx - top_indices[pos];
+    float left_value =
+        recovery_eval_trig_dense(trig_coeff, trig_dense, params, params.dense_n - 1);
+    float center_value =
+        recovery_eval_trig_dense(trig_coeff, trig_dense, params, 0);
+    float right_value =
+        recovery_eval_trig_dense(
+            trig_coeff, trig_dense, params, params.dense_n == 1 ? 0 : 1);
+    for (uint dense_idx = 0; dense_idx < params.dense_n; ++dense_idx) {
+        uint dist = dense_idx > primary_idx
+            ? dense_idx - primary_idx
+            : primary_idx - dense_idx;
         dist = min(dist, params.dense_n - dist);
-        if (dist > params.sep) {
-            const RecoveryPeakCandidate candidate =
-                recovery_dense_peak_candidate_private(
-                    response, row_offset, m, params, top_indices[pos]);
-            if (candidate.is_peak) {
-                secondary_value = candidate.value;
-                secondary_idx = candidate.dense_idx;
-                has_secondary = true;
-                break;
-            }
+        if (center_value >= left_value
+                && center_value >= right_value
+                && dist > params.sep
+                && center_value > secondary_value) {
+            secondary_value = center_value;
+            secondary_idx = dense_idx;
+            has_secondary = true;
         }
+        left_value = center_value;
+        center_value = right_value;
+        uint next_idx = dense_idx + 2;
+        if (next_idx >= params.dense_n) {
+            next_idx -= params.dense_n;
+        }
+        right_value = recovery_eval_trig_dense(trig_coeff, trig_dense, params, next_idx);
     }
 
     theta_p[row] = float(primary_idx) * params.pi_over_dense;
@@ -1568,6 +1593,8 @@ kernel void recovery_peaks_private_stack(
     device float* m_s [[buffer(7)]],
     device float* row_range [[buffer(8)]],
     constant RecoveryParams& params [[buffer(9)]],
+    device const float* trig_solver [[buffer(10)]],
+    device const float* trig_dense [[buffer(11)]],
     uint row [[thread_position_in_grid]]
 ) {
     if (row >= params.n_rows || params.k > 64) {
@@ -1686,28 +1713,47 @@ kernel void recovery_peaks_private_stack(
         primary_idx = 0;
     }
 
+    float trig_coeff[RECOVERY_TRIG_COEFFS];
+    for (uint c_idx = 0; c_idx < params.trig_coeffs; ++c_idx) {
+        float sum = 0.0f;
+        const uint solver_row = c_idx * k;
+        for (uint j = 0; j < k; ++j) {
+            sum += trig_solver[solver_row + j]
+                * response[ulong(j) * ulong(params.plane_size) + ulong(row)];
+        }
+        trig_coeff[c_idx] = sum;
+    }
+
     float secondary_value = -INFINITY;
     uint secondary_idx = 0;
     bool has_secondary = false;
-    for (uint pos = 0; pos < 7; ++pos) {
-        if (top_values[pos] == -INFINITY) {
-            break;
-        }
-        uint dist = top_indices[pos] > primary_idx
-            ? top_indices[pos] - primary_idx
-            : primary_idx - top_indices[pos];
+    float left_value =
+        recovery_eval_trig_dense(trig_coeff, trig_dense, params, params.dense_n - 1);
+    float center_value =
+        recovery_eval_trig_dense(trig_coeff, trig_dense, params, 0);
+    float right_value =
+        recovery_eval_trig_dense(
+            trig_coeff, trig_dense, params, params.dense_n == 1 ? 0 : 1);
+    for (uint dense_idx = 0; dense_idx < params.dense_n; ++dense_idx) {
+        uint dist = dense_idx > primary_idx
+            ? dense_idx - primary_idx
+            : primary_idx - dense_idx;
         dist = min(dist, params.dense_n - dist);
-        if (dist > params.sep) {
-            const RecoveryPeakCandidate candidate =
-                recovery_dense_peak_candidate_stack(
-                    response, row, m, params, top_indices[pos]);
-            if (candidate.is_peak) {
-                secondary_value = candidate.value;
-                secondary_idx = candidate.dense_idx;
-                has_secondary = true;
-                break;
-            }
+        if (center_value >= left_value
+                && center_value >= right_value
+                && dist > params.sep
+                && center_value > secondary_value) {
+            secondary_value = center_value;
+            secondary_idx = dense_idx;
+            has_secondary = true;
         }
+        left_value = center_value;
+        center_value = right_value;
+        uint next_idx = dense_idx + 2;
+        if (next_idx >= params.dense_n) {
+            next_idx -= params.dense_n;
+        }
+        right_value = recovery_eval_trig_dense(trig_coeff, trig_dense, params, next_idx);
     }
 
     theta_p[row] = float(primary_idx) * params.pi_over_dense;
@@ -2162,6 +2208,8 @@ struct RecoveryParams {
     cyclic_denom_inv: c_float,
     response_layout: c_uint,
     plane_size: c_uint,
+    trig_order: c_uint,
+    trig_coeffs: c_uint,
 }
 
 #[repr(C)]
@@ -2859,6 +2907,51 @@ fn build_recovery_solver(
         z.into_iter().map(|value| value as c_float).collect(),
         (1.0 / cyclic_denom) as c_float,
     ))
+}
+
+fn build_recovery_trig_tables(
+    k: usize,
+    dense_n: usize,
+) -> Result<(Vec<c_float>, Vec<c_float>), String> {
+    const ORDER: usize = 4;
+    const COEFFS: usize = 2 * ORDER + 1;
+    if k < 2 * ORDER {
+        return Err("hybrid trig recovery requires at least 8 angles".to_string());
+    }
+    if dense_n == 0 {
+        return Err("dense_n must be positive".to_string());
+    }
+
+    let mut solver = vec![0.0f32; COEFFS * k];
+    let inv_k = 1.0f64 / k as f64;
+    for j in 0..k {
+        let theta = std::f64::consts::PI * j as f64 / k as f64;
+        solver[j] = inv_k as c_float;
+        for n in 1..=ORDER {
+            let base = 2 * n - 1;
+            let phase = 2.0 * n as f64 * theta;
+            let nyquist = 2 * n == k;
+            let scale = if nyquist { inv_k } else { 2.0 * inv_k };
+            solver[base * k + j] = (scale * phase.cos()) as c_float;
+            solver[(base + 1) * k + j] =
+                if nyquist { 0.0 } else { (scale * phase.sin()) as c_float };
+        }
+    }
+
+    let mut dense = vec![0.0f32; dense_n * COEFFS];
+    for idx in 0..dense_n {
+        let theta = std::f64::consts::PI * idx as f64 / dense_n as f64;
+        let row = idx * COEFFS;
+        dense[row] = 1.0;
+        for n in 1..=ORDER {
+            let base = row + 2 * n - 1;
+            let phase = 2.0 * n as f64 * theta;
+            dense[base] = phase.cos() as c_float;
+            dense[base + 1] = phase.sin() as c_float;
+        }
+    }
+
+    Ok((solver, dense))
 }
 
 unsafe fn run_convolve_pair_with_state(
@@ -5260,7 +5353,18 @@ unsafe fn run_recover_two_peaks_with_state(
         return Err("closed-form recovery currently supports at most 64 angles".to_string());
     }
     let (cprime, inv_denom, z_solve, cyclic_denom_inv) = build_recovery_solver(k_count)?;
+    let (trig_solver, trig_dense) = build_recovery_trig_tables(k_count, dense_n as usize)?;
     let coeff_len = checked_len(k_count, std::mem::size_of::<c_float>(), "recovery solver")?;
+    let trig_solver_len = checked_len(
+        trig_solver.len(),
+        std::mem::size_of::<c_float>(),
+        "recovery trig solver",
+    )?;
+    let trig_dense_len = checked_len(
+        trig_dense.len(),
+        std::mem::size_of::<c_float>(),
+        "recovery trig dense table",
+    )?;
 
     let sep_raw = (min_sep_frac as f64 * dense_n as f64).trunc();
     if sep_raw > c_uint::MAX as f64 {
@@ -5282,6 +5386,8 @@ unsafe fn run_recover_two_peaks_with_state(
         cyclic_denom_inv,
         response_layout: 0,
         plane_size: n_rows,
+        trig_order: 4,
+        trig_coeffs: 9,
     };
 
     let shared_options = MTLResourceOptions::StorageModeShared;
@@ -5306,6 +5412,18 @@ unsafe fn run_recover_two_peaks_with_state(
     let z_solve_buffer = state.device.new_buffer_with_bytes_no_copy(
         z_solve.as_ptr().cast(),
         coeff_len as u64,
+        shared_options,
+        None,
+    );
+    let trig_solver_buffer = state.device.new_buffer_with_bytes_no_copy(
+        trig_solver.as_ptr().cast(),
+        trig_solver_len as u64,
+        shared_options,
+        None,
+    );
+    let trig_dense_buffer = state.device.new_buffer_with_bytes_no_copy(
+        trig_dense.as_ptr().cast(),
+        trig_dense_len as u64,
         shared_options,
         None,
     );
@@ -5352,6 +5470,8 @@ unsafe fn run_recover_two_peaks_with_state(
     cprime_buffer.did_modify_range(NSRange::new(0, coeff_len as u64));
     inv_denom_buffer.did_modify_range(NSRange::new(0, coeff_len as u64));
     z_solve_buffer.did_modify_range(NSRange::new(0, coeff_len as u64));
+    trig_solver_buffer.did_modify_range(NSRange::new(0, trig_solver_len as u64));
+    trig_dense_buffer.did_modify_range(NSRange::new(0, trig_dense_len as u64));
 
     let command_buffer = state.queue.new_command_buffer();
     command_buffer.set_label("orientation recovery peaks");
@@ -5367,6 +5487,8 @@ unsafe fn run_recover_two_peaks_with_state(
     encoder.set_buffer(7, Some(&m_s_buffer), 0);
     encoder.set_buffer(8, Some(&row_range_buffer), 0);
     encoder.set_buffer(9, Some(&params_buffer), 0);
+    encoder.set_buffer(10, Some(&trig_solver_buffer), 0);
+    encoder.set_buffer(11, Some(&trig_dense_buffer), 0);
     encoder.dispatch_threads(
         MTLSize {
             width: n_rows as u64,
@@ -5537,7 +5659,18 @@ unsafe fn run_recover_two_peaks_buffer_with_state(
         return Err("recovery response layout must be 0 or 1".to_string());
     }
     let (cprime, inv_denom, z_solve, cyclic_denom_inv) = build_recovery_solver(k_count)?;
+    let (trig_solver, trig_dense) = build_recovery_trig_tables(k_count, dense_n as usize)?;
     let coeff_len = checked_len(k_count, std::mem::size_of::<c_float>(), "recovery solver")?;
+    let trig_solver_len = checked_len(
+        trig_solver.len(),
+        std::mem::size_of::<c_float>(),
+        "recovery trig solver",
+    )?;
+    let trig_dense_len = checked_len(
+        trig_dense.len(),
+        std::mem::size_of::<c_float>(),
+        "recovery trig dense table",
+    )?;
 
     let sep_raw = (min_sep_frac as f64 * dense_n as f64).trunc();
     if sep_raw > c_uint::MAX as f64 {
@@ -5559,6 +5692,8 @@ unsafe fn run_recover_two_peaks_buffer_with_state(
         cyclic_denom_inv,
         response_layout,
         plane_size,
+        trig_order: 4,
+        trig_coeffs: 9,
     };
 
     let shared_options = MTLResourceOptions::StorageModeShared;
@@ -5577,6 +5712,18 @@ unsafe fn run_recover_two_peaks_buffer_with_state(
     let z_solve_buffer = state.device.new_buffer_with_bytes_no_copy(
         z_solve.as_ptr().cast(),
         coeff_len as u64,
+        shared_options,
+        None,
+    );
+    let trig_solver_buffer = state.device.new_buffer_with_bytes_no_copy(
+        trig_solver.as_ptr().cast(),
+        trig_solver_len as u64,
+        shared_options,
+        None,
+    );
+    let trig_dense_buffer = state.device.new_buffer_with_bytes_no_copy(
+        trig_dense.as_ptr().cast(),
+        trig_dense_len as u64,
         shared_options,
         None,
     );
@@ -5622,6 +5769,8 @@ unsafe fn run_recover_two_peaks_buffer_with_state(
     cprime_buffer.did_modify_range(NSRange::new(0, coeff_len as u64));
     inv_denom_buffer.did_modify_range(NSRange::new(0, coeff_len as u64));
     z_solve_buffer.did_modify_range(NSRange::new(0, coeff_len as u64));
+    trig_solver_buffer.did_modify_range(NSRange::new(0, trig_solver_len as u64));
+    trig_dense_buffer.did_modify_range(NSRange::new(0, trig_dense_len as u64));
 
     let recovery_pipeline = if response_layout == 1 {
         &state.recovery_stack_pipeline
@@ -5642,6 +5791,8 @@ unsafe fn run_recover_two_peaks_buffer_with_state(
     encoder.set_buffer(7, Some(&m_s_buffer), 0);
     encoder.set_buffer(8, Some(&row_range_buffer), 0);
     encoder.set_buffer(9, Some(&params_buffer), 0);
+    encoder.set_buffer(10, Some(&trig_solver_buffer), 0);
+    encoder.set_buffer(11, Some(&trig_dense_buffer), 0);
     encoder.dispatch_threads(
         MTLSize {
             width: n_rows as u64,
