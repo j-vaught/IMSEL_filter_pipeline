@@ -10,6 +10,8 @@ use std::os::raw::{c_float, c_uint};
 
 const FFT_SHADER_SOURCE: &str = include_str!("../wvf.metal");
 const MAX_RADIX: usize = 8;
+const MAX_STAGES: usize = 16;
+const TRANSPOSE_TILE: usize = 16;
 
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -36,20 +38,32 @@ struct WvfFftPostprocessParams {
 
 #[repr(C)]
 #[derive(Clone, Copy)]
-struct WvfFftStageParams {
-    row_len: c_uint,
-    row_count: c_uint,
-    stride: c_uint,
-    prev: c_uint,
-    radix: c_uint,
-}
-
-#[repr(C)]
-#[derive(Clone, Copy)]
 struct WvfFftTransposeParams {
     width: c_uint,
     height: c_uint,
     batch_count: c_uint,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct WvfFftHermitianParams {
+    fft_width: c_uint,
+    fft_height: c_uint,
+    complex_width: c_uint,
+    batch_count: c_uint,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct WvfFftRowPlanParams {
+    row_len: c_uint,
+    row_count: c_uint,
+    stage_count: c_uint,
+    _reserved: c_uint,
+    radix: [c_uint; MAX_STAGES],
+    stride: [c_uint; MAX_STAGES],
+    prev: [c_uint; MAX_STAGES],
+    weight_offset: [c_uint; MAX_STAGES],
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -70,38 +84,41 @@ struct KernelKey {
     kernel_hash: u64,
 }
 
-struct StagePlan {
-    params: WvfFftStageParams,
-    params_buffer: Buffer,
-    weights_buffer: Buffer,
-}
-
 struct RowPlan {
     len: usize,
-    stages: Vec<StagePlan>,
+    row_count: usize,
+    params_buffer: Buffer,
+    weights_buffer: Buffer,
+    threadgroup_width: u64,
+    threadgroup_bytes: u64,
 }
 
 struct ImagePlan {
     fft_w: usize,
     fft_h: usize,
-    plane_len: usize,
+    full_plane_len: usize,
+    complex_w: usize,
+    reduced_plane_len: usize,
     single_padded: Buffer,
-    single_a: Buffer,
-    single_b: Buffer,
+    single_width: Buffer,
+    single_reduced_a: Buffer,
+    single_reduced_b: Buffer,
     single_transpose: Buffer,
-    single_output: Buffer,
-    double_input: Buffer,
-    double_a: Buffer,
-    double_b: Buffer,
-    double_transpose: Buffer,
+    double_width: Buffer,
     double_output: Buffer,
+    double_reduced_a: Buffer,
+    double_reduced_b: Buffer,
+    double_transpose: Buffer,
     pad_params_buffer: Buffer,
     postprocess_params_buffer: Buffer,
-    complex_count_buffer: Buffer,
+    reduced_complex_count_buffer: Buffer,
     transpose_forward_single_buffer: Buffer,
     transpose_reverse_single_buffer: Buffer,
     transpose_forward_double_buffer: Buffer,
     transpose_reverse_double_buffer: Buffer,
+    pack_single_buffer: Buffer,
+    pack_double_buffer: Buffer,
+    unpack_double_buffer: Buffer,
     width_forward_single: RowPlan,
     width_forward_double: RowPlan,
     width_inverse_double: RowPlan,
@@ -119,8 +136,10 @@ pub(super) struct GpuFftBackend {
     device: Device,
     queue: CommandQueue,
     pad_pipeline: ComputePipelineState,
-    stage_pipeline: ComputePipelineState,
+    row_pipeline: ComputePipelineState,
     transpose_pipeline: ComputePipelineState,
+    pack_pipeline: ComputePipelineState,
+    unpack_pipeline: ComputePipelineState,
     multiply_pipeline: ComputePipelineState,
     postprocess_pipeline: ComputePipelineState,
     image_plans: HashMap<PlanKey, ImagePlan>,
@@ -134,16 +153,20 @@ impl GpuFftBackend {
         let queue = device.new_command_queue();
         let library = compile_library(&device, FFT_SHADER_SOURCE)?;
         let pad_pipeline = pipeline(&device, &library, "wvf_fft_reflect_pad_complex_dense")?;
-        let stage_pipeline = pipeline(&device, &library, "wvf_fft_stage_c2c")?;
+        let row_pipeline = pipeline(&device, &library, "wvf_fft_row_c2c_fused")?;
         let transpose_pipeline = pipeline(&device, &library, "wvf_fft_transpose_c2c")?;
+        let pack_pipeline = pipeline(&device, &library, "wvf_fft_pack_hermitian")?;
+        let unpack_pipeline = pipeline(&device, &library, "wvf_fft_unpack_hermitian")?;
         let multiply_pipeline = pipeline(&device, &library, "wvf_fft_multiply_spectra")?;
         let postprocess_pipeline = pipeline(&device, &library, "wvf_fft_postprocess_complex_dense")?;
         Ok(Self {
             device,
             queue,
             pad_pipeline,
-            stage_pipeline,
+            row_pipeline,
             transpose_pipeline,
+            pack_pipeline,
+            unpack_pipeline,
             multiply_pipeline,
             postprocess_pipeline,
             image_plans: HashMap::new(),
@@ -236,44 +259,53 @@ impl GpuFftBackend {
             plan.fft_w,
             plan.fft_h,
         );
-        encode_c2c_2d(
-            &self.stage_pipeline,
+        encode_forward_2d_reduced(
+            &self.row_pipeline,
             &self.transpose_pipeline,
+            &self.pack_pipeline,
             &command_buffer,
             &plan.width_forward_single,
             &plan.height_forward_single,
             &plan.single_padded,
-            &plan.single_a,
-            &plan.single_b,
+            &plan.single_width,
+            &plan.single_reduced_a,
+            &plan.single_reduced_b,
             &plan.single_transpose,
-            &plan.single_output,
+            &plan.single_reduced_a,
+            &plan.pack_single_buffer,
             &plan.transpose_forward_single_buffer,
             &plan.transpose_reverse_single_buffer,
             1,
+            plan.complex_w,
+            plan.fft_h,
         );
         encode_multiply(
             &self.multiply_pipeline,
             &command_buffer,
-            &plan.single_output,
+            &plan.single_reduced_a,
             &spectrum_buffer,
-            &plan.double_input,
-            &plan.complex_count_buffer,
-            plan.plane_len,
+            &plan.double_reduced_a,
+            &plan.reduced_complex_count_buffer,
+            plan.reduced_plane_len,
         );
-        encode_c2c_2d(
-            &self.stage_pipeline,
+        encode_inverse_2d_reduced(
+            &self.row_pipeline,
             &self.transpose_pipeline,
+            &self.unpack_pipeline,
             &command_buffer,
             &plan.width_inverse_double,
             &plan.height_inverse_double,
-            &plan.double_input,
-            &plan.double_a,
-            &plan.double_b,
+            &plan.double_reduced_a,
+            &plan.double_width,
+            &plan.double_reduced_b,
             &plan.double_transpose,
             &plan.double_output,
+            &plan.unpack_double_buffer,
             &plan.transpose_forward_double_buffer,
             &plan.transpose_reverse_double_buffer,
             2,
+            plan.complex_w,
+            plan.fft_h,
         );
         encode_postprocess(
             &self.postprocess_pipeline,
@@ -324,24 +356,33 @@ impl GpuFftBackend {
                 MTLResourceOptions::StorageModeShared,
             );
             let spectrum_buffer = self.device.new_buffer(
-                input_bytes as u64,
+                crate::checked_len(
+                    plan.reduced_plane_len * 2,
+                    size_of::<Complex32>(),
+                    "cached reduced kernel spectra",
+                )? as u64,
                 MTLResourceOptions::StorageModePrivate,
             );
             let command_buffer = self.queue.new_command_buffer();
-            encode_c2c_2d(
-                &self.stage_pipeline,
+            encode_forward_2d_reduced(
+                &self.row_pipeline,
                 &self.transpose_pipeline,
+                &self.pack_pipeline,
                 &command_buffer,
                 &plan.width_forward_double,
                 &plan.height_forward_double,
                 &upload,
-                &plan.double_a,
-                &plan.double_b,
+                &plan.double_width,
+                &plan.double_reduced_a,
+                &plan.double_reduced_b,
                 &plan.double_transpose,
                 &spectrum_buffer,
+                &plan.pack_double_buffer,
                 &plan.transpose_forward_double_buffer,
                 &plan.transpose_reverse_double_buffer,
                 2,
+                plan.complex_w,
+                plan.fft_h,
             );
             command_buffer.commit();
             command_buffer.wait_until_completed();
@@ -357,7 +398,9 @@ impl GpuFftBackend {
     fn build_image_plan(&self, key: PlanKey) -> Result<ImagePlan, String> {
         let fft_w = key.fft_w as usize;
         let fft_h = key.fft_h as usize;
-        let plane_len = crate::checked_len(fft_w, fft_h, "FFT plane")?;
+        let full_plane_len = crate::checked_len(fft_w, fft_h, "FFT plane")?;
+        let complex_w = fft_w / 2 + 1;
+        let reduced_plane_len = crate::checked_len(complex_w, fft_h, "reduced FFT plane")?;
         let padded_width = key
             .width
             .checked_add(key.radius.saturating_mul(2))
@@ -368,39 +411,50 @@ impl GpuFftBackend {
             .ok_or_else(|| "padded height exceeded uint32".to_string())?;
 
         let complex_plane_bytes = crate::checked_len(
-            plane_len,
+            full_plane_len,
             size_of::<Complex32>(),
             "complex FFT plane",
         )?;
         let complex_double_bytes = crate::checked_len(complex_plane_bytes, 2, "double complex plane")?;
-        let complex_count = c_uint::try_from(plane_len).map_err(|_| "FFT plane exceeded uint32".to_string())?;
+        let reduced_complex_plane_bytes = crate::checked_len(
+            reduced_plane_len,
+            size_of::<Complex32>(),
+            "reduced complex FFT plane",
+        )?;
+        let reduced_complex_double_bytes = crate::checked_len(
+            reduced_complex_plane_bytes,
+            2,
+            "double reduced complex plane",
+        )?;
+        let reduced_complex_count =
+            c_uint::try_from(reduced_plane_len).map_err(|_| "reduced FFT plane exceeded uint32".to_string())?;
 
         let width_radices = factor_fft_length(fft_w)?;
         let height_radices = factor_fft_length(fft_h)?;
         let width_forward_single =
-            build_row_plan(&self.device, fft_w, fft_h, 1, &width_radices, false)?;
+            build_row_plan(&self.device, &self.row_pipeline, fft_w, fft_h, 1, &width_radices, false)?;
         let width_forward_double =
-            build_row_plan(&self.device, fft_w, fft_h, 2, &width_radices, false)?;
+            build_row_plan(&self.device, &self.row_pipeline, fft_w, fft_h, 2, &width_radices, false)?;
         let width_inverse_double =
-            build_row_plan(&self.device, fft_w, fft_h, 2, &width_radices, true)?;
+            build_row_plan(&self.device, &self.row_pipeline, fft_w, fft_h, 2, &width_radices, true)?;
         let height_forward_single =
-            build_row_plan(&self.device, fft_h, fft_w, 1, &height_radices, false)?;
+            build_row_plan(&self.device, &self.row_pipeline, fft_h, complex_w, 1, &height_radices, false)?;
         let height_forward_double =
-            build_row_plan(&self.device, fft_h, fft_w, 2, &height_radices, false)?;
+            build_row_plan(&self.device, &self.row_pipeline, fft_h, complex_w, 2, &height_radices, false)?;
         let height_inverse_double =
-            build_row_plan(&self.device, fft_h, fft_w, 2, &height_radices, true)?;
+            build_row_plan(&self.device, &self.row_pipeline, fft_h, complex_w, 2, &height_radices, true)?;
 
         let private = MTLResourceOptions::StorageModePrivate;
         let single_padded = self.device.new_buffer(complex_plane_bytes as u64, private);
-        let single_a = self.device.new_buffer(complex_plane_bytes as u64, private);
-        let single_b = self.device.new_buffer(complex_plane_bytes as u64, private);
-        let single_transpose = self.device.new_buffer(complex_plane_bytes as u64, private);
-        let single_output = self.device.new_buffer(complex_plane_bytes as u64, private);
-        let double_input = self.device.new_buffer(complex_double_bytes as u64, private);
-        let double_a = self.device.new_buffer(complex_double_bytes as u64, private);
-        let double_b = self.device.new_buffer(complex_double_bytes as u64, private);
-        let double_transpose = self.device.new_buffer(complex_double_bytes as u64, private);
+        let single_width = self.device.new_buffer(complex_plane_bytes as u64, private);
+        let single_reduced_a = self.device.new_buffer(reduced_complex_plane_bytes as u64, private);
+        let single_reduced_b = self.device.new_buffer(reduced_complex_plane_bytes as u64, private);
+        let single_transpose = self.device.new_buffer(reduced_complex_plane_bytes as u64, private);
+        let double_width = self.device.new_buffer(complex_double_bytes as u64, private);
         let double_output = self.device.new_buffer(complex_double_bytes as u64, private);
+        let double_reduced_a = self.device.new_buffer(reduced_complex_double_bytes as u64, private);
+        let double_reduced_b = self.device.new_buffer(reduced_complex_double_bytes as u64, private);
+        let double_transpose = self.device.new_buffer(reduced_complex_double_bytes as u64, private);
 
         let pad_params = WvfFftPadParams {
             image_width: key.width,
@@ -416,51 +470,68 @@ impl GpuFftBackend {
             height: key.height,
             crop: key.radius.saturating_mul(2),
             fft_width: key.fft_w,
-            plane_stride: complex_count,
-            scale: 1.0 / plane_len as f32,
+            plane_stride: c_uint::try_from(full_plane_len).map_err(|_| "FFT plane exceeded uint32".to_string())?,
+            scale: 1.0 / full_plane_len as f32,
+        };
+        let pack_single = WvfFftHermitianParams {
+            fft_width: key.fft_w,
+            fft_height: key.fft_h,
+            complex_width: complex_w as c_uint,
+            batch_count: 1,
+        };
+        let pack_double = WvfFftHermitianParams {
+            fft_width: key.fft_w,
+            fft_height: key.fft_h,
+            complex_width: complex_w as c_uint,
+            batch_count: 2,
         };
         let transpose_forward_single = WvfFftTransposeParams {
-            width: key.fft_w,
+            width: complex_w as c_uint,
             height: key.fft_h,
             batch_count: 1,
         };
         let transpose_reverse_single = WvfFftTransposeParams {
             width: key.fft_h,
-            height: key.fft_w,
+            height: complex_w as c_uint,
             batch_count: 1,
         };
         let transpose_forward_double = WvfFftTransposeParams {
-            width: key.fft_w,
+            width: complex_w as c_uint,
             height: key.fft_h,
             batch_count: 2,
         };
         let transpose_reverse_double = WvfFftTransposeParams {
             width: key.fft_h,
-            height: key.fft_w,
+            height: complex_w as c_uint,
             batch_count: 2,
         };
 
         Ok(ImagePlan {
             fft_w,
             fft_h,
-            plane_len,
+            full_plane_len,
+            complex_w,
+            reduced_plane_len,
             single_padded,
-            single_a,
-            single_b,
+            single_width,
+            single_reduced_a,
+            single_reduced_b,
             single_transpose,
-            single_output,
-            double_input,
-            double_a,
-            double_b,
-            double_transpose,
+            double_width,
             double_output,
+            double_reduced_a,
+            double_reduced_b,
+            double_transpose,
             pad_params_buffer: param_buffer(&self.device, &pad_params),
             postprocess_params_buffer: param_buffer(&self.device, &postprocess_params),
-            complex_count_buffer: param_buffer(&self.device, &complex_count),
+            reduced_complex_count_buffer: param_buffer(&self.device, &reduced_complex_count),
             transpose_forward_single_buffer: param_buffer(&self.device, &transpose_forward_single),
             transpose_reverse_single_buffer: param_buffer(&self.device, &transpose_reverse_single),
             transpose_forward_double_buffer: param_buffer(&self.device, &transpose_forward_double),
             transpose_reverse_double_buffer: param_buffer(&self.device, &transpose_reverse_double),
+            pack_single_buffer: param_buffer(&self.device, &pack_single),
+            pack_double_buffer: param_buffer(&self.device, &pack_double),
+            unpack_double_buffer: param_buffer(&self.device, &pack_double),
             width_forward_single,
             width_forward_double,
             width_inverse_double,
@@ -475,14 +546,14 @@ fn build_complex_kernel_values(
     plan: &ImagePlan,
     kernels: &DenseConvolutionKernels,
 ) -> Result<Vec<Complex32>, String> {
-    let mut values = vec![Complex32::new(0.0, 0.0); plan.plane_len * 2];
+    let mut values = vec![Complex32::new(0.0, 0.0); plan.full_plane_len * 2];
     let kernel_width = kernels.kernel_width as usize;
     for y in 0..kernel_width {
         for x in 0..kernel_width {
             let src = y * kernel_width + x;
             let dst = y * plan.fft_w + x;
             values[dst] = Complex32::new(kernels.kernel_x[src], 0.0);
-            values[plan.plane_len + dst] = Complex32::new(kernels.kernel_y[src], 0.0);
+            values[plan.full_plane_len + dst] = Complex32::new(kernels.kernel_y[src], 0.0);
         }
     }
     Ok(values)
@@ -490,38 +561,55 @@ fn build_complex_kernel_values(
 
 fn build_row_plan(
     device: &Device,
+    pipeline: &ComputePipelineState,
     len: usize,
     rows: usize,
     batch_count: usize,
     radices: &[u32],
     inverse: bool,
 ) -> Result<RowPlan, String> {
-    let mut stages = Vec::with_capacity(radices.len());
+    if radices.len() > MAX_STAGES {
+        return Err("FFT stage count exceeded static GPU plan limit".to_string());
+    }
+    let mut params = WvfFftRowPlanParams {
+        row_len: len as c_uint,
+        row_count: (rows * batch_count) as c_uint,
+        stage_count: radices.len() as c_uint,
+        _reserved: 0,
+        radix: [0; MAX_STAGES],
+        stride: [0; MAX_STAGES],
+        prev: [0; MAX_STAGES],
+        weight_offset: [0; MAX_STAGES],
+    };
+    let mut packed_weights = Vec::<Complex32>::new();
     let mut prev = 1usize;
-    for &radix in radices {
+    for (stage_index, &radix) in radices.iter().enumerate() {
         let stride = len
             .checked_div(prev * radix as usize)
             .ok_or_else(|| "invalid FFT stage factorization".to_string())?;
-        let params = WvfFftStageParams {
-            row_len: len as c_uint,
-            row_count: (rows * batch_count) as c_uint,
-            stride: stride as c_uint,
-            prev: prev as c_uint,
-            radix,
-        };
         let weights = build_stage_weights(radix as usize, prev, inverse)?;
-        stages.push(StagePlan {
-            params,
-            params_buffer: param_buffer(device, &params),
-            weights_buffer: device.new_buffer_with_data(
-                weights.as_ptr().cast(),
-                (weights.len() * size_of::<Complex32>()) as u64,
-                MTLResourceOptions::StorageModeShared,
-            ),
-        });
+        params.radix[stage_index] = radix;
+        params.stride[stage_index] = stride as c_uint;
+        params.prev[stage_index] = prev as c_uint;
+        params.weight_offset[stage_index] = packed_weights.len() as c_uint;
+        packed_weights.extend_from_slice(&weights);
         prev *= radix as usize;
     }
-    Ok(RowPlan { len, stages })
+    let weights_buffer = device.new_buffer_with_data(
+        packed_weights.as_ptr().cast(),
+        (packed_weights.len() * size_of::<Complex32>()) as u64,
+        MTLResourceOptions::StorageModeShared,
+    );
+    let threadgroup_width = choose_row_threadgroup_width(pipeline, len);
+    let threadgroup_bytes = (len * size_of::<Complex32>()) as u64;
+    Ok(RowPlan {
+        len,
+        row_count: rows * batch_count,
+        params_buffer: param_buffer(device, &params),
+        weights_buffer,
+        threadgroup_width,
+        threadgroup_bytes,
+    })
 }
 
 fn build_stage_weights(
@@ -628,30 +716,28 @@ fn encode_row_fft(
     command_buffer: &metal::CommandBufferRef,
     plan: &RowPlan,
     input: &Buffer,
-    scratch_a: &Buffer,
-    scratch_b: &Buffer,
-) -> bool {
-    let mut src = input;
-    for (index, stage) in plan.stages.iter().enumerate() {
-        let dst = if index % 2 == 0 { scratch_a } else { scratch_b };
-        let encoder = command_buffer.new_compute_command_encoder();
-        encoder.set_compute_pipeline_state(pipeline);
-        encoder.set_buffer(0, Some(src), 0);
-        encoder.set_buffer(1, Some(dst), 0);
-        encoder.set_buffer(2, Some(&stage.params_buffer), 0);
-        encoder.set_buffer(3, Some(&stage.weights_buffer), 0);
-        encoder.dispatch_threads(
-            MTLSize {
-                width: plan.len as u64,
-                height: stage.params.row_count as u64,
-                depth: 1,
-            },
-            threadgroup_1d(pipeline),
-        );
-        encoder.end_encoding();
-        src = dst;
-    }
-    plan.stages.len() % 2 == 1
+    output: &Buffer,
+) {
+    let encoder = command_buffer.new_compute_command_encoder();
+    encoder.set_compute_pipeline_state(pipeline);
+    encoder.set_threadgroup_memory_length(0, plan.threadgroup_bytes);
+    encoder.set_buffer(0, Some(input), 0);
+    encoder.set_buffer(1, Some(output), 0);
+    encoder.set_buffer(2, Some(&plan.params_buffer), 0);
+    encoder.set_buffer(3, Some(&plan.weights_buffer), 0);
+    encoder.dispatch_thread_groups(
+        MTLSize {
+            width: 1,
+            height: plan.row_count as u64,
+            depth: 1,
+        },
+        MTLSize {
+            width: plan.threadgroup_width,
+            height: 1,
+            depth: 1,
+        },
+    );
+    encoder.end_encoding();
 }
 
 fn encode_transpose(
@@ -669,10 +755,40 @@ fn encode_transpose(
     encoder.set_buffer(0, Some(input), 0);
     encoder.set_buffer(1, Some(output), 0);
     encoder.set_buffer(2, Some(params), 0);
+    encoder.dispatch_thread_groups(
+        MTLSize {
+            width: width.div_ceil(TRANSPOSE_TILE) as u64,
+            height: height.div_ceil(TRANSPOSE_TILE) as u64,
+            depth: batch_count as u64,
+        },
+        MTLSize {
+            width: TRANSPOSE_TILE as u64,
+            height: TRANSPOSE_TILE as u64,
+            depth: 1,
+        },
+    );
+    encoder.end_encoding();
+}
+
+fn encode_pack_hermitian(
+    pipeline: &ComputePipelineState,
+    command_buffer: &metal::CommandBufferRef,
+    input: &Buffer,
+    output: &Buffer,
+    params: &Buffer,
+    complex_w: usize,
+    fft_h: usize,
+    batch_count: usize,
+) {
+    let encoder = command_buffer.new_compute_command_encoder();
+    encoder.set_compute_pipeline_state(pipeline);
+    encoder.set_buffer(0, Some(input), 0);
+    encoder.set_buffer(1, Some(output), 0);
+    encoder.set_buffer(2, Some(params), 0);
     encoder.dispatch_threads(
         MTLSize {
-            width: width as u64,
-            height: height as u64,
+            width: complex_w as u64,
+            height: fft_h as u64,
             depth: batch_count as u64,
         },
         threadgroup_2d(pipeline),
@@ -680,45 +796,137 @@ fn encode_transpose(
     encoder.end_encoding();
 }
 
-fn encode_c2c_2d(
-    stage_pipeline: &ComputePipelineState,
+fn encode_unpack_hermitian(
+    pipeline: &ComputePipelineState,
+    command_buffer: &metal::CommandBufferRef,
+    input: &Buffer,
+    output: &Buffer,
+    params: &Buffer,
+    fft_w: usize,
+    fft_h: usize,
+    batch_count: usize,
+) {
+    let encoder = command_buffer.new_compute_command_encoder();
+    encoder.set_compute_pipeline_state(pipeline);
+    encoder.set_buffer(0, Some(input), 0);
+    encoder.set_buffer(1, Some(output), 0);
+    encoder.set_buffer(2, Some(params), 0);
+    encoder.dispatch_threads(
+        MTLSize {
+            width: fft_w as u64,
+            height: fft_h as u64,
+            depth: batch_count as u64,
+        },
+        threadgroup_2d(pipeline),
+    );
+    encoder.end_encoding();
+}
+
+fn encode_forward_2d_reduced(
+    row_pipeline: &ComputePipelineState,
     transpose_pipeline: &ComputePipelineState,
+    pack_pipeline: &ComputePipelineState,
     command_buffer: &metal::CommandBufferRef,
     width_plan: &RowPlan,
     height_plan: &RowPlan,
     input: &Buffer,
-    scratch_a: &Buffer,
-    scratch_b: &Buffer,
+    full_width: &Buffer,
+    reduced_a: &Buffer,
+    reduced_b: &Buffer,
     transpose: &Buffer,
     output: &Buffer,
+    pack_params: &Buffer,
     transpose_forward_params: &Buffer,
     transpose_reverse_params: &Buffer,
     batch_count: usize,
+    complex_w: usize,
+    fft_h: usize,
 ) {
-    let width_in_a = encode_row_fft(stage_pipeline, command_buffer, width_plan, input, scratch_a, scratch_b);
-    let width_output = if width_in_a { scratch_a } else { scratch_b };
+    encode_row_fft(row_pipeline, command_buffer, width_plan, input, full_width);
+    encode_pack_hermitian(
+        pack_pipeline,
+        command_buffer,
+        full_width,
+        reduced_a,
+        pack_params,
+        complex_w,
+        fft_h,
+        batch_count,
+    );
     encode_transpose(
         transpose_pipeline,
         command_buffer,
-        width_output,
+        reduced_a,
         transpose,
         transpose_forward_params,
-        width_plan.len,
+        complex_w,
         height_plan.len,
         batch_count,
     );
-    let height_in_a = encode_row_fft(stage_pipeline, command_buffer, height_plan, transpose, scratch_a, scratch_b);
-    let height_output = if height_in_a { scratch_a } else { scratch_b };
+    encode_row_fft(row_pipeline, command_buffer, height_plan, transpose, reduced_b);
     encode_transpose(
         transpose_pipeline,
         command_buffer,
-        height_output,
+        reduced_b,
         output,
         transpose_reverse_params,
         height_plan.len,
-        width_plan.len,
+        complex_w,
         batch_count,
     );
+}
+
+fn encode_inverse_2d_reduced(
+    row_pipeline: &ComputePipelineState,
+    transpose_pipeline: &ComputePipelineState,
+    unpack_pipeline: &ComputePipelineState,
+    command_buffer: &metal::CommandBufferRef,
+    width_plan: &RowPlan,
+    height_plan: &RowPlan,
+    input: &Buffer,
+    full_width: &Buffer,
+    reduced_b: &Buffer,
+    transpose: &Buffer,
+    output: &Buffer,
+    unpack_params: &Buffer,
+    transpose_forward_params: &Buffer,
+    transpose_reverse_params: &Buffer,
+    batch_count: usize,
+    complex_w: usize,
+    fft_h: usize,
+) {
+    encode_transpose(
+        transpose_pipeline,
+        command_buffer,
+        input,
+        transpose,
+        transpose_forward_params,
+        complex_w,
+        fft_h,
+        batch_count,
+    );
+    encode_row_fft(row_pipeline, command_buffer, height_plan, transpose, reduced_b);
+    encode_transpose(
+        transpose_pipeline,
+        command_buffer,
+        reduced_b,
+        input,
+        transpose_reverse_params,
+        height_plan.len,
+        complex_w,
+        batch_count,
+    );
+    encode_unpack_hermitian(
+        unpack_pipeline,
+        command_buffer,
+        input,
+        full_width,
+        unpack_params,
+        width_plan.len,
+        fft_h,
+        batch_count,
+    );
+    encode_row_fft(row_pipeline, command_buffer, width_plan, full_width, output);
 }
 
 fn encode_multiply(
@@ -799,6 +1007,19 @@ fn threadgroup_1d(pipeline: &ComputePipelineState) -> MTLSize {
         height: 1,
         depth: 1,
     }
+}
+
+fn choose_row_threadgroup_width(
+    pipeline: &ComputePipelineState,
+    row_len: usize,
+) -> u64 {
+    let execution_width = pipeline.thread_execution_width().max(1);
+    let max_threads = pipeline.max_total_threads_per_threadgroup().max(1);
+    let preferred = execution_width
+        .saturating_mul(4)
+        .min(max_threads)
+        .max(execution_width);
+    preferred.min(row_len as u64).max(1)
 }
 
 fn next_smooth_fft_size(mut value: u64) -> u64 {
