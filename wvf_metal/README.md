@@ -68,10 +68,13 @@ VkFFT bridge because that path still wins the recorded warm benchmark gate.
 `vkfft` is kept as a compatibility alias for the same backend id and behavior.
 
 An experimental Rust `MPSGraph` FFT backend lives under `rust/src/fft_backend/`
-and can be enabled with `WVF_METAL_EXPERIMENTAL_MPSGRAPH=1`. That path matches
-the spatial reference numerically and uses a small-radius crossover to the
-faster split kernel, but it is not the default until the standalone regression
-harness clears the warm-performance gate.
+and can be enabled with `WVF_METAL_EXPERIMENTAL_MPSGRAPH=1`. It uses a
+single-command-buffer hybrid path where Rust encodes explicit Metal kernels for
+reflect-pad, spectrum multiply, and postprocess around compiled `MPSGraph` FFT
+executables, and it uses a small-radius crossover to the faster split kernel.
+That path matches the spatial reference numerically, but it is not the default
+until the standalone regression harness clears the warm-performance gate. Set
+`WVF_METAL_FFT_PROFILE=1` to print per-stage timing for the experimental path.
 
 ## CLI
 

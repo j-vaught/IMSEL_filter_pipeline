@@ -1,18 +1,46 @@
 use super::interop;
 use super::DenseConvolutionKernels;
-use metal::{Buffer, CommandQueue, Device, MTLResourceOptions};
+use metal::{
+    Buffer, CommandQueue, CompileOptions, ComputePipelineState, Device, Library,
+    MTLResourceOptions, MTLSize,
+};
 use objc2::AnyThread;
 use objc2::rc::Retained;
 use objc2_foundation::{NSArray, NSDictionary, NSNumber};
-use objc2_metal_performance_shaders::{MPSDataType, MPSShape};
+use objc2_metal_performance_shaders::{MPSCommandBuffer, MPSDataType, MPSShape};
 use objc2_metal_performance_shaders_graph::{
-    MPSGraph, MPSGraphDevice, MPSGraphFFTDescriptor, MPSGraphFFTScalingMode, MPSGraphPaddingMode,
-    MPSGraphShapedType, MPSGraphTensor, MPSGraphTensorData, MPSGraphTensorShapedTypeDictionary,
-    MPSGraphExecutable,
+    MPSGraph, MPSGraphDevice, MPSGraphFFTDescriptor, MPSGraphFFTScalingMode,
+    MPSGraphShapedType, MPSGraphTensor, MPSGraphTensorData,
+    MPSGraphTensorShapedTypeDictionary, MPSGraphExecutable,
 };
 use std::collections::HashMap;
 use std::mem::size_of;
 use std::os::raw::{c_float, c_uint};
+use std::time::Instant;
+
+const FFT_SHADER_SOURCE: &str = include_str!("../wvf.metal");
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct WvfFftPadParams {
+    image_width: c_uint,
+    image_height: c_uint,
+    padded_width: c_uint,
+    padded_height: c_uint,
+    fft_width: c_uint,
+    fft_height: c_uint,
+    radius: c_uint,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct WvfFftPostprocessParams {
+    width: c_uint,
+    height: c_uint,
+    crop: c_uint,
+    fft_width: c_uint,
+    plane_stride: c_uint,
+}
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 struct ImagePlanKey {
@@ -21,7 +49,6 @@ struct ImagePlanKey {
     radius: c_uint,
     fft_w: c_uint,
     fft_h: c_uint,
-    kernel_width: c_uint,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -42,11 +69,22 @@ struct KernelSpectrumKey {
 
 #[derive(Clone)]
 struct ImagePlan {
-    executable: Retained<MPSGraphExecutable>,
-    image_shape: Retained<MPSShape>,
-    kernel_shape: Retained<MPSShape>,
-    output_shape: Retained<MPSShape>,
-    kernel_row_bytes: usize,
+    fft_w: c_uint,
+    fft_h: c_uint,
+    complex_count: c_uint,
+    padded_buffer: Buffer,
+    image_spectrum_buffer: Buffer,
+    multiplied_spectra_buffer: Buffer,
+    inverse_real_buffer: Buffer,
+    pad_params_buffer: Buffer,
+    postprocess_params_buffer: Buffer,
+    complex_count_buffer: Buffer,
+    forward_executable: Retained<MPSGraphExecutable>,
+    inverse_executable: Retained<MPSGraphExecutable>,
+    forward_inputs: Retained<NSArray<MPSGraphTensorData>>,
+    forward_results: Retained<NSArray<MPSGraphTensorData>>,
+    inverse_inputs: Retained<NSArray<MPSGraphTensorData>>,
+    inverse_results: Retained<NSArray<MPSGraphTensorData>>,
 }
 
 #[derive(Clone)]
@@ -68,9 +106,68 @@ pub(super) struct MpsGraphFftBackend {
     device: Device,
     queue: CommandQueue,
     graph_device: Retained<MPSGraphDevice>,
+    pad_pipeline: ComputePipelineState,
+    multiply_pipeline: ComputePipelineState,
+    postprocess_pipeline: ComputePipelineState,
     image_plans: HashMap<ImagePlanKey, ImagePlan>,
     kernel_plans: HashMap<KernelPlanKey, KernelPlan>,
     kernel_spectra: HashMap<KernelSpectrumKey, KernelSpectra>,
+}
+
+struct ProfileRun {
+    enabled: bool,
+    radius: c_uint,
+    width: c_uint,
+    height: c_uint,
+    start: Instant,
+    last: Instant,
+    steps: Vec<(&'static str, f64)>,
+}
+
+impl ProfileRun {
+    fn new(width: c_uint, height: c_uint, radius: c_uint) -> Self {
+        let enabled = std::env::var("WVF_METAL_FFT_PROFILE")
+            .map(|value| {
+                let normalized = value.trim().to_ascii_lowercase();
+                !normalized.is_empty() && normalized != "0" && normalized != "false"
+            })
+            .unwrap_or(false);
+        let start = Instant::now();
+        Self {
+            enabled,
+            radius,
+            width,
+            height,
+            start,
+            last: start,
+            steps: Vec::new(),
+        }
+    }
+
+    fn mark(&mut self, label: &'static str) {
+        if !self.enabled {
+            return;
+        }
+        let now = Instant::now();
+        self.steps
+            .push((label, now.duration_since(self.last).as_secs_f64() * 1_000.0));
+        self.last = now;
+    }
+
+    fn finish(mut self) {
+        if !self.enabled {
+            return;
+        }
+        self.mark("finish");
+        let total_ms = self.start.elapsed().as_secs_f64() * 1_000.0;
+        eprintln!(
+            "wvf_metal experimental fft profile size={}x{} radius={} total_ms={total_ms:.3} steps={:?}",
+            self.height,
+            self.width,
+            self.radius,
+            self.steps
+        );
+    }
 }
 
 impl MpsGraphFftBackend {
@@ -79,10 +176,17 @@ impl MpsGraphFftBackend {
             Device::system_default().ok_or_else(|| "no Metal device is available".to_string())?;
         let queue = device.new_command_queue();
         let graph_device = unsafe { MPSGraphDevice::deviceWithMTLDevice(interop::device_ref(&device)) };
+        let library = compile_library(&device, FFT_SHADER_SOURCE)?;
+        let pad_pipeline = pipeline(&device, &library, "wvf_fft_reflect_pad_real_dense")?;
+        let multiply_pipeline = pipeline(&device, &library, "wvf_fft_multiply_spectra")?;
+        let postprocess_pipeline = pipeline(&device, &library, "wvf_fft_postprocess_dense")?;
         Ok(Self {
             device,
             queue,
             graph_device,
+            pad_pipeline,
+            multiply_pipeline,
+            postprocess_pipeline,
             image_plans: HashMap::new(),
             kernel_plans: HashMap::new(),
             kernel_spectra: HashMap::new(),
@@ -101,6 +205,7 @@ impl MpsGraphFftBackend {
         magnitude: *mut c_float,
         angle: *mut c_float,
     ) -> Result<(), String> {
+        let mut profile = ProfileRun::new(width, height, radius);
         if image.is_null() || out_x.is_null() || out_y.is_null() || magnitude.is_null() || angle.is_null() {
             return Err("null pointer passed to FFT backend".to_string());
         }
@@ -111,22 +216,20 @@ impl MpsGraphFftBackend {
             .map_err(|_| "FFT width exceeded uint32".to_string())?;
         let fft_h = c_uint::try_from(fft_h_u64)
             .map_err(|_| "FFT height exceeded uint32".to_string())?;
-        let plan_key = ImagePlanKey {
+
+        let plan = self.image_plan(ImagePlanKey {
             width,
             height,
             radius,
             fft_w,
             fft_h,
-            kernel_width: kernels.kernel_width,
-        };
-
-        let plan = self.image_plan(plan_key)?;
+        })?;
         let spectra = self.kernel_spectra(radius, fft_w, fft_h, kernels)?;
+        profile.mark("plan_and_kernel_cache");
 
         let image_pixels = crate::checked_image_pixels(width, height)?;
         let image_bytes = crate::checked_len(image_pixels, size_of::<c_float>(), "image")?;
         let output_bytes = image_bytes;
-
         let shared = MTLResourceOptions::StorageModeShared;
         let image_buffer =
             self.device
@@ -156,63 +259,62 @@ impl MpsGraphFftBackend {
             shared,
             None,
         );
+        profile.mark("buffer_wrap");
 
-        let image_row_bytes = width as usize * size_of::<c_float>();
-        let output_row_bytes = image_row_bytes;
-        let image_data = tensor_data(
-            &image_buffer,
-            &plan.image_shape,
-            MPSDataType::Float32,
-            Some(image_row_bytes),
-        );
-        let kernel_data = tensor_data(
-            &spectra.buffer,
-            &plan.kernel_shape,
-            MPSDataType::ComplexFloat32,
-            Some(plan.kernel_row_bytes),
-        );
-        let out_x_data = tensor_data(
-            &out_x_buffer,
-            &plan.output_shape,
-            MPSDataType::Float32,
-            Some(output_row_bytes),
-        );
-        let out_y_data = tensor_data(
-            &out_y_buffer,
-            &plan.output_shape,
-            MPSDataType::Float32,
-            Some(output_row_bytes),
-        );
-        let magnitude_data = tensor_data(
-            &magnitude_buffer,
-            &plan.output_shape,
-            MPSDataType::Float32,
-            Some(output_row_bytes),
-        );
-        let angle_data = tensor_data(
-            &angle_buffer,
-            &plan.output_shape,
-            MPSDataType::Float32,
-            Some(output_row_bytes),
-        );
+        let mps_command_buffer = unsafe {
+            MPSCommandBuffer::commandBufferFromCommandQueue(interop::command_queue_ref(&self.queue))
+        };
+        let mut root = unsafe { mps_command_buffer.rootCommandBuffer() };
+        let mut command_buffer = unsafe { interop::metal_command_buffer_ref(&root) };
 
-        let inputs = NSArray::from_slice(&[&*image_data, &*kernel_data]);
-        let results = NSArray::from_slice(&[
-            &*out_x_data,
-            &*out_y_data,
-            &*magnitude_data,
-            &*angle_data,
-        ]);
+        self.encode_pad(command_buffer, &image_buffer, &plan)?;
+        profile.mark("pad");
+
         unsafe {
             let _ = plan
-                .executable
-                .runWithMTLCommandQueue_inputsArray_resultsArray_executionDescriptor(
-                    interop::command_queue_ref(&self.queue),
-                    &inputs,
-                    Some(&results),
+                .forward_executable
+                .encodeToCommandBuffer_inputsArray_resultsArray_executionDescriptor(
+                    &mps_command_buffer,
+                    &plan.forward_inputs,
+                    Some(&plan.forward_results),
                     None,
                 );
         }
+        profile.mark("forward_fft");
+
+        root = unsafe { mps_command_buffer.rootCommandBuffer() };
+        command_buffer = unsafe { interop::metal_command_buffer_ref(&root) };
+        self.encode_multiply(command_buffer, &plan, &spectra)?;
+        profile.mark("multiply");
+
+        unsafe {
+            let _ = plan
+                .inverse_executable
+                .encodeToCommandBuffer_inputsArray_resultsArray_executionDescriptor(
+                    &mps_command_buffer,
+                    &plan.inverse_inputs,
+                    Some(&plan.inverse_results),
+                    None,
+                );
+        }
+        profile.mark("inverse_fft");
+
+        root = unsafe { mps_command_buffer.rootCommandBuffer() };
+        command_buffer = unsafe { interop::metal_command_buffer_ref(&root) };
+        self.encode_postprocess(
+            command_buffer,
+            &plan,
+            &out_x_buffer,
+            &out_y_buffer,
+            &magnitude_buffer,
+            &angle_buffer,
+        )?;
+        profile.mark("postprocess_encode");
+
+        command_buffer.commit();
+        command_buffer.wait_until_completed();
+        profile.mark("wait");
+        profile.finish();
         Ok(())
     }
 
@@ -308,6 +410,143 @@ impl MpsGraphFftBackend {
             .ok_or_else(|| "kernel spectrum cache insertion failed".to_string())
     }
 
+    fn build_image_plan(&self, key: ImagePlanKey) -> Result<ImagePlan, String> {
+        let complex_w = key.fft_w as usize / 2 + 1;
+        let complex_count = crate::checked_len(key.fft_h as usize, complex_w, "complex plane")?;
+        let complex_count_u32 =
+            c_uint::try_from(complex_count).map_err(|_| "complex plane exceeded uint32".to_string())?;
+        let plane_stride = crate::checked_len(
+            key.fft_w as usize,
+            key.fft_h as usize,
+            "real plane",
+        )?;
+        let plane_stride_u32 =
+            c_uint::try_from(plane_stride).map_err(|_| "real plane exceeded uint32".to_string())?;
+
+        let forward_input_shape = shape(&[key.fft_h as usize, key.fft_w as usize]);
+        let forward_output_shape = shape(&[key.fft_h as usize, complex_w]);
+        let inverse_input_shape = shape(&[2, key.fft_h as usize, complex_w]);
+        let inverse_output_shape = shape(&[2, key.fft_h as usize, key.fft_w as usize]);
+
+        let forward_executable = build_forward_fft_executable(
+            &self.graph_device,
+            &forward_input_shape,
+            &forward_output_shape,
+        );
+        let inverse_executable = build_inverse_fft_executable(
+            &self.graph_device,
+            &inverse_input_shape,
+            &inverse_output_shape,
+        );
+
+        let fft_row_bytes = crate::checked_len(key.fft_w as usize, size_of::<c_float>(), "FFT row")?;
+        let padded_bytes = crate::checked_len(fft_row_bytes, key.fft_h as usize, "padded buffer")?;
+        let complex_row_bytes =
+            crate::checked_len(complex_w, size_of::<[f32; 2]>(), "complex spectrum row")?;
+        let image_spectrum_bytes =
+            crate::checked_len(complex_row_bytes, key.fft_h as usize, "image spectrum buffer")?;
+        let multiplied_spectra_bytes =
+            crate::checked_len(image_spectrum_bytes, 2, "multiplied spectrum buffer")?;
+        let inverse_real_bytes =
+            crate::checked_len(padded_bytes, 2, "inverse real buffer")?;
+
+        let private = MTLResourceOptions::StorageModePrivate;
+        let padded_buffer = self.device.new_buffer(padded_bytes as u64, private);
+        let image_spectrum_buffer = self.device.new_buffer(image_spectrum_bytes as u64, private);
+        let multiplied_spectra_buffer =
+            self.device.new_buffer(multiplied_spectra_bytes as u64, private);
+        let inverse_real_buffer = self.device.new_buffer(inverse_real_bytes as u64, private);
+
+        let padded_input = tensor_data(
+            &padded_buffer,
+            &forward_input_shape,
+            MPSDataType::Float32,
+            Some(fft_row_bytes),
+        );
+        let image_spectrum_output = tensor_data(
+            &image_spectrum_buffer,
+            &forward_output_shape,
+            MPSDataType::ComplexFloat32,
+            Some(complex_row_bytes),
+        );
+        let multiplied_spectra_input = tensor_data(
+            &multiplied_spectra_buffer,
+            &inverse_input_shape,
+            MPSDataType::ComplexFloat32,
+            Some(complex_row_bytes),
+        );
+        let inverse_real_output = tensor_data(
+            &inverse_real_buffer,
+            &inverse_output_shape,
+            MPSDataType::Float32,
+            Some(fft_row_bytes),
+        );
+
+        let forward_inputs = NSArray::from_slice(&[&*padded_input]);
+        let forward_results = NSArray::from_slice(&[&*image_spectrum_output]);
+        let inverse_inputs = NSArray::from_slice(&[&*multiplied_spectra_input]);
+        let inverse_results = NSArray::from_slice(&[&*inverse_real_output]);
+
+        let padded_width = key
+            .width
+            .checked_add(key.radius.saturating_mul(2))
+            .ok_or_else(|| "padded width exceeded uint32".to_string())?;
+        let padded_height = key
+            .height
+            .checked_add(key.radius.saturating_mul(2))
+            .ok_or_else(|| "padded height exceeded uint32".to_string())?;
+        let pad_params = WvfFftPadParams {
+            image_width: key.width,
+            image_height: key.height,
+            padded_width,
+            padded_height,
+            fft_width: key.fft_w,
+            fft_height: key.fft_h,
+            radius: key.radius,
+        };
+        let postprocess_params = WvfFftPostprocessParams {
+            width: key.width,
+            height: key.height,
+            crop: key.radius.saturating_mul(2),
+            fft_width: key.fft_w,
+            plane_stride: plane_stride_u32,
+        };
+        let pad_params_buffer = self.device.new_buffer_with_data(
+            (&pad_params as *const WvfFftPadParams).cast(),
+            size_of::<WvfFftPadParams>() as u64,
+            MTLResourceOptions::StorageModeShared,
+        );
+        let postprocess_params_buffer = self.device.new_buffer_with_data(
+            (&postprocess_params as *const WvfFftPostprocessParams).cast(),
+            size_of::<WvfFftPostprocessParams>() as u64,
+            MTLResourceOptions::StorageModeShared,
+        );
+        let complex_count_buffer = self.device.new_buffer_with_data(
+            (&complex_count_u32 as *const c_uint).cast(),
+            size_of::<c_uint>() as u64,
+            MTLResourceOptions::StorageModeShared,
+        );
+
+        Ok(ImagePlan {
+            fft_w: key.fft_w,
+            fft_h: key.fft_h,
+            complex_count: complex_count_u32,
+            padded_buffer,
+            image_spectrum_buffer,
+            multiplied_spectra_buffer,
+            inverse_real_buffer,
+            pad_params_buffer,
+            postprocess_params_buffer,
+            complex_count_buffer,
+            forward_executable,
+            inverse_executable,
+            forward_inputs,
+            forward_results,
+            inverse_inputs,
+            inverse_results,
+        })
+    }
+
     fn build_kernel_plan(&self, key: KernelPlanKey) -> Result<KernelPlan, String> {
         let input_shape = shape(&[2, key.kernel_width as usize, key.kernel_width as usize]);
         let complex_w = key.fft_w as usize / 2 + 1;
@@ -327,7 +566,7 @@ impl MpsGraphFftBackend {
             ]);
             let padded = graph.padTensor_withPaddingMode_leftPadding_rightPadding_constantValue_name(
                 &kernel_tensor,
-                MPSGraphPaddingMode::Constant,
+                objc2_metal_performance_shaders_graph::MPSGraphPaddingMode::Constant,
                 &zero_left,
                 &zero_right,
                 0.0,
@@ -352,7 +591,8 @@ impl MpsGraphFftBackend {
                 None,
             )
         };
-        let output_row_bytes = crate::checked_len(complex_w, size_of::<[f32; 2]>(), "kernel spectrum row")?;
+        let output_row_bytes =
+            crate::checked_len(complex_w, size_of::<[f32; 2]>(), "kernel spectrum row")?;
         let output_elems = crate::checked_len(
             2,
             crate::checked_len(key.fft_h as usize, complex_w, "kernel spectrum shape")?,
@@ -374,154 +614,193 @@ impl MpsGraphFftBackend {
         })
     }
 
-    fn build_image_plan(&self, key: ImagePlanKey) -> Result<ImagePlan, String> {
-        let image_shape = shape(&[key.height as usize, key.width as usize]);
-        let complex_w = key.fft_w as usize / 2 + 1;
-        let kernel_shape = shape(&[2, key.fft_h as usize, complex_w]);
-        let output_shape = shape(&[key.height as usize, key.width as usize]);
-        let executable = unsafe {
-            let graph = MPSGraph::new();
-            let image_tensor = graph.placeholderWithShape_dataType_name(
-                Some(&image_shape),
-                MPSDataType::Float32,
-                None,
-            );
-            let kernel_tensor = graph.placeholderWithShape_dataType_name(
-                Some(&kernel_shape),
-                MPSDataType::ComplexFloat32,
-                None,
-            );
-            let reflect_pad = shape(&[key.radius as usize, key.radius as usize]);
-            let reflected = graph.padTensor_withPaddingMode_leftPadding_rightPadding_constantValue_name(
-                &image_tensor,
-                MPSGraphPaddingMode::Symmetric,
-                &reflect_pad,
-                &reflect_pad,
-                0.0,
-                None,
-            );
-            let zero_left = shape(&[0, 0]);
-            let zero_right = shape(&[
-                key.fft_h as usize - (key.height as usize + 2 * key.radius as usize),
-                key.fft_w as usize - (key.width as usize + 2 * key.radius as usize),
-            ]);
-            let padded = graph.padTensor_withPaddingMode_leftPadding_rightPadding_constantValue_name(
-                &reflected,
-                MPSGraphPaddingMode::Constant,
-                &zero_left,
-                &zero_right,
-                0.0,
-                None,
-            );
-            let image_axes = index_array(&[0, 1]);
-            let batched_axes = index_array(&[1, 2]);
-            let forward_desc = fft_descriptor(false, MPSGraphFFTScalingMode::None);
-            let inverse_desc = fft_descriptor(true, MPSGraphFFTScalingMode::Size);
-            let spectrum = graph.realToHermiteanFFTWithTensor_axes_descriptor_name(
-                &padded,
-                &image_axes,
-                &forward_desc,
-                None,
-            );
-            let spectrum = graph.expandDimsOfTensor_axis_name(&spectrum, 0, None);
-            let filtered = graph.multiplicationWithPrimaryTensor_secondaryTensor_name(
-                &spectrum,
-                &kernel_tensor,
-                None,
-            );
-            let planes = graph.HermiteanToRealFFTWithTensor_axes_descriptor_name(
-                &filtered,
-                &batched_axes,
-                &inverse_desc,
-                None,
-            );
-            let split = graph.splitTensor_splitSizes_axis_name(
-                &planes,
-                &index_array(&[1, 1]),
-                0,
-                None,
-            );
-            let gx_plane = split.objectAtIndex(0);
-            let gy_plane = split.objectAtIndex(1);
-            let gx_plane = graph.squeezeTensor_axis_name(&gx_plane, 0, None);
-            let gy_plane = graph.squeezeTensor_axis_name(&gy_plane, 0, None);
-            let crop = usize::try_from(key.radius)
-                .map_err(|_| "radius is too large".to_string())?
-                .saturating_mul(2);
-            let gx = crop_tensor(
-                &graph,
-                &gx_plane,
-                crop,
-                crop,
-                key.height as usize,
-                key.width as usize,
-            );
-            let gy = crop_tensor(
-                &graph,
-                &gy_plane,
-                crop,
-                crop,
-                key.height as usize,
-                key.width as usize,
-            );
-            let gx_sq = graph.multiplicationWithPrimaryTensor_secondaryTensor_name(&gx, &gx, None);
-            let gy_sq = graph.multiplicationWithPrimaryTensor_secondaryTensor_name(&gy, &gy, None);
-            let mag_sq =
-                graph.additionWithPrimaryTensor_secondaryTensor_name(&gx_sq, &gy_sq, None);
-            let magnitude = graph.squareRootWithTensor_name(&mag_sq, None);
-            let zero = graph.constantWithScalar_dataType(0.0, MPSDataType::Float32);
-            let pi = graph.constantWithScalar_dataType(std::f64::consts::PI, MPSDataType::Float32);
-            let angle_raw = graph.atan2WithPrimaryTensor_secondaryTensor_name(&gy, &gx, None);
-            let angle_plus_pi =
-                graph.additionWithPrimaryTensor_secondaryTensor_name(&angle_raw, &pi, None);
-            let angle_non_negative = graph
-                .selectWithPredicateTensor_truePredicateTensor_falsePredicateTensor_name(
-                    &graph.lessThanWithPrimaryTensor_secondaryTensor_name(&angle_raw, &zero, None),
-                    &angle_plus_pi,
-                    &angle_raw,
-                    None,
-                );
-            let angle_minus_pi = graph.subtractionWithPrimaryTensor_secondaryTensor_name(
-                &angle_non_negative,
-                &pi,
-                None,
-            );
-            let angle = graph
-                .selectWithPredicateTensor_truePredicateTensor_falsePredicateTensor_name(
-                    &graph.greaterThanOrEqualToWithPrimaryTensor_secondaryTensor_name(
-                        &angle_non_negative,
-                        &pi,
-                        None,
-                    ),
-                    &angle_minus_pi,
-                    &angle_non_negative,
-                    None,
-                );
-            let feed_types = shaped_type_dictionary(&[
-                (&image_tensor, &image_shape, MPSDataType::Float32),
-                (&kernel_tensor, &kernel_shape, MPSDataType::ComplexFloat32),
-            ]);
-            let targets = NSArray::from_slice(&[&*gx, &*gy, &*magnitude, &*angle]);
-            graph.compileWithDevice_feeds_targetTensors_targetOperations_compilationDescriptor(
-                Some(&self.graph_device),
-                &feed_types,
-                &targets,
-                None,
-                None,
-            )
-        };
+    fn encode_pad(
+        &self,
+        command_buffer: &metal::CommandBufferRef,
+        image_buffer: &Buffer,
+        plan: &ImagePlan,
+    ) -> Result<(), String> {
+        let encoder = command_buffer.new_compute_command_encoder();
+        encoder.set_compute_pipeline_state(&self.pad_pipeline);
+        encoder.set_buffer(0, Some(image_buffer), 0);
+        encoder.set_buffer(1, Some(&plan.padded_buffer), 0);
+        encoder.set_buffer(2, Some(&plan.pad_params_buffer), 0);
+        encoder.dispatch_threads(
+            MTLSize {
+                width: plan.fft_w as u64,
+                height: plan.fft_h as u64,
+                depth: 1,
+            },
+            threadgroup_2d(&self.pad_pipeline),
+        );
+        encoder.end_encoding();
+        Ok(())
+    }
 
-        Ok(ImagePlan {
-            executable,
-            image_shape,
-            kernel_shape,
-            output_shape,
-            kernel_row_bytes: crate::checked_len(complex_w, size_of::<[f32; 2]>(), "kernel spectrum row")?,
-        })
+    fn encode_multiply(
+        &self,
+        command_buffer: &metal::CommandBufferRef,
+        plan: &ImagePlan,
+        spectra: &KernelSpectra,
+    ) -> Result<(), String> {
+        let encoder = command_buffer.new_compute_command_encoder();
+        encoder.set_compute_pipeline_state(&self.multiply_pipeline);
+        encoder.set_buffer(0, Some(&plan.image_spectrum_buffer), 0);
+        encoder.set_buffer(1, Some(&spectra.buffer), 0);
+        encoder.set_buffer(2, Some(&plan.multiplied_spectra_buffer), 0);
+        encoder.set_buffer(3, Some(&plan.complex_count_buffer), 0);
+        encoder.dispatch_threads(
+            MTLSize {
+                width: u64::from(plan.complex_count) * 2,
+                height: 1,
+                depth: 1,
+            },
+            threadgroup_1d(&self.multiply_pipeline),
+        );
+        encoder.end_encoding();
+        Ok(())
+    }
+
+    fn encode_postprocess(
+        &self,
+        command_buffer: &metal::CommandBufferRef,
+        plan: &ImagePlan,
+        out_x: &Buffer,
+        out_y: &Buffer,
+        magnitude: &Buffer,
+        angle: &Buffer,
+    ) -> Result<(), String> {
+        let params: WvfFftPostprocessParams = unsafe {
+            *(plan.postprocess_params_buffer.contents() as *const WvfFftPostprocessParams)
+        };
+        let encoder = command_buffer.new_compute_command_encoder();
+        encoder.set_compute_pipeline_state(&self.postprocess_pipeline);
+        encoder.set_buffer(0, Some(&plan.inverse_real_buffer), 0);
+        encoder.set_buffer(1, Some(out_x), 0);
+        encoder.set_buffer(2, Some(out_y), 0);
+        encoder.set_buffer(3, Some(magnitude), 0);
+        encoder.set_buffer(4, Some(angle), 0);
+        encoder.set_buffer(5, Some(&plan.postprocess_params_buffer), 0);
+        encoder.dispatch_threads(
+            MTLSize {
+                width: params.width as u64,
+                height: params.height as u64,
+                depth: 1,
+            },
+            threadgroup_2d(&self.postprocess_pipeline),
+        );
+        encoder.end_encoding();
+        Ok(())
     }
 }
 
-fn fft_descriptor(inverse: bool, scaling_mode: MPSGraphFFTScalingMode) -> Retained<MPSGraphFFTDescriptor> {
+fn compile_library(device: &Device, source: &str) -> Result<Library, String> {
+    let options = CompileOptions::new();
+    options.set_fast_math_enabled(true);
+    device
+        .new_library_with_source(source, &options)
+        .map_err(|err| format!("failed to compile Metal FFT utility shaders: {err}"))
+}
+
+fn pipeline(device: &Device, library: &Library, name: &str) -> Result<ComputePipelineState, String> {
+    let function = library
+        .get_function(name, None)
+        .map_err(|err| format!("failed to load Metal FFT function {name}: {err}"))?;
+    device
+        .new_compute_pipeline_state_with_function(&function)
+        .map_err(|err| format!("failed to create Metal FFT pipeline {name}: {err}"))
+}
+
+fn threadgroup_2d(pipeline: &ComputePipelineState) -> MTLSize {
+    let execution_width = pipeline.thread_execution_width().max(1);
+    let max_threads = pipeline.max_total_threads_per_threadgroup().max(1);
+    let width = execution_width.min(max_threads);
+    let height = (max_threads / width).clamp(1, 16);
+    MTLSize {
+        width,
+        height,
+        depth: 1,
+    }
+}
+
+fn threadgroup_1d(pipeline: &ComputePipelineState) -> MTLSize {
+    MTLSize {
+        width: pipeline.max_total_threads_per_threadgroup().max(1),
+        height: 1,
+        depth: 1,
+    }
+}
+
+fn build_forward_fft_executable(
+    graph_device: &MPSGraphDevice,
+    input_shape: &MPSShape,
+    _output_shape: &MPSShape,
+) -> Retained<MPSGraphExecutable> {
+    unsafe {
+        let graph = MPSGraph::new();
+        let input_tensor = graph.placeholderWithShape_dataType_name(
+            Some(input_shape),
+            MPSDataType::Float32,
+            None,
+        );
+        let axes = index_array(&[0, 1]);
+        let descriptor = fft_descriptor(false, MPSGraphFFTScalingMode::None);
+        let spectrum = graph.realToHermiteanFFTWithTensor_axes_descriptor_name(
+            &input_tensor,
+            &axes,
+            &descriptor,
+            None,
+        );
+        let feed_types =
+            shaped_type_dictionary(&[(&input_tensor, input_shape, MPSDataType::Float32)]);
+        let targets = NSArray::from_slice(&[&*spectrum]);
+        graph.compileWithDevice_feeds_targetTensors_targetOperations_compilationDescriptor(
+            Some(graph_device),
+            &feed_types,
+            &targets,
+            None,
+            None,
+        )
+    }
+}
+
+fn build_inverse_fft_executable(
+    graph_device: &MPSGraphDevice,
+    input_shape: &MPSShape,
+    _output_shape: &MPSShape,
+) -> Retained<MPSGraphExecutable> {
+    unsafe {
+        let graph = MPSGraph::new();
+        let input_tensor = graph.placeholderWithShape_dataType_name(
+            Some(input_shape),
+            MPSDataType::ComplexFloat32,
+            None,
+        );
+        let axes = index_array(&[1, 2]);
+        let descriptor = fft_descriptor(true, MPSGraphFFTScalingMode::Size);
+        let planes = graph.HermiteanToRealFFTWithTensor_axes_descriptor_name(
+            &input_tensor,
+            &axes,
+            &descriptor,
+            None,
+        );
+        let feed_types =
+            shaped_type_dictionary(&[(&input_tensor, input_shape, MPSDataType::ComplexFloat32)]);
+        let targets = NSArray::from_slice(&[&*planes]);
+        graph.compileWithDevice_feeds_targetTensors_targetOperations_compilationDescriptor(
+            Some(graph_device),
+            &feed_types,
+            &targets,
+            None,
+            None,
+        )
+    }
+}
+
+fn fft_descriptor(
+    inverse: bool,
+    scaling_mode: MPSGraphFFTScalingMode,
+) -> Retained<MPSGraphFFTDescriptor> {
     let descriptor = unsafe { MPSGraphFFTDescriptor::new() };
     unsafe {
         descriptor.setInverse(inverse);
@@ -531,32 +810,19 @@ fn fft_descriptor(inverse: bool, scaling_mode: MPSGraphFFTScalingMode) -> Retain
     descriptor
 }
 
-fn crop_tensor(
-    graph: &MPSGraph,
-    tensor: &MPSGraphTensor,
-    start_y: usize,
-    start_x: usize,
-    height: usize,
-    width: usize,
-) -> Retained<MPSGraphTensor> {
-    unsafe {
-        graph.sliceTensor_starts_ends_strides_name(
-            tensor,
-            &index_array(&[start_y as i64, start_x as i64]),
-            &index_array(&[(start_y + height) as i64, (start_x + width) as i64]),
-            &index_array(&[1, 1]),
-            None,
-        )
-    }
-}
-
 fn shape(dims: &[usize]) -> Retained<MPSShape> {
-    let values: Vec<Retained<NSNumber>> = dims.iter().map(|&dim| NSNumber::new_usize(dim)).collect();
+    let values: Vec<Retained<NSNumber>> = dims
+        .iter()
+        .map(|&dim| NSNumber::new_usize(dim))
+        .collect();
     NSArray::from_retained_slice(&values)
 }
 
 fn index_array(values: &[i64]) -> Retained<NSArray<NSNumber>> {
-    let numbers: Vec<Retained<NSNumber>> = values.iter().map(|&value| NSNumber::new_i64(value)).collect();
+    let numbers: Vec<Retained<NSNumber>> = values
+        .iter()
+        .map(|&value| NSNumber::new_i64(value))
+        .collect();
     NSArray::from_retained_slice(&numbers)
 }
 

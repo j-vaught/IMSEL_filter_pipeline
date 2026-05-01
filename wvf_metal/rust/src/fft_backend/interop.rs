@@ -1,7 +1,7 @@
 use foreign_types::ForeignTypeRef;
-use metal::{BufferRef, CommandQueueRef, DeviceRef};
+use metal::{BufferRef, CommandBufferRef, CommandQueueRef, DeviceRef};
 use objc2::runtime::ProtocolObject;
-use objc2_metal::{MTLBuffer, MTLCommandQueue, MTLDevice};
+use objc2_metal::{MTLBuffer, MTLCommandBuffer, MTLCommandQueue, MTLDevice};
 
 pub(super) unsafe fn buffer_ref(buffer: &BufferRef) -> &ProtocolObject<dyn MTLBuffer> {
     // `metal` and `objc2-metal` both wrap the same Objective-C object pointer.
@@ -12,6 +12,12 @@ pub(super) unsafe fn command_queue_ref(
     queue: &CommandQueueRef,
 ) -> &ProtocolObject<dyn MTLCommandQueue> {
     &*(queue.as_ptr().cast())
+}
+
+pub(super) unsafe fn metal_command_buffer_ref(
+    command_buffer: &ProtocolObject<dyn MTLCommandBuffer>,
+) -> &CommandBufferRef {
+    &*(command_buffer as *const ProtocolObject<dyn MTLCommandBuffer> as *const CommandBufferRef)
 }
 
 pub(super) unsafe fn device_ref(device: &DeviceRef) -> &ProtocolObject<dyn MTLDevice> {
