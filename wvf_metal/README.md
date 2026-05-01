@@ -81,12 +81,16 @@ Only the border band uses reflected indexing. This is the default because most
 pixels in normal images are interior pixels.
 
 `fft` is the preferred public name for backend `3`. By default it uses the
-bundled VkFFT bridge when the native GPU path is available and falls back to
-the restored Rust CPU FFT backend when it is not. `vkfft` is kept as a
-compatibility alias for the same backend id and behavior.
+bundled VkFFT bridge or the restored Rust CPU FFT backend, depending on which
+one benchmarks faster for the current workload on the current device. `vkfft`
+is kept as a compatibility alias for the same backend id and behavior.
 
 For `variant="fft"` or `variant="vkfft"`, pass `fft_backend="auto"`,
 `fft_backend="cpu"`, or `fft_backend="vkfft"`. `auto` is the default.
+The first `auto` call for a given image shape, radius, degree, and GPU device
+warms both FFT backends once, times the next call, and caches the faster
+choice under the user cache directory. Later calls reuse that choice until the
+native build fingerprint or workload key changes.
 
 For Metal or VkFFT GPU execution, you can choose the GPU with `device_index=`
 in Python or `WVF_GPU_DEVICE_INDEX` in the environment. `WVF_METAL_DEVICE_INDEX`
@@ -97,8 +101,7 @@ Linux notes:
 - The Python wrapper auto-discovers common CUDA runtime library locations and
   preloads `cudart`, `nvrtc`, and `nvrtc-builtins` when needed.
 - If no compatible CUDA host C++ compiler is found, the native extension builds
-  in CPU-only mode and `fft_backend="auto"` falls back to the Rust CPU FFT
-  backend.
+  in CPU-only mode and `fft_backend="auto"` chooses the Rust CPU FFT backend.
 - If `nvcc` needs an older host compiler than the system default, set
   `WVF_CUDA_HOST_CXX` or `CUDAHOSTCXX` to a compatible `g++` wrapper or binary
   before first use.

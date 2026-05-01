@@ -55,7 +55,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--fft-backend",
         choices=("auto", "cpu", "vkfft"),
         default="auto",
-        help="FFT backend to use when variant is fft/vkfft.",
+        help="FFT backend for variant=fft/vkfft. auto benchmarks CPU and VkFFT once per workload.",
     )
     parser.add_argument(
         "--device-index",

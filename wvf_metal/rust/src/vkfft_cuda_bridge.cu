@@ -132,16 +132,9 @@ struct CudaRuntime {
     std::mutex mutex;
     std::unordered_map<PlanKey, std::unique_ptr<PlanBundle>, PlanKeyHash> plan_cache;
     std::unordered_map<KernelKey, std::unique_ptr<KernelSpectra>, KernelKeyHash> kernel_cache;
+    struct ExternalBuffers* reusable_io = nullptr;
 
-    ~CudaRuntime() {
-        if (context) {
-            CUcontext current = nullptr;
-            if (cuCtxGetCurrent(&current) == CUDA_SUCCESS && current == context) {
-                cuCtxSetCurrent(nullptr);
-            }
-            cuDevicePrimaryCtxRelease(device);
-        }
-    }
+    ~CudaRuntime();
 };
 
 struct ExternalBuffers {
@@ -150,25 +143,55 @@ struct ExternalBuffers {
     float* out_y = nullptr;
     float* magnitude = nullptr;
     float* angle = nullptr;
+    uint64_t image_capacity = 0;
+    uint64_t output_capacity = 0;
 
-    ~ExternalBuffers() {
+    void release_image() {
+        if (image) {
+            cudaFree(image);
+            image = nullptr;
+        }
+        image_capacity = 0;
+    }
+
+    void release_outputs() {
         if (angle) {
             cudaFree(angle);
+            angle = nullptr;
         }
         if (magnitude) {
             cudaFree(magnitude);
+            magnitude = nullptr;
         }
         if (out_y) {
             cudaFree(out_y);
+            out_y = nullptr;
         }
         if (out_x) {
             cudaFree(out_x);
+            out_x = nullptr;
         }
-        if (image) {
-            cudaFree(image);
-        }
+        output_capacity = 0;
+    }
+
+    ~ExternalBuffers() {
+        release_outputs();
+        release_image();
     }
 };
+
+CudaRuntime::~CudaRuntime() {
+    if (reusable_io) {
+        delete reusable_io;
+    }
+    if (context) {
+        CUcontext current = nullptr;
+        if (cuCtxGetCurrent(&current) == CUDA_SUCCESS && current == context) {
+            cuCtxSetCurrent(nullptr);
+        }
+        cuDevicePrimaryCtxRelease(device);
+    }
+}
 
 struct WVFPadParams {
     uint32_t image_width = 0;
@@ -677,12 +700,16 @@ KernelSpectra* get_or_create_kernel_spectra(
     return inserted.first->second.get();
 }
 
-bool allocate_external_buffers(
-    ExternalBuffers* buffers,
+bool ensure_reusable_io_buffers(
+    CudaRuntime& runtime,
     uint64_t image_bytes,
     uint64_t output_bytes,
     std::string* error_out
 ) {
+    if (!runtime.reusable_io) {
+        runtime.reusable_io = new ExternalBuffers();
+    }
+    ExternalBuffers* buffers = runtime.reusable_io;
     if (!buffers) {
         if (error_out) {
             *error_out = "internal CUDA buffer allocation failed";
@@ -690,20 +717,42 @@ bool allocate_external_buffers(
         return false;
     }
 
-    cudaError_t cuda_result = cudaMalloc(reinterpret_cast<void**>(&buffers->image), image_bytes);
-    if (cuda_result == cudaSuccess) {
+    if (buffers->image_capacity < image_bytes) {
+        buffers->release_image();
+    }
+    if (buffers->output_capacity < output_bytes) {
+        buffers->release_outputs();
+    }
+
+    cudaError_t cuda_result = cudaSuccess;
+    if (!buffers->image) {
+        cuda_result = cudaMalloc(reinterpret_cast<void**>(&buffers->image), image_bytes);
+        if (cuda_result == cudaSuccess) {
+            buffers->image_capacity = image_bytes;
+        }
+    }
+    if (cuda_result == cudaSuccess && !buffers->out_x) {
         cuda_result = cudaMalloc(reinterpret_cast<void**>(&buffers->out_x), output_bytes);
     }
-    if (cuda_result == cudaSuccess) {
+    if (cuda_result == cudaSuccess && !buffers->out_y) {
         cuda_result = cudaMalloc(reinterpret_cast<void**>(&buffers->out_y), output_bytes);
     }
-    if (cuda_result == cudaSuccess) {
+    if (cuda_result == cudaSuccess && !buffers->magnitude) {
         cuda_result = cudaMalloc(reinterpret_cast<void**>(&buffers->magnitude), output_bytes);
     }
-    if (cuda_result == cudaSuccess) {
+    if (cuda_result == cudaSuccess && !buffers->angle) {
         cuda_result = cudaMalloc(reinterpret_cast<void**>(&buffers->angle), output_bytes);
     }
+    if (cuda_result == cudaSuccess) {
+        buffers->output_capacity = output_bytes;
+    }
     if (cuda_result != cudaSuccess) {
+        if (!buffers->image) {
+            buffers->release_image();
+        }
+        if (!buffers->out_x || !buffers->out_y || !buffers->magnitude || !buffers->angle) {
+            buffers->release_outputs();
+        }
         if (error_out) {
             *error_out = std::string("failed to allocate CUDA IO buffers: ") +
                          cudaGetErrorString(cuda_result);
@@ -818,11 +867,11 @@ int run_wvf_vkfft(
     const uint64_t image_bytes =
         static_cast<uint64_t>(width) * static_cast<uint64_t>(height) * sizeof(float);
     const uint64_t output_bytes = image_bytes;
-    ExternalBuffers external;
-    if (!allocate_external_buffers(&external, image_bytes, output_bytes, &cache_error)) {
+    if (!ensure_reusable_io_buffers(*runtime, image_bytes, output_bytes, &cache_error)) {
         write_error(error_out, error_len, cache_error);
         return 1;
     }
+    ExternalBuffers& external = *runtime->reusable_io;
 
     cuda_result = cudaMemcpyAsync(
         external.image,

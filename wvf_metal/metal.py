@@ -9,6 +9,7 @@ import os
 import platform
 import shutil
 import subprocess
+import time
 from functools import lru_cache
 from pathlib import Path
 
@@ -32,6 +33,8 @@ _VARIANTS = {
 
 _FFT_VARIANT_IDS = {3}
 _FFT_BACKENDS = {"auto", "cpu", "vkfft", "metal", "gpu"}
+_AUTO_FFT_CACHE_VERSION = 1
+_AUTO_FFT_CACHE: dict[str, str] | None = None
 
 
 def _package_root() -> Path:
@@ -70,6 +73,102 @@ def _stored_build_fingerprint(path: Path) -> dict[str, object] | None:
         return json.loads(path.read_text(encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         return None
+
+
+def _user_cache_dir() -> Path:
+    if platform.system() == "Darwin":
+        return Path.home() / "Library" / "Caches" / "wvf_metal"
+    base = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
+    return base / "wvf_metal"
+
+
+def _auto_fft_cache_path() -> Path:
+    return _user_cache_dir() / "fft_backend_auto_v1.json"
+
+
+def _load_auto_fft_cache() -> dict[str, str]:
+    global _AUTO_FFT_CACHE
+    if _AUTO_FFT_CACHE is not None:
+        return _AUTO_FFT_CACHE
+
+    path = _auto_fft_cache_path()
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        payload = {}
+
+    if (
+        isinstance(payload, dict)
+        and payload.get("version") == _AUTO_FFT_CACHE_VERSION
+        and isinstance(payload.get("entries"), dict)
+    ):
+        entries = {
+            str(key): str(value)
+            for key, value in payload["entries"].items()
+            if value in {"cpu", "vkfft"}
+        }
+    else:
+        entries = {}
+    _AUTO_FFT_CACHE = entries
+    return _AUTO_FFT_CACHE
+
+
+def _store_auto_fft_cache() -> None:
+    if _AUTO_FFT_CACHE is None:
+        return
+    path = _auto_fft_cache_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "version": _AUTO_FFT_CACHE_VERSION,
+        "entries": _AUTO_FFT_CACHE,
+    }
+    tmp_path = path.with_suffix(".tmp")
+    tmp_path.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
+    tmp_path.replace(path)
+
+
+def _auto_fft_cache_key(
+    image: np.ndarray,
+    radius: int,
+    degree: int,
+    device_index: int | None,
+) -> str:
+    key = {
+        "build": _build_fingerprint(),
+        "degree": int(degree),
+        "device_index": 0 if device_index is None else int(device_index),
+        "height": int(image.shape[0]),
+        "host": platform.node(),
+        "machine": platform.machine(),
+        "radius": int(radius),
+        "system": platform.system(),
+        "width": int(image.shape[1]),
+    }
+    return json.dumps(key, sort_keys=True, separators=(",", ":"))
+
+
+def _cached_auto_fft_backend(
+    image: np.ndarray,
+    radius: int,
+    degree: int,
+    device_index: int | None,
+) -> str | None:
+    cache = _load_auto_fft_cache()
+    return cache.get(_auto_fft_cache_key(image, radius, degree, device_index))
+
+
+def _cache_auto_fft_backend(
+    image: np.ndarray,
+    radius: int,
+    degree: int,
+    device_index: int | None,
+    backend: str,
+) -> None:
+    if backend not in {"cpu", "vkfft"}:
+        return
+    cache = _load_auto_fft_cache()
+    cache[_auto_fft_cache_key(image, radius, degree, device_index)] = backend
+    _store_auto_fft_cache()
 
 
 def _candidate_linux_cuda_lib_dirs() -> list[Path]:
@@ -419,6 +518,94 @@ def _run_native_magnitude_angle(
     )
 
 
+def _benchmark_auto_fft_backend(
+    img: np.ndarray,
+    radius: int,
+    degree: int,
+    variant: str,
+    device_index: int | None,
+) -> tuple[str, tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
+    timings: dict[str, float] = {}
+    results: dict[str, tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]] = {}
+    errors: dict[str, Exception] = {}
+    _load_library()
+
+    for backend in ("vkfft", "cpu"):
+        try:
+            _run_native_magnitude_angle(
+                img,
+                radius=radius,
+                degree=degree,
+                variant=variant,
+                fft_backend=backend,
+                device_index=device_index,
+            )
+            started = time.perf_counter()
+            result = _run_native_magnitude_angle(
+                img,
+                radius=radius,
+                degree=degree,
+                variant=variant,
+                fft_backend=backend,
+                device_index=device_index,
+            )
+        except (MetalBackendError, OSError, RuntimeError, ValueError) as exc:
+            errors[backend] = exc
+            continue
+        timings[backend] = time.perf_counter() - started
+        results[backend] = result
+
+    if not timings:
+        messages = ", ".join(f"{backend}: {error}" for backend, error in errors.items())
+        raise MetalBackendError(f"no FFT backend succeeded for auto selection: {messages}")
+
+    chosen_backend = min(timings, key=timings.__getitem__)
+    _cache_auto_fft_backend(
+        img,
+        radius=radius,
+        degree=degree,
+        device_index=device_index,
+        backend=chosen_backend,
+    )
+    return chosen_backend, results[chosen_backend]
+
+
+def _run_auto_fft_magnitude_angle(
+    img: np.ndarray,
+    radius: int,
+    degree: int,
+    variant: str,
+    device_index: int | None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    cached_backend = _cached_auto_fft_backend(
+        img,
+        radius=radius,
+        degree=degree,
+        device_index=device_index,
+    )
+    if cached_backend is not None:
+        try:
+            return _run_native_magnitude_angle(
+                img,
+                radius=radius,
+                degree=degree,
+                variant=variant,
+                fft_backend=cached_backend,
+                device_index=device_index,
+            )
+        except (MetalBackendError, OSError, RuntimeError, ValueError):
+            pass
+
+    _, result = _benchmark_auto_fft_backend(
+        img,
+        radius=radius,
+        degree=degree,
+        variant=variant,
+        device_index=device_index,
+    )
+    return result
+
+
 def wvf_gradients_metal(
     image: np.ndarray,
     radius: int,
@@ -436,6 +623,15 @@ def wvf_gradients_metal(
         raise MetalBackendError(
             "wvf_metal requires macOS or Linux for the native extension."
         )
+    if _variant_is_fft(variant) and chosen_fft_backend == "auto":
+        gx, gy, _, _ = _run_auto_fft_magnitude_angle(
+            img,
+            radius=radius,
+            degree=degree,
+            variant=variant,
+            device_index=checked_device_index,
+        )
+        return gx, gy
     return _run_native_gradients(
         img,
         radius=radius,
@@ -462,6 +658,14 @@ def wvf_magnitude_angle_metal(
     if platform.system() not in {"Darwin", "Linux"}:
         raise MetalBackendError(
             "wvf_metal requires macOS or Linux for the native extension."
+        )
+    if _variant_is_fft(variant) and chosen_fft_backend == "auto":
+        return _run_auto_fft_magnitude_angle(
+            img,
+            radius=radius,
+            degree=degree,
+            variant=variant,
+            device_index=checked_device_index,
         )
     return _run_native_magnitude_angle(
         img,
