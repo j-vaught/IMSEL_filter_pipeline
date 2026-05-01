@@ -61,9 +61,7 @@ struct MetalState {
 }
 
 impl MetalState {
-    fn new() -> Result<Self, String> {
-        let device =
-            Device::system_default().ok_or_else(|| "no Metal device is available".to_string())?;
+    fn new(device: Device) -> Result<Self, String> {
         let options = CompileOptions::new();
         options.set_fast_math_enabled(true);
         let library = device
@@ -112,10 +110,44 @@ fn pipeline(
 }
 
 thread_local! {
-    static METAL_STATE: RefCell<Option<MetalState>> = const { RefCell::new(None) };
+    static METAL_STATE: RefCell<HashMap<i32, MetalState>> = RefCell::new(HashMap::new());
     static KERNEL_CACHE: RefCell<HashMap<(c_uint, c_uint, c_uint), GeneratedKernels>> = RefCell::new(HashMap::new());
     static PLAN_CACHE: RefCell<HashMap<(c_uint, c_uint, c_uint), KernelPlan>> = RefCell::new(HashMap::new());
     static DENSE_KERNEL_CACHE: RefCell<HashMap<(c_uint, c_uint), DenseConvolutionKernels>> = RefCell::new(HashMap::new());
+}
+
+fn selected_metal_device() -> Result<(i32, Device), String> {
+    let raw_index = std::env::var("WVF_METAL_DEVICE_INDEX").ok();
+    let device_key = match raw_index.as_deref().map(str::trim) {
+        None | Some("") => -1,
+        Some(value) => {
+            let parsed: usize = value
+                .parse()
+                .map_err(|_| "WVF_METAL_DEVICE_INDEX must be a non-negative integer".to_string())?;
+            i32::try_from(parsed)
+                .map_err(|_| "WVF_METAL_DEVICE_INDEX exceeded supported range".to_string())?
+        }
+    };
+
+    if device_key < 0 {
+        let device =
+            Device::system_default().ok_or_else(|| "no Metal device is available".to_string())?;
+        return Ok((device_key, device));
+    }
+
+    let devices = Device::all();
+    let index = device_key as usize;
+    if index >= devices.len() {
+        return Err(format!(
+            "WVF_METAL_DEVICE_INDEX {index} is out of range for {} Metal device(s)",
+            devices.len()
+        ));
+    }
+    let device = devices
+        .into_iter()
+        .nth(index)
+        .ok_or_else(|| "failed to select requested Metal device".to_string())?;
+    Ok((device_key, device))
 }
 
 fn threadgroup_2d(pipeline: &ComputePipelineState) -> MTLSize {
@@ -1088,12 +1120,15 @@ unsafe fn run_checked<F>(runner: F) -> Result<(), String>
 where
     F: FnOnce(&MetalState) -> Result<(), String>,
 {
+    let (device_key, device) = selected_metal_device()?;
     METAL_STATE.with(|state_cell| {
-        let mut state_slot = state_cell.borrow_mut();
-        if state_slot.is_none() {
-            *state_slot = Some(MetalState::new()?);
+        let mut states = state_cell.borrow_mut();
+        if !states.contains_key(&device_key) {
+            states.insert(device_key, MetalState::new(device)?);
         }
-        let state = state_slot.as_ref().expect("Metal state was initialized");
+        let state = states
+            .get(&device_key)
+            .ok_or_else(|| "Metal state initialization failed".to_string())?;
         runner(state)
     })
 }

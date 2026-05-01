@@ -9,7 +9,9 @@
 
 #include <algorithm>
 #include <array>
+#include <cerrno>
 #include <cmath>
+#include <cstdlib>
 #include <cstdint>
 #include <cstring>
 #include <limits>
@@ -461,35 +463,110 @@ bool initialize_runtime_pipelines(MetalRuntime* runtime, std::string* error_out)
     return runtime->pad_pipeline && runtime->multiply_pipeline && runtime->postprocess_pipeline;
 }
 
-MetalRuntime* get_runtime(std::string* error_out) {
-    static std::unique_ptr<MetalRuntime> runtime;
-    static std::string init_error;
-    static bool initialized = false;
+int selected_device_index(std::string* error_out) {
+    const char* value = std::getenv("WVF_METAL_DEVICE_INDEX");
+    if (!value || !value[0]) {
+        return -1;
+    }
 
-    if (!initialized) {
-        initialized = true;
+    errno = 0;
+    char* end = nullptr;
+    const long parsed = std::strtol(value, &end, 10);
+    if (errno != 0 || end == value || (end && *end != '\0') || parsed < 0 ||
+        parsed > std::numeric_limits<int>::max()) {
+        if (error_out) {
+            *error_out = "WVF_METAL_DEVICE_INDEX must be a non-negative integer";
+        }
+        return -2;
+    }
+    return static_cast<int>(parsed);
+}
+
+MTL::Device* create_selected_device(int device_index, std::string* error_out) {
+    if (device_index < 0) {
+        return MTL::CreateSystemDefaultDevice();
+    }
+
+    NS::Array* devices = MTL::CopyAllDevices();
+    if (!devices) {
+        if (error_out) {
+            *error_out = "failed to enumerate Metal devices for VkFFT";
+        }
+        return nullptr;
+    }
+
+    const int count = static_cast<int>(devices->count());
+    if (device_index >= count) {
+        if (error_out) {
+            *error_out =
+                "WVF_METAL_DEVICE_INDEX " + std::to_string(device_index) +
+                " is out of range for " + std::to_string(count) + " Metal device(s)";
+        }
+        devices->release();
+        return nullptr;
+    }
+
+    auto* device = static_cast<MTL::Device*>(
+        devices->object(static_cast<NS::UInteger>(device_index))
+    );
+    if (device) {
+        device->retain();
+    }
+    devices->release();
+    return device;
+}
+
+MetalRuntime* get_runtime(std::string* error_out) {
+    static std::mutex runtime_mutex;
+    static std::unordered_map<int, std::unique_ptr<MetalRuntime>> runtimes;
+    static std::unordered_map<int, std::string> init_errors;
+
+    std::string selection_error;
+    const int device_index = selected_device_index(&selection_error);
+    if (device_index == -2) {
+        if (error_out) {
+            *error_out = selection_error;
+        }
+        return nullptr;
+    }
+
+    std::lock_guard<std::mutex> lock(runtime_mutex);
+    if (runtimes.find(device_index) == runtimes.end() &&
+        init_errors.find(device_index) == init_errors.end()) {
         ScopedAutoreleasePool pool;
+        std::string init_error;
         auto created = std::make_unique<MetalRuntime>();
-        created->device = MTL::CreateSystemDefaultDevice();
+        created->device = create_selected_device(device_index, &init_error);
         if (!created->device) {
-            init_error = "no Metal device is available for VkFFT";
+            if (init_error.empty()) {
+                init_error = "no Metal device is available for VkFFT";
+            }
         } else {
             created->queue = created->device->newCommandQueue();
             if (!created->queue) {
                 init_error = "failed to create Metal command queue for VkFFT";
             } else if (initialize_runtime_pipelines(created.get(), &init_error)) {
-                runtime = std::move(created);
+                runtimes.emplace(device_index, std::move(created));
             }
+        }
+        if (runtimes.find(device_index) == runtimes.end()) {
+            init_errors.emplace(device_index, init_error);
         }
     }
 
-    if (!runtime) {
+    auto runtime_it = runtimes.find(device_index);
+    if (runtime_it == runtimes.end()) {
         if (error_out) {
-            *error_out = init_error.empty() ? "failed to initialize VkFFT runtime" : init_error;
+            const auto error_it = init_errors.find(device_index);
+            if (error_it == init_errors.end() || error_it->second.empty()) {
+                *error_out = "failed to initialize VkFFT runtime";
+            } else {
+                *error_out = error_it->second;
+            }
         }
         return nullptr;
     }
-    return runtime.get();
+    return runtime_it->second.get();
 }
 
 MTL::Size threadgroup_1d(MTL::ComputePipelineState* pipeline) {

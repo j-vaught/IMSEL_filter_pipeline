@@ -1,4 +1,4 @@
-"""Standalone radius-defined WVF implementation with an Apple Metal backend."""
+"""Standalone radius-defined WVF with Metal/VkFFT and CPU FFT backends."""
 
 from __future__ import annotations
 

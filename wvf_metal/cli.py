@@ -40,7 +40,7 @@ def _load_array(path: Path, key: str | None) -> np.ndarray:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run standalone WVF gradients with the Metal backend."
+        description="Run standalone WVF gradients with VkFFT/Metal or CPU FFT."
     )
     parser.add_argument("input", type=Path, help="Input .npy, .npz, or image path.")
     parser.add_argument("output", type=Path, help="Output .npz path.")
@@ -50,6 +50,18 @@ def build_parser() -> argparse.ArgumentParser:
         "--variant",
         choices=("split", "antipodal", "direct", "fft", "vkfft"),
         default="split",
+    )
+    parser.add_argument(
+        "--fft-backend",
+        choices=("auto", "cpu", "vkfft"),
+        default="auto",
+        help="FFT backend to use when variant is fft/vkfft.",
+    )
+    parser.add_argument(
+        "--device-index",
+        type=int,
+        default=None,
+        help="Metal device index for direct/antipodal/split or VkFFT GPU execution.",
     )
     parser.add_argument("--key", default=None, help="Array key when input is .npz.")
     return parser
@@ -63,6 +75,8 @@ def main(argv: list[str] | None = None) -> int:
         radius=args.radius,
         degree=args.degree,
         variant=args.variant,
+        fft_backend=args.fft_backend,
+        device_index=args.device_index,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(
