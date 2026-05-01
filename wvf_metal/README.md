@@ -2,9 +2,12 @@
 
 This folder is a copyable Apple Silicon implementation of radius-defined Wide
 View Filter gradients. WVF weights are built and cached in Rust, convolution
-runs in Metal, and magnitude/angle recovery is fused into the Metal convolution
-path. Python only loads inputs, allocates output arrays, and calls the Rust
-dynamic library.
+runs in Metal, and magnitude/angle recovery stays on the GPU. The spatial
+variants use the `metal` crate directly. Backend `3`, exposed as `fft` and the
+compatibility alias `vkfft`, currently keeps the legacy VkFFT bridge for the
+best warm performance while the Rust `MPSGraph` path remains available as an
+experimental opt-in. Python only loads inputs, allocates output arrays, and
+calls the Rust dynamic library.
 
 ## Requirements
 
@@ -41,7 +44,8 @@ gx, gy, magnitude, angle = wvf_magnitude_angle_metal(image, radius=9, degree=3)
 ```
 
 The default Metal variant is `split`. For comparisons, pass `variant="direct"`,
-`variant="antipodal"`, or `variant="vkfft"`.
+`variant="antipodal"`, or `variant="fft"`. `variant="vkfft"` remains as a
+compatibility alias for backend `3`.
 
 ## Kernel Variants
 
@@ -59,19 +63,23 @@ pixels use a fast path with direct indexing and no reflected-boundary checks.
 Only the border band uses reflected indexing. This is the default because most
 pixels in normal images are interior pixels.
 
-`vkfft` uses a small Rust/C++ bridge around the vendored VkFFT Metal backend.
-It builds the WVF kernels in Rust, pads the FFT domain to power-of-two extents,
-runs forward real FFTs for the image and dense `Gx/Gy` kernels, multiplies the
-spectra in a minimal Metal kernel, runs the inverse real FFT, then crops and
-returns the same output arrays as the spatial variants. This path is intended
-for large radii where FFT convolution can beat direct spatial convolution.
+`fft` is the preferred public name for backend `3`. Today it uses the existing
+VkFFT bridge because that path still wins the recorded warm benchmark gate.
+`vkfft` is kept as a compatibility alias for the same backend id and behavior.
+
+An experimental Rust `MPSGraph` FFT backend lives under `rust/src/fft_backend/`
+and can be enabled with `WVF_METAL_EXPERIMENTAL_MPSGRAPH=1`. That path matches
+the spatial reference numerically and uses a small-radius crossover to the
+faster split kernel, but it is not the default until the standalone regression
+harness clears the warm-performance gate.
 
 ## CLI
 
 ```bash
 wvf-metal input.npy output.npz --radius 9 --degree 3
 wvf-metal input.npz output.npz --key image --radius 15 --degree 3 --variant direct
-wvf-metal input.npy output.npz --radius 44 --degree 3 --variant vkfft
+wvf-metal input.npy output.npz --radius 44 --degree 3 --variant fft
+wvf-metal-regression
 ```
 
 The output archive contains `gx`, `gy`, `magnitude`, `angle`, `radius`,
@@ -81,9 +89,12 @@ The output archive contains `gx`, `gy`, `magnitude`, `angle`, `radius`,
 
 - `metal.py` builds and loads the Rust/Metal backend and exposes the Python API.
 - `cli.py` provides the command line wrapper.
+- `fft_regression.py` compares `split` against backend `3` for correctness and
+  warm performance.
 - `rust/src/lib.rs` builds WVF weights, owns the Metal dispatch code, and
   exposes the C ABI.
+- `rust/src/fft_backend/` contains the Rust FFT backend, MPSGraph plan/cache
+  ownership, and the Objective-C interop shim used by the experimental path.
 - `rust/src/wvf.metal` contains the Metal compute kernels.
-- `rust/src/vkfft_bridge.cpp` contains the minimal VkFFT/Metal bridge.
-- `rust/third_party/` contains the vendored VkFFT and metal-cpp headers needed
-  by the bridge.
+- `rust/src/vkfft_bridge.cpp` contains the active legacy FFT bridge.
+- `rust/third_party/` contains the vendored headers needed by that bridge.

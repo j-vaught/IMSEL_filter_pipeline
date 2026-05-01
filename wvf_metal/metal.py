@@ -130,7 +130,7 @@ def _variant_id(variant: str) -> int:
         return _VARIANTS[str(variant).lower()]
     except KeyError as exc:
         raise ValueError(
-            "variant must be 'split', 'antipodal', 'direct', or 'vkfft'"
+            "variant must be 'split', 'antipodal', 'direct', or 'fft'/'vkfft'"
         ) from exc
 
 

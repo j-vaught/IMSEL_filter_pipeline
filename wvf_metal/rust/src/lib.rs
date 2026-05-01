@@ -8,11 +8,13 @@ use std::ffi::{c_char, CStr};
 use std::os::raw::{c_float, c_int, c_uint};
 use std::ptr;
 
+mod fft_backend;
+
 const SHADER_SOURCE: &str = include_str!("wvf.metal");
 const WVF_VARIANT_DIRECT: c_uint = 0;
 const WVF_VARIANT_ANTIPODAL: c_uint = 1;
 const WVF_VARIANT_SPLIT: c_uint = 2;
-const WVF_VARIANT_VKFFT: c_uint = 3;
+const WVF_VARIANT_FFT: c_uint = 3;
 
 extern "C" {
     fn wvf_vkfft_magnitude_angle(
@@ -1098,6 +1100,47 @@ where
     })
 }
 
+unsafe fn run_experimental_fft_backend_magnitude_angle(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+    magnitude: *mut c_float,
+    angle: *mut c_float,
+) -> Result<(), String> {
+    fft_backend::run_fft_magnitude_angle(
+        image, width, height, radius, degree, out_x, out_y, magnitude, angle,
+    )
+}
+
+unsafe fn run_experimental_fft_backend_gradients(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+) -> Result<(), String> {
+    fft_backend::run_fft_gradients(image, width, height, radius, degree, out_x, out_y)
+}
+
+fn use_split_crossover_for_fft_variant(radius: c_uint) -> bool {
+    radius <= 9
+}
+
+fn use_experimental_fft_backend() -> bool {
+    std::env::var("WVF_METAL_EXPERIMENTAL_MPSGRAPH")
+        .map(|value| {
+            let normalized = value.trim().to_ascii_lowercase();
+            !normalized.is_empty() && normalized != "0" && normalized != "false"
+        })
+        .unwrap_or(false)
+}
+
 unsafe fn run_vkfft_magnitude_angle(
     image: *const c_float,
     width: c_uint,
@@ -1219,9 +1262,9 @@ unsafe fn validate_generated(
     }
     if !matches!(
         variant,
-        WVF_VARIANT_DIRECT | WVF_VARIANT_ANTIPODAL | WVF_VARIANT_SPLIT | WVF_VARIANT_VKFFT
+        WVF_VARIANT_DIRECT | WVF_VARIANT_ANTIPODAL | WVF_VARIANT_SPLIT | WVF_VARIANT_FFT
     ) {
-        return Err("variant must be 0=direct, 1=antipodal, 2=split, or 3=vkfft".to_string());
+        return Err("variant must be 0=direct, 1=antipodal, 2=split, or 3=fft/vkfft".to_string());
     }
     Ok(())
 }
@@ -1237,7 +1280,16 @@ unsafe fn run_generated_gradients_with_state(
     out_x: *mut c_float,
     out_y: *mut c_float,
 ) -> Result<(), String> {
-    if variant == WVF_VARIANT_VKFFT {
+    if variant == WVF_VARIANT_FFT {
+        if use_experimental_fft_backend() {
+            if use_split_crossover_for_fft_variant(radius) {
+                let plan = generated_kernel_plan(state, radius, degree, WVF_VARIANT_SPLIT)?;
+                return run_plan_split_with_state(state, image, width, height, &plan, out_x, out_y);
+            }
+            return run_experimental_fft_backend_gradients(
+                image, width, height, radius, degree, out_x, out_y,
+            );
+        }
         return run_vkfft_gradients(image, width, height, radius, degree, out_x, out_y);
     }
 
@@ -1266,7 +1318,7 @@ unsafe fn run_generated_gradients_with_state(
         WVF_VARIANT_SPLIT => {
             run_plan_split_with_state(state, image, width, height, &plan, out_x, out_y)
         }
-        _ => Err("variant must be 0=direct, 1=antipodal, 2=split, or 3=vkfft".to_string()),
+        _ => Err("variant must be 0=direct, 1=antipodal, 2=split, or 3=fft/vkfft".to_string()),
     }
 }
 
@@ -1283,7 +1335,18 @@ unsafe fn run_generated_magnitude_angle_with_state(
     magnitude: *mut c_float,
     angle: *mut c_float,
 ) -> Result<(), String> {
-    if variant == WVF_VARIANT_VKFFT {
+    if variant == WVF_VARIANT_FFT {
+        if use_experimental_fft_backend() {
+            if use_split_crossover_for_fft_variant(radius) {
+                let plan = generated_kernel_plan(state, radius, degree, WVF_VARIANT_SPLIT)?;
+                return run_plan_split_magnitude_angle_with_state(
+                    state, image, width, height, &plan, out_x, out_y, magnitude, angle,
+                );
+            }
+            return run_experimental_fft_backend_magnitude_angle(
+                image, width, height, radius, degree, out_x, out_y, magnitude, angle,
+            );
+        }
         return run_vkfft_magnitude_angle(
             image, width, height, radius, degree, out_x, out_y, magnitude, angle,
         );
@@ -1318,7 +1381,7 @@ unsafe fn run_generated_magnitude_angle_with_state(
         WVF_VARIANT_SPLIT => run_plan_split_magnitude_angle_with_state(
             state, image, width, height, &plan, out_x, out_y, magnitude, angle,
         ),
-        _ => Err("variant must be 0=direct, 1=antipodal, 2=split, or 3=vkfft".to_string()),
+        _ => Err("variant must be 0=direct, 1=antipodal, 2=split, or 3=fft/vkfft".to_string()),
     }
 }
 

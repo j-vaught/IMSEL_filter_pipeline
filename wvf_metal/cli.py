@@ -48,7 +48,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("-d", "--degree", type=int, required=True)
     parser.add_argument(
         "--variant",
-        choices=("split", "antipodal", "direct", "vkfft"),
+        choices=("split", "antipodal", "direct", "fft", "vkfft"),
         default="split",
     )
     parser.add_argument("--key", default=None, help="Array key when input is .npz.")
