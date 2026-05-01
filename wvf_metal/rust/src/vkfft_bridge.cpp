@@ -1185,3 +1185,117 @@ extern "C" int wvf_vkfft_magnitude_angle(
         error_len
     );
 }
+
+extern "C" int wvf_vkfft_gradients(
+    const float* image,
+    uint32_t width,
+    uint32_t height,
+    uint32_t radius,
+    const float* kernel_x,
+    const float* kernel_y,
+    uint32_t kernel_width,
+    float* out_x,
+    float* out_y,
+    char* error_out,
+    size_t error_len
+) {
+    uint64_t pixel_count = 0;
+    if (!checked_mul(static_cast<uint64_t>(width), static_cast<uint64_t>(height), &pixel_count) ||
+        pixel_count > std::numeric_limits<size_t>::max()) {
+        write_error(error_out, error_len, "VkFFT WVF output dimensions overflowed");
+        return 1;
+    }
+    std::vector<float> magnitude(static_cast<size_t>(pixel_count));
+    std::vector<float> angle(static_cast<size_t>(pixel_count));
+    return run_wvf_vkfft(
+        image,
+        width,
+        height,
+        radius,
+        kernel_x,
+        kernel_y,
+        kernel_width,
+        out_x,
+        out_y,
+        magnitude.data(),
+        angle.data(),
+        error_out,
+        error_len
+    );
+}
+
+extern "C" int wvf_vkfft_magnitude(
+    const float* image,
+    uint32_t width,
+    uint32_t height,
+    uint32_t radius,
+    const float* kernel_x,
+    const float* kernel_y,
+    uint32_t kernel_width,
+    float* magnitude,
+    char* error_out,
+    size_t error_len
+) {
+    uint64_t pixel_count = 0;
+    if (!checked_mul(static_cast<uint64_t>(width), static_cast<uint64_t>(height), &pixel_count) ||
+        pixel_count > std::numeric_limits<size_t>::max()) {
+        write_error(error_out, error_len, "VkFFT WVF output dimensions overflowed");
+        return 1;
+    }
+    std::vector<float> out_x(static_cast<size_t>(pixel_count));
+    std::vector<float> out_y(static_cast<size_t>(pixel_count));
+    std::vector<float> angle(static_cast<size_t>(pixel_count));
+    return run_wvf_vkfft(
+        image,
+        width,
+        height,
+        radius,
+        kernel_x,
+        kernel_y,
+        kernel_width,
+        out_x.data(),
+        out_y.data(),
+        magnitude,
+        angle.data(),
+        error_out,
+        error_len
+    );
+}
+
+extern "C" int wvf_vkfft_magnitude_orientation(
+    const float* image,
+    uint32_t width,
+    uint32_t height,
+    uint32_t radius,
+    const float* kernel_x,
+    const float* kernel_y,
+    uint32_t kernel_width,
+    float* magnitude,
+    float* angle,
+    char* error_out,
+    size_t error_len
+) {
+    uint64_t pixel_count = 0;
+    if (!checked_mul(static_cast<uint64_t>(width), static_cast<uint64_t>(height), &pixel_count) ||
+        pixel_count > std::numeric_limits<size_t>::max()) {
+        write_error(error_out, error_len, "VkFFT WVF output dimensions overflowed");
+        return 1;
+    }
+    std::vector<float> out_x(static_cast<size_t>(pixel_count));
+    std::vector<float> out_y(static_cast<size_t>(pixel_count));
+    return run_wvf_vkfft(
+        image,
+        width,
+        height,
+        radius,
+        kernel_x,
+        kernel_y,
+        kernel_width,
+        out_x.data(),
+        out_y.data(),
+        magnitude,
+        angle,
+        error_out,
+        error_len
+    );
+}

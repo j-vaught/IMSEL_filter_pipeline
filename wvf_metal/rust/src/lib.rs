@@ -39,6 +39,50 @@ extern "C" {
     ) -> c_int;
 }
 
+#[cfg(wvf_has_vkfft)]
+extern "C" {
+    fn wvf_vkfft_gradients(
+        image: *const c_float,
+        width: c_uint,
+        height: c_uint,
+        radius: c_uint,
+        kernel_x: *const c_float,
+        kernel_y: *const c_float,
+        kernel_width: c_uint,
+        out_x: *mut c_float,
+        out_y: *mut c_float,
+        error_out: *mut c_char,
+        error_len: usize,
+    ) -> c_int;
+
+    fn wvf_vkfft_magnitude(
+        image: *const c_float,
+        width: c_uint,
+        height: c_uint,
+        radius: c_uint,
+        kernel_x: *const c_float,
+        kernel_y: *const c_float,
+        kernel_width: c_uint,
+        magnitude: *mut c_float,
+        error_out: *mut c_char,
+        error_len: usize,
+    ) -> c_int;
+
+    fn wvf_vkfft_magnitude_orientation(
+        image: *const c_float,
+        width: c_uint,
+        height: c_uint,
+        radius: c_uint,
+        kernel_x: *const c_float,
+        kernel_y: *const c_float,
+        kernel_width: c_uint,
+        magnitude: *mut c_float,
+        angle: *mut c_float,
+        error_out: *mut c_char,
+        error_len: usize,
+    ) -> c_int;
+}
+
 thread_local! {
     static KERNEL_CACHE: RefCell<HashMap<(c_uint, c_uint, c_uint), GeneratedKernels>> = RefCell::new(HashMap::new());
     static DENSE_KERNEL_CACHE: RefCell<HashMap<(c_uint, c_uint), DenseConvolutionKernels>> = RefCell::new(HashMap::new());
@@ -445,6 +489,23 @@ fn with_vkfft_convolution_kernels<T>(
 }
 
 #[cfg(wvf_has_vkfft)]
+unsafe fn vkfft_status_to_result(status: c_int, error: &[c_char]) -> Result<(), String> {
+    if status == 0 {
+        return Ok(());
+    }
+
+    let message = CStr::from_ptr(error.as_ptr())
+        .to_string_lossy()
+        .trim()
+        .to_string();
+    if message.is_empty() {
+        Err(format!("VkFFT WVF backend failed with status {status}"))
+    } else {
+        Err(message)
+    }
+}
+
+#[cfg(wvf_has_vkfft)]
 unsafe fn run_vkfft_magnitude_angle(
     image: *const c_float,
     width: c_uint,
@@ -473,19 +534,7 @@ unsafe fn run_vkfft_magnitude_angle(
             error.as_mut_ptr(),
             error.len(),
         );
-        if status == 0 {
-            return Ok(());
-        }
-
-        let message = CStr::from_ptr(error.as_ptr())
-            .to_string_lossy()
-            .trim()
-            .to_string();
-        if message.is_empty() {
-            Err(format!("VkFFT WVF backend failed with status {status}"))
-        } else {
-            Err(message)
-        }
+        vkfft_status_to_result(status, &error)
     })?
 }
 
@@ -504,6 +553,78 @@ unsafe fn run_vkfft_magnitude_angle(
     Err("VkFFT GPU backend is not available in this build".to_string())
 }
 
+unsafe fn run_vkfft_magnitude_orientation(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    magnitude: *mut c_float,
+    angle: *mut c_float,
+) -> Result<(), String> {
+    #[cfg(wvf_has_vkfft)]
+    {
+        return with_vkfft_convolution_kernels(radius, degree, |kernels| {
+            let mut error = vec![0 as c_char; 4096];
+            let status = wvf_vkfft_magnitude_orientation(
+                image,
+                width,
+                height,
+                radius,
+                kernels.kernel_x.as_ptr(),
+                kernels.kernel_y.as_ptr(),
+                kernels.kernel_width,
+                magnitude,
+                angle,
+                error.as_mut_ptr(),
+                error.len(),
+            );
+            vkfft_status_to_result(status, &error)
+        })?;
+    }
+
+    #[cfg(not(wvf_has_vkfft))]
+    {
+        let _ = (image, width, height, radius, degree, magnitude, angle);
+        Err("VkFFT GPU backend is not available in this build".to_string())
+    }
+}
+
+unsafe fn run_vkfft_magnitude(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    magnitude: *mut c_float,
+) -> Result<(), String> {
+    #[cfg(wvf_has_vkfft)]
+    {
+        return with_vkfft_convolution_kernels(radius, degree, |kernels| {
+            let mut error = vec![0 as c_char; 4096];
+            let status = wvf_vkfft_magnitude(
+                image,
+                width,
+                height,
+                radius,
+                kernels.kernel_x.as_ptr(),
+                kernels.kernel_y.as_ptr(),
+                kernels.kernel_width,
+                magnitude,
+                error.as_mut_ptr(),
+                error.len(),
+            );
+            vkfft_status_to_result(status, &error)
+        })?;
+    }
+
+    #[cfg(not(wvf_has_vkfft))]
+    {
+        let _ = (image, width, height, radius, degree, magnitude);
+        Err("VkFFT GPU backend is not available in this build".to_string())
+    }
+}
+
 unsafe fn run_vkfft_gradients(
     image: *const c_float,
     width: c_uint,
@@ -513,20 +634,32 @@ unsafe fn run_vkfft_gradients(
     out_x: *mut c_float,
     out_y: *mut c_float,
 ) -> Result<(), String> {
-    let total_pixels = checked_image_pixels(width, height)?;
-    let mut magnitude = vec![0.0; total_pixels];
-    let mut angle = vec![0.0; total_pixels];
-    run_vkfft_magnitude_angle(
-        image,
-        width,
-        height,
-        radius,
-        degree,
-        out_x,
-        out_y,
-        magnitude.as_mut_ptr(),
-        angle.as_mut_ptr(),
-    )
+    #[cfg(wvf_has_vkfft)]
+    {
+        return with_vkfft_convolution_kernels(radius, degree, |kernels| {
+            let mut error = vec![0 as c_char; 4096];
+            let status = wvf_vkfft_gradients(
+                image,
+                width,
+                height,
+                radius,
+                kernels.kernel_x.as_ptr(),
+                kernels.kernel_y.as_ptr(),
+                kernels.kernel_width,
+                out_x,
+                out_y,
+                error.as_mut_ptr(),
+                error.len(),
+            );
+            vkfft_status_to_result(status, &error)
+        })?;
+    }
+
+    #[cfg(not(wvf_has_vkfft))]
+    {
+        let _ = (image, width, height, radius, degree, out_x, out_y);
+        Err("VkFFT GPU backend is not available in this build".to_string())
+    }
 }
 
 unsafe fn validate_common(
@@ -557,19 +690,15 @@ unsafe fn validate_common(
     Ok(())
 }
 
-unsafe fn validate_generated(
+unsafe fn validate_generated_common(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
     radius: c_uint,
     degree: c_uint,
     variant: c_uint,
-    out_x: *mut c_float,
-    out_y: *mut c_float,
 ) -> Result<(), String> {
     check_ptr(image, "image")?;
-    check_mut_ptr(out_x, "out_x")?;
-    check_mut_ptr(out_y, "out_y")?;
     if width == 0 || height == 0 {
         return Err("image width and height must be positive".to_string());
     }
@@ -585,6 +714,22 @@ unsafe fn validate_generated(
     ) {
         return Err("variant must be 0=direct, 1=antipodal, 2=split, or 3=fft/vkfft".to_string());
     }
+    Ok(())
+}
+
+unsafe fn validate_generated(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    variant: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+) -> Result<(), String> {
+    validate_generated_common(image, width, height, radius, degree, variant)?;
+    check_mut_ptr(out_x, "out_x")?;
+    check_mut_ptr(out_y, "out_y")?;
     Ok(())
 }
 
@@ -667,6 +812,125 @@ pub unsafe extern "C" fn wvf_metal_magnitude_angle(
                         platform_metal::run_generated_magnitude_angle_with_state(
                             state, image, width, height, radius, degree, variant, out_x, out_y,
                             magnitude, angle,
+                        )
+                    })
+                }
+                #[cfg(not(target_os = "macos"))]
+                {
+                    Err("direct, antipodal, and split variants require macOS Metal".to_string())
+                }
+            }
+        });
+    match result {
+        Ok(()) => 0,
+        Err(message) => {
+            write_error(error_out, error_len, &message);
+            1
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wvf_metal_magnitude(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    variant: c_uint,
+    magnitude: *mut c_float,
+    error_out: *mut c_char,
+    error_len: usize,
+) -> c_int {
+    let result = validate_generated_common(image, width, height, radius, degree, variant)
+        .and_then(|()| check_mut_ptr(magnitude, "magnitude"))
+        .and_then(|()| {
+            if variant == WVF_VARIANT_FFT && should_use_cpu_fft_backend()? {
+                fft_backend::run_fft_magnitude_cpu(image, width, height, radius, degree, magnitude)
+            } else if variant == WVF_VARIANT_FFT {
+                run_vkfft_magnitude(image, width, height, radius, degree, magnitude)
+            } else {
+                #[cfg(target_os = "macos")]
+                {
+                    let total_pixels = checked_image_pixels(width, height)?;
+                    let mut out_x = vec![0.0; total_pixels];
+                    let mut out_y = vec![0.0; total_pixels];
+                    let mut angle = vec![0.0; total_pixels];
+                    platform_metal::run_checked(|state| {
+                        platform_metal::run_generated_magnitude_angle_with_state(
+                            state,
+                            image,
+                            width,
+                            height,
+                            radius,
+                            degree,
+                            variant,
+                            out_x.as_mut_ptr(),
+                            out_y.as_mut_ptr(),
+                            magnitude,
+                            angle.as_mut_ptr(),
+                        )
+                    })
+                }
+                #[cfg(not(target_os = "macos"))]
+                {
+                    Err("direct, antipodal, and split variants require macOS Metal".to_string())
+                }
+            }
+        });
+    match result {
+        Ok(()) => 0,
+        Err(message) => {
+            write_error(error_out, error_len, &message);
+            1
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wvf_metal_magnitude_orientation(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    variant: c_uint,
+    magnitude: *mut c_float,
+    angle: *mut c_float,
+    error_out: *mut c_char,
+    error_len: usize,
+) -> c_int {
+    let result = validate_generated_common(image, width, height, radius, degree, variant)
+        .and_then(|()| check_mut_ptr(magnitude, "magnitude"))
+        .and_then(|()| check_mut_ptr(angle, "angle"))
+        .and_then(|()| {
+            if variant == WVF_VARIANT_FFT && should_use_cpu_fft_backend()? {
+                fft_backend::run_fft_magnitude_orientation_cpu(
+                    image, width, height, radius, degree, magnitude, angle,
+                )
+            } else if variant == WVF_VARIANT_FFT {
+                run_vkfft_magnitude_orientation(
+                    image, width, height, radius, degree, magnitude, angle,
+                )
+            } else {
+                #[cfg(target_os = "macos")]
+                {
+                    let total_pixels = checked_image_pixels(width, height)?;
+                    let mut out_x = vec![0.0; total_pixels];
+                    let mut out_y = vec![0.0; total_pixels];
+                    platform_metal::run_checked(|state| {
+                        platform_metal::run_generated_magnitude_angle_with_state(
+                            state,
+                            image,
+                            width,
+                            height,
+                            radius,
+                            degree,
+                            variant,
+                            out_x.as_mut_ptr(),
+                            out_y.as_mut_ptr(),
+                            magnitude,
+                            angle,
                         )
                     })
                 }
@@ -773,7 +1037,7 @@ pub unsafe extern "C" fn wvf_metal_convolve_split(
     wx: *const c_float,
     wy: *const c_float,
     n_offsets: c_uint,
-    radius: c_uint,
+    _radius: c_uint,
     out_x: *mut c_float,
     out_y: *mut c_float,
     error_out: *mut c_char,
@@ -786,7 +1050,7 @@ pub unsafe extern "C" fn wvf_metal_convolve_split(
         #[cfg(target_os = "macos")]
         {
             platform_metal::run_convolve_split(
-                image, width, height, dx, dy, wx, wy, n_offsets, radius, out_x, out_y,
+                image, width, height, dx, dy, wx, wy, n_offsets, _radius, out_x, out_y,
             )
         }
         #[cfg(not(target_os = "macos"))]

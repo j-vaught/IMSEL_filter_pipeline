@@ -51,6 +51,74 @@ impl CpuFftBackend {
         })
     }
 
+    pub(super) unsafe fn run_gradients(
+        &mut self,
+        image: *const c_float,
+        width: c_uint,
+        height: c_uint,
+        radius: c_uint,
+        kernels: &DenseConvolutionKernels,
+        out_x: *mut c_float,
+        out_y: *mut c_float,
+    ) -> Result<(), String> {
+        self.run_requested(
+            image,
+            width,
+            height,
+            radius,
+            kernels,
+            Some(out_x),
+            Some(out_y),
+            None,
+            None,
+        )
+    }
+
+    pub(super) unsafe fn run_magnitude(
+        &mut self,
+        image: *const c_float,
+        width: c_uint,
+        height: c_uint,
+        radius: c_uint,
+        kernels: &DenseConvolutionKernels,
+        magnitude: *mut c_float,
+    ) -> Result<(), String> {
+        self.run_requested(
+            image,
+            width,
+            height,
+            radius,
+            kernels,
+            None,
+            None,
+            Some(magnitude),
+            None,
+        )
+    }
+
+    pub(super) unsafe fn run_magnitude_orientation(
+        &mut self,
+        image: *const c_float,
+        width: c_uint,
+        height: c_uint,
+        radius: c_uint,
+        kernels: &DenseConvolutionKernels,
+        magnitude: *mut c_float,
+        angle: *mut c_float,
+    ) -> Result<(), String> {
+        self.run_requested(
+            image,
+            width,
+            height,
+            radius,
+            kernels,
+            None,
+            None,
+            Some(magnitude),
+            Some(angle),
+        )
+    }
+
     pub(super) unsafe fn run_magnitude_angle(
         &mut self,
         image: *const c_float,
@@ -63,11 +131,41 @@ impl CpuFftBackend {
         magnitude: *mut c_float,
         angle: *mut c_float,
     ) -> Result<(), String> {
-        if image.is_null()
-            || out_x.is_null()
-            || out_y.is_null()
-            || magnitude.is_null()
-            || angle.is_null()
+        self.run_requested(
+            image,
+            width,
+            height,
+            radius,
+            kernels,
+            Some(out_x),
+            Some(out_y),
+            Some(magnitude),
+            Some(angle),
+        )
+    }
+
+    unsafe fn run_requested(
+        &mut self,
+        image: *const c_float,
+        width: c_uint,
+        height: c_uint,
+        radius: c_uint,
+        kernels: &DenseConvolutionKernels,
+        out_x: Option<*mut c_float>,
+        out_y: Option<*mut c_float>,
+        magnitude: Option<*mut c_float>,
+        angle: Option<*mut c_float>,
+    ) -> Result<(), String> {
+        if image.is_null() {
+            return Err("null pointer passed to FFT backend".to_string());
+        }
+        if out_x.is_none() && out_y.is_none() && magnitude.is_none() && angle.is_none() {
+            return Err("no output planes were requested".to_string());
+        }
+        if out_x.is_some_and(|ptr| ptr.is_null())
+            || out_y.is_some_and(|ptr| ptr.is_null())
+            || magnitude.is_some_and(|ptr| ptr.is_null())
+            || angle.is_some_and(|ptr| ptr.is_null())
         {
             return Err("null pointer passed to FFT backend".to_string());
         }
@@ -124,10 +222,11 @@ impl CpuFftBackend {
         fft2_in_place(plan, out_x_plane, &mut work_plane, true);
         fft2_in_place(plan, out_y_plane, &mut work_plane, true);
 
-        let out_x_slice = std::slice::from_raw_parts_mut(out_x, image_len);
-        let out_y_slice = std::slice::from_raw_parts_mut(out_y, image_len);
-        let magnitude_slice = std::slice::from_raw_parts_mut(magnitude, image_len);
-        let angle_slice = std::slice::from_raw_parts_mut(angle, image_len);
+        let mut out_x_slice = out_x.map(|ptr| std::slice::from_raw_parts_mut(ptr, image_len));
+        let mut out_y_slice = out_y.map(|ptr| std::slice::from_raw_parts_mut(ptr, image_len));
+        let mut magnitude_slice =
+            magnitude.map(|ptr| std::slice::from_raw_parts_mut(ptr, image_len));
+        let mut angle_slice = angle.map(|ptr| std::slice::from_raw_parts_mut(ptr, image_len));
         let crop = radius_usize * 2;
         for y in 0..height_usize {
             for x in 0..width_usize {
@@ -135,10 +234,23 @@ impl CpuFftBackend {
                 let src_index = (y + crop) * plan.fft_w + (x + crop);
                 let gx = out_x_plane[src_index].re;
                 let gy = out_y_plane[src_index].re;
-                out_x_slice[out_index] = gx;
-                out_y_slice[out_index] = gy;
-                magnitude_slice[out_index] = (gx * gx + gy * gy).sqrt();
-                angle_slice[out_index] = wvf_unsigned_angle(gy, gx);
+                if let Some(slice) = out_x_slice.as_deref_mut() {
+                    slice[out_index] = gx;
+                }
+                if let Some(slice) = out_y_slice.as_deref_mut() {
+                    slice[out_index] = gy;
+                }
+                let mag = if magnitude_slice.is_some() || angle_slice.is_some() {
+                    Some((gx * gx + gy * gy).sqrt())
+                } else {
+                    None
+                };
+                if let Some(slice) = magnitude_slice.as_deref_mut() {
+                    slice[out_index] = mag.unwrap_or(0.0);
+                }
+                if let Some(slice) = angle_slice.as_deref_mut() {
+                    slice[out_index] = wvf_unsigned_angle(gy, gx);
+                }
             }
         }
 

@@ -683,10 +683,18 @@ __global__ void wvf_fft_postprocess(
     const uint32_t src_idx = (y + params.crop) * params.real_pitch + x + params.crop;
     const float gx = planes[src_idx];
     const float gy = planes[params.real_plane_count + src_idx];
-    out_x[out_idx] = gx;
-    out_y[out_idx] = gy;
-    magnitude[out_idx] = sqrtf(gx * gx + gy * gy);
-    angle[out_idx] = unsigned_angle_device(gy, gx);
+    if (out_x) {
+        out_x[out_idx] = gx;
+    }
+    if (out_y) {
+        out_y[out_idx] = gy;
+    }
+    if (magnitude) {
+        magnitude[out_idx] = sqrtf(gx * gx + gy * gy);
+    }
+    if (angle) {
+        angle[out_idx] = unsigned_angle_device(gy, gx);
+    }
 }
 
 VkFFTResult run_vkfft_once(
@@ -868,6 +876,10 @@ bool ensure_reusable_io_buffers(
     CudaRuntime& runtime,
     uint64_t image_bytes,
     uint64_t output_bytes,
+    bool need_out_x,
+    bool need_out_y,
+    bool need_magnitude,
+    bool need_angle,
     std::string* error_out
 ) {
     if (!runtime.reusable_io) {
@@ -895,16 +907,16 @@ bool ensure_reusable_io_buffers(
             buffers->image_capacity = image_bytes;
         }
     }
-    if (cuda_result == cudaSuccess && !buffers->out_x) {
+    if (cuda_result == cudaSuccess && need_out_x && !buffers->out_x) {
         cuda_result = cudaMalloc(reinterpret_cast<void**>(&buffers->out_x), output_bytes);
     }
-    if (cuda_result == cudaSuccess && !buffers->out_y) {
+    if (cuda_result == cudaSuccess && need_out_y && !buffers->out_y) {
         cuda_result = cudaMalloc(reinterpret_cast<void**>(&buffers->out_y), output_bytes);
     }
-    if (cuda_result == cudaSuccess && !buffers->magnitude) {
+    if (cuda_result == cudaSuccess && need_magnitude && !buffers->magnitude) {
         cuda_result = cudaMalloc(reinterpret_cast<void**>(&buffers->magnitude), output_bytes);
     }
-    if (cuda_result == cudaSuccess && !buffers->angle) {
+    if (cuda_result == cudaSuccess && need_angle && !buffers->angle) {
         cuda_result = cudaMalloc(reinterpret_cast<void**>(&buffers->angle), output_bytes);
     }
     if (cuda_result == cudaSuccess) {
@@ -914,7 +926,8 @@ bool ensure_reusable_io_buffers(
         if (!buffers->image) {
             buffers->release_image();
         }
-        if (!buffers->out_x || !buffers->out_y || !buffers->magnitude || !buffers->angle) {
+        if ((need_out_x && !buffers->out_x) || (need_out_y && !buffers->out_y) ||
+            (need_magnitude && !buffers->magnitude) || (need_angle && !buffers->angle)) {
             buffers->release_outputs();
         }
         if (error_out) {
@@ -929,7 +942,11 @@ bool ensure_reusable_io_buffers(
 bool ensure_pinned_host_staging_buffers(
     CudaRuntime& runtime,
     uint64_t image_bytes,
-    uint64_t output_bytes
+    uint64_t output_bytes,
+    bool need_out_x,
+    bool need_out_y,
+    bool need_magnitude,
+    bool need_angle
 ) {
     if (!runtime.pinned_host_io) {
         runtime.pinned_host_io = new HostStagingBuffers();
@@ -953,16 +970,16 @@ bool ensure_pinned_host_staging_buffers(
             buffers->image_capacity = image_bytes;
         }
     }
-    if (cuda_result == cudaSuccess && !buffers->out_x) {
+    if (cuda_result == cudaSuccess && need_out_x && !buffers->out_x) {
         cuda_result = cudaMallocHost(reinterpret_cast<void**>(&buffers->out_x), output_bytes);
     }
-    if (cuda_result == cudaSuccess && !buffers->out_y) {
+    if (cuda_result == cudaSuccess && need_out_y && !buffers->out_y) {
         cuda_result = cudaMallocHost(reinterpret_cast<void**>(&buffers->out_y), output_bytes);
     }
-    if (cuda_result == cudaSuccess && !buffers->magnitude) {
+    if (cuda_result == cudaSuccess && need_magnitude && !buffers->magnitude) {
         cuda_result = cudaMallocHost(reinterpret_cast<void**>(&buffers->magnitude), output_bytes);
     }
-    if (cuda_result == cudaSuccess && !buffers->angle) {
+    if (cuda_result == cudaSuccess && need_angle && !buffers->angle) {
         cuda_result = cudaMallocHost(reinterpret_cast<void**>(&buffers->angle), output_bytes);
     }
     if (cuda_result == cudaSuccess) {
@@ -973,7 +990,8 @@ bool ensure_pinned_host_staging_buffers(
     if (!buffers->image) {
         buffers->release_image();
     }
-    if (!buffers->out_x || !buffers->out_y || !buffers->magnitude || !buffers->angle) {
+    if ((need_out_x && !buffers->out_x) || (need_out_y && !buffers->out_y) ||
+        (need_magnitude && !buffers->magnitude) || (need_angle && !buffers->angle)) {
         buffers->release_outputs();
     }
     cudaGetLastError();
@@ -989,6 +1007,10 @@ bool try_register_host_buffers(
     float* magnitude,
     float* angle,
     uint64_t output_bytes,
+    bool need_out_x,
+    bool need_out_y,
+    bool need_magnitude,
+    bool need_angle,
     ScopedHostRegistration* registration,
     std::string* error_out
 ) {
@@ -1000,10 +1022,10 @@ bool try_register_host_buffers(
     }
 
     if (!registration->register_range(const_cast<float*>(image), image_bytes) ||
-        !registration->register_range(out_x, output_bytes) ||
-        !registration->register_range(out_y, output_bytes) ||
-        !registration->register_range(magnitude, output_bytes) ||
-        !registration->register_range(angle, output_bytes)) {
+        (need_out_x && !registration->register_range(out_x, output_bytes)) ||
+        (need_out_y && !registration->register_range(out_y, output_bytes)) ||
+        (need_magnitude && !registration->register_range(magnitude, output_bytes)) ||
+        (need_angle && !registration->register_range(angle, output_bytes))) {
         const cudaError_t register_error = cudaGetLastError();
         registration->release();
         if (error_out) {
@@ -1017,7 +1039,7 @@ bool try_register_host_buffers(
     return true;
 }
 
-int run_wvf_vkfft(
+int run_wvf_vkfft_requested(
     const float* image,
     uint32_t width,
     uint32_t height,
@@ -1032,8 +1054,16 @@ int run_wvf_vkfft(
     char* error_out,
     size_t error_len
 ) {
-    if (!image || !kernel_x || !kernel_y || !out_x || !out_y || !magnitude || !angle) {
+    if (!image || !kernel_x || !kernel_y) {
         write_error(error_out, error_len, "null pointer passed to VkFFT WVF backend");
+        return 1;
+    }
+    const bool need_out_x = out_x != nullptr;
+    const bool need_out_y = out_y != nullptr;
+    const bool need_magnitude = magnitude != nullptr;
+    const bool need_angle = angle != nullptr;
+    if (!need_out_x && !need_out_y && !need_magnitude && !need_angle) {
+        write_error(error_out, error_len, "no output planes were requested");
         return 1;
     }
     if (width == 0 || height == 0 || radius == 0 || kernel_width != 2 * radius + 1) {
@@ -1122,7 +1152,15 @@ int run_wvf_vkfft(
     const uint64_t image_bytes =
         static_cast<uint64_t>(width) * static_cast<uint64_t>(height) * sizeof(float);
     const uint64_t output_bytes = image_bytes;
-    if (!ensure_reusable_io_buffers(*runtime, image_bytes, output_bytes, &cache_error)) {
+    if (!ensure_reusable_io_buffers(
+            *runtime,
+            image_bytes,
+            output_bytes,
+            need_out_x,
+            need_out_y,
+            need_magnitude,
+            need_angle,
+            &cache_error)) {
         write_error(error_out, error_len, cache_error);
         return 1;
     }
@@ -1138,7 +1176,14 @@ int run_wvf_vkfft(
     HostStagingBuffers* host_staging = nullptr;
     bool using_pinned_staging = false;
     if (host_io_mode == HostIoMode::PinnedStaging) {
-        if (!ensure_pinned_host_staging_buffers(*runtime, image_bytes, output_bytes)) {
+        if (!ensure_pinned_host_staging_buffers(
+                *runtime,
+                image_bytes,
+                output_bytes,
+                need_out_x,
+                need_out_y,
+                need_magnitude,
+                need_angle)) {
             write_error(
                 error_out,
                 error_len,
@@ -1159,10 +1204,10 @@ int run_wvf_vkfft(
     float* download_angle = angle;
     if (using_pinned_staging) {
         upload_image = host_staging->image;
-        download_out_x = host_staging->out_x;
-        download_out_y = host_staging->out_y;
-        download_magnitude = host_staging->magnitude;
-        download_angle = host_staging->angle;
+        download_out_x = need_out_x ? host_staging->out_x : nullptr;
+        download_out_y = need_out_y ? host_staging->out_y : nullptr;
+        download_magnitude = need_magnitude ? host_staging->magnitude : nullptr;
+        download_angle = need_angle ? host_staging->angle : nullptr;
     } else if (host_io_mode == HostIoMode::Register) {
         if (!try_register_host_buffers(
             *runtime,
@@ -1173,6 +1218,10 @@ int run_wvf_vkfft(
             magnitude,
             angle,
             output_bytes,
+            need_out_x,
+            need_out_y,
+            need_magnitude,
+            need_angle,
             &host_registration,
             &cache_error
         )) {
@@ -1277,10 +1326,10 @@ int run_wvf_vkfft(
     );
     wvf_fft_postprocess<<<grid_post, threads_2d, 0, runtime->stream>>>(
         static_cast<const float*>(plan->scratch_output[0]),
-        external.out_x,
-        external.out_y,
-        external.magnitude,
-        external.angle,
+        need_out_x ? external.out_x : nullptr,
+        need_out_y ? external.out_y : nullptr,
+        need_magnitude ? external.magnitude : nullptr,
+        need_angle ? external.angle : nullptr,
         post_params
     );
     cuda_result = cudaGetLastError();
@@ -1293,11 +1342,25 @@ int run_wvf_vkfft(
         return 1;
     }
 
-    cuda_result = cudaMemcpyAsync(download_out_x, external.out_x, output_bytes, cudaMemcpyDeviceToHost, runtime->stream);
-    if (cuda_result == cudaSuccess) {
-        cuda_result = cudaMemcpyAsync(download_out_y, external.out_y, output_bytes, cudaMemcpyDeviceToHost, runtime->stream);
+    if (need_out_x) {
+        cuda_result = cudaMemcpyAsync(
+            download_out_x,
+            external.out_x,
+            output_bytes,
+            cudaMemcpyDeviceToHost,
+            runtime->stream
+        );
     }
-    if (cuda_result == cudaSuccess) {
+    if (cuda_result == cudaSuccess && need_out_y) {
+        cuda_result = cudaMemcpyAsync(
+            download_out_y,
+            external.out_y,
+            output_bytes,
+            cudaMemcpyDeviceToHost,
+            runtime->stream
+        );
+    }
+    if (cuda_result == cudaSuccess && need_magnitude) {
         cuda_result = cudaMemcpyAsync(
             download_magnitude,
             external.magnitude,
@@ -1306,8 +1369,14 @@ int run_wvf_vkfft(
             runtime->stream
         );
     }
-    if (cuda_result == cudaSuccess) {
-        cuda_result = cudaMemcpyAsync(download_angle, external.angle, output_bytes, cudaMemcpyDeviceToHost, runtime->stream);
+    if (cuda_result == cudaSuccess && need_angle) {
+        cuda_result = cudaMemcpyAsync(
+            download_angle,
+            external.angle,
+            output_bytes,
+            cudaMemcpyDeviceToHost,
+            runtime->stream
+        );
     }
     if (cuda_result != cudaSuccess) {
         write_error(
@@ -1329,10 +1398,18 @@ int run_wvf_vkfft(
     }
     host_registration.clear_stream();
     if (using_pinned_staging) {
-        std::memcpy(out_x, host_staging->out_x, output_bytes);
-        std::memcpy(out_y, host_staging->out_y, output_bytes);
-        std::memcpy(magnitude, host_staging->magnitude, output_bytes);
-        std::memcpy(angle, host_staging->angle, output_bytes);
+        if (need_out_x) {
+            std::memcpy(out_x, host_staging->out_x, output_bytes);
+        }
+        if (need_out_y) {
+            std::memcpy(out_y, host_staging->out_y, output_bytes);
+        }
+        if (need_magnitude) {
+            std::memcpy(magnitude, host_staging->magnitude, output_bytes);
+        }
+        if (need_angle) {
+            std::memcpy(angle, host_staging->angle, output_bytes);
+        }
     }
 
     return 0;
@@ -1355,7 +1432,7 @@ extern "C" int wvf_vkfft_magnitude_angle(
     char* error_out,
     size_t error_len
 ) {
-    return run_wvf_vkfft(
+    return run_wvf_vkfft_requested(
         image,
         width,
         height,
@@ -1365,6 +1442,95 @@ extern "C" int wvf_vkfft_magnitude_angle(
         kernel_width,
         out_x,
         out_y,
+        magnitude,
+        angle,
+        error_out,
+        error_len
+    );
+}
+
+extern "C" int wvf_vkfft_gradients(
+    const float* image,
+    uint32_t width,
+    uint32_t height,
+    uint32_t radius,
+    const float* kernel_x,
+    const float* kernel_y,
+    uint32_t kernel_width,
+    float* out_x,
+    float* out_y,
+    char* error_out,
+    size_t error_len
+) {
+    return run_wvf_vkfft_requested(
+        image,
+        width,
+        height,
+        radius,
+        kernel_x,
+        kernel_y,
+        kernel_width,
+        out_x,
+        out_y,
+        nullptr,
+        nullptr,
+        error_out,
+        error_len
+    );
+}
+
+extern "C" int wvf_vkfft_magnitude(
+    const float* image,
+    uint32_t width,
+    uint32_t height,
+    uint32_t radius,
+    const float* kernel_x,
+    const float* kernel_y,
+    uint32_t kernel_width,
+    float* magnitude,
+    char* error_out,
+    size_t error_len
+) {
+    return run_wvf_vkfft_requested(
+        image,
+        width,
+        height,
+        radius,
+        kernel_x,
+        kernel_y,
+        kernel_width,
+        nullptr,
+        nullptr,
+        magnitude,
+        nullptr,
+        error_out,
+        error_len
+    );
+}
+
+extern "C" int wvf_vkfft_magnitude_orientation(
+    const float* image,
+    uint32_t width,
+    uint32_t height,
+    uint32_t radius,
+    const float* kernel_x,
+    const float* kernel_y,
+    uint32_t kernel_width,
+    float* magnitude,
+    float* angle,
+    char* error_out,
+    size_t error_len
+) {
+    return run_wvf_vkfft_requested(
+        image,
+        width,
+        height,
+        radius,
+        kernel_x,
+        kernel_y,
+        kernel_width,
+        nullptr,
+        nullptr,
         magnitude,
         angle,
         error_out,

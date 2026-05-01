@@ -33,7 +33,7 @@ _VARIANTS = {
 
 _FFT_VARIANT_IDS = {3}
 _FFT_BACKENDS = {"auto", "cpu", "vkfft", "metal", "gpu"}
-_AUTO_FFT_CACHE_VERSION = 1
+_AUTO_FFT_CACHE_VERSION = 2
 _AUTO_FFT_CACHE: dict[str, str] | None = None
 
 
@@ -83,7 +83,7 @@ def _user_cache_dir() -> Path:
 
 
 def _auto_fft_cache_path() -> Path:
-    return _user_cache_dir() / "fft_backend_auto_v1.json"
+    return _user_cache_dir() / "fft_backend_auto_v2.json"
 
 
 def _load_auto_fft_cache() -> dict[str, str]:
@@ -132,6 +132,7 @@ def _auto_fft_cache_key(
     radius: int,
     degree: int,
     device_index: int | None,
+    output_mode: str,
 ) -> str:
     key = {
         "build": _build_fingerprint(),
@@ -140,6 +141,7 @@ def _auto_fft_cache_key(
         "height": int(image.shape[0]),
         "host": platform.node(),
         "machine": platform.machine(),
+        "output_mode": output_mode,
         "radius": int(radius),
         "system": platform.system(),
         "width": int(image.shape[1]),
@@ -152,9 +154,12 @@ def _cached_auto_fft_backend(
     radius: int,
     degree: int,
     device_index: int | None,
+    output_mode: str,
 ) -> str | None:
     cache = _load_auto_fft_cache()
-    return cache.get(_auto_fft_cache_key(image, radius, degree, device_index))
+    return cache.get(
+        _auto_fft_cache_key(image, radius, degree, device_index, output_mode)
+    )
 
 
 def _cache_auto_fft_backend(
@@ -162,12 +167,13 @@ def _cache_auto_fft_backend(
     radius: int,
     degree: int,
     device_index: int | None,
+    output_mode: str,
     backend: str,
 ) -> None:
     if backend not in {"cpu", "vkfft"}:
         return
     cache = _load_auto_fft_cache()
-    cache[_auto_fft_cache_key(image, radius, degree, device_index)] = backend
+    cache[_auto_fft_cache_key(image, radius, degree, device_index, output_mode)] = backend
     _store_auto_fft_cache()
 
 
@@ -334,14 +340,31 @@ def _load_library() -> ctypes.CDLL:
     lib.wvf_metal_gradients.argtypes = gradient_args
     lib.wvf_metal_gradients.restype = ctypes.c_int
 
-    magnitude_args = gradient_args[:8] + [
+    magnitude_angle_args = gradient_args[:8] + [
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_char),
         ctypes.c_size_t,
     ]
-    lib.wvf_metal_magnitude_angle.argtypes = magnitude_args
+    lib.wvf_metal_magnitude_angle.argtypes = magnitude_angle_args
     lib.wvf_metal_magnitude_angle.restype = ctypes.c_int
+
+    magnitude_args = gradient_args[:6] + [
+        ctypes.POINTER(ctypes.c_float),
+        ctypes.POINTER(ctypes.c_char),
+        ctypes.c_size_t,
+    ]
+    lib.wvf_metal_magnitude.argtypes = magnitude_args
+    lib.wvf_metal_magnitude.restype = ctypes.c_int
+
+    magnitude_orientation_args = gradient_args[:6] + [
+        ctypes.POINTER(ctypes.c_float),
+        ctypes.POINTER(ctypes.c_float),
+        ctypes.POINTER(ctypes.c_char),
+        ctypes.c_size_t,
+    ]
+    lib.wvf_metal_magnitude_orientation.argtypes = magnitude_orientation_args
+    lib.wvf_metal_magnitude_orientation.restype = ctypes.c_int
     return lib
 
 
@@ -470,6 +493,80 @@ def _run_native_gradients(
     return gx.reshape(img.shape), gy.reshape(img.shape)
 
 
+def _run_native_magnitude(
+    img: np.ndarray,
+    radius: int,
+    degree: int,
+    variant: str,
+    fft_backend: str | None,
+    device_index: int | None,
+) -> np.ndarray:
+    magnitude = np.empty(img.size, dtype=np.float32)
+    error_buffer = ctypes.create_string_buffer(4096)
+    h, w = img.shape
+
+    with _temporary_env_var("WVF_METAL_FFT_BACKEND", fft_backend):
+        with _temporary_env_var(
+            "WVF_GPU_DEVICE_INDEX",
+            None if device_index is None else str(device_index),
+        ):
+            with _temporary_env_var(
+                "WVF_METAL_DEVICE_INDEX",
+                None if device_index is None else str(device_index),
+            ):
+                status = _load_library().wvf_metal_magnitude(
+                    img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                    _checked_uint(w, "image width"),
+                    _checked_uint(h, "image height"),
+                    _checked_uint(radius, "radius"),
+                    _checked_uint(degree, "degree"),
+                    ctypes.c_uint(_variant_id(variant)),
+                    magnitude.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                    error_buffer,
+                    ctypes.c_size_t(len(error_buffer)),
+                )
+    _raise_if_failed(status, error_buffer)
+    return magnitude.reshape(img.shape)
+
+
+def _run_native_magnitude_orientation(
+    img: np.ndarray,
+    radius: int,
+    degree: int,
+    variant: str,
+    fft_backend: str | None,
+    device_index: int | None,
+) -> tuple[np.ndarray, np.ndarray]:
+    magnitude = np.empty(img.size, dtype=np.float32)
+    angle = np.empty(img.size, dtype=np.float32)
+    error_buffer = ctypes.create_string_buffer(4096)
+    h, w = img.shape
+
+    with _temporary_env_var("WVF_METAL_FFT_BACKEND", fft_backend):
+        with _temporary_env_var(
+            "WVF_GPU_DEVICE_INDEX",
+            None if device_index is None else str(device_index),
+        ):
+            with _temporary_env_var(
+                "WVF_METAL_DEVICE_INDEX",
+                None if device_index is None else str(device_index),
+            ):
+                status = _load_library().wvf_metal_magnitude_orientation(
+                    img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                    _checked_uint(w, "image width"),
+                    _checked_uint(h, "image height"),
+                    _checked_uint(radius, "radius"),
+                    _checked_uint(degree, "degree"),
+                    ctypes.c_uint(_variant_id(variant)),
+                    magnitude.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                    angle.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                    error_buffer,
+                    ctypes.c_size_t(len(error_buffer)),
+                )
+    _raise_if_failed(status, error_buffer)
+    return magnitude.reshape(img.shape), angle.reshape(img.shape)
+
+
 def _run_native_magnitude_angle(
     img: np.ndarray,
     radius: int,
@@ -524,15 +621,17 @@ def _benchmark_auto_fft_backend(
     degree: int,
     variant: str,
     device_index: int | None,
-) -> tuple[str, tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
+    output_mode: str,
+    runner,
+):
     timings: dict[str, float] = {}
-    results: dict[str, tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]] = {}
+    results: dict[str, object] = {}
     errors: dict[str, Exception] = {}
     _load_library()
 
     for backend in ("vkfft", "cpu"):
         try:
-            _run_native_magnitude_angle(
+            runner(
                 img,
                 radius=radius,
                 degree=degree,
@@ -541,7 +640,7 @@ def _benchmark_auto_fft_backend(
                 device_index=device_index,
             )
             started = time.perf_counter()
-            result = _run_native_magnitude_angle(
+            result = runner(
                 img,
                 radius=radius,
                 degree=degree,
@@ -565,27 +664,31 @@ def _benchmark_auto_fft_backend(
         radius=radius,
         degree=degree,
         device_index=device_index,
+        output_mode=output_mode,
         backend=chosen_backend,
     )
     return chosen_backend, results[chosen_backend]
 
 
-def _run_auto_fft_magnitude_angle(
+def _run_auto_fft(
     img: np.ndarray,
     radius: int,
     degree: int,
     variant: str,
     device_index: int | None,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    output_mode: str,
+    runner,
+):
     cached_backend = _cached_auto_fft_backend(
         img,
         radius=radius,
         degree=degree,
         device_index=device_index,
+        output_mode=output_mode,
     )
     if cached_backend is not None:
         try:
-            return _run_native_magnitude_angle(
+            return runner(
                 img,
                 radius=radius,
                 degree=degree,
@@ -602,6 +705,8 @@ def _run_auto_fft_magnitude_angle(
         degree=degree,
         variant=variant,
         device_index=device_index,
+        output_mode=output_mode,
+        runner=runner,
     )
     return result
 
@@ -624,15 +729,90 @@ def wvf_gradients_metal(
             "wvf_metal requires macOS or Linux for the native extension."
         )
     if _variant_is_fft(variant) and chosen_fft_backend == "auto":
-        gx, gy, _, _ = _run_auto_fft_magnitude_angle(
+        return _run_auto_fft(
             img,
             radius=radius,
             degree=degree,
             variant=variant,
             device_index=checked_device_index,
+            output_mode="gradients",
+            runner=_run_native_gradients,
         )
-        return gx, gy
     return _run_native_gradients(
+        img,
+        radius=radius,
+        degree=degree,
+        variant=variant,
+        fft_backend=chosen_fft_backend,
+        device_index=checked_device_index,
+    )
+
+
+def wvf_magnitude_metal(
+    image: np.ndarray,
+    radius: int,
+    degree: int = 4,
+    variant: str = "split",
+    fft_backend: str | None = "auto",
+    device_index: int | None = None,
+) -> np.ndarray:
+    """Compute WVF magnitude through the native backends."""
+    img = _as_float_image(image)
+    chosen_fft_backend = _resolve_fft_backend(variant, fft_backend)
+    checked_device_index = _checked_device_index(device_index)
+
+    if platform.system() not in {"Darwin", "Linux"}:
+        raise MetalBackendError(
+            "wvf_metal requires macOS or Linux for the native extension."
+        )
+    if _variant_is_fft(variant) and chosen_fft_backend == "auto":
+        return _run_auto_fft(
+            img,
+            radius=radius,
+            degree=degree,
+            variant=variant,
+            device_index=checked_device_index,
+            output_mode="magnitude",
+            runner=_run_native_magnitude,
+        )
+    return _run_native_magnitude(
+        img,
+        radius=radius,
+        degree=degree,
+        variant=variant,
+        fft_backend=chosen_fft_backend,
+        device_index=checked_device_index,
+    )
+
+
+def wvf_magnitude_orientation_metal(
+    image: np.ndarray,
+    radius: int,
+    degree: int = 4,
+    variant: str = "split",
+    fft_backend: str | None = "auto",
+    device_index: int | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Compute WVF magnitude and angle through the native backends."""
+    img = _as_float_image(image)
+    chosen_fft_backend = _resolve_fft_backend(variant, fft_backend)
+    checked_device_index = _checked_device_index(device_index)
+
+    if platform.system() not in {"Darwin", "Linux"}:
+        raise MetalBackendError(
+            "wvf_metal requires macOS or Linux for the native extension."
+        )
+    if _variant_is_fft(variant) and chosen_fft_backend == "auto":
+        return _run_auto_fft(
+            img,
+            radius=radius,
+            degree=degree,
+            variant=variant,
+            device_index=checked_device_index,
+            output_mode="magnitude_orientation",
+            runner=_run_native_magnitude_orientation,
+        )
+    return _run_native_magnitude_orientation(
         img,
         radius=radius,
         degree=degree,
@@ -660,12 +840,14 @@ def wvf_magnitude_angle_metal(
             "wvf_metal requires macOS or Linux for the native extension."
         )
     if _variant_is_fft(variant) and chosen_fft_backend == "auto":
-        return _run_auto_fft_magnitude_angle(
+        return _run_auto_fft(
             img,
             radius=radius,
             degree=degree,
             variant=variant,
             device_index=checked_device_index,
+            output_mode="magnitude_angle",
+            runner=_run_native_magnitude_angle,
         )
     return _run_native_magnitude_angle(
         img,

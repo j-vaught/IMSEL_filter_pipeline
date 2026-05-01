@@ -41,10 +41,17 @@ The Rust dynamic library builds automatically on first use and is cached under
 
 ```python
 import numpy as np
-from wvf_metal import wvf_gradients_metal, wvf_magnitude_angle_metal
+from wvf_metal import (
+    wvf_gradients_metal,
+    wvf_magnitude_metal,
+    wvf_magnitude_orientation_metal,
+    wvf_magnitude_angle_metal,
+)
 
 image = np.random.default_rng(0).random((1024, 1024), dtype=np.float32)
 gx, gy = wvf_gradients_metal(image, radius=9, degree=3)
+mag = wvf_magnitude_metal(image, radius=9, degree=3)
+mag, angle = wvf_magnitude_orientation_metal(image, radius=9, degree=3)
 gx, gy, magnitude, angle = wvf_magnitude_angle_metal(image, radius=9, degree=3)
 gx, gy, magnitude, angle = wvf_magnitude_angle_metal(
     image,
@@ -87,10 +94,10 @@ is kept as a compatibility alias for the same backend id and behavior.
 
 For `variant="fft"` or `variant="vkfft"`, pass `fft_backend="auto"`,
 `fft_backend="cpu"`, or `fft_backend="vkfft"`. `auto` is the default.
-The first `auto` call for a given image shape, radius, degree, and GPU device
-warms both FFT backends once, times the next call, and caches the faster
-choice under the user cache directory. Later calls reuse that choice until the
-native build fingerprint or workload key changes.
+The first `auto` call for a given image shape, radius, degree, GPU device, and
+requested output shape warms both FFT backends once, times the next call, and
+caches the faster choice under the user cache directory. Later calls reuse that
+choice until the native build fingerprint or workload key changes.
 
 For Metal or VkFFT GPU execution, you can choose the GPU with `device_index=`
 in Python or `WVF_GPU_DEVICE_INDEX` in the environment. `WVF_METAL_DEVICE_INDEX`

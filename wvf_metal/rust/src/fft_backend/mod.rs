@@ -110,18 +110,44 @@ pub(crate) unsafe fn run_fft_gradients_cpu(
     out_x: *mut c_float,
     out_y: *mut c_float,
 ) -> Result<(), String> {
-    let total_pixels = crate::checked_image_pixels(width, height)?;
-    let mut magnitude = vec![0.0; total_pixels];
-    let mut angle = vec![0.0; total_pixels];
-    run_fft_magnitude_angle_cpu(
-        image,
-        width,
-        height,
-        radius,
-        degree,
-        out_x,
-        out_y,
-        magnitude.as_mut_ptr(),
-        angle.as_mut_ptr(),
-    )
+    with_dense_convolution_kernels(radius, degree, |kernels| {
+        with_cpu_backend(|backend| {
+            backend.run_gradients(image, width, height, radius, kernels, out_x, out_y)
+        })
+    })??;
+    Ok(())
+}
+
+pub(crate) unsafe fn run_fft_magnitude_cpu(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    magnitude: *mut c_float,
+) -> Result<(), String> {
+    with_dense_convolution_kernels(radius, degree, |kernels| {
+        with_cpu_backend(|backend| {
+            backend.run_magnitude(image, width, height, radius, kernels, magnitude)
+        })
+    })??;
+    Ok(())
+}
+
+pub(crate) unsafe fn run_fft_magnitude_orientation_cpu(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    magnitude: *mut c_float,
+    angle: *mut c_float,
+) -> Result<(), String> {
+    with_dense_convolution_kernels(radius, degree, |kernels| {
+        with_cpu_backend(|backend| {
+            backend
+                .run_magnitude_orientation(image, width, height, radius, kernels, magnitude, angle)
+        })
+    })??;
+    Ok(())
 }
