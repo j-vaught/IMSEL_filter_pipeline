@@ -13,6 +13,7 @@ from wvf.metal import (
     MetalBackendError,
     _load_library as _load_wvf_library,
 )
+from wvf.radius import build_wvf_antipodal_kernels
 from wvf.radius import build_wvf_radius_kernels
 
 
@@ -20,7 +21,7 @@ from wvf.radius import build_wvf_radius_kernels
 def _load_pipeline_library() -> ctypes.CDLL:
     try:
         lib = _load_wvf_library()
-        lib.edgecritic_metal_wvf_lf_recover.argtypes = [
+        recover_argtypes = [
             ctypes.POINTER(ctypes.c_float),
             ctypes.c_uint,
             ctypes.c_uint,
@@ -45,7 +46,13 @@ def _load_pipeline_library() -> ctypes.CDLL:
             ctypes.POINTER(ctypes.c_char),
             ctypes.c_size_t,
         ]
+        lib.edgecritic_metal_wvf_lf_recover.argtypes = recover_argtypes
         lib.edgecritic_metal_wvf_lf_recover.restype = ctypes.c_int
+        lib.edgecritic_metal_wvf_lf_recover_antipodal.argtypes = recover_argtypes
+        lib.edgecritic_metal_wvf_lf_recover_antipodal.restype = ctypes.c_int
+        split_argtypes = recover_argtypes[:8] + [ctypes.c_uint] + recover_argtypes[8:]
+        lib.edgecritic_metal_wvf_lf_recover_antipodal_split.argtypes = split_argtypes
+        lib.edgecritic_metal_wvf_lf_recover_antipodal_split.restype = ctypes.c_int
     except AttributeError as exc:
         raise MetalBackendError("Rust/Metal fused pipeline symbols are not available") from exc
     except OSError as exc:
@@ -82,6 +89,7 @@ def wvf_lf_recover_metal(
     dense_n: int = 500,
     min_sep_frac: float = 0.125,
     method: str = "box",
+    wvf_variant: str = "split",
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Run WVF -> LF -> orientation recovery as a single fused Metal pipeline."""
     method_name = str(method).lower()
@@ -109,7 +117,22 @@ def wvf_lf_recover_metal(
     tau_valid = _finite_float(tau_validity, "tau_validity")
     sep_frac = _finite_float(min_sep_frac, "min_sep_frac")
 
-    kernels = build_wvf_radius_kernels(radius=radius_value, order=degree_value)
+    variant_name = str(wvf_variant).lower()
+    if variant_name in {"direct", "baseline", "pair"}:
+        kernels = build_wvf_radius_kernels(radius=radius_value, order=degree_value)
+        recover = _load_pipeline_library().edgecritic_metal_wvf_lf_recover
+        n_offsets = kernels.support_size
+    elif variant_name in {"antipodal"}:
+        kernels = build_wvf_antipodal_kernels(radius=radius_value, order=degree_value)
+        recover = _load_pipeline_library().edgecritic_metal_wvf_lf_recover_antipodal
+        n_offsets = kernels.pair_count
+    elif variant_name in {"split", "optimized", "auto"}:
+        kernels = build_wvf_antipodal_kernels(radius=radius_value, order=degree_value)
+        recover = _load_pipeline_library().edgecritic_metal_wvf_lf_recover_antipodal_split
+        n_offsets = kernels.pair_count
+    else:
+        raise ValueError("wvf_variant must be 'split', 'antipodal', or 'direct'")
+
     offsets = kernels.offsets_xy.astype(np.int32, copy=False)
     dx = np.ascontiguousarray(offsets[:, 0], dtype=np.int32)
     dy = np.ascontiguousarray(offsets[:, 1], dtype=np.int32)
@@ -123,7 +146,7 @@ def wvf_lf_recover_metal(
     v = np.empty(img.size, dtype=np.uint8)
     error_buffer = ctypes.create_string_buffer(4096)
 
-    status = _load_pipeline_library().edgecritic_metal_wvf_lf_recover(
+    args = [
         img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
         _as_uint32(w, "image width"),
         _as_uint32(h, "image height"),
@@ -131,7 +154,12 @@ def wvf_lf_recover_metal(
         dy.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
         wx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
         wy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-        _as_uint32(kernels.support_size, "WVF support size"),
+        _as_uint32(n_offsets, "WVF support size"),
+    ]
+    if variant_name in {"split", "optimized", "auto"}:
+        args.append(_as_uint32(radius_value, "WVF radius"))
+    args.extend(
+        [
         _as_int32(lf_value, "LF half-length"),
         _as_uint32(n, "orientation count"),
         ctypes.c_uint(1),
@@ -147,7 +175,9 @@ def wvf_lf_recover_metal(
         v.ctypes.data_as(ctypes.POINTER(ctypes.c_uint8)),
         error_buffer,
         ctypes.c_size_t(len(error_buffer)),
+        ]
     )
+    status = recover(*args)
     if status != 0:
         raise MetalBackendError(error_buffer.value.decode("utf-8", errors="replace"))
 

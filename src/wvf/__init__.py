@@ -9,12 +9,19 @@ from wvf.components import wvf_component_backend, wvf_component_gradients
 from wvf.reference import wvf_image as _wvf_cpu
 from wvf.reference import wvf_single_pixel
 from wvf.radius import (
+    WVFAntipodalKernels,
     WVFRadiusKernels,
+    build_wvf_antipodal_kernels,
     build_wvf_radius_kernels,
     disk_offsets,
     wvf_radius_gradients_cpu,
 )
-from wvf.metal import wvf_gradients_metal, wvf_magnitude_angle_metal
+from wvf.metal import (
+    wvf_antipodal_gradients_metal,
+    wvf_antipodal_split_gradients_metal,
+    wvf_gradients_metal,
+    wvf_magnitude_angle_metal,
+)
 
 
 def _select_backend(backend: str) -> str:
@@ -76,8 +83,12 @@ def wvf_image(
 
 __all__ = [
     "build_wvf_radius_kernels",
+    "build_wvf_antipodal_kernels",
     "disk_offsets",
+    "WVFAntipodalKernels",
     "WVFRadiusKernels",
+    "wvf_antipodal_gradients_metal",
+    "wvf_antipodal_split_gradients_metal",
     "wvf_component_backend",
     "wvf_component_gradients",
     "wvf_gradients_metal",

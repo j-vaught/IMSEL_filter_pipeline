@@ -17,6 +17,13 @@ struct KernelParams {
     uint n_offsets;
 };
 
+struct WvfInteriorParams {
+    uint width;
+    uint height;
+    uint n_offsets;
+    uint radius;
+};
+
 struct LfParams {
     uint width;
     uint height;

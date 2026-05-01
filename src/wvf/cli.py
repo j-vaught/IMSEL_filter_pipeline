@@ -52,6 +52,11 @@ def build_parser() -> argparse.ArgumentParser:
         choices=("float32", "float64"),
         default="float32",
     )
+    parser.add_argument(
+        "--variant",
+        choices=("split", "antipodal", "direct"),
+        default="split",
+    )
     return parser
 
 
@@ -64,6 +69,7 @@ def main(argv: list[str] | None = None) -> int:
         radius=args.radius,
         degree=args.degree,
         output_dtype=dtype,
+        variant=args.variant,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(
@@ -74,6 +80,7 @@ def main(argv: list[str] | None = None) -> int:
         angle=angle,
         radius=np.int32(args.radius),
         degree=np.int32(args.degree),
+        variant=args.variant,
         input_path=str(args.input),
     )
     return 0

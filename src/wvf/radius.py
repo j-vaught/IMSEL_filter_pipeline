@@ -28,6 +28,21 @@ class WVFRadiusKernels:
         return int(self.offsets_xy.shape[0])
 
 
+@dataclass(frozen=True)
+class WVFAntipodalKernels:
+    """Antipodal derivative pairs for one integer disk radius."""
+
+    radius: int
+    order: int
+    offsets_xy: np.ndarray
+    weights_x: np.ndarray
+    weights_y: np.ndarray
+
+    @property
+    def pair_count(self) -> int:
+        return int(self.offsets_xy.shape[0])
+
+
 def disk_offsets(radius: int, include_center: bool = False) -> np.ndarray:
     """Return all integer offsets inside a disk of ``radius``."""
     r = int(radius)
@@ -80,6 +95,51 @@ def build_wvf_radius_kernels(radius: int, order: int = 4) -> WVFRadiusKernels:
         weights_y=weights_y,
         kernel_x=np.ascontiguousarray(kernel_x, dtype=np.float64),
         kernel_y=np.ascontiguousarray(kernel_y, dtype=np.float64),
+    )
+
+
+@lru_cache(maxsize=64)
+def build_wvf_antipodal_kernels(radius: int, order: int = 4) -> WVFAntipodalKernels:
+    """Build symmetric WVF derivative pairs for Metal acceleration."""
+    kernels = build_wvf_radius_kernels(radius=radius, order=order)
+    offsets = kernels.offsets_xy.astype(np.int64, copy=False)
+    index = {tuple(offset): i for i, offset in enumerate(offsets)}
+    used: set[int] = set()
+    pair_offsets: list[tuple[int, int]] = []
+    pair_weights_x: list[float] = []
+    pair_weights_y: list[float] = []
+
+    for i, (dx, dy) in enumerate(offsets):
+        if i in used:
+            continue
+        opposite = (-int(dx), -int(dy))
+        j = index.get(opposite)
+        if j is None:
+            raise ValueError(f"offset ({dx}, {dy}) has no antipodal partner")
+
+        used.add(i)
+        used.add(j)
+        if int(dy) > 0 or (int(dy) == 0 and int(dx) > 0):
+            pos, neg = i, j
+            pair_dx, pair_dy = int(dx), int(dy)
+        else:
+            pos, neg = j, i
+            pair_dx, pair_dy = opposite
+
+        pair_offsets.append((pair_dx, pair_dy))
+        pair_weights_x.append(
+            0.5 * (float(kernels.weights_x[pos]) - float(kernels.weights_x[neg]))
+        )
+        pair_weights_y.append(
+            0.5 * (float(kernels.weights_y[pos]) - float(kernels.weights_y[neg]))
+        )
+
+    return WVFAntipodalKernels(
+        radius=int(radius),
+        order=int(order),
+        offsets_xy=np.ascontiguousarray(pair_offsets, dtype=np.int32),
+        weights_x=np.ascontiguousarray(pair_weights_x, dtype=np.float64),
+        weights_y=np.ascontiguousarray(pair_weights_y, dtype=np.float64),
     )
 
 

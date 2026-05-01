@@ -12,6 +12,9 @@ const LF_STACK_EXECUTION_AUTO: c_uint = 0;
 const LF_STACK_EXECUTION_DIRECT: c_uint = 1;
 const LF_STACK_EXECUTION_PROJECTED: c_uint = 2;
 const MAX_BOX_PASSES: c_uint = 32;
+const WVF_DIRECT: c_uint = 0;
+const WVF_ANTIPODAL: c_uint = 1;
+const WVF_ANTIPODAL_SPLIT: c_uint = 2;
 
 mod shaders;
 use shaders::SHADER_SOURCE;
@@ -21,6 +24,14 @@ struct KernelParams {
     width: c_uint,
     height: c_uint,
     n_offsets: c_uint,
+}
+
+#[repr(C)]
+struct WvfInteriorParams {
+    width: c_uint,
+    height: c_uint,
+    n_offsets: c_uint,
+    radius: c_uint,
 }
 
 #[repr(C)]
@@ -157,6 +168,9 @@ struct CgmmParams {
 struct MetalState {
     device: Device,
     wvf_pipeline: ComputePipelineState,
+    wvf_antipodal_pipeline: ComputePipelineState,
+    wvf_antipodal_interior_pipeline: ComputePipelineState,
+    wvf_antipodal_boundary_pipeline: ComputePipelineState,
     lf_pipeline: ComputePipelineState,
     lf_batch_pipeline: ComputePipelineState,
     lf_stack_interior_pipeline: ComputePipelineState,
@@ -210,6 +224,34 @@ impl MetalState {
         let wvf_pipeline = device
             .new_compute_pipeline_state_with_function(&function)
             .map_err(|err| format!("failed to create Metal compute pipeline: {err}"))?;
+        let antipodal_function = library
+            .get_function("wvf_convolve_antipodal", None)
+            .map_err(|err| format!("failed to load antipodal WVF Metal function: {err}"))?;
+        let wvf_antipodal_pipeline = device
+            .new_compute_pipeline_state_with_function(&antipodal_function)
+            .map_err(|err| {
+                format!("failed to create antipodal WVF Metal compute pipeline: {err}")
+            })?;
+        let antipodal_interior_function = library
+            .get_function("wvf_convolve_antipodal_interior", None)
+            .map_err(|err| {
+                format!("failed to load antipodal WVF interior Metal function: {err}")
+            })?;
+        let wvf_antipodal_interior_pipeline = device
+            .new_compute_pipeline_state_with_function(&antipodal_interior_function)
+            .map_err(|err| {
+                format!("failed to create antipodal WVF interior Metal compute pipeline: {err}")
+            })?;
+        let antipodal_boundary_function = library
+            .get_function("wvf_convolve_antipodal_boundary", None)
+            .map_err(|err| {
+                format!("failed to load antipodal WVF boundary Metal function: {err}")
+            })?;
+        let wvf_antipodal_boundary_pipeline = device
+            .new_compute_pipeline_state_with_function(&antipodal_boundary_function)
+            .map_err(|err| {
+                format!("failed to create antipodal WVF boundary Metal compute pipeline: {err}")
+            })?;
         let lf_function = library
             .get_function("lf_response", None)
             .map_err(|err| format!("failed to load LF Metal function: {err}"))?;
@@ -365,6 +407,9 @@ impl MetalState {
         Ok(Self {
             device,
             wvf_pipeline,
+            wvf_antipodal_pipeline,
+            wvf_antipodal_interior_pipeline,
+            wvf_antipodal_boundary_pipeline,
             lf_pipeline,
             lf_batch_pipeline,
             lf_stack_interior_pipeline,
@@ -885,6 +930,7 @@ fn build_recovery_trig_tables(
 
 unsafe fn run_convolve_pair_with_state(
     state: &MetalState,
+    antipodal: bool,
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -962,9 +1008,14 @@ unsafe fn run_convolve_pair_with_state(
     wx_buffer.did_modify_range(NSRange::new(0, weight_len as u64));
     wy_buffer.did_modify_range(NSRange::new(0, weight_len as u64));
 
+    let pipeline = if antipodal {
+        &state.wvf_antipodal_pipeline
+    } else {
+        &state.wvf_pipeline
+    };
     let command_buffer = state.queue.new_command_buffer();
     let encoder = command_buffer.new_compute_command_encoder();
-    encoder.set_compute_pipeline_state(&state.wvf_pipeline);
+    encoder.set_compute_pipeline_state(pipeline);
     encoder.set_buffer(0, Some(&image_buffer), 0);
     encoder.set_buffer(1, Some(&dx_buffer), 0);
     encoder.set_buffer(2, Some(&dy_buffer), 0);
@@ -979,7 +1030,7 @@ unsafe fn run_convolve_pair_with_state(
         height: height as u64,
         depth: 1,
     };
-    let group = threadgroup_2d(&state.wvf_pipeline);
+    let group = threadgroup_2d(pipeline);
     encoder.dispatch_threads(threads, group);
     encoder.end_encoding();
     command_buffer.commit();
@@ -1022,7 +1073,213 @@ unsafe fn run_convolve_pair(
         }
         let state = state_slot.as_ref().expect("Metal state was initialized");
         run_convolve_pair_with_state(
-            state, image, width, height, dx, dy, wx, wy, n_offsets, out_x, out_y,
+            state, false, image, width, height, dx, dy, wx, wy, n_offsets, out_x, out_y,
+        )
+    })
+}
+
+unsafe fn run_convolve_antipodal(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    dx: *const c_int,
+    dy: *const c_int,
+    wx: *const c_float,
+    wy: *const c_float,
+    n_offsets: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+) -> Result<(), String> {
+    check_ptr(image, "image")?;
+    check_ptr(dx, "dx")?;
+    check_ptr(dy, "dy")?;
+    check_ptr(wx, "wx")?;
+    check_ptr(wy, "wy")?;
+    check_mut_ptr(out_x, "out_x")?;
+    check_mut_ptr(out_y, "out_y")?;
+
+    if width == 0 || height == 0 {
+        return Err("image width and height must be positive".to_string());
+    }
+    if n_offsets == 0 {
+        return Err("n_offsets must be positive".to_string());
+    }
+
+    METAL_STATE.with(|state_cell| {
+        let mut state_slot = state_cell.borrow_mut();
+        if state_slot.is_none() {
+            *state_slot = Some(MetalState::new()?);
+        }
+        let state = state_slot.as_ref().expect("Metal state was initialized");
+        run_convolve_pair_with_state(
+            state, true, image, width, height, dx, dy, wx, wy, n_offsets, out_x, out_y,
+        )
+    })
+}
+
+unsafe fn run_convolve_antipodal_split_with_state(
+    state: &MetalState,
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    dx: *const c_int,
+    dy: *const c_int,
+    wx: *const c_float,
+    wy: *const c_float,
+    n_offsets: c_uint,
+    radius: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+) -> Result<(), String> {
+    let double_radius = radius.saturating_mul(2);
+    let interior_width = width.saturating_sub(double_radius);
+    let interior_height = height.saturating_sub(double_radius);
+    if radius == 0 || interior_width == 0 || interior_height == 0 {
+        return run_convolve_pair_with_state(
+            state, true, image, width, height, dx, dy, wx, wy, n_offsets, out_x, out_y,
+        );
+    }
+
+    let total_pixels = checked_image_pixels(width, height)?;
+    let image_len = checked_len(total_pixels, std::mem::size_of::<c_float>(), "image")?;
+    let offset_len = checked_len(n_offsets as usize, std::mem::size_of::<c_int>(), "offset")?;
+    let weight_len = checked_len(n_offsets as usize, std::mem::size_of::<c_float>(), "weight")?;
+    let output_len = image_len;
+
+    let resource_options = MTLResourceOptions::StorageModeShared;
+    let image_buffer = state.device.new_buffer_with_bytes_no_copy(
+        image.cast(),
+        image_len as u64,
+        resource_options,
+        None,
+    );
+    let dx_buffer = state.device.new_buffer_with_bytes_no_copy(
+        dx.cast(),
+        offset_len as u64,
+        resource_options,
+        None,
+    );
+    let dy_buffer = state.device.new_buffer_with_bytes_no_copy(
+        dy.cast(),
+        offset_len as u64,
+        resource_options,
+        None,
+    );
+    let wx_buffer = state.device.new_buffer_with_bytes_no_copy(
+        wx.cast(),
+        weight_len as u64,
+        resource_options,
+        None,
+    );
+    let wy_buffer = state.device.new_buffer_with_bytes_no_copy(
+        wy.cast(),
+        weight_len as u64,
+        resource_options,
+        None,
+    );
+    let out_x_buffer = state.device.new_buffer_with_bytes_no_copy(
+        out_x.cast::<std::ffi::c_void>().cast_const(),
+        output_len as u64,
+        resource_options,
+        None,
+    );
+    let out_y_buffer = state.device.new_buffer_with_bytes_no_copy(
+        out_y.cast::<std::ffi::c_void>().cast_const(),
+        output_len as u64,
+        resource_options,
+        None,
+    );
+    let params = WvfInteriorParams {
+        width,
+        height,
+        n_offsets,
+        radius,
+    };
+    let params_buffer = state.device.new_buffer_with_data(
+        (&params as *const WvfInteriorParams).cast(),
+        std::mem::size_of::<WvfInteriorParams>() as u64,
+        resource_options,
+    );
+
+    image_buffer.did_modify_range(NSRange::new(0, image_len as u64));
+    dx_buffer.did_modify_range(NSRange::new(0, offset_len as u64));
+    dy_buffer.did_modify_range(NSRange::new(0, offset_len as u64));
+    wx_buffer.did_modify_range(NSRange::new(0, weight_len as u64));
+    wy_buffer.did_modify_range(NSRange::new(0, weight_len as u64));
+
+    let command_buffer = state.queue.new_command_buffer();
+    let encoder = command_buffer.new_compute_command_encoder();
+    encoder.set_buffer(0, Some(&image_buffer), 0);
+    encoder.set_buffer(1, Some(&dx_buffer), 0);
+    encoder.set_buffer(2, Some(&dy_buffer), 0);
+    encoder.set_buffer(3, Some(&wx_buffer), 0);
+    encoder.set_buffer(4, Some(&wy_buffer), 0);
+    encoder.set_buffer(5, Some(&out_x_buffer), 0);
+    encoder.set_buffer(6, Some(&out_y_buffer), 0);
+    encoder.set_buffer(7, Some(&params_buffer), 0);
+
+    encoder.set_compute_pipeline_state(&state.wvf_antipodal_interior_pipeline);
+    encoder.dispatch_threads(
+        MTLSize {
+            width: interior_width as u64,
+            height: interior_height as u64,
+            depth: 1,
+        },
+        threadgroup_2d(&state.wvf_antipodal_interior_pipeline),
+    );
+
+    encoder.set_compute_pipeline_state(&state.wvf_antipodal_boundary_pipeline);
+    encoder.dispatch_threads(
+        MTLSize {
+            width: width as u64,
+            height: height as u64,
+            depth: 1,
+        },
+        threadgroup_2d(&state.wvf_antipodal_boundary_pipeline),
+    );
+    encoder.end_encoding();
+    command_buffer.commit();
+    command_buffer.wait_until_completed();
+
+    Ok(())
+}
+
+unsafe fn run_convolve_antipodal_split(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    dx: *const c_int,
+    dy: *const c_int,
+    wx: *const c_float,
+    wy: *const c_float,
+    n_offsets: c_uint,
+    radius: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+) -> Result<(), String> {
+    check_ptr(image, "image")?;
+    check_ptr(dx, "dx")?;
+    check_ptr(dy, "dy")?;
+    check_ptr(wx, "wx")?;
+    check_ptr(wy, "wy")?;
+    check_mut_ptr(out_x, "out_x")?;
+    check_mut_ptr(out_y, "out_y")?;
+
+    if width == 0 || height == 0 {
+        return Err("image width and height must be positive".to_string());
+    }
+    if n_offsets == 0 {
+        return Err("n_offsets must be positive".to_string());
+    }
+
+    METAL_STATE.with(|state_cell| {
+        let mut state_slot = state_cell.borrow_mut();
+        if state_slot.is_none() {
+            *state_slot = Some(MetalState::new()?);
+        }
+        let state = state_slot.as_ref().expect("Metal state was initialized");
+        run_convolve_antipodal_split_with_state(
+            state, image, width, height, dx, dy, wx, wy, n_offsets, radius, out_x, out_y,
         )
     })
 }
@@ -3010,6 +3267,59 @@ pub unsafe extern "C" fn edgecritic_metal_wvf_convolve_pair(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn edgecritic_metal_wvf_convolve_antipodal(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    dx: *const c_int,
+    dy: *const c_int,
+    wx: *const c_float,
+    wy: *const c_float,
+    n_offsets: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+    error_out: *mut c_char,
+    error_len: usize,
+) -> c_int {
+    match run_convolve_antipodal(
+        image, width, height, dx, dy, wx, wy, n_offsets, out_x, out_y,
+    ) {
+        Ok(()) => 0,
+        Err(message) => {
+            write_error(error_out, error_len, &message);
+            1
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn edgecritic_metal_wvf_convolve_antipodal_split(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    dx: *const c_int,
+    dy: *const c_int,
+    wx: *const c_float,
+    wy: *const c_float,
+    n_offsets: c_uint,
+    radius: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+    error_out: *mut c_char,
+    error_len: usize,
+) -> c_int {
+    match run_convolve_antipodal_split(
+        image, width, height, dx, dy, wx, wy, n_offsets, radius, out_x, out_y,
+    ) {
+        Ok(()) => 0,
+        Err(message) => {
+            write_error(error_out, error_len, &message);
+            1
+        }
+    }
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn edgecritic_metal_lf_response(
     g_x: *const c_float,
     g_y: *const c_float,
@@ -3919,6 +4229,8 @@ unsafe fn run_recover_two_peaks(
 
 unsafe fn run_wvf_lf_recover_with_state(
     state: &MetalState,
+    wvf_mode: c_uint,
+    radius: c_uint,
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -4047,6 +4359,17 @@ unsafe fn run_wvf_lf_recover_with_state(
         std::mem::size_of::<KernelParams>() as u64,
         shared_options,
     );
+    let split_params = WvfInteriorParams {
+        width,
+        height,
+        n_offsets,
+        radius,
+    };
+    let split_params_buffer = state.device.new_buffer_with_data(
+        (&split_params as *const WvfInteriorParams).cast(),
+        std::mem::size_of::<WvfInteriorParams>() as u64,
+        shared_options,
+    );
 
     image_buffer.did_modify_range(NSRange::new(0, image_len as u64));
     dx_buffer.did_modify_range(NSRange::new(0, offset_len as u64));
@@ -4057,7 +4380,6 @@ unsafe fn run_wvf_lf_recover_with_state(
     let command_buffer = state.queue.new_command_buffer();
     command_buffer.set_label("fused WVF gradients");
     let encoder = command_buffer.new_compute_command_encoder();
-    encoder.set_compute_pipeline_state(&state.wvf_pipeline);
     encoder.set_buffer(0, Some(&image_buffer), 0);
     encoder.set_buffer(1, Some(&dx_buffer), 0);
     encoder.set_buffer(2, Some(&dy_buffer), 0);
@@ -4065,15 +4387,59 @@ unsafe fn run_wvf_lf_recover_with_state(
     encoder.set_buffer(4, Some(&wy_buffer), 0);
     encoder.set_buffer(5, Some(&gx_buffer), 0);
     encoder.set_buffer(6, Some(&gy_buffer), 0);
-    encoder.set_buffer(7, Some(&params_buffer), 0);
-    encoder.dispatch_threads(
-        MTLSize {
-            width: width as u64,
-            height: height as u64,
-            depth: 1,
-        },
-        threadgroup_2d(&state.wvf_pipeline),
-    );
+    if wvf_mode == WVF_ANTIPODAL_SPLIT {
+        let double_radius = radius.saturating_mul(2);
+        let interior_width = width.saturating_sub(double_radius);
+        let interior_height = height.saturating_sub(double_radius);
+        if radius > 0 && interior_width > 0 && interior_height > 0 {
+            encoder.set_buffer(7, Some(&split_params_buffer), 0);
+            encoder.set_compute_pipeline_state(&state.wvf_antipodal_interior_pipeline);
+            encoder.dispatch_threads(
+                MTLSize {
+                    width: interior_width as u64,
+                    height: interior_height as u64,
+                    depth: 1,
+                },
+                threadgroup_2d(&state.wvf_antipodal_interior_pipeline),
+            );
+            encoder.set_compute_pipeline_state(&state.wvf_antipodal_boundary_pipeline);
+            encoder.dispatch_threads(
+                MTLSize {
+                    width: width as u64,
+                    height: height as u64,
+                    depth: 1,
+                },
+                threadgroup_2d(&state.wvf_antipodal_boundary_pipeline),
+            );
+        } else {
+            encoder.set_buffer(7, Some(&params_buffer), 0);
+            encoder.set_compute_pipeline_state(&state.wvf_antipodal_pipeline);
+            encoder.dispatch_threads(
+                MTLSize {
+                    width: width as u64,
+                    height: height as u64,
+                    depth: 1,
+                },
+                threadgroup_2d(&state.wvf_antipodal_pipeline),
+            );
+        }
+    } else {
+        let wvf_pipeline = if wvf_mode == WVF_ANTIPODAL {
+            &state.wvf_antipodal_pipeline
+        } else {
+            &state.wvf_pipeline
+        };
+        encoder.set_buffer(7, Some(&params_buffer), 0);
+        encoder.set_compute_pipeline_state(wvf_pipeline);
+        encoder.dispatch_threads(
+            MTLSize {
+                width: width as u64,
+                height: height as u64,
+                depth: 1,
+            },
+            threadgroup_2d(wvf_pipeline),
+        );
+    }
     encoder.end_encoding();
     command_buffer.commit();
     command_buffer.wait_until_completed();
@@ -4115,6 +4481,8 @@ unsafe fn run_wvf_lf_recover_with_state(
 }
 
 unsafe fn run_wvf_lf_recover(
+    wvf_mode: c_uint,
+    radius: c_uint,
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -4173,6 +4541,8 @@ unsafe fn run_wvf_lf_recover(
         let state = state_slot.as_ref().expect("Metal state was initialized");
         run_wvf_lf_recover_with_state(
             state,
+            wvf_mode,
+            radius,
             image,
             width,
             height,
@@ -4266,6 +4636,127 @@ pub unsafe extern "C" fn edgecritic_metal_wvf_lf_recover(
     error_len: usize,
 ) -> c_int {
     match run_wvf_lf_recover(
+        WVF_DIRECT,
+        0,
+        image,
+        width,
+        height,
+        dx,
+        dy,
+        wx,
+        wy,
+        n_offsets,
+        lf_half_length,
+        n_orientations,
+        box_passes,
+        box_radius,
+        tau_sec_floor,
+        tau_validity,
+        dense_n,
+        min_sep_frac,
+        theta_p,
+        m_p,
+        theta_s,
+        m_s,
+        v,
+    ) {
+        Ok(()) => 0,
+        Err(message) => {
+            write_error(error_out, error_len, &message);
+            1
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn edgecritic_metal_wvf_lf_recover_antipodal(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    dx: *const c_int,
+    dy: *const c_int,
+    wx: *const c_float,
+    wy: *const c_float,
+    n_offsets: c_uint,
+    lf_half_length: c_int,
+    n_orientations: c_uint,
+    box_passes: c_uint,
+    box_radius: c_int,
+    tau_sec_floor: c_float,
+    tau_validity: c_float,
+    dense_n: c_uint,
+    min_sep_frac: c_float,
+    theta_p: *mut c_float,
+    m_p: *mut c_float,
+    theta_s: *mut c_float,
+    m_s: *mut c_float,
+    v: *mut u8,
+    error_out: *mut c_char,
+    error_len: usize,
+) -> c_int {
+    match run_wvf_lf_recover(
+        WVF_ANTIPODAL,
+        0,
+        image,
+        width,
+        height,
+        dx,
+        dy,
+        wx,
+        wy,
+        n_offsets,
+        lf_half_length,
+        n_orientations,
+        box_passes,
+        box_radius,
+        tau_sec_floor,
+        tau_validity,
+        dense_n,
+        min_sep_frac,
+        theta_p,
+        m_p,
+        theta_s,
+        m_s,
+        v,
+    ) {
+        Ok(()) => 0,
+        Err(message) => {
+            write_error(error_out, error_len, &message);
+            1
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn edgecritic_metal_wvf_lf_recover_antipodal_split(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    dx: *const c_int,
+    dy: *const c_int,
+    wx: *const c_float,
+    wy: *const c_float,
+    n_offsets: c_uint,
+    radius: c_uint,
+    lf_half_length: c_int,
+    n_orientations: c_uint,
+    box_passes: c_uint,
+    box_radius: c_int,
+    tau_sec_floor: c_float,
+    tau_validity: c_float,
+    dense_n: c_uint,
+    min_sep_frac: c_float,
+    theta_p: *mut c_float,
+    m_p: *mut c_float,
+    theta_s: *mut c_float,
+    m_s: *mut c_float,
+    v: *mut u8,
+    error_out: *mut c_char,
+    error_len: usize,
+) -> c_int {
+    match run_wvf_lf_recover(
+        WVF_ANTIPODAL_SPLIT,
+        radius,
         image,
         width,
         height,
