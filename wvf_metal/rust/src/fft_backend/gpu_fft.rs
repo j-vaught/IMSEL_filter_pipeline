@@ -250,7 +250,7 @@ impl GpuFftBackend {
             .image_plans
             .get(&key)
             .ok_or_else(|| "GPU FFT image plan cache insertion failed".to_string())?;
-        let forward_height_mode = HeightFftMode::Transpose;
+        let forward_height_mode = height_forward_mode();
         let inverse_height_mode = height_inverse_mode();
         let single_spectrum = match forward_height_mode {
             HeightFftMode::Transpose => &plan.single_reduced_a,
@@ -320,7 +320,7 @@ impl GpuFftBackend {
             &plan.single_reduced_a,
             &plan.single_reduced_b,
             &plan.single_transpose,
-            &plan.single_reduced_a,
+            single_spectrum,
             &plan.real_width_single_buffer,
             &plan.real_width_twiddles_buffer,
             &plan.transpose_forward_single_buffer,
@@ -1216,6 +1216,14 @@ fn choose_row_threadgroup_width(
 
 fn height_inverse_mode() -> HeightFftMode {
     match std::env::var("WVF_METAL_GPU_HEIGHT_INVERSE_MODE").ok().as_deref() {
+        Some("strided") => HeightFftMode::Strided,
+        Some("transpose") => HeightFftMode::Transpose,
+        _ => HeightFftMode::Transpose,
+    }
+}
+
+fn height_forward_mode() -> HeightFftMode {
+    match std::env::var("WVF_METAL_GPU_HEIGHT_FORWARD_MODE").ok().as_deref() {
         Some("strided") => HeightFftMode::Strided,
         Some("transpose") => HeightFftMode::Transpose,
         _ => HeightFftMode::Transpose,
