@@ -22,9 +22,76 @@
 namespace {
 
 constexpr float kPi = 3.14159265358979323846f;
-constexpr char kMultiplyShader[] = R"(
+constexpr char kUtilityShaders[] = R"(
     #include <metal_stdlib>
     using namespace metal;
+
+    struct WVFPadParams {
+        uint image_width;
+        uint image_height;
+        uint padded_width;
+        uint padded_height;
+        uint real_pitch;
+        uint fft_height;
+        uint radius;
+    };
+
+    struct WVFPostprocessParams {
+        uint width;
+        uint height;
+        uint crop;
+        uint real_pitch;
+        uint real_plane_count;
+    };
+
+    inline int wvf_reflect_index(int value, int limit) {
+        if (limit <= 1) {
+            return 0;
+        }
+        while (value < 0 || value >= limit) {
+            if (value < 0) {
+                value = -value - 1;
+            } else {
+                value = 2 * limit - value - 1;
+            }
+        }
+        return value;
+    }
+
+    inline float wvf_unsigned_angle(float y, float x) {
+        float theta = atan2(y, x);
+        if (theta < 0.0f) {
+            theta += M_PI_F;
+        }
+        if (theta >= M_PI_F) {
+            theta -= M_PI_F;
+        }
+        return theta;
+    }
+
+    kernel void wvf_reflect_pad_real(
+        device const float* image [[buffer(0)]],
+        device float* padded [[buffer(1)]],
+        constant WVFPadParams& params [[buffer(2)]],
+        uint2 gid [[thread_position_in_grid]]
+    ) {
+        if (gid.x >= params.real_pitch || gid.y >= params.fft_height) {
+            return;
+        }
+
+        const uint dst_idx = gid.y * params.real_pitch + gid.x;
+        if (gid.x >= params.padded_width || gid.y >= params.padded_height) {
+            padded[dst_idx] = 0.0f;
+            return;
+        }
+
+        const int src_x =
+            wvf_reflect_index(int(gid.x) - int(params.radius), int(params.image_width));
+        const int src_y =
+            wvf_reflect_index(int(gid.y) - int(params.radius), int(params.image_height));
+        padded[dst_idx] = image[uint(src_y) * params.image_width + uint(src_x)];
+    }
+
     kernel void wvf_multiply_spectra(
         device const float2* input [[buffer(0)]],
         device const float2* kernels [[buffer(1)]],
@@ -32,15 +99,39 @@ constexpr char kMultiplyShader[] = R"(
         constant uint& n_complex [[buffer(3)]],
         uint id [[thread_position_in_grid]]
     ) {
-        uint total = n_complex * 2u;
+        const uint total = n_complex * 2u;
         if (id >= total) {
             return;
         }
-        uint plane = id / n_complex;
-        uint idx = id - plane * n_complex;
-        float2 a = input[idx];
-        float2 b = kernels[id];
+        const uint plane = id / n_complex;
+        const uint idx = id - plane * n_complex;
+        const float2 a = input[idx];
+        const float2 b = kernels[id];
         output[id] = float2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+    }
+
+    kernel void wvf_fft_postprocess(
+        device const float* planes [[buffer(0)]],
+        device float* out_x [[buffer(1)]],
+        device float* out_y [[buffer(2)]],
+        device float* magnitude [[buffer(3)]],
+        device float* angle [[buffer(4)]],
+        constant WVFPostprocessParams& params [[buffer(5)]],
+        uint2 gid [[thread_position_in_grid]]
+    ) {
+        if (gid.x >= params.width || gid.y >= params.height) {
+            return;
+        }
+
+        const uint out_idx = gid.y * params.width + gid.x;
+        const uint src_idx =
+            (gid.y + params.crop) * params.real_pitch + gid.x + params.crop;
+        const float gx = planes[src_idx];
+        const float gy = planes[params.real_plane_count + src_idx];
+        out_x[out_idx] = gx;
+        out_y[out_idx] = gy;
+        magnitude[out_idx] = sqrt(gx * gx + gy * gy);
+        angle[out_idx] = wvf_unsigned_angle(gy, gx);
     }
 )";
 
@@ -135,7 +226,6 @@ struct PlanBundle {
     std::array<MTL::Buffer*, 1> placeholder_two = {nullptr};
     std::array<MTL::Buffer*, 1> scratch_input = {nullptr};
     std::array<MTL::Buffer*, 1> scratch_output = {nullptr};
-    MTL::Buffer* shared_one = nullptr;
     MTL::Buffer* shared_two = nullptr;
     VkFFTPlanHandle input_plan;
     VkFFTPlanHandle kernel_plan;
@@ -144,9 +234,6 @@ struct PlanBundle {
     ~PlanBundle() {
         if (shared_two) {
             shared_two->release();
-        }
-        if (shared_one) {
-            shared_one->release();
         }
         if (scratch_output[0]) {
             scratch_output[0]->release();
@@ -176,7 +263,9 @@ struct KernelSpectra {
 struct MetalRuntime {
     MTL::Device* device = nullptr;
     MTL::CommandQueue* queue = nullptr;
+    MTL::ComputePipelineState* pad_pipeline = nullptr;
     MTL::ComputePipelineState* multiply_pipeline = nullptr;
+    MTL::ComputePipelineState* postprocess_pipeline = nullptr;
     std::mutex mutex;
     std::unordered_map<PlanKey, std::unique_ptr<PlanBundle>, PlanKeyHash> plan_cache;
     std::unordered_map<KernelKey, std::unique_ptr<KernelSpectra>, KernelKeyHash> kernel_cache;
@@ -184,8 +273,14 @@ struct MetalRuntime {
     ~MetalRuntime() {
         kernel_cache.clear();
         plan_cache.clear();
+        if (postprocess_pipeline) {
+            postprocess_pipeline->release();
+        }
         if (multiply_pipeline) {
             multiply_pipeline->release();
+        }
+        if (pad_pipeline) {
+            pad_pipeline->release();
         }
         if (queue) {
             queue->release();
@@ -194,6 +289,50 @@ struct MetalRuntime {
             device->release();
         }
     }
+};
+
+struct ExternalBuffers {
+    MTL::Buffer* image = nullptr;
+    MTL::Buffer* out_x = nullptr;
+    MTL::Buffer* out_y = nullptr;
+    MTL::Buffer* magnitude = nullptr;
+    MTL::Buffer* angle = nullptr;
+
+    ~ExternalBuffers() {
+        if (angle) {
+            angle->release();
+        }
+        if (magnitude) {
+            magnitude->release();
+        }
+        if (out_y) {
+            out_y->release();
+        }
+        if (out_x) {
+            out_x->release();
+        }
+        if (image) {
+            image->release();
+        }
+    }
+};
+
+struct WVFPadParams {
+    uint32_t image_width = 0;
+    uint32_t image_height = 0;
+    uint32_t padded_width = 0;
+    uint32_t padded_height = 0;
+    uint32_t real_pitch = 0;
+    uint32_t fft_height = 0;
+    uint32_t radius = 0;
+};
+
+struct WVFPostprocessParams {
+    uint32_t width = 0;
+    uint32_t height = 0;
+    uint32_t crop = 0;
+    uint32_t real_pitch = 0;
+    uint32_t real_plane_count = 0;
 };
 
 void write_error(char* error_out, size_t error_len, const std::string& message) {
@@ -248,17 +387,6 @@ int reflect_index(int64_t value, int64_t limit) {
     return static_cast<int>(value);
 }
 
-float unsigned_angle(float y, float x) {
-    float theta = std::atan2(y, x);
-    if (theta < 0.0f) {
-        theta += kPi;
-    }
-    if (theta >= kPi) {
-        theta -= kPi;
-    }
-    return theta;
-}
-
 std::string vkfft_error(const std::string& prefix, VkFFTResult result) {
     return prefix + ": " + std::string(getVkFFTErrorString(result));
 }
@@ -273,44 +401,64 @@ uint64_t hash_bytes(const void* data, size_t byte_count, uint64_t seed = 1469598
     return hash;
 }
 
-MTL::ComputePipelineState* build_multiply_pipeline(MTL::Device* device, std::string* error_out) {
+MTL::ComputePipelineState* build_compute_pipeline(
+    MTL::Device* device,
+    MTL::Library* library,
+    const char* function_name,
+    std::string* error_out
+) {
+    NS::Error* error = nullptr;
+    NS::String* name = NS::String::string(function_name, NS::UTF8StringEncoding);
+    MTL::Function* function = library->newFunction(name);
+    if (!function) {
+        if (error_out) {
+            *error_out = std::string("failed to load Metal function ") + function_name;
+        }
+        return nullptr;
+    }
+    MTL::ComputePipelineState* pipeline = device->newComputePipelineState(function, &error);
+    function->release();
+    if (!pipeline) {
+        if (error_out) {
+            *error_out = std::string("failed to create Metal pipeline ") + function_name;
+        }
+        return nullptr;
+    }
+    return pipeline;
+}
+
+bool initialize_runtime_pipelines(MetalRuntime* runtime, std::string* error_out) {
     NS::Error* error = nullptr;
     MTL::CompileOptions* options = MTL::CompileOptions::alloc()->init();
     if (!options) {
         if (error_out) {
             *error_out = "failed to allocate Metal compile options for VkFFT";
         }
-        return nullptr;
+        return false;
     }
     options->setFastMathEnabled(true);
-    NS::String* source = NS::String::string(kMultiplyShader, NS::UTF8StringEncoding);
-    MTL::Library* library = device->newLibrary(source, options, &error);
+    NS::String* source = NS::String::string(kUtilityShaders, NS::UTF8StringEncoding);
+    MTL::Library* library = runtime->device->newLibrary(source, options, &error);
     options->release();
     if (!library) {
         if (error_out) {
-            *error_out = "failed to compile Metal spectrum multiply shader";
+            *error_out = "failed to compile Metal VkFFT utility shaders";
         }
-        return nullptr;
+        return false;
     }
-    NS::String* name = NS::String::string("wvf_multiply_spectra", NS::UTF8StringEncoding);
-    MTL::Function* function = library->newFunction(name);
-    if (!function) {
-        library->release();
-        if (error_out) {
-            *error_out = "failed to load Metal spectrum multiply function";
-        }
-        return nullptr;
-    }
-    MTL::ComputePipelineState* pipeline = device->newComputePipelineState(function, &error);
-    function->release();
+
+    runtime->pad_pipeline =
+        build_compute_pipeline(runtime->device, library, "wvf_reflect_pad_real", error_out);
+    runtime->multiply_pipeline =
+        runtime->pad_pipeline
+            ? build_compute_pipeline(runtime->device, library, "wvf_multiply_spectra", error_out)
+            : nullptr;
+    runtime->postprocess_pipeline =
+        runtime->multiply_pipeline
+            ? build_compute_pipeline(runtime->device, library, "wvf_fft_postprocess", error_out)
+            : nullptr;
     library->release();
-    if (!pipeline) {
-        if (error_out) {
-            *error_out = "failed to create Metal spectrum multiply pipeline";
-        }
-        return nullptr;
-    }
-    return pipeline;
+    return runtime->pad_pipeline && runtime->multiply_pipeline && runtime->postprocess_pipeline;
 }
 
 MetalRuntime* get_runtime(std::string* error_out) {
@@ -329,11 +477,8 @@ MetalRuntime* get_runtime(std::string* error_out) {
             created->queue = created->device->newCommandQueue();
             if (!created->queue) {
                 init_error = "failed to create Metal command queue for VkFFT";
-            } else {
-                created->multiply_pipeline = build_multiply_pipeline(created->device, &init_error);
-                if (created->multiply_pipeline) {
-                    runtime = std::move(created);
-                }
+            } else if (initialize_runtime_pipelines(created.get(), &init_error)) {
+                runtime = std::move(created);
             }
         }
     }
@@ -347,17 +492,31 @@ MetalRuntime* get_runtime(std::string* error_out) {
     return runtime.get();
 }
 
+MTL::Size threadgroup_1d(MTL::ComputePipelineState* pipeline) {
+    const NS::UInteger width = std::min<NS::UInteger>(
+        pipeline->maxTotalThreadsPerThreadgroup(),
+        std::max<NS::UInteger>(pipeline->threadExecutionWidth(), 1)
+    );
+    return MTL::Size::Make(width, 1, 1);
+}
+
+MTL::Size threadgroup_2d(MTL::ComputePipelineState* pipeline) {
+    const NS::UInteger width = std::min<NS::UInteger>(
+        pipeline->maxTotalThreadsPerThreadgroup(),
+        std::max<NS::UInteger>(pipeline->threadExecutionWidth(), 1)
+    );
+    const NS::UInteger height =
+        std::max<NS::UInteger>(1, std::min<NS::UInteger>(16, pipeline->maxTotalThreadsPerThreadgroup() / width));
+    return MTL::Size::Make(width, height, 1);
+}
+
 VkFFTResult append_vkfft(
-    MetalRuntime& runtime,
+    MTL::CommandBuffer* command_buffer,
     VkFFTApplication* app,
     int inverse,
     MTL::Buffer** buffer
 ) {
     VkFFTLaunchParams launch_params = {};
-    MTL::CommandBuffer* command_buffer = runtime.queue->commandBuffer();
-    if (!command_buffer) {
-        return VKFFT_ERROR_FAILED_TO_CREATE_COMMAND_LIST;
-    }
     launch_params.commandBuffer = command_buffer;
     launch_params.buffer = buffer;
     launch_params.inputBuffer = buffer;
@@ -371,9 +530,26 @@ VkFFTResult append_vkfft(
 
     VkFFTResult result = VkFFTAppend(app, inverse, &launch_params);
     encoder->endEncoding();
+    return result;
+}
+
+VkFFTResult run_vkfft_once(
+    MetalRuntime& runtime,
+    VkFFTApplication* app,
+    int inverse,
+    MTL::Buffer** buffer
+) {
+    MTL::CommandBuffer* command_buffer = runtime.queue->commandBuffer();
+    if (!command_buffer) {
+        return VKFFT_ERROR_FAILED_TO_CREATE_COMMAND_LIST;
+    }
+    const VkFFTResult result = append_vkfft(command_buffer, app, inverse, buffer);
+    if (result != VKFFT_SUCCESS) {
+        return result;
+    }
     command_buffer->commit();
     command_buffer->waitUntilCompleted();
-    return result;
+    return VKFFT_SUCCESS;
 }
 
 VkFFTResult copy_host_to_buffer(
@@ -404,39 +580,13 @@ VkFFTResult copy_host_to_buffer(
     return VKFFT_SUCCESS;
 }
 
-VkFFTResult copy_buffer_to_host(
-    MetalRuntime& runtime,
-    MTL::Buffer* source,
-    MTL::Buffer* staging,
-    void* destination,
-    uint64_t byte_count
-) {
-    if (!source || !staging) {
-        return VKFFT_ERROR_FAILED_TO_ALLOCATE;
-    }
-    MTL::CommandBuffer* command_buffer = runtime.queue->commandBuffer();
-    if (!command_buffer) {
-        return VKFFT_ERROR_FAILED_TO_CREATE_COMMAND_LIST;
-    }
-    MTL::BlitCommandEncoder* encoder = command_buffer->blitCommandEncoder();
-    if (!encoder) {
-        return VKFFT_ERROR_FAILED_TO_CREATE_COMMAND_LIST;
-    }
-    encoder->copyFromBuffer(source, 0, staging, 0, static_cast<NS::UInteger>(byte_count));
-    encoder->endEncoding();
-    command_buffer->commit();
-    command_buffer->waitUntilCompleted();
-    std::memcpy(destination, staging->contents(), static_cast<size_t>(byte_count));
-    return VKFFT_SUCCESS;
-}
-
 bool initialize_plan(
     VkFFTPlanHandle* handle,
     VkFFTConfiguration config,
     const std::string& label,
     std::string* error_out
 ) {
-    VkFFTResult result = initializeVkFFT(&handle->app, config);
+    const VkFFTResult result = initializeVkFFT(&handle->app, config);
     if (result != VKFFT_SUCCESS) {
         if (error_out) {
             *error_out = vkfft_error(label, result);
@@ -483,17 +633,13 @@ PlanBundle* get_or_create_plan_bundle(
         static_cast<NS::UInteger>(plan->two_plane_bytes),
         MTL::ResourceStorageModePrivate
     );
-    plan->shared_one = runtime.device->newBuffer(
-        static_cast<NS::UInteger>(plan->one_plane_bytes),
-        MTL::ResourceStorageModeShared
-    );
     plan->shared_two = runtime.device->newBuffer(
         static_cast<NS::UInteger>(plan->two_plane_bytes),
         MTL::ResourceStorageModeShared
     );
     if (!plan->placeholder_one[0] || !plan->placeholder_two[0] ||
         !plan->scratch_input[0] || !plan->scratch_output[0] ||
-        !plan->shared_one || !plan->shared_two) {
+        !plan->shared_two) {
         if (error_out) {
             *error_out = "failed to allocate cached Metal buffers for VkFFT";
         }
@@ -606,7 +752,7 @@ KernelSpectra* get_or_create_kernel_spectra(
     }
 
     MTL::Buffer* kernel_buffer_array[1] = {spectra->buffer};
-    result = append_vkfft(runtime, &plan.kernel_plan.app, -1, kernel_buffer_array);
+    result = run_vkfft_once(runtime, &plan.kernel_plan.app, -1, kernel_buffer_array);
     if (result != VKFFT_SUCCESS) {
         if (error_out) {
             *error_out = vkfft_error("failed to transform WVF kernels with VkFFT", result);
@@ -618,8 +764,76 @@ KernelSpectra* get_or_create_kernel_spectra(
     return inserted.first->second.get();
 }
 
-VkFFTResult multiply_spectra(
+ExternalBuffers wrap_external_buffers(
     MetalRuntime& runtime,
+    const float* image,
+    uint64_t image_bytes,
+    float* out_x,
+    float* out_y,
+    float* magnitude,
+    float* angle,
+    uint64_t output_bytes
+) {
+    ExternalBuffers buffers;
+    const auto shared = MTL::ResourceStorageModeShared;
+    buffers.image =
+        runtime.device->newBuffer(image, static_cast<NS::UInteger>(image_bytes), shared, nullptr);
+    buffers.out_x = runtime.device->newBuffer(
+        static_cast<const void*>(out_x),
+        static_cast<NS::UInteger>(output_bytes),
+        shared,
+        nullptr
+    );
+    buffers.out_y = runtime.device->newBuffer(
+        static_cast<const void*>(out_y),
+        static_cast<NS::UInteger>(output_bytes),
+        shared,
+        nullptr
+    );
+    buffers.magnitude = runtime.device->newBuffer(
+        static_cast<const void*>(magnitude),
+        static_cast<NS::UInteger>(output_bytes),
+        shared,
+        nullptr
+    );
+    buffers.angle = runtime.device->newBuffer(
+        static_cast<const void*>(angle),
+        static_cast<NS::UInteger>(output_bytes),
+        shared,
+        nullptr
+    );
+    if (buffers.image) {
+        buffers.image->didModifyRange(NS::Range::Make(0, static_cast<NS::UInteger>(image_bytes)));
+    }
+    return buffers;
+}
+
+VkFFTResult encode_reflect_pad(
+    MetalRuntime& runtime,
+    MTL::CommandBuffer* command_buffer,
+    MTL::Buffer* source_image,
+    MTL::Buffer* destination,
+    const WVFPadParams& params
+) {
+    MTL::ComputeCommandEncoder* encoder = command_buffer->computeCommandEncoder();
+    if (!encoder) {
+        return VKFFT_ERROR_FAILED_TO_CREATE_COMMAND_LIST;
+    }
+    encoder->setComputePipelineState(runtime.pad_pipeline);
+    encoder->setBuffer(source_image, 0, 0);
+    encoder->setBuffer(destination, 0, 1);
+    encoder->setBytes(&params, sizeof(params), 2);
+    encoder->dispatchThreads(
+        MTL::Size::Make(params.real_pitch, params.fft_height, 1),
+        threadgroup_2d(runtime.pad_pipeline)
+    );
+    encoder->endEncoding();
+    return VKFFT_SUCCESS;
+}
+
+VkFFTResult encode_multiply_spectra(
+    MetalRuntime& runtime,
+    MTL::CommandBuffer* command_buffer,
     MTL::Buffer* input,
     MTL::Buffer* kernels,
     MTL::Buffer* output,
@@ -629,33 +843,47 @@ VkFFTResult multiply_spectra(
         return VKFFT_ERROR_UNSUPPORTED_FFT_LENGTH;
     }
 
-    uint32_t n_complex = static_cast<uint32_t>(complex_count);
-    MTL::CommandBuffer* command_buffer = runtime.queue->commandBuffer();
-    if (!command_buffer) {
-        return VKFFT_ERROR_FAILED_TO_CREATE_COMMAND_LIST;
-    }
+    const uint32_t n_complex = static_cast<uint32_t>(complex_count);
     MTL::ComputeCommandEncoder* encoder = command_buffer->computeCommandEncoder();
     if (!encoder) {
         return VKFFT_ERROR_FAILED_TO_CREATE_COMMAND_LIST;
     }
-
     encoder->setComputePipelineState(runtime.multiply_pipeline);
     encoder->setBuffer(input, 0, 0);
     encoder->setBuffer(kernels, 0, 1);
     encoder->setBuffer(output, 0, 2);
     encoder->setBytes(&n_complex, sizeof(n_complex), 3);
-    const NS::UInteger total = static_cast<NS::UInteger>(complex_count * 2ull);
-    const NS::UInteger group_width = std::min<NS::UInteger>(
-        runtime.multiply_pipeline->maxTotalThreadsPerThreadgroup(),
-        std::max<NS::UInteger>(runtime.multiply_pipeline->threadExecutionWidth(), 1)
-    );
     encoder->dispatchThreads(
-        MTL::Size::Make(total, 1, 1),
-        MTL::Size::Make(group_width, 1, 1)
+        MTL::Size::Make(static_cast<NS::UInteger>(complex_count * 2ull), 1, 1),
+        threadgroup_1d(runtime.multiply_pipeline)
     );
     encoder->endEncoding();
-    command_buffer->commit();
-    command_buffer->waitUntilCompleted();
+    return VKFFT_SUCCESS;
+}
+
+VkFFTResult encode_postprocess(
+    MetalRuntime& runtime,
+    MTL::CommandBuffer* command_buffer,
+    MTL::Buffer* source_planes,
+    const ExternalBuffers& outputs,
+    const WVFPostprocessParams& params
+) {
+    MTL::ComputeCommandEncoder* encoder = command_buffer->computeCommandEncoder();
+    if (!encoder) {
+        return VKFFT_ERROR_FAILED_TO_CREATE_COMMAND_LIST;
+    }
+    encoder->setComputePipelineState(runtime.postprocess_pipeline);
+    encoder->setBuffer(source_planes, 0, 0);
+    encoder->setBuffer(outputs.out_x, 0, 1);
+    encoder->setBuffer(outputs.out_y, 0, 2);
+    encoder->setBuffer(outputs.magnitude, 0, 3);
+    encoder->setBuffer(outputs.angle, 0, 4);
+    encoder->setBytes(&params, sizeof(params), 5);
+    encoder->dispatchThreads(
+        MTL::Size::Make(params.width, params.height, 1),
+        threadgroup_2d(runtime.postprocess_pipeline)
+    );
+    encoder->endEncoding();
     return VKFFT_SUCCESS;
 }
 
@@ -696,6 +924,14 @@ int run_wvf_vkfft(
     if (!checked_mul(real_pitch, fft_h, &real_plane_count) ||
         !checked_mul(fft_w / 2ull + 1ull, fft_h, &complex_count)) {
         write_error(error_out, error_len, "VkFFT WVF buffer dimensions overflowed");
+        return 1;
+    }
+    if (real_pitch > std::numeric_limits<uint32_t>::max() ||
+        fft_h > std::numeric_limits<uint32_t>::max() ||
+        padded_w > std::numeric_limits<uint32_t>::max() ||
+        padded_h > std::numeric_limits<uint32_t>::max() ||
+        real_plane_count > std::numeric_limits<uint32_t>::max()) {
+        write_error(error_out, error_len, "VkFFT WVF dimensions exceed uint32 limits");
         return 1;
     }
 
@@ -746,44 +982,66 @@ int run_wvf_vkfft(
         return 1;
     }
 
-    std::vector<float> input_data(static_cast<size_t>(plan->real_plane_count), 0.0f);
-    const volatile uint64_t padded_h_limit = padded_h;
-    const volatile uint64_t padded_w_limit = padded_w;
-    for (uint64_t y = 0; y < padded_h_limit; ++y) {
-        const int src_y = reflect_index(
-            static_cast<int64_t>(y) - static_cast<int64_t>(radius),
-            static_cast<int64_t>(height)
-        );
-        for (uint64_t x = 0; x < padded_w_limit; ++x) {
-            const int src_x = reflect_index(
-                static_cast<int64_t>(x) - static_cast<int64_t>(radius),
-                static_cast<int64_t>(width)
-            );
-            input_data[static_cast<size_t>(y * plan->real_pitch + x)] =
-                image[static_cast<uint64_t>(src_y) * width + static_cast<uint64_t>(src_x)];
-        }
+    const uint64_t image_bytes = static_cast<uint64_t>(width) * static_cast<uint64_t>(height) * sizeof(float);
+    const uint64_t output_bytes = image_bytes;
+    ExternalBuffers external = wrap_external_buffers(
+        *runtime,
+        image,
+        image_bytes,
+        out_x,
+        out_y,
+        magnitude,
+        angle,
+        output_bytes
+    );
+    if (!external.image || !external.out_x || !external.out_y || !external.magnitude || !external.angle) {
+        write_error(error_out, error_len, "failed to wrap host buffers for VkFFT");
+        return 1;
     }
 
-    VkFFTResult result = copy_host_to_buffer(
+    WVFPadParams pad_params = {};
+    pad_params.image_width = width;
+    pad_params.image_height = height;
+    pad_params.padded_width = static_cast<uint32_t>(padded_w);
+    pad_params.padded_height = static_cast<uint32_t>(padded_h);
+    pad_params.real_pitch = static_cast<uint32_t>(real_pitch);
+    pad_params.fft_height = static_cast<uint32_t>(fft_h);
+    pad_params.radius = radius;
+
+    WVFPostprocessParams post_params = {};
+    post_params.width = width;
+    post_params.height = height;
+    post_params.crop = radius * 2u;
+    post_params.real_pitch = static_cast<uint32_t>(real_pitch);
+    post_params.real_plane_count = static_cast<uint32_t>(real_plane_count);
+
+    MTL::CommandBuffer* command_buffer = runtime->queue->commandBuffer();
+    if (!command_buffer) {
+        write_error(error_out, error_len, "failed to create Metal command buffer for VkFFT");
+        return 1;
+    }
+
+    VkFFTResult result = encode_reflect_pad(
         *runtime,
-        input_data.data(),
-        one_plane_bytes,
-        plan->shared_one,
-        plan->scratch_input[0]
+        command_buffer,
+        external.image,
+        plan->scratch_input[0],
+        pad_params
     );
     if (result != VKFFT_SUCCESS) {
-        write_error(error_out, error_len, vkfft_error("failed to upload WVF image to VkFFT", result));
+        write_error(error_out, error_len, vkfft_error("failed to reflect-pad WVF image on Metal", result));
         return static_cast<int>(result);
     }
 
-    result = append_vkfft(*runtime, &plan->input_plan.app, -1, plan->scratch_input.data());
+    result = append_vkfft(command_buffer, &plan->input_plan.app, -1, plan->scratch_input.data());
     if (result != VKFFT_SUCCESS) {
         write_error(error_out, error_len, vkfft_error("failed to transform WVF image with VkFFT", result));
         return static_cast<int>(result);
     }
 
-    result = multiply_spectra(
+    result = encode_multiply_spectra(
         *runtime,
+        command_buffer,
         plan->scratch_input[0],
         kernel_spectra->buffer,
         plan->scratch_output[0],
@@ -794,41 +1052,26 @@ int run_wvf_vkfft(
         return static_cast<int>(result);
     }
 
-    result = append_vkfft(*runtime, &plan->inverse_plan.app, 1, plan->scratch_output.data());
+    result = append_vkfft(command_buffer, &plan->inverse_plan.app, 1, plan->scratch_output.data());
     if (result != VKFFT_SUCCESS) {
         write_error(error_out, error_len, vkfft_error("failed to invert WVF spectra with VkFFT", result));
         return static_cast<int>(result);
     }
 
-    std::vector<float> output_data(static_cast<size_t>(2ull * plan->real_plane_count), 0.0f);
-    result = copy_buffer_to_host(
+    result = encode_postprocess(
         *runtime,
+        command_buffer,
         plan->scratch_output[0],
-        plan->shared_two,
-        output_data.data(),
-        two_plane_bytes
+        external,
+        post_params
     );
     if (result != VKFFT_SUCCESS) {
-        write_error(error_out, error_len, vkfft_error("failed to download WVF output from VkFFT", result));
+        write_error(error_out, error_len, vkfft_error("failed to postprocess WVF FFT output", result));
         return static_cast<int>(result);
     }
 
-    const uint64_t crop = 2ull * radius;
-    for (uint64_t y = 0; y < height; ++y) {
-        const uint64_t src_row = (y + crop) * plan->real_pitch;
-        const uint64_t dst_row = y * width;
-        for (uint64_t x = 0; x < width; ++x) {
-            const uint64_t src_idx = src_row + x + crop;
-            const uint64_t dst_idx = dst_row + x;
-            const float gx = output_data[static_cast<size_t>(src_idx)];
-            const float gy = output_data[static_cast<size_t>(plan->real_plane_count + src_idx)];
-            out_x[dst_idx] = gx;
-            out_y[dst_idx] = gy;
-            magnitude[dst_idx] = std::sqrt(gx * gx + gy * gy);
-            angle[dst_idx] = unsigned_angle(gy, gx);
-        }
-    }
-
+    command_buffer->commit();
+    command_buffer->waitUntilCompleted();
     return 0;
 }
 

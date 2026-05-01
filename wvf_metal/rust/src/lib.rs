@@ -115,6 +115,7 @@ thread_local! {
     static METAL_STATE: RefCell<Option<MetalState>> = const { RefCell::new(None) };
     static KERNEL_CACHE: RefCell<HashMap<(c_uint, c_uint, c_uint), GeneratedKernels>> = RefCell::new(HashMap::new());
     static PLAN_CACHE: RefCell<HashMap<(c_uint, c_uint, c_uint), KernelPlan>> = RefCell::new(HashMap::new());
+    static DENSE_KERNEL_CACHE: RefCell<HashMap<(c_uint, c_uint), DenseConvolutionKernels>> = RefCell::new(HashMap::new());
 }
 
 fn threadgroup_2d(pipeline: &ComputePipelineState) -> MTLSize {
@@ -492,6 +493,25 @@ fn build_vkfft_convolution_kernels(
         kernel_width,
         kernel_x,
         kernel_y,
+    })
+}
+
+fn with_vkfft_convolution_kernels<T>(
+    radius: c_uint,
+    degree: c_uint,
+    f: impl FnOnce(&DenseConvolutionKernels) -> T,
+) -> Result<T, String> {
+    DENSE_KERNEL_CACHE.with(|cache_cell| {
+        let key = (radius, degree);
+        if !cache_cell.borrow().contains_key(&key) {
+            let kernels = build_vkfft_convolution_kernels(radius, degree)?;
+            cache_cell.borrow_mut().insert(key, kernels);
+        }
+        let cache = cache_cell.borrow();
+        let kernels = cache
+            .get(&key)
+            .ok_or_else(|| "dense VkFFT kernel cache insertion failed".to_string())?;
+        Ok(f(kernels))
     })
 }
 
@@ -1089,36 +1109,37 @@ unsafe fn run_vkfft_magnitude_angle(
     magnitude: *mut c_float,
     angle: *mut c_float,
 ) -> Result<(), String> {
-    let kernels = build_vkfft_convolution_kernels(radius, degree)?;
-    let mut error = vec![0 as c_char; 4096];
-    let status = wvf_vkfft_magnitude_angle(
-        image,
-        width,
-        height,
-        radius,
-        kernels.kernel_x.as_ptr(),
-        kernels.kernel_y.as_ptr(),
-        kernels.kernel_width,
-        out_x,
-        out_y,
-        magnitude,
-        angle,
-        error.as_mut_ptr(),
-        error.len(),
-    );
-    if status == 0 {
-        return Ok(());
-    }
+    with_vkfft_convolution_kernels(radius, degree, |kernels| {
+        let mut error = vec![0 as c_char; 4096];
+        let status = wvf_vkfft_magnitude_angle(
+            image,
+            width,
+            height,
+            radius,
+            kernels.kernel_x.as_ptr(),
+            kernels.kernel_y.as_ptr(),
+            kernels.kernel_width,
+            out_x,
+            out_y,
+            magnitude,
+            angle,
+            error.as_mut_ptr(),
+            error.len(),
+        );
+        if status == 0 {
+            return Ok(());
+        }
 
-    let message = CStr::from_ptr(error.as_ptr())
-        .to_string_lossy()
-        .trim()
-        .to_string();
-    if message.is_empty() {
-        Err(format!("VkFFT WVF backend failed with status {status}"))
-    } else {
-        Err(message)
-    }
+        let message = CStr::from_ptr(error.as_ptr())
+            .to_string_lossy()
+            .trim()
+            .to_string();
+        if message.is_empty() {
+            Err(format!("VkFFT WVF backend failed with status {status}"))
+        } else {
+            Err(message)
+        }
+    })?
 }
 
 unsafe fn run_vkfft_gradients(
