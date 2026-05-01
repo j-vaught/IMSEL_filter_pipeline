@@ -2,13 +2,12 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::os::raw::{c_float, c_int, c_uint};
 
-mod interop;
-mod mps_graph;
+mod custom_fft;
 
 thread_local! {
     static DENSE_KERNEL_CACHE: RefCell<HashMap<(c_uint, c_uint), DenseConvolutionKernels>> =
         RefCell::new(HashMap::new());
-    static FFT_BACKEND: RefCell<Option<mps_graph::MpsGraphFftBackend>> = const { RefCell::new(None) };
+    static FFT_BACKEND: RefCell<Option<custom_fft::RustFftBackend>> = const { RefCell::new(None) };
 }
 
 #[derive(Clone)]
@@ -75,12 +74,12 @@ fn with_dense_convolution_kernels<T>(
 }
 
 fn with_backend<T>(
-    f: impl FnOnce(&mut mps_graph::MpsGraphFftBackend) -> Result<T, String>,
+    f: impl FnOnce(&mut custom_fft::RustFftBackend) -> Result<T, String>,
 ) -> Result<T, String> {
     FFT_BACKEND.with(|backend_cell| {
         let mut backend_slot = backend_cell.borrow_mut();
         if backend_slot.is_none() {
-            *backend_slot = Some(mps_graph::MpsGraphFftBackend::new()?);
+            *backend_slot = Some(custom_fft::RustFftBackend::new()?);
         }
         let backend = backend_slot
             .as_mut()

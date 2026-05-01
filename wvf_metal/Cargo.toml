@@ -11,11 +11,9 @@ path = "rust/src/lib.rs"
 [dependencies]
 foreign-types = "0.5"
 metal = "0.29"
-objc2 = "0.6.4"
-objc2-foundation = { version = "0.3.2", features = ["NSArray", "NSDictionary", "NSObject"] }
-objc2-metal = { version = "0.3.2", features = ["MTLBuffer", "MTLCommandBuffer", "MTLCommandQueue", "MTLDevice"] }
-objc2-metal-performance-shaders = { version = "0.3.2", features = ["MPSCommandBuffer", "MPSCoreTypes"] }
-objc2-metal-performance-shaders-graph = "0.3.2"
+num-complex = "0.4"
+rayon = "1.11"
+rustfft = "6.4"
 
 [build-dependencies]
 cc = "1.0"

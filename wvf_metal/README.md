@@ -5,9 +5,9 @@ View Filter gradients. WVF weights are built and cached in Rust, convolution
 runs in Metal, and magnitude/angle recovery stays on the GPU. The spatial
 variants use the `metal` crate directly. Backend `3`, exposed as `fft` and the
 compatibility alias `vkfft`, currently keeps the legacy VkFFT bridge for the
-best warm performance while the Rust `MPSGraph` path remains available as an
-experimental opt-in. Python only loads inputs, allocates output arrays, and
-calls the Rust dynamic library.
+best warm performance while a pure Rust FFT path remains available as an
+opt-in. Python only loads inputs, allocates output arrays, and calls the Rust
+dynamic library.
 
 ## Requirements
 
@@ -67,14 +67,12 @@ pixels in normal images are interior pixels.
 VkFFT bridge because that path still wins the recorded warm benchmark gate.
 `vkfft` is kept as a compatibility alias for the same backend id and behavior.
 
-An experimental Rust `MPSGraph` FFT backend lives under `rust/src/fft_backend/`
-and can be enabled with `WVF_METAL_EXPERIMENTAL_MPSGRAPH=1`. It uses a
-single-command-buffer hybrid path where Rust encodes explicit Metal kernels for
-reflect-pad, spectrum multiply, and postprocess around compiled `MPSGraph` FFT
-executables, and it uses a small-radius crossover to the faster split kernel.
-That path matches the spatial reference numerically, but it is not the default
-until the standalone regression harness clears the warm-performance gate. Set
-`WVF_METAL_FFT_PROFILE=1` to print per-stage timing for the experimental path.
+Use `WVF_METAL_FFT_BACKEND=rust` to route backend `3` through the pure Rust FFT
+implementation. Use `WVF_METAL_FFT_BACKEND=legacy` to force the existing VkFFT
+bridge. `WVF_METAL_FFT_BACKEND=auto` is the default and currently selects the
+legacy path until the Rust backend clears the warm-performance gate. The older
+`WVF_METAL_EXPERIMENTAL_MPSGRAPH=1` flag is kept as a temporary compatibility
+alias for `WVF_METAL_FFT_BACKEND=rust`.
 
 ## CLI
 
@@ -96,8 +94,8 @@ The output archive contains `gx`, `gy`, `magnitude`, `angle`, `radius`,
   warm performance.
 - `rust/src/lib.rs` builds WVF weights, owns the Metal dispatch code, and
   exposes the C ABI.
-- `rust/src/fft_backend/` contains the Rust FFT backend, MPSGraph plan/cache
-  ownership, and the Objective-C interop shim used by the experimental path.
+- `rust/src/fft_backend/` contains the Rust FFT backend and its plan/cache
+  ownership.
 - `rust/src/wvf.metal` contains the Metal compute kernels.
 - `rust/src/vkfft_bridge.cpp` contains the active legacy FFT bridge.
 - `rust/third_party/` contains the vendored headers needed by that bridge.

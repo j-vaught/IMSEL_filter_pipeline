@@ -1100,7 +1100,7 @@ where
     })
 }
 
-unsafe fn run_experimental_fft_backend_magnitude_angle(
+unsafe fn run_rust_fft_backend_magnitude_angle(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -1116,7 +1116,7 @@ unsafe fn run_experimental_fft_backend_magnitude_angle(
     )
 }
 
-unsafe fn run_experimental_fft_backend_gradients(
+unsafe fn run_rust_fft_backend_gradients(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -1132,13 +1132,35 @@ fn use_split_crossover_for_fft_variant(radius: c_uint) -> bool {
     radius <= 9
 }
 
-fn use_experimental_fft_backend() -> bool {
-    std::env::var("WVF_METAL_EXPERIMENTAL_MPSGRAPH")
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum FftBackendMode {
+    Auto,
+    Legacy,
+    Rust,
+}
+
+fn truthy_env(var_name: &str) -> bool {
+    std::env::var(var_name)
         .map(|value| {
             let normalized = value.trim().to_ascii_lowercase();
             !normalized.is_empty() && normalized != "0" && normalized != "false"
         })
         .unwrap_or(false)
+}
+
+fn fft_backend_mode() -> FftBackendMode {
+    if let Ok(value) = std::env::var("WVF_METAL_FFT_BACKEND") {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "" | "auto" => return FftBackendMode::Auto,
+            "legacy" | "vkfft" => return FftBackendMode::Legacy,
+            "rust" => return FftBackendMode::Rust,
+            _ => {}
+        }
+    }
+    if truthy_env("WVF_METAL_EXPERIMENTAL_MPSGRAPH") {
+        return FftBackendMode::Rust;
+    }
+    FftBackendMode::Auto
 }
 
 unsafe fn run_vkfft_magnitude_angle(
@@ -1281,14 +1303,17 @@ unsafe fn run_generated_gradients_with_state(
     out_y: *mut c_float,
 ) -> Result<(), String> {
     if variant == WVF_VARIANT_FFT {
-        if use_experimental_fft_backend() {
-            if use_split_crossover_for_fft_variant(radius) {
-                let plan = generated_kernel_plan(state, radius, degree, WVF_VARIANT_SPLIT)?;
-                return run_plan_split_with_state(state, image, width, height, &plan, out_x, out_y);
+        match fft_backend_mode() {
+            FftBackendMode::Rust => {
+                if use_split_crossover_for_fft_variant(radius) {
+                    let plan = generated_kernel_plan(state, radius, degree, WVF_VARIANT_SPLIT)?;
+                    return run_plan_split_with_state(state, image, width, height, &plan, out_x, out_y);
+                }
+                return run_rust_fft_backend_gradients(
+                    image, width, height, radius, degree, out_x, out_y,
+                );
             }
-            return run_experimental_fft_backend_gradients(
-                image, width, height, radius, degree, out_x, out_y,
-            );
+            FftBackendMode::Auto | FftBackendMode::Legacy => {}
         }
         return run_vkfft_gradients(image, width, height, radius, degree, out_x, out_y);
     }
@@ -1336,16 +1361,19 @@ unsafe fn run_generated_magnitude_angle_with_state(
     angle: *mut c_float,
 ) -> Result<(), String> {
     if variant == WVF_VARIANT_FFT {
-        if use_experimental_fft_backend() {
-            if use_split_crossover_for_fft_variant(radius) {
-                let plan = generated_kernel_plan(state, radius, degree, WVF_VARIANT_SPLIT)?;
-                return run_plan_split_magnitude_angle_with_state(
-                    state, image, width, height, &plan, out_x, out_y, magnitude, angle,
+        match fft_backend_mode() {
+            FftBackendMode::Rust => {
+                if use_split_crossover_for_fft_variant(radius) {
+                    let plan = generated_kernel_plan(state, radius, degree, WVF_VARIANT_SPLIT)?;
+                    return run_plan_split_magnitude_angle_with_state(
+                        state, image, width, height, &plan, out_x, out_y, magnitude, angle,
+                    );
+                }
+                return run_rust_fft_backend_magnitude_angle(
+                    image, width, height, radius, degree, out_x, out_y, magnitude, angle,
                 );
             }
-            return run_experimental_fft_backend_magnitude_angle(
-                image, width, height, radius, degree, out_x, out_y, magnitude, angle,
-            );
+            FftBackendMode::Auto | FftBackendMode::Legacy => {}
         }
         return run_vkfft_magnitude_angle(
             image, width, height, radius, degree, out_x, out_y, magnitude, angle,
