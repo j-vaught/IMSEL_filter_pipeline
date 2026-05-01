@@ -83,6 +83,13 @@ struct WvfFftRealWidthParams {
     uint rows_per_batch;
 };
 
+struct WvfFftFourStepParams {
+    uint n1;
+    uint n2;
+    uint group_count;
+    uint _reserved;
+};
+
 inline int reflect_index(int value, int limit) {
     if (limit <= 1) {
         return 0;
@@ -565,6 +572,22 @@ kernel void wvf_fft_unpack_real_pairs(
     const float2 value = src[src_index];
     dst[dst_base] = value.x;
     dst[dst_base + 1u] = value.y;
+}
+
+kernel void wvf_fft_four_step_twiddle(
+    device float2* data [[buffer(0)]],
+    constant WvfFftFourStepParams& params [[buffer(1)]],
+    device const float2* twiddles [[buffer(2)]],
+    uint2 gid [[thread_position_in_grid]]
+) {
+    const uint total_rows = params.group_count * params.n2;
+    if (gid.x >= params.n1 || gid.y >= total_rows) {
+        return;
+    }
+
+    const uint j2 = gid.y % params.n2;
+    const uint index = gid.y * params.n1 + gid.x;
+    data[index] = complex_mul(data[index], twiddles[j2 * params.n1 + gid.x]);
 }
 
 kernel void wvf_fft_transpose_c2c(

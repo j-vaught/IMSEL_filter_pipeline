@@ -76,6 +76,15 @@ struct WvfFftStridedParams {
     _reserved: c_uint,
 }
 
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct WvfFftFourStepParams {
+    n1: c_uint,
+    n2: c_uint,
+    group_count: c_uint,
+    _reserved: c_uint,
+}
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 struct PlanKey {
     width: c_uint,
@@ -93,6 +102,7 @@ struct KernelKey {
     kernel_width: c_uint,
     kernel_hash: u64,
     transposed_layout: bool,
+    four_step: bool,
 }
 
 struct RowPlan {
@@ -103,6 +113,25 @@ struct RowPlan {
     threadgroup_width: u64,
     threadgroup_bytes: u64,
     double_shared: bool,
+}
+
+struct HeightFourStepPlan {
+    n1: usize,
+    n2: usize,
+    forward_stage1_single: RowPlan,
+    forward_stage1_double: RowPlan,
+    forward_stage2_single: RowPlan,
+    forward_stage2_double: RowPlan,
+    inverse_stage1_double: RowPlan,
+    inverse_stage2_double: RowPlan,
+    twiddle_forward_buffer: Buffer,
+    twiddle_inverse_buffer: Buffer,
+    twiddle_single_params_buffer: Buffer,
+    twiddle_double_params_buffer: Buffer,
+    block_forward_single_buffer: Buffer,
+    block_reverse_single_buffer: Buffer,
+    block_forward_double_buffer: Buffer,
+    block_reverse_double_buffer: Buffer,
 }
 
 struct ImagePlan {
@@ -139,6 +168,7 @@ struct ImagePlan {
     height_forward_single: RowPlan,
     height_forward_double: RowPlan,
     height_inverse_double: RowPlan,
+    height_four_step: Option<HeightFourStepPlan>,
 }
 
 #[derive(Clone)]
@@ -166,6 +196,7 @@ pub(super) struct GpuFftBackend {
     prepare_c2r_transposed_pipeline: ComputePipelineState,
     unpack_real_pipeline: ComputePipelineState,
     transpose_pipeline: ComputePipelineState,
+    four_step_twiddle_pipeline: ComputePipelineState,
     multiply_pipeline: ComputePipelineState,
     postprocess_pipeline: ComputePipelineState,
     image_plans: HashMap<PlanKey, ImagePlan>,
@@ -193,6 +224,7 @@ impl GpuFftBackend {
             pipeline(&device, &library, "wvf_fft_prepare_c2r_transposed")?;
         let unpack_real_pipeline = pipeline(&device, &library, "wvf_fft_unpack_real_pairs")?;
         let transpose_pipeline = pipeline(&device, &library, "wvf_fft_transpose_c2c")?;
+        let four_step_twiddle_pipeline = pipeline(&device, &library, "wvf_fft_four_step_twiddle")?;
         let multiply_pipeline = pipeline(&device, &library, "wvf_fft_multiply_spectra")?;
         let postprocess_pipeline = pipeline(&device, &library, "wvf_fft_postprocess_dense")?;
         Ok(Self {
@@ -209,6 +241,7 @@ impl GpuFftBackend {
             prepare_c2r_transposed_pipeline,
             unpack_real_pipeline,
             transpose_pipeline,
+            four_step_twiddle_pipeline,
             multiply_pipeline,
             postprocess_pipeline,
             image_plans: HashMap::new(),
@@ -262,7 +295,8 @@ impl GpuFftBackend {
         }
         let forward_height_mode = height_forward_mode();
         let inverse_height_mode = height_inverse_mode();
-        let spectrum_buffer = self.kernel_spectra(key, kernels, forward_height_mode)?;
+        let use_four_step_forward = use_height_four_step_forward();
+        let spectrum_buffer = self.kernel_spectra(key, kernels, forward_height_mode, use_four_step_forward)?;
         let plan = self
             .image_plans
             .get(&key)
@@ -325,9 +359,11 @@ impl GpuFftBackend {
             &self.finalize_r2c_pipeline,
             &self.finalize_r2c_transposed_pipeline,
             &self.transpose_pipeline,
+            &self.four_step_twiddle_pipeline,
             &command_buffer,
             &plan.width_forward_single,
             &plan.height_forward_single,
+            plan.height_four_step.as_ref(),
             &plan.single_padded,
             &plan.single_half,
             &plan.single_transpose,
@@ -341,6 +377,7 @@ impl GpuFftBackend {
             &plan.transpose_reverse_single_buffer,
             &plan.height_strided_single_buffer,
             forward_height_mode,
+            use_four_step_forward,
             plan.complex_w,
             1,
         );
@@ -361,9 +398,11 @@ impl GpuFftBackend {
             &self.prepare_c2r_transposed_pipeline,
             &self.unpack_real_pipeline,
             &self.transpose_pipeline,
+            &self.four_step_twiddle_pipeline,
             &command_buffer,
             &plan.width_inverse_double,
             &plan.height_inverse_double,
+            plan.height_four_step.as_ref(),
             &plan.double_reduced_a,
             &plan.double_reduced_b,
             &plan.double_half,
@@ -376,6 +415,7 @@ impl GpuFftBackend {
             &plan.height_strided_double_buffer,
             forward_height_mode,
             inverse_height_mode,
+            use_height_four_step_inverse(),
             plan.complex_w,
             plan.fft_h,
             2,
@@ -403,6 +443,7 @@ impl GpuFftBackend {
         plan_key: PlanKey,
         kernels: &DenseConvolutionKernels,
         height_mode: HeightFftMode,
+        use_four_step: bool,
     ) -> Result<Buffer, String> {
         let kernel_hash = hash_f32_bytes(&kernels.kernel_x, 14695981039346656037);
         let kernel_hash = hash_f32_bytes(&kernels.kernel_y, kernel_hash);
@@ -413,6 +454,7 @@ impl GpuFftBackend {
             kernel_width: kernels.kernel_width,
             kernel_hash,
             transposed_layout: height_mode == HeightFftMode::Transpose,
+            four_step: use_four_step,
         };
         if !self.kernel_spectra.contains_key(&key) {
             let plan = self
@@ -447,9 +489,11 @@ impl GpuFftBackend {
                 &self.finalize_r2c_pipeline,
                 &self.finalize_r2c_transposed_pipeline,
                 &self.transpose_pipeline,
+                &self.four_step_twiddle_pipeline,
                 &command_buffer,
                 &plan.width_forward_double,
                 &plan.height_forward_double,
+                plan.height_four_step.as_ref(),
                 &upload,
                 &plan.double_half,
                 &plan.double_transpose,
@@ -463,6 +507,7 @@ impl GpuFftBackend {
                 &plan.transpose_reverse_double_buffer,
                 &plan.height_strided_double_buffer,
                 height_mode,
+                use_four_step,
                 plan.complex_w,
                 2,
             );
@@ -534,6 +579,12 @@ impl GpuFftBackend {
             build_row_plan(&self.device, &self.row_strided_pipeline, fft_h, complex_w, 2, &height_radices, false, false)?;
         let height_inverse_double =
             build_row_plan(&self.device, &self.row_strided_pipeline, fft_h, complex_w, 2, &height_radices, true, false)?;
+        let height_four_step = build_height_four_step_plan(
+            &self.device,
+            &self.row_pipeline,
+            fft_h,
+            complex_w,
+        )?;
         let real_width_twiddles = build_real_width_twiddles(fft_w);
 
         let private = MTLResourceOptions::StorageModePrivate;
@@ -653,6 +704,7 @@ impl GpuFftBackend {
             height_forward_single,
             height_forward_double,
             height_inverse_double,
+            height_four_step,
         })
     }
 }
@@ -682,6 +734,148 @@ fn build_real_width_twiddles(fft_w: usize) -> Vec<Complex32> {
         twiddles.push(Complex32::new(phase.cos() as f32, phase.sin() as f32));
     }
     twiddles
+}
+
+fn choose_four_step_factors(len: usize) -> Option<(usize, usize)> {
+    let mut best: Option<(usize, usize)> = None;
+    for n1 in 2..=((len as f64).sqrt() as usize) {
+        if len % n1 != 0 {
+            continue;
+        }
+        let n2 = len / n1;
+        if n2 < 2 {
+            continue;
+        }
+        let score = (n2.max(n1), n2.abs_diff(n1));
+        match best {
+            Some((best_n1, best_n2)) => {
+                let best_score = (best_n2.max(best_n1), best_n2.abs_diff(best_n1));
+                if score < best_score {
+                    best = Some((n1, n2));
+                }
+            }
+            None => best = Some((n1, n2)),
+        }
+    }
+    best
+}
+
+fn build_four_step_twiddles(n1: usize, n2: usize, inverse: bool) -> Vec<Complex32> {
+    let mut twiddles = Vec::with_capacity(n1 * n2);
+    let sign = if inverse { 1.0_f64 } else { -1.0_f64 };
+    let len = (n1 * n2) as f64;
+    for j2 in 0..n2 {
+        for k1 in 0..n1 {
+            let phase = sign * 2.0 * std::f64::consts::PI * (j2 * k1) as f64 / len;
+            twiddles.push(Complex32::new(phase.cos() as f32, phase.sin() as f32));
+        }
+    }
+    twiddles
+}
+
+fn build_height_four_step_plan(
+    device: &Device,
+    row_pipeline: &ComputePipelineState,
+    fft_h: usize,
+    complex_w: usize,
+) -> Result<Option<HeightFourStepPlan>, String> {
+    let direct_row_bytes = fft_h
+        .checked_mul(size_of::<Complex32>())
+        .ok_or_else(|| "height FFT row bytes overflowed".to_string())? as u64;
+    if direct_row_bytes.saturating_mul(2) <= 32 * 1024 {
+        return Ok(None);
+    }
+    let Some((n1, n2)) = choose_four_step_factors(fft_h) else {
+        return Ok(None);
+    };
+
+    let stage1_radices = factor_fft_length(n1)?;
+    let stage2_radices = factor_fft_length(n2)?;
+    let forward_stage1_single =
+        build_row_plan(device, row_pipeline, n1, complex_w * n2, 1, &stage1_radices, false, true)?;
+    let forward_stage1_double =
+        build_row_plan(device, row_pipeline, n1, complex_w * n2, 2, &stage1_radices, false, true)?;
+    let forward_stage2_single =
+        build_row_plan(device, row_pipeline, n2, complex_w * n1, 1, &stage2_radices, false, true)?;
+    let forward_stage2_double =
+        build_row_plan(device, row_pipeline, n2, complex_w * n1, 2, &stage2_radices, false, true)?;
+    let inverse_stage1_double =
+        build_row_plan(device, row_pipeline, n2, complex_w * n1, 2, &stage2_radices, true, true)?;
+    let inverse_stage2_double =
+        build_row_plan(device, row_pipeline, n1, complex_w * n2, 2, &stage1_radices, true, true)?;
+
+    let twiddle_forward = build_four_step_twiddles(n1, n2, false);
+    let twiddle_inverse = build_four_step_twiddles(n1, n2, true);
+    let twiddle_forward_buffer = device.new_buffer_with_data(
+        twiddle_forward.as_ptr().cast(),
+        (twiddle_forward.len() * size_of::<Complex32>()) as u64,
+        MTLResourceOptions::StorageModeShared,
+    );
+    let twiddle_inverse_buffer = device.new_buffer_with_data(
+        twiddle_inverse.as_ptr().cast(),
+        (twiddle_inverse.len() * size_of::<Complex32>()) as u64,
+        MTLResourceOptions::StorageModeShared,
+    );
+
+    let group_count_single = c_uint::try_from(complex_w)
+        .map_err(|_| "four-step single group count exceeded uint32".to_string())?;
+    let group_count_double = c_uint::try_from(
+        complex_w
+            .checked_mul(2)
+            .ok_or_else(|| "four-step double group count overflowed".to_string())?,
+    )
+    .map_err(|_| "four-step double group count exceeded uint32".to_string())?;
+    let twiddle_single_params = WvfFftFourStepParams {
+        n1: n1 as c_uint,
+        n2: n2 as c_uint,
+        group_count: group_count_single,
+        _reserved: 0,
+    };
+    let twiddle_double_params = WvfFftFourStepParams {
+        n1: n1 as c_uint,
+        n2: n2 as c_uint,
+        group_count: group_count_double,
+        _reserved: 0,
+    };
+    let block_forward_single = WvfFftTransposeParams {
+        width: n2 as c_uint,
+        height: n1 as c_uint,
+        batch_count: group_count_single,
+    };
+    let block_reverse_single = WvfFftTransposeParams {
+        width: n1 as c_uint,
+        height: n2 as c_uint,
+        batch_count: group_count_single,
+    };
+    let block_forward_double = WvfFftTransposeParams {
+        width: n2 as c_uint,
+        height: n1 as c_uint,
+        batch_count: group_count_double,
+    };
+    let block_reverse_double = WvfFftTransposeParams {
+        width: n1 as c_uint,
+        height: n2 as c_uint,
+        batch_count: group_count_double,
+    };
+
+    Ok(Some(HeightFourStepPlan {
+        n1,
+        n2,
+        forward_stage1_single,
+        forward_stage1_double,
+        forward_stage2_single,
+        forward_stage2_double,
+        inverse_stage1_double,
+        inverse_stage2_double,
+        twiddle_forward_buffer,
+        twiddle_inverse_buffer,
+        twiddle_single_params_buffer: param_buffer(device, &twiddle_single_params),
+        twiddle_double_params_buffer: param_buffer(device, &twiddle_double_params),
+        block_forward_single_buffer: param_buffer(device, &block_forward_single),
+        block_reverse_single_buffer: param_buffer(device, &block_reverse_single),
+        block_forward_double_buffer: param_buffer(device, &block_forward_double),
+        block_reverse_double_buffer: param_buffer(device, &block_reverse_double),
+    }))
 }
 
 fn build_row_plan(
@@ -990,6 +1184,32 @@ fn encode_real_width_twiddled_stage(
     encoder.end_encoding();
 }
 
+fn encode_four_step_twiddle(
+    pipeline: &ComputePipelineState,
+    command_buffer: &metal::CommandBufferRef,
+    data: &Buffer,
+    params: &Buffer,
+    twiddles: &Buffer,
+    n1: usize,
+    n2: usize,
+    group_count: usize,
+) {
+    let encoder = command_buffer.new_compute_command_encoder();
+    encoder.set_compute_pipeline_state(pipeline);
+    encoder.set_buffer(0, Some(data), 0);
+    encoder.set_buffer(1, Some(params), 0);
+    encoder.set_buffer(2, Some(twiddles), 0);
+    encoder.dispatch_threads(
+        MTLSize {
+            width: n1 as u64,
+            height: (n2 * group_count) as u64,
+            depth: 1,
+        },
+        threadgroup_2d(pipeline),
+    );
+    encoder.end_encoding();
+}
+
 fn encode_forward_2d_real(
     row_pipeline: &ComputePipelineState,
     row_double_shared_pipeline: &ComputePipelineState,
@@ -998,9 +1218,11 @@ fn encode_forward_2d_real(
     finalize_r2c_pipeline: &ComputePipelineState,
     _finalize_r2c_transposed_pipeline: &ComputePipelineState,
     transpose_pipeline: &ComputePipelineState,
+    four_step_twiddle_pipeline: &ComputePipelineState,
     command_buffer: &metal::CommandBufferRef,
     width_plan: &RowPlan,
     height_plan: &RowPlan,
+    height_four_step: Option<&HeightFourStepPlan>,
     input: &Buffer,
     half_input: &Buffer,
     half_work: &Buffer,
@@ -1014,6 +1236,7 @@ fn encode_forward_2d_real(
     _transpose_reverse_params: &Buffer,
     height_strided_params: &Buffer,
     height_mode: HeightFftMode,
+    use_four_step: bool,
     complex_w: usize,
     batch_count: usize,
 ) {
@@ -1057,14 +1280,106 @@ fn encode_forward_2d_real(
                 height_plan.len,
                 batch_count,
             );
-            encode_row_fft(
-                row_pipeline,
-                row_double_shared_pipeline,
-                command_buffer,
-                height_plan,
-                transpose,
-                output,
-            );
+            if use_four_step {
+                if let Some(four_step) = height_four_step {
+                    let (stage1_plan, stage2_plan, twiddle_params, block_forward_params, group_count) =
+                        if batch_count == 1 {
+                            (
+                                &four_step.forward_stage1_single,
+                                &four_step.forward_stage2_single,
+                                &four_step.twiddle_single_params_buffer,
+                                &four_step.block_forward_single_buffer,
+                                complex_w,
+                            )
+                        } else {
+                            (
+                                &four_step.forward_stage1_double,
+                                &four_step.forward_stage2_double,
+                                &four_step.twiddle_double_params_buffer,
+                                &four_step.block_forward_double_buffer,
+                                complex_w * batch_count,
+                            )
+                        };
+                    encode_transpose(
+                        transpose_pipeline,
+                        command_buffer,
+                        transpose,
+                        reduced_a,
+                        block_forward_params,
+                        four_step.n2,
+                        four_step.n1,
+                        group_count,
+                    );
+                    encode_row_fft(
+                        row_pipeline,
+                        row_double_shared_pipeline,
+                        command_buffer,
+                        stage1_plan,
+                        reduced_a,
+                        transpose,
+                    );
+                    encode_four_step_twiddle(
+                        four_step_twiddle_pipeline,
+                        command_buffer,
+                        transpose,
+                        twiddle_params,
+                        &four_step.twiddle_forward_buffer,
+                        four_step.n1,
+                        four_step.n2,
+                        group_count,
+                    );
+                    encode_transpose(
+                        transpose_pipeline,
+                        command_buffer,
+                        transpose,
+                        reduced_a,
+                        if batch_count == 1 {
+                            &four_step.block_reverse_single_buffer
+                        } else {
+                            &four_step.block_reverse_double_buffer
+                        },
+                        four_step.n1,
+                        four_step.n2,
+                        group_count,
+                    );
+                    encode_row_fft(
+                        row_pipeline,
+                        row_double_shared_pipeline,
+                        command_buffer,
+                        stage2_plan,
+                        reduced_a,
+                        transpose,
+                    );
+                    encode_transpose(
+                        transpose_pipeline,
+                        command_buffer,
+                        transpose,
+                        output,
+                        block_forward_params,
+                        four_step.n2,
+                        four_step.n1,
+                        group_count,
+                    );
+                } else {
+                    encode_row_fft(
+                        row_pipeline,
+                        row_double_shared_pipeline,
+                        command_buffer,
+                        height_plan,
+                        transpose,
+                        output,
+                    );
+                }
+            } else {
+                encode_row_fft(
+                    row_pipeline,
+                    row_double_shared_pipeline,
+                    command_buffer,
+                    height_plan,
+                    transpose,
+                    output,
+                );
+            }
         }
         HeightFftMode::Strided => {
             encode_row_fft_strided(
@@ -1087,9 +1402,11 @@ fn encode_inverse_2d_real(
     prepare_c2r_transposed_pipeline: &ComputePipelineState,
     unpack_real_pipeline: &ComputePipelineState,
     transpose_pipeline: &ComputePipelineState,
+    four_step_twiddle_pipeline: &ComputePipelineState,
     command_buffer: &metal::CommandBufferRef,
     width_plan: &RowPlan,
     height_plan: &RowPlan,
+    height_four_step: Option<&HeightFourStepPlan>,
     input: &Buffer,
     reduced_b: &Buffer,
     half_buffer: &Buffer,
@@ -1102,15 +1419,127 @@ fn encode_inverse_2d_real(
     height_strided_params: &Buffer,
     input_layout: HeightFftMode,
     height_mode: HeightFftMode,
+    use_four_step: bool,
     complex_w: usize,
     fft_h: usize,
     batch_count: usize,
 ) {
     let width_inverse_input = match height_mode {
         HeightFftMode::Transpose => {
-            let height_input = match input_layout {
-                HeightFftMode::Transpose => input,
-                HeightFftMode::Strided => {
+            if input_layout == HeightFftMode::Transpose {
+                if use_four_step {
+                    if let Some(four_step) = height_four_step {
+                        encode_transpose(
+                            transpose_pipeline,
+                            command_buffer,
+                            input,
+                            transpose,
+                            &four_step.block_reverse_double_buffer,
+                            four_step.n1,
+                            four_step.n2,
+                            complex_w * batch_count,
+                        );
+                        encode_row_fft(
+                            row_pipeline,
+                            row_double_shared_pipeline,
+                            command_buffer,
+                            &four_step.inverse_stage1_double,
+                            transpose,
+                            reduced_b,
+                        );
+                        encode_transpose(
+                            transpose_pipeline,
+                            command_buffer,
+                            reduced_b,
+                            input,
+                            &four_step.block_forward_double_buffer,
+                            four_step.n2,
+                            four_step.n1,
+                            complex_w * batch_count,
+                        );
+                        encode_four_step_twiddle(
+                            four_step_twiddle_pipeline,
+                            command_buffer,
+                            input,
+                            &four_step.twiddle_double_params_buffer,
+                            &four_step.twiddle_inverse_buffer,
+                            four_step.n1,
+                            four_step.n2,
+                            complex_w * batch_count,
+                        );
+                        encode_row_fft(
+                            row_pipeline,
+                            row_double_shared_pipeline,
+                            command_buffer,
+                            &four_step.inverse_stage2_double,
+                            input,
+                            transpose,
+                        );
+                        encode_transpose(
+                            transpose_pipeline,
+                            command_buffer,
+                            transpose,
+                            reduced_b,
+                            &four_step.block_reverse_double_buffer,
+                            four_step.n1,
+                            four_step.n2,
+                            complex_w * batch_count,
+                        );
+                        encode_real_width_twiddled_stage(
+                            prepare_c2r_transposed_pipeline,
+                            command_buffer,
+                            reduced_b,
+                            half_buffer,
+                            real_width_params,
+                            twiddles,
+                            width_plan.len,
+                            width_plan.row_count,
+                        );
+                        half_buffer
+                    } else {
+                        encode_row_fft(
+                            row_pipeline,
+                            row_double_shared_pipeline,
+                            command_buffer,
+                            height_plan,
+                            input,
+                            reduced_b,
+                        );
+                        encode_real_width_twiddled_stage(
+                            prepare_c2r_transposed_pipeline,
+                            command_buffer,
+                            reduced_b,
+                            half_buffer,
+                            real_width_params,
+                            twiddles,
+                            width_plan.len,
+                            width_plan.row_count,
+                        );
+                        half_buffer
+                    }
+                } else {
+                    encode_row_fft(
+                        row_pipeline,
+                        row_double_shared_pipeline,
+                        command_buffer,
+                        height_plan,
+                        input,
+                        reduced_b,
+                    );
+                    encode_real_width_twiddled_stage(
+                        prepare_c2r_transposed_pipeline,
+                        command_buffer,
+                        reduced_b,
+                        half_buffer,
+                        real_width_params,
+                        twiddles,
+                        width_plan.len,
+                        width_plan.row_count,
+                    );
+                    half_buffer
+                }
+            } else {
+                let height_input = {
                     encode_transpose(
                         transpose_pipeline,
                         command_buffer,
@@ -1122,46 +1551,37 @@ fn encode_inverse_2d_real(
                         batch_count,
                     );
                     transpose
-                }
-            };
-            encode_row_fft(
-                row_pipeline,
-                row_double_shared_pipeline,
-                command_buffer,
-                height_plan,
-                height_input,
-                reduced_b,
-            );
-            let prepare_input = match input_layout {
-                HeightFftMode::Transpose => reduced_b,
-                HeightFftMode::Strided => {
-                    encode_transpose(
-                        transpose_pipeline,
-                        command_buffer,
-                        reduced_b,
-                        input,
-                        transpose_reverse_params,
-                        height_plan.len,
-                        complex_w,
-                        batch_count,
-                    );
-                    input
-                }
-            };
-            encode_real_width_twiddled_stage(
-                match input_layout {
-                    HeightFftMode::Transpose => prepare_c2r_transposed_pipeline,
-                    HeightFftMode::Strided => prepare_c2r_pipeline,
-                },
-                command_buffer,
-                prepare_input,
-                half_buffer,
-                real_width_params,
-                twiddles,
-                width_plan.len,
-                width_plan.row_count,
-            );
-            half_buffer
+                };
+                encode_row_fft(
+                    row_pipeline,
+                    row_double_shared_pipeline,
+                    command_buffer,
+                    height_plan,
+                    height_input,
+                    reduced_b,
+                );
+                encode_transpose(
+                    transpose_pipeline,
+                    command_buffer,
+                    reduced_b,
+                    input,
+                    transpose_reverse_params,
+                    height_plan.len,
+                    complex_w,
+                    batch_count,
+                );
+                encode_real_width_twiddled_stage(
+                    prepare_c2r_pipeline,
+                    command_buffer,
+                    input,
+                    half_buffer,
+                    real_width_params,
+                    twiddles,
+                    width_plan.len,
+                    width_plan.row_count,
+                );
+                half_buffer
+            }
         }
         HeightFftMode::Strided => {
             let height_input = match input_layout {
@@ -1327,6 +1747,24 @@ fn height_forward_mode() -> HeightFftMode {
         Some("transpose") => HeightFftMode::Transpose,
         _ => HeightFftMode::Transpose,
     }
+}
+
+fn use_height_four_step_forward() -> bool {
+    matches!(
+        std::env::var("WVF_METAL_GPU_HEIGHT_FOUR_STEP_FORWARD")
+            .ok()
+            .as_deref(),
+        Some("1") | Some("true") | Some("on") | Some("fourstep")
+    )
+}
+
+fn use_height_four_step_inverse() -> bool {
+    matches!(
+        std::env::var("WVF_METAL_GPU_HEIGHT_FOUR_STEP_INVERSE")
+            .ok()
+            .as_deref(),
+        Some("1") | Some("true") | Some("on") | Some("fourstep")
+    )
 }
 
 fn next_smooth_fft_size(mut value: u64) -> u64 {
