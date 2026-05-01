@@ -68,6 +68,13 @@ struct WvfFftRowPlanParams {
     uint weight_offset[WVF_MAX_FFT_STAGES];
 };
 
+struct WvfFftRealWidthParams {
+    uint fft_width;
+    uint half_width;
+    uint complex_width;
+    uint row_count;
+};
+
 inline int reflect_index(int value, int limit) {
     if (limit <= 1) {
         return 0;
@@ -258,6 +265,100 @@ kernel void wvf_fft_row_c2c_fused(
             dst[row_base + idx] = shared_row[idx];
         }
     }
+}
+
+kernel void wvf_fft_pack_real_pairs(
+    device const float* src [[buffer(0)]],
+    device float2* dst [[buffer(1)]],
+    constant WvfFftRealWidthParams& params [[buffer(2)]],
+    uint2 gid [[thread_position_in_grid]]
+) {
+    if (gid.x >= params.half_width || gid.y >= params.row_count) {
+        return;
+    }
+
+    const uint src_base = gid.y * params.fft_width + gid.x * 2u;
+    const uint dst_index = gid.y * params.half_width + gid.x;
+    dst[dst_index] = float2(src[src_base], src[src_base + 1u]);
+}
+
+kernel void wvf_fft_finalize_r2c(
+    device const float2* src [[buffer(0)]],
+    device float2* dst [[buffer(1)]],
+    constant WvfFftRealWidthParams& params [[buffer(2)]],
+    device const float2* twiddles [[buffer(3)]],
+    uint2 gid [[thread_position_in_grid]]
+) {
+    if (gid.x >= params.complex_width || gid.y >= params.row_count) {
+        return;
+    }
+
+    const uint src_row = gid.y * params.half_width;
+    const uint dst_row = gid.y * params.complex_width;
+    const uint k = gid.x;
+    const float2 z0 = src[src_row];
+    if (k == 0u) {
+        dst[dst_row] = float2(z0.x + z0.y, 0.0f);
+        return;
+    }
+    if (k == params.half_width) {
+        dst[dst_row + k] = float2(z0.x - z0.y, 0.0f);
+        return;
+    }
+
+    const float2 a = src[src_row + k];
+    const float2 mirrored = src[src_row + (params.half_width - k)];
+    const float2 b = float2(mirrored.x, -mirrored.y);
+    const float2 diff = a - b;
+    const float2 twiddled = complex_mul(twiddles[k], diff);
+    dst[dst_row + k] = 0.5f * ((a + b) + float2(twiddled.y, -twiddled.x));
+}
+
+kernel void wvf_fft_prepare_c2r(
+    device const float2* src [[buffer(0)]],
+    device float2* dst [[buffer(1)]],
+    constant WvfFftRealWidthParams& params [[buffer(2)]],
+    device const float2* twiddles [[buffer(3)]],
+    uint2 gid [[thread_position_in_grid]]
+) {
+    if (gid.x >= params.half_width || gid.y >= params.row_count) {
+        return;
+    }
+
+    const uint src_row = gid.y * params.complex_width;
+    const uint dst_row = gid.y * params.half_width;
+    const uint k = gid.x;
+    if (k == 0u) {
+        const float x0 = src[src_row].x;
+        const float xm = src[src_row + params.half_width].x;
+        dst[dst_row] = float2(0.5f * (x0 + xm), 0.5f * (x0 - xm));
+        return;
+    }
+
+    const float2 xk = src[src_row + k];
+    const float2 mirrored = src[src_row + (params.half_width - k)];
+    const float2 y = float2(mirrored.x, -mirrored.y);
+    const float2 diff = xk - y;
+    const float2 conj_twiddle = float2(twiddles[k].x, -twiddles[k].y);
+    const float2 twiddled = complex_mul(conj_twiddle, diff);
+    dst[dst_row + k] = 0.5f * ((xk + y) + float2(-twiddled.y, twiddled.x));
+}
+
+kernel void wvf_fft_unpack_real_pairs(
+    device const float2* src [[buffer(0)]],
+    device float* dst [[buffer(1)]],
+    constant WvfFftRealWidthParams& params [[buffer(2)]],
+    uint2 gid [[thread_position_in_grid]]
+) {
+    if (gid.x >= params.half_width || gid.y >= params.row_count) {
+        return;
+    }
+
+    const uint src_index = gid.y * params.half_width + gid.x;
+    const uint dst_base = gid.y * params.fft_width + gid.x * 2u;
+    const float2 value = src[src_index];
+    dst[dst_base] = value.x;
+    dst[dst_base + 1u] = value.y;
 }
 
 kernel void wvf_fft_transpose_c2c(
