@@ -36,6 +36,9 @@ _FFT_BACKENDS = {"auto", "cpu", "vkfft", "metal", "gpu"}
 _AUTO_FFT_CACHE_VERSION = 2
 _AUTO_FFT_CACHE: dict[str, str] | None = None
 
+VARIANT_NAMES = tuple(dict.fromkeys(_VARIANTS))
+FFT_BACKEND_NAMES = ("auto", "cpu", "vkfft")
+
 
 def _package_root() -> Path:
     return Path(__file__).resolve().parent
@@ -375,6 +378,38 @@ def metal_backend_available() -> bool:
     except (MetalBackendError, OSError):
         return False
     return True
+
+
+def backend_info() -> dict[str, object]:
+    """Return basic installation and backend diagnostics."""
+    native_error: str | None = None
+    native_available = True
+    try:
+        _load_library()
+    except (MetalBackendError, OSError) as exc:
+        native_available = False
+        native_error = str(exc)
+
+    cuda_runtime_dir = _linux_cuda_runtime_lib_dir()
+    return {
+        "package": "wvf-metal",
+        "system": platform.system(),
+        "machine": platform.machine(),
+        "python": platform.python_version(),
+        "package_root": str(_package_root()),
+        "target_dir": str(_target_dir()),
+        "cache_dir": str(_user_cache_dir()),
+        "cargo_in_path": shutil.which("cargo") is not None,
+        "native_backend_available": native_available,
+        "native_backend_error": native_error,
+        "spatial_variants_supported": platform.system() == "Darwin",
+        "fft_variants_supported": platform.system() in {"Darwin", "Linux"},
+        "available_variants": VARIANT_NAMES,
+        "available_fft_backends": FFT_BACKEND_NAMES,
+        "detected_cuda_runtime_lib_dir": (
+            None if cuda_runtime_dir is None else str(cuda_runtime_dir)
+        ),
+    }
 
 
 def _normalize_fft_backend(fft_backend: str | None) -> str:

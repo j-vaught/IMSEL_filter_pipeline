@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 import numpy as np
 
-from .metal import wvf_magnitude_angle_metal
+from . import backend_info, components, gradients, magnitude, magnitude_orientation
 
 
 def _load_array(path: Path, key: str | None) -> np.ndarray:
@@ -40,7 +41,7 @@ def _load_array(path: Path, key: str | None) -> np.ndarray:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run standalone WVF gradients with native GPU or Rust CPU FFT backends."
+        description="Run standalone WVF outputs with native GPU or Rust CPU FFT backends."
     )
     parser.add_argument("input", type=Path, help="Input .npy, .npz, or image path.")
     parser.add_argument("output", type=Path, help="Output .npz path.")
@@ -63,6 +64,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="GPU device index for native GPU execution.",
     )
+    parser.add_argument(
+        "--mode",
+        choices=("gradients", "magnitude", "magnitude-angle", "all"),
+        default="all",
+        help="Requested output mode.",
+    )
     parser.add_argument("--key", default=None, help="Array key when input is .npz.")
     return parser
 
@@ -70,26 +77,46 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     image = _load_array(args.input, args.key)
-    gx, gy, mag, angle = wvf_magnitude_angle_metal(
-        image,
-        radius=args.radius,
-        degree=args.degree,
-        variant=args.variant,
-        fft_backend=args.fft_backend,
-        device_index=args.device_index,
-    )
+
+    payload: dict[str, object] = {
+        "radius": np.int32(args.radius),
+        "degree": np.int32(args.degree),
+        "variant": args.variant,
+        "mode": args.mode,
+        "input_path": str(args.input),
+    }
+    common_kwargs = {
+        "radius": args.radius,
+        "degree": args.degree,
+        "variant": args.variant,
+        "fft_backend": args.fft_backend,
+        "device_index": args.device_index,
+    }
+    if args.mode == "gradients":
+        result = gradients(image, **common_kwargs)
+        payload["gx"] = result.gx
+        payload["gy"] = result.gy
+    elif args.mode == "magnitude":
+        payload["magnitude"] = magnitude(image, **common_kwargs)
+    elif args.mode == "magnitude-angle":
+        result = magnitude_orientation(image, **common_kwargs)
+        payload["magnitude"] = result.magnitude
+        payload["angle"] = result.angle
+    else:
+        result = components(image, **common_kwargs)
+        payload["gx"] = result.gx
+        payload["gy"] = result.gy
+        payload["magnitude"] = result.magnitude
+        payload["angle"] = result.angle
+
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(
-        args.output,
-        gx=gx,
-        gy=gy,
-        magnitude=mag,
-        angle=angle,
-        radius=np.int32(args.radius),
-        degree=np.int32(args.degree),
-        variant=args.variant,
-        input_path=str(args.input),
-    )
+    np.savez_compressed(args.output, **payload)
+    return 0
+
+
+def doctor_main(argv: list[str] | None = None) -> int:
+    del argv
+    print(json.dumps(backend_info(), indent=2, sort_keys=True))
     return 0
 
 

@@ -1,12 +1,10 @@
-# Standalone WVF Metal
+# WVF Metal
 
-This folder is a copyable WVF package with native FFT backends for backend
-`3`. WVF weights are built and cached in Rust for both the bundled VkFFT path
-and the restored Rust CPU FFT path. On macOS, the spatial variants use the
-`metal` crate directly. On Linux, `variant="fft"` and `variant="vkfft"` are
-available through the bundled VkFFT CUDA bridge or the restored Rust CPU FFT
-backend. Python only loads inputs, allocates output arrays, and calls the Rust
-dynamic library.
+This folder is a standalone WVF package with native backends. On macOS, the
+spatial variants use Metal directly. On macOS and Linux, the FFT path uses the
+bundled VkFFT bridge when available and falls back to the Rust CPU FFT backend
+when needed. Python only loads inputs, allocates output arrays, and calls the
+native library.
 
 ## Requirements
 
@@ -25,7 +23,7 @@ dynamic library.
 Image-file input for the CLI also needs `imageio`. Array input through `.npy`
 or `.npz` does not.
 
-## Install From This Folder
+## Install
 
 ```bash
 cd wvf_metal
@@ -34,26 +32,38 @@ source .venv/bin/activate
 pip install -e .
 ```
 
+If you want image-file CLI input, install the `image` extra:
+
+```bash
+pip install -e .[image]
+```
+
 The Rust dynamic library builds automatically on first use and is cached under
 `wvf_metal/build/target`.
+
+For an installation report, run:
+
+```bash
+wvf-metal-doctor
+```
 
 ## Python API
 
 ```python
 import numpy as np
 from wvf_metal import (
-    wvf_gradients_metal,
-    wvf_magnitude_metal,
-    wvf_magnitude_orientation_metal,
-    wvf_magnitude_angle_metal,
+    gradients,
+    magnitude,
+    magnitude_orientation,
+    components,
 )
 
 image = np.random.default_rng(0).random((1024, 1024), dtype=np.float32)
-gx, gy = wvf_gradients_metal(image, radius=9, degree=3)
-mag = wvf_magnitude_metal(image, radius=9, degree=3)
-mag, angle = wvf_magnitude_orientation_metal(image, radius=9, degree=3)
-gx, gy, magnitude, angle = wvf_magnitude_angle_metal(image, radius=9, degree=3)
-gx, gy, magnitude, angle = wvf_magnitude_angle_metal(
+gx, gy = gradients(image, radius=9, degree=3)
+mag = magnitude(image, radius=9, degree=3)
+mag, angle = magnitude_orientation(image, radius=9, degree=3)
+gx, gy, mag, angle = components(image, radius=9, degree=3)
+gx, gy, mag, angle = components(
     image,
     radius=44,
     degree=3,
@@ -61,6 +71,12 @@ gx, gy, magnitude, angle = wvf_magnitude_angle_metal(
     fft_backend="cpu",
 )
 ```
+
+Compatibility aliases remain available:
+- `wvf_gradients_metal`
+- `wvf_magnitude_metal`
+- `wvf_magnitude_orientation_metal`
+- `wvf_magnitude_angle_metal`
 
 The default variant is `split` on macOS. For comparisons, pass
 `variant="direct"`, `variant="antipodal"`, or `variant="fft"`.
@@ -121,19 +137,23 @@ Linux notes:
 
 ```bash
 wvf-metal input.npy output.npz --radius 9 --degree 3
+wvf-metal input.npy output.npz --radius 9 --degree 3 --mode gradients
+wvf-metal input.npy output.npz --radius 9 --degree 3 --mode magnitude
+wvf-metal input.npy output.npz --radius 9 --degree 3 --mode magnitude-angle
 wvf-metal input.npz output.npz --key image --radius 15 --degree 3 --variant direct
 wvf-metal input.npy output.npz --radius 44 --degree 3 --variant fft
 wvf-metal input.npy output.npz --radius 44 --degree 3 --variant fft --fft-backend cpu
+wvf-metal-doctor
 wvf-metal-regression
 ```
 
-The output archive contains `gx`, `gy`, `magnitude`, `angle`, `radius`,
-`degree`, `variant`, and `input_path`.
+The output archive always contains `radius`, `degree`, `variant`, `mode`, and
+`input_path`, plus whichever arrays match the requested `--mode`.
 
 ## File Map
 
-- `metal.py` selects the Rust CPU FFT or VkFFT backend for `variant="fft"` and
-  exposes the Python API.
+- `api.py` contains the short public API.
+- `metal.py` contains the native binding, backend selection, and install logic.
 - `cli.py` provides the command line wrapper.
 - `fft_regression.py` compares `split` against the VkFFT backend for
   correctness and warm performance.

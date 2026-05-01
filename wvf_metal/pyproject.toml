@@ -4,18 +4,45 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wvf-metal"
-version = "0.1.0"
-description = "Standalone Metal implementation of radius-defined Wide View Filter gradients"
+version = "0.2.0"
+description = "Standalone native WVF gradients with macOS Metal, VkFFT, CUDA, and Rust CPU FFT backends"
+readme = "README.md"
 requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "J.C. Vaught", email = "jvaught@sc.edu"},
+]
+keywords = ["wvf", "edge-detection", "fft", "metal", "cuda", "image-processing"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Rust",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
 dependencies = [
     "numpy>=1.24",
 ]
 
+[project.urls]
+Homepage = "https://github.com/j-vaught/edge-detection-filter-critique"
+Repository = "https://github.com/j-vaught/edge-detection-filter-critique"
+Issues = "https://github.com/j-vaught/edge-detection-filter-critique/issues"
+
 [project.optional-dependencies]
 image = ["imageio>=2.31"]
+all = ["imageio>=2.31"]
 
 [project.scripts]
 wvf-metal = "wvf_metal.cli:main"
+wvf-metal-doctor = "wvf_metal.cli:doctor_main"
 wvf-metal-regression = "wvf_metal.fft_regression:main"
 
 [tool.setuptools]
