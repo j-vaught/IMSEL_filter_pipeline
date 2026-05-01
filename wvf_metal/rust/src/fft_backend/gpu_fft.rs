@@ -51,6 +51,7 @@ struct WvfFftRealWidthParams {
     half_width: c_uint,
     complex_width: c_uint,
     row_count: c_uint,
+    rows_per_batch: c_uint,
 }
 
 #[repr(C)]
@@ -91,6 +92,7 @@ struct KernelKey {
     radius: c_uint,
     kernel_width: c_uint,
     kernel_hash: u64,
+    transposed_layout: bool,
 }
 
 struct RowPlan {
@@ -100,6 +102,7 @@ struct RowPlan {
     weights_buffer: Buffer,
     threadgroup_width: u64,
     threadgroup_bytes: u64,
+    double_shared: bool,
 }
 
 struct ImagePlan {
@@ -154,10 +157,13 @@ pub(super) struct GpuFftBackend {
     queue: CommandQueue,
     pad_pipeline: ComputePipelineState,
     row_pipeline: ComputePipelineState,
+    row_double_shared_pipeline: ComputePipelineState,
     row_strided_pipeline: ComputePipelineState,
     pack_real_pipeline: ComputePipelineState,
     finalize_r2c_pipeline: ComputePipelineState,
+    finalize_r2c_transposed_pipeline: ComputePipelineState,
     prepare_c2r_pipeline: ComputePipelineState,
+    prepare_c2r_transposed_pipeline: ComputePipelineState,
     unpack_real_pipeline: ComputePipelineState,
     transpose_pipeline: ComputePipelineState,
     multiply_pipeline: ComputePipelineState,
@@ -175,10 +181,16 @@ impl GpuFftBackend {
         let library = compile_library(&device, FFT_SHADER_SOURCE)?;
         let pad_pipeline = pipeline(&device, &library, "wvf_fft_reflect_pad_real_dense")?;
         let row_pipeline = pipeline(&device, &library, "wvf_fft_row_c2c_fused")?;
+        let row_double_shared_pipeline =
+            pipeline(&device, &library, "wvf_fft_row_c2c_double_shared_fused")?;
         let row_strided_pipeline = pipeline(&device, &library, "wvf_fft_row_c2c_strided_fused")?;
         let pack_real_pipeline = pipeline(&device, &library, "wvf_fft_pack_real_pairs")?;
         let finalize_r2c_pipeline = pipeline(&device, &library, "wvf_fft_finalize_r2c")?;
+        let finalize_r2c_transposed_pipeline =
+            pipeline(&device, &library, "wvf_fft_finalize_r2c_transposed")?;
         let prepare_c2r_pipeline = pipeline(&device, &library, "wvf_fft_prepare_c2r")?;
+        let prepare_c2r_transposed_pipeline =
+            pipeline(&device, &library, "wvf_fft_prepare_c2r_transposed")?;
         let unpack_real_pipeline = pipeline(&device, &library, "wvf_fft_unpack_real_pairs")?;
         let transpose_pipeline = pipeline(&device, &library, "wvf_fft_transpose_c2c")?;
         let multiply_pipeline = pipeline(&device, &library, "wvf_fft_multiply_spectra")?;
@@ -188,10 +200,13 @@ impl GpuFftBackend {
             queue,
             pad_pipeline,
             row_pipeline,
+            row_double_shared_pipeline,
             row_strided_pipeline,
             pack_real_pipeline,
             finalize_r2c_pipeline,
+            finalize_r2c_transposed_pipeline,
             prepare_c2r_pipeline,
+            prepare_c2r_transposed_pipeline,
             unpack_real_pipeline,
             transpose_pipeline,
             multiply_pipeline,
@@ -245,17 +260,14 @@ impl GpuFftBackend {
             let plan = self.build_image_plan(key)?;
             self.image_plans.insert(key, plan);
         }
-        let spectrum_buffer = self.kernel_spectra(key, kernels)?;
+        let forward_height_mode = height_forward_mode();
+        let inverse_height_mode = height_inverse_mode();
+        let spectrum_buffer = self.kernel_spectra(key, kernels, forward_height_mode)?;
         let plan = self
             .image_plans
             .get(&key)
             .ok_or_else(|| "GPU FFT image plan cache insertion failed".to_string())?;
-        let forward_height_mode = height_forward_mode();
-        let inverse_height_mode = height_inverse_mode();
-        let single_spectrum = match forward_height_mode {
-            HeightFftMode::Transpose => &plan.single_reduced_a,
-            HeightFftMode::Strided => &plan.single_reduced_b,
-        };
+        let single_spectrum = &plan.single_reduced_b;
 
         let image_len = crate::checked_image_pixels(width, height)?;
         let image_bytes = crate::checked_len(image_len, size_of::<c_float>(), "image")?;
@@ -307,9 +319,11 @@ impl GpuFftBackend {
         );
         encode_forward_2d_real(
             &self.row_pipeline,
+            &self.row_double_shared_pipeline,
             &self.row_strided_pipeline,
             &self.pack_real_pipeline,
             &self.finalize_r2c_pipeline,
+            &self.finalize_r2c_transposed_pipeline,
             &self.transpose_pipeline,
             &command_buffer,
             &plan.width_forward_single,
@@ -341,8 +355,10 @@ impl GpuFftBackend {
         );
         encode_inverse_2d_real(
             &self.row_pipeline,
+            &self.row_double_shared_pipeline,
             &self.row_strided_pipeline,
             &self.prepare_c2r_pipeline,
+            &self.prepare_c2r_transposed_pipeline,
             &self.unpack_real_pipeline,
             &self.transpose_pipeline,
             &command_buffer,
@@ -358,6 +374,7 @@ impl GpuFftBackend {
             &plan.transpose_forward_double_buffer,
             &plan.transpose_reverse_double_buffer,
             &plan.height_strided_double_buffer,
+            forward_height_mode,
             inverse_height_mode,
             plan.complex_w,
             plan.fft_h,
@@ -385,6 +402,7 @@ impl GpuFftBackend {
         &mut self,
         plan_key: PlanKey,
         kernels: &DenseConvolutionKernels,
+        height_mode: HeightFftMode,
     ) -> Result<Buffer, String> {
         let kernel_hash = hash_f32_bytes(&kernels.kernel_x, 14695981039346656037);
         let kernel_hash = hash_f32_bytes(&kernels.kernel_y, kernel_hash);
@@ -394,6 +412,7 @@ impl GpuFftBackend {
             radius: plan_key.radius,
             kernel_width: kernels.kernel_width,
             kernel_hash,
+            transposed_layout: height_mode == HeightFftMode::Transpose,
         };
         if !self.kernel_spectra.contains_key(&key) {
             let plan = self
@@ -422,9 +441,11 @@ impl GpuFftBackend {
             let command_buffer = self.queue.new_command_buffer();
             encode_forward_2d_real(
                 &self.row_pipeline,
+                &self.row_double_shared_pipeline,
                 &self.row_strided_pipeline,
                 &self.pack_real_pipeline,
                 &self.finalize_r2c_pipeline,
+                &self.finalize_r2c_transposed_pipeline,
                 &self.transpose_pipeline,
                 &command_buffer,
                 &plan.width_forward_double,
@@ -441,7 +462,7 @@ impl GpuFftBackend {
                 &plan.transpose_forward_double_buffer,
                 &plan.transpose_reverse_double_buffer,
                 &plan.height_strided_double_buffer,
-                HeightFftMode::Transpose,
+                height_mode,
                 plan.complex_w,
                 2,
             );
@@ -502,17 +523,17 @@ impl GpuFftBackend {
         let width_radices = factor_fft_length(half_w)?;
         let height_radices = factor_fft_length(fft_h)?;
         let width_forward_single =
-            build_row_plan(&self.device, &self.row_pipeline, half_w, fft_h, 1, &width_radices, false)?;
+            build_row_plan(&self.device, &self.row_pipeline, half_w, fft_h, 1, &width_radices, false, true)?;
         let width_forward_double =
-            build_row_plan(&self.device, &self.row_pipeline, half_w, fft_h, 2, &width_radices, false)?;
+            build_row_plan(&self.device, &self.row_pipeline, half_w, fft_h, 2, &width_radices, false, true)?;
         let width_inverse_double =
-            build_row_plan(&self.device, &self.row_pipeline, half_w, fft_h, 2, &width_radices, true)?;
+            build_row_plan(&self.device, &self.row_pipeline, half_w, fft_h, 2, &width_radices, true, true)?;
         let height_forward_single =
-            build_row_plan(&self.device, &self.row_strided_pipeline, fft_h, complex_w, 1, &height_radices, false)?;
+            build_row_plan(&self.device, &self.row_strided_pipeline, fft_h, complex_w, 1, &height_radices, false, false)?;
         let height_forward_double =
-            build_row_plan(&self.device, &self.row_strided_pipeline, fft_h, complex_w, 2, &height_radices, false)?;
+            build_row_plan(&self.device, &self.row_strided_pipeline, fft_h, complex_w, 2, &height_radices, false, false)?;
         let height_inverse_double =
-            build_row_plan(&self.device, &self.row_strided_pipeline, fft_h, complex_w, 2, &height_radices, true)?;
+            build_row_plan(&self.device, &self.row_strided_pipeline, fft_h, complex_w, 2, &height_radices, true, false)?;
         let real_width_twiddles = build_real_width_twiddles(fft_w);
 
         let private = MTLResourceOptions::StorageModePrivate;
@@ -549,6 +570,7 @@ impl GpuFftBackend {
             half_width: half_w as c_uint,
             complex_width: complex_w as c_uint,
             row_count: key.fft_h,
+            rows_per_batch: key.fft_h,
         };
         let real_width_double = WvfFftRealWidthParams {
             fft_width: key.fft_w,
@@ -558,6 +580,7 @@ impl GpuFftBackend {
                 .fft_h
                 .checked_mul(2)
                 .ok_or_else(|| "batched row count exceeded uint32".to_string())?,
+            rows_per_batch: key.fft_h,
         };
         let transpose_forward_single = WvfFftTransposeParams {
             width: complex_w as c_uint,
@@ -669,6 +692,7 @@ fn build_row_plan(
     batch_count: usize,
     radices: &[u32],
     inverse: bool,
+    allow_double_shared: bool,
 ) -> Result<RowPlan, String> {
     if radices.len() > MAX_STAGES {
         return Err("FFT stage count exceeded static GPU plan limit".to_string());
@@ -704,6 +728,7 @@ fn build_row_plan(
     );
     let threadgroup_width = choose_row_threadgroup_width(pipeline, len);
     let threadgroup_bytes = (len * size_of::<Complex32>()) as u64;
+    let double_shared = allow_double_shared && threadgroup_bytes.saturating_mul(2) <= 32 * 1024;
     Ok(RowPlan {
         len,
         row_count: rows * batch_count,
@@ -711,6 +736,7 @@ fn build_row_plan(
         weights_buffer,
         threadgroup_width,
         threadgroup_bytes,
+        double_shared,
     })
 }
 
@@ -814,15 +840,24 @@ fn encode_reflect_pad(
 }
 
 fn encode_row_fft(
-    pipeline: &ComputePipelineState,
+    row_pipeline: &ComputePipelineState,
+    row_double_shared_pipeline: &ComputePipelineState,
     command_buffer: &metal::CommandBufferRef,
     plan: &RowPlan,
     input: &Buffer,
     output: &Buffer,
 ) {
     let encoder = command_buffer.new_compute_command_encoder();
+    let pipeline = if plan.double_shared {
+        row_double_shared_pipeline
+    } else {
+        row_pipeline
+    };
     encoder.set_compute_pipeline_state(pipeline);
     encoder.set_threadgroup_memory_length(0, plan.threadgroup_bytes);
+    if plan.double_shared {
+        encoder.set_threadgroup_memory_length(1, plan.threadgroup_bytes);
+    }
     encoder.set_buffer(0, Some(input), 0);
     encoder.set_buffer(1, Some(output), 0);
     encoder.set_buffer(2, Some(&plan.params_buffer), 0);
@@ -957,9 +992,11 @@ fn encode_real_width_twiddled_stage(
 
 fn encode_forward_2d_real(
     row_pipeline: &ComputePipelineState,
+    row_double_shared_pipeline: &ComputePipelineState,
     row_strided_pipeline: &ComputePipelineState,
     pack_real_pipeline: &ComputePipelineState,
     finalize_r2c_pipeline: &ComputePipelineState,
+    _finalize_r2c_transposed_pipeline: &ComputePipelineState,
     transpose_pipeline: &ComputePipelineState,
     command_buffer: &metal::CommandBufferRef,
     width_plan: &RowPlan,
@@ -968,13 +1005,13 @@ fn encode_forward_2d_real(
     half_input: &Buffer,
     half_work: &Buffer,
     reduced_a: &Buffer,
-    reduced_b: &Buffer,
+    _reduced_b: &Buffer,
     transpose: &Buffer,
     output: &Buffer,
     real_width_params: &Buffer,
     twiddles: &Buffer,
     transpose_forward_params: &Buffer,
-    transpose_reverse_params: &Buffer,
+    _transpose_reverse_params: &Buffer,
     height_strided_params: &Buffer,
     height_mode: HeightFftMode,
     complex_w: usize,
@@ -990,7 +1027,14 @@ fn encode_forward_2d_real(
         width_plan.len,
         row_count,
     );
-    encode_row_fft(row_pipeline, command_buffer, width_plan, half_input, half_work);
+    encode_row_fft(
+        row_pipeline,
+        row_double_shared_pipeline,
+        command_buffer,
+        width_plan,
+        half_input,
+        half_work,
+    );
     encode_real_width_twiddled_stage(
         finalize_r2c_pipeline,
         command_buffer,
@@ -1013,16 +1057,13 @@ fn encode_forward_2d_real(
                 height_plan.len,
                 batch_count,
             );
-            encode_row_fft(row_pipeline, command_buffer, height_plan, transpose, reduced_b);
-            encode_transpose(
-                transpose_pipeline,
+            encode_row_fft(
+                row_pipeline,
+                row_double_shared_pipeline,
                 command_buffer,
-                reduced_b,
+                height_plan,
+                transpose,
                 output,
-                transpose_reverse_params,
-                height_plan.len,
-                complex_w,
-                batch_count,
             );
         }
         HeightFftMode::Strided => {
@@ -1040,8 +1081,10 @@ fn encode_forward_2d_real(
 
 fn encode_inverse_2d_real(
     row_pipeline: &ComputePipelineState,
+    row_double_shared_pipeline: &ComputePipelineState,
     row_strided_pipeline: &ComputePipelineState,
     prepare_c2r_pipeline: &ComputePipelineState,
+    prepare_c2r_transposed_pipeline: &ComputePipelineState,
     unpack_real_pipeline: &ComputePipelineState,
     transpose_pipeline: &ComputePipelineState,
     command_buffer: &metal::CommandBufferRef,
@@ -1057,6 +1100,7 @@ fn encode_inverse_2d_real(
     transpose_forward_params: &Buffer,
     transpose_reverse_params: &Buffer,
     height_strided_params: &Buffer,
+    input_layout: HeightFftMode,
     height_mode: HeightFftMode,
     complex_w: usize,
     fft_h: usize,
@@ -1064,52 +1108,107 @@ fn encode_inverse_2d_real(
 ) {
     let width_inverse_input = match height_mode {
         HeightFftMode::Transpose => {
-            encode_transpose(
-                transpose_pipeline,
+            let height_input = match input_layout {
+                HeightFftMode::Transpose => input,
+                HeightFftMode::Strided => {
+                    encode_transpose(
+                        transpose_pipeline,
+                        command_buffer,
+                        input,
+                        transpose,
+                        transpose_forward_params,
+                        complex_w,
+                        fft_h,
+                        batch_count,
+                    );
+                    transpose
+                }
+            };
+            encode_row_fft(
+                row_pipeline,
+                row_double_shared_pipeline,
                 command_buffer,
-                input,
-                transpose,
-                transpose_forward_params,
-                complex_w,
-                fft_h,
-                batch_count,
-            );
-            encode_row_fft(row_pipeline, command_buffer, height_plan, transpose, reduced_b);
-            encode_transpose(
-                transpose_pipeline,
-                command_buffer,
+                height_plan,
+                height_input,
                 reduced_b,
-                input,
-                transpose_reverse_params,
-                height_plan.len,
-                complex_w,
-                batch_count,
             );
-            input
+            let prepare_input = match input_layout {
+                HeightFftMode::Transpose => reduced_b,
+                HeightFftMode::Strided => {
+                    encode_transpose(
+                        transpose_pipeline,
+                        command_buffer,
+                        reduced_b,
+                        input,
+                        transpose_reverse_params,
+                        height_plan.len,
+                        complex_w,
+                        batch_count,
+                    );
+                    input
+                }
+            };
+            encode_real_width_twiddled_stage(
+                match input_layout {
+                    HeightFftMode::Transpose => prepare_c2r_transposed_pipeline,
+                    HeightFftMode::Strided => prepare_c2r_pipeline,
+                },
+                command_buffer,
+                prepare_input,
+                half_buffer,
+                real_width_params,
+                twiddles,
+                width_plan.len,
+                width_plan.row_count,
+            );
+            half_buffer
         }
         HeightFftMode::Strided => {
+            let height_input = match input_layout {
+                HeightFftMode::Transpose => {
+                    encode_transpose(
+                        transpose_pipeline,
+                        command_buffer,
+                        input,
+                        transpose,
+                        transpose_reverse_params,
+                        fft_h,
+                        complex_w,
+                        batch_count,
+                    );
+                    transpose
+                }
+                HeightFftMode::Strided => input,
+            };
             encode_row_fft_strided(
                 row_strided_pipeline,
                 command_buffer,
                 height_plan,
                 height_strided_params,
-                input,
+                height_input,
                 reduced_b,
             );
-            reduced_b
+            encode_real_width_twiddled_stage(
+                prepare_c2r_pipeline,
+                command_buffer,
+                reduced_b,
+                half_buffer,
+                real_width_params,
+                twiddles,
+                width_plan.len,
+                width_plan.row_count,
+            );
+            half_buffer
         }
     };
-    encode_real_width_twiddled_stage(
-        prepare_c2r_pipeline,
+    encode_row_fft(
+        row_pipeline,
+        row_double_shared_pipeline,
         command_buffer,
+        width_plan,
         width_inverse_input,
-        half_buffer,
-        real_width_params,
-        twiddles,
-        width_plan.len,
-        width_plan.row_count,
+        transpose,
     );
-    encode_row_fft(row_pipeline, command_buffer, width_plan, half_buffer, transpose);
     encode_real_width_stage(
         unpack_real_pipeline,
         command_buffer,

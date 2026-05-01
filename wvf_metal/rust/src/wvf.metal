@@ -80,6 +80,7 @@ struct WvfFftRealWidthParams {
     uint half_width;
     uint complex_width;
     uint row_count;
+    uint rows_per_batch;
 };
 
 inline int reflect_index(int value, int limit) {
@@ -274,6 +275,65 @@ kernel void wvf_fft_row_c2c_fused(
     }
 }
 
+kernel void wvf_fft_row_c2c_double_shared_fused(
+    device const float2* src [[buffer(0)]],
+    device float2* dst [[buffer(1)]],
+    constant WvfFftRowPlanParams& plan [[buffer(2)]],
+    device const float2* weights [[buffer(3)]],
+    threadgroup float2* shared_a [[threadgroup(0)]],
+    threadgroup float2* shared_b [[threadgroup(1)]],
+    uint3 thread_position_in_threadgroup [[thread_position_in_threadgroup]],
+    uint3 threads_per_threadgroup [[threads_per_threadgroup]],
+    uint3 threadgroup_position [[threadgroup_position_in_grid]]
+) {
+    const uint tid = thread_position_in_threadgroup.x;
+    const uint threads_per_group = threads_per_threadgroup.x;
+    const uint row_index = threadgroup_position.y;
+    if (row_index >= plan.row_count) {
+        return;
+    }
+
+    const uint row_base = row_index * plan.row_len;
+    for (uint idx = tid; idx < plan.row_len; idx += threads_per_group) {
+        shared_a[idx] = src[row_base + idx];
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    bool read_from_a = true;
+    for (uint stage = 0; stage < plan.stage_count; ++stage) {
+        const uint radix = plan.radix[stage];
+        const uint stride = plan.stride[stage];
+        const uint prev = plan.prev[stage];
+        const uint weight_offset = plan.weight_offset[stage];
+
+        threadgroup float2* read_buffer = read_from_a ? shared_a : shared_b;
+        threadgroup float2* write_buffer = read_from_a ? shared_b : shared_a;
+        for (uint idx = tid; idx < plan.row_len; idx += threads_per_group) {
+            const uint group = idx / stride;
+            const uint q = idx - group * stride;
+            const uint p = group % prev;
+
+            float2 sum = float2(0.0f, 0.0f);
+            for (uint l = 0; l < WVF_MAX_FFT_STAGES; ++l) {
+                if (l >= radix) {
+                    break;
+                }
+                const uint input_index = q + stride * (radix * p + l);
+                sum = complex_add(sum, complex_mul(read_buffer[input_index], weights[weight_offset + group * radix + l]));
+            }
+            write_buffer[idx] = sum;
+        }
+
+        threadgroup_barrier(mem_flags::mem_threadgroup);
+        read_from_a = !read_from_a;
+    }
+
+    threadgroup float2* final_buffer = read_from_a ? shared_a : shared_b;
+    for (uint idx = tid; idx < plan.row_len; idx += threads_per_group) {
+        dst[row_base + idx] = final_buffer[idx];
+    }
+}
+
 kernel void wvf_fft_row_c2c_strided_fused(
     device const float2* src [[buffer(0)]],
     device float2* dst [[buffer(1)]],
@@ -391,6 +451,41 @@ kernel void wvf_fft_finalize_r2c(
     dst[dst_row + k] = 0.5f * ((a + b) + float2(twiddled.y, -twiddled.x));
 }
 
+kernel void wvf_fft_finalize_r2c_transposed(
+    device const float2* src [[buffer(0)]],
+    device float2* dst [[buffer(1)]],
+    constant WvfFftRealWidthParams& params [[buffer(2)]],
+    device const float2* twiddles [[buffer(3)]],
+    uint2 gid [[thread_position_in_grid]]
+) {
+    if (gid.x >= params.complex_width || gid.y >= params.row_count) {
+        return;
+    }
+
+    const uint batch = gid.y / params.rows_per_batch;
+    const uint row_in_batch = gid.y - batch * params.rows_per_batch;
+    const uint src_row = gid.y * params.half_width;
+    const uint dst_plane_stride = params.complex_width * params.rows_per_batch;
+    const uint dst_index = batch * dst_plane_stride + gid.x * params.rows_per_batch + row_in_batch;
+    const uint k = gid.x;
+    const float2 z0 = src[src_row];
+    if (k == 0u) {
+        dst[dst_index] = float2(z0.x + z0.y, 0.0f);
+        return;
+    }
+    if (k == params.half_width) {
+        dst[dst_index] = float2(z0.x - z0.y, 0.0f);
+        return;
+    }
+
+    const float2 a = src[src_row + k];
+    const float2 mirrored = src[src_row + (params.half_width - k)];
+    const float2 b = float2(mirrored.x, -mirrored.y);
+    const float2 diff = a - b;
+    const float2 twiddled = complex_mul(twiddles[k], diff);
+    dst[dst_index] = 0.5f * ((a + b) + float2(twiddled.y, -twiddled.x));
+}
+
 kernel void wvf_fft_prepare_c2r(
     device const float2* src [[buffer(0)]],
     device float2* dst [[buffer(1)]],
@@ -414,6 +509,40 @@ kernel void wvf_fft_prepare_c2r(
 
     const float2 xk = src[src_row + k];
     const float2 mirrored = src[src_row + (params.half_width - k)];
+    const float2 y = float2(mirrored.x, -mirrored.y);
+    const float2 diff = xk - y;
+    const float2 conj_twiddle = float2(twiddles[k].x, -twiddles[k].y);
+    const float2 twiddled = complex_mul(conj_twiddle, diff);
+    dst[dst_row + k] = 0.5f * ((xk + y) + float2(-twiddled.y, twiddled.x));
+}
+
+kernel void wvf_fft_prepare_c2r_transposed(
+    device const float2* src [[buffer(0)]],
+    device float2* dst [[buffer(1)]],
+    constant WvfFftRealWidthParams& params [[buffer(2)]],
+    device const float2* twiddles [[buffer(3)]],
+    uint2 gid [[thread_position_in_grid]]
+) {
+    if (gid.x >= params.half_width || gid.y >= params.row_count) {
+        return;
+    }
+
+    const uint batch = gid.y / params.rows_per_batch;
+    const uint row_in_batch = gid.y - batch * params.rows_per_batch;
+    const uint src_plane_stride = params.complex_width * params.rows_per_batch;
+    const uint src_row = batch * src_plane_stride + row_in_batch;
+    const uint dst_row = gid.y * params.half_width;
+    const uint k = gid.x;
+    if (k == 0u) {
+        const float x0 = src[src_row].x;
+        const float xm = src[batch * src_plane_stride + params.half_width * params.rows_per_batch + row_in_batch].x;
+        dst[dst_row] = float2(0.5f * (x0 + xm), 0.5f * (x0 - xm));
+        return;
+    }
+
+    const float2 xk = src[src_row + k * params.rows_per_batch];
+    const float2 mirrored =
+        src[src_row + (params.half_width - k) * params.rows_per_batch];
     const float2 y = float2(mirrored.x, -mirrored.y);
     const float2 diff = xk - y;
     const float2 conj_twiddle = float2(twiddles[k].x, -twiddles[k].y);
