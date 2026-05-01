@@ -1,4 +1,4 @@
-"""Standalone radius-defined WVF with Metal/VkFFT and CPU FFT backends."""
+"""Standalone radius-defined WVF with Metal/VkFFT and Rust CPU FFT backends."""
 
 from __future__ import annotations
 

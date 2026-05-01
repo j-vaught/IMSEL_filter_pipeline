@@ -1,4 +1,4 @@
-"""Thin Python bindings for standalone WVF native and CPU FFT backends."""
+"""Thin Python bindings for the standalone WVF native backends."""
 
 from __future__ import annotations
 
@@ -12,8 +12,6 @@ from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
-
-from .cpu_fft import wvf_fft_magnitude_angle_cpu
 
 
 class MetalBackendError(RuntimeError):
@@ -151,12 +149,7 @@ def _resolve_fft_backend(variant: str, fft_backend: str | None) -> str | None:
             raise ValueError("fft_backend only applies to variant='fft' or variant='vkfft'")
         return None
 
-    chosen = _normalize_fft_backend(fft_backend)
-    if chosen != "auto":
-        return chosen
-    if platform.system() == "Darwin" and metal_backend_available():
-        return "vkfft"
-    return "cpu"
+    return _normalize_fft_backend(fft_backend)
 
 
 def _checked_device_index(device_index: int | None) -> int | None:
@@ -219,6 +212,7 @@ def _run_native_gradients(
     radius: int,
     degree: int,
     variant: str,
+    fft_backend: str | None,
     device_index: int | None,
 ) -> tuple[np.ndarray, np.ndarray]:
     gx = np.empty(img.size, dtype=np.float32)
@@ -226,22 +220,23 @@ def _run_native_gradients(
     error_buffer = ctypes.create_string_buffer(4096)
     h, w = img.shape
 
-    with _temporary_env_var(
-        "WVF_METAL_DEVICE_INDEX",
-        None if device_index is None else str(device_index),
-    ):
-        status = _load_library().wvf_metal_gradients(
-            img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            _checked_uint(w, "image width"),
-            _checked_uint(h, "image height"),
-            _checked_uint(radius, "radius"),
-            _checked_uint(degree, "degree"),
-            ctypes.c_uint(_variant_id(variant)),
-            gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            error_buffer,
-            ctypes.c_size_t(len(error_buffer)),
-        )
+    with _temporary_env_var("WVF_METAL_FFT_BACKEND", fft_backend):
+        with _temporary_env_var(
+            "WVF_METAL_DEVICE_INDEX",
+            None if device_index is None else str(device_index),
+        ):
+            status = _load_library().wvf_metal_gradients(
+                img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                _checked_uint(w, "image width"),
+                _checked_uint(h, "image height"),
+                _checked_uint(radius, "radius"),
+                _checked_uint(degree, "degree"),
+                ctypes.c_uint(_variant_id(variant)),
+                gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                error_buffer,
+                ctypes.c_size_t(len(error_buffer)),
+            )
     _raise_if_failed(status, error_buffer)
     return gx.reshape(img.shape), gy.reshape(img.shape)
 
@@ -251,6 +246,7 @@ def _run_native_magnitude_angle(
     radius: int,
     degree: int,
     variant: str,
+    fft_backend: str | None,
     device_index: int | None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     gx = np.empty(img.size, dtype=np.float32)
@@ -260,24 +256,25 @@ def _run_native_magnitude_angle(
     error_buffer = ctypes.create_string_buffer(4096)
     h, w = img.shape
 
-    with _temporary_env_var(
-        "WVF_METAL_DEVICE_INDEX",
-        None if device_index is None else str(device_index),
-    ):
-        status = _load_library().wvf_metal_magnitude_angle(
-            img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            _checked_uint(w, "image width"),
-            _checked_uint(h, "image height"),
-            _checked_uint(radius, "radius"),
-            _checked_uint(degree, "degree"),
-            ctypes.c_uint(_variant_id(variant)),
-            gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            magnitude.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            angle.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            error_buffer,
-            ctypes.c_size_t(len(error_buffer)),
-        )
+    with _temporary_env_var("WVF_METAL_FFT_BACKEND", fft_backend):
+        with _temporary_env_var(
+            "WVF_METAL_DEVICE_INDEX",
+            None if device_index is None else str(device_index),
+        ):
+            status = _load_library().wvf_metal_magnitude_angle(
+                img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                _checked_uint(w, "image width"),
+                _checked_uint(h, "image height"),
+                _checked_uint(radius, "radius"),
+                _checked_uint(degree, "degree"),
+                ctypes.c_uint(_variant_id(variant)),
+                gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                magnitude.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                angle.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                error_buffer,
+                ctypes.c_size_t(len(error_buffer)),
+            )
     _raise_if_failed(status, error_buffer)
     shape = img.shape
     return (
@@ -296,24 +293,21 @@ def wvf_gradients_metal(
     fft_backend: str | None = "auto",
     device_index: int | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Compute standalone WVF ``Gx`` and ``Gy`` through Metal or CPU FFT."""
+    """Compute standalone WVF ``Gx`` and ``Gy`` through the native backends."""
     img = _as_float_image(image)
     chosen_fft_backend = _resolve_fft_backend(variant, fft_backend)
     checked_device_index = _checked_device_index(device_index)
 
-    if chosen_fft_backend == "cpu":
-        gx, gy, _, _ = wvf_fft_magnitude_angle_cpu(img, radius=radius, degree=degree)
-        return gx, gy
-
     if platform.system() != "Darwin":
         raise MetalBackendError(
-            "Metal variants require macOS. Use variant='fft' with fft_backend='cpu' for portable FFT fallback."
+            "wvf_metal requires macOS. The restored Rust CPU FFT backend is part of the native extension."
         )
     return _run_native_gradients(
         img,
         radius=radius,
         degree=degree,
         variant=variant,
+        fft_backend=chosen_fft_backend,
         device_index=checked_device_index,
     )
 
@@ -326,22 +320,20 @@ def wvf_magnitude_angle_metal(
     fft_backend: str | None = "auto",
     device_index: int | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Compute WVF components, magnitude, and angle through Metal or CPU FFT."""
+    """Compute WVF components, magnitude, and angle through the native backends."""
     img = _as_float_image(image)
     chosen_fft_backend = _resolve_fft_backend(variant, fft_backend)
     checked_device_index = _checked_device_index(device_index)
 
-    if chosen_fft_backend == "cpu":
-        return wvf_fft_magnitude_angle_cpu(img, radius=radius, degree=degree)
-
     if platform.system() != "Darwin":
         raise MetalBackendError(
-            "Metal variants require macOS. Use variant='fft' with fft_backend='cpu' for portable FFT fallback."
+            "wvf_metal requires macOS. The restored Rust CPU FFT backend is part of the native extension."
         )
     return _run_native_magnitude_angle(
         img,
         radius=radius,
         degree=degree,
         variant=variant,
+        fft_backend=chosen_fft_backend,
         device_index=checked_device_index,
     )

@@ -8,11 +8,20 @@ use std::ffi::{c_char, CStr};
 use std::os::raw::{c_float, c_int, c_uint};
 use std::ptr;
 
+mod fft_backend;
+
 const SHADER_SOURCE: &str = include_str!("wvf.metal");
 const WVF_VARIANT_DIRECT: c_uint = 0;
 const WVF_VARIANT_ANTIPODAL: c_uint = 1;
 const WVF_VARIANT_SPLIT: c_uint = 2;
 const WVF_VARIANT_FFT: c_uint = 3;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum FftBackendMode {
+    Auto,
+    Cpu,
+    Vkfft,
+}
 
 extern "C" {
     fn wvf_vkfft_magnitude_angle(
@@ -148,6 +157,33 @@ fn selected_metal_device() -> Result<(i32, Device), String> {
         .nth(index)
         .ok_or_else(|| "failed to select requested Metal device".to_string())?;
     Ok((device_key, device))
+}
+
+fn selected_fft_backend() -> Result<FftBackendMode, String> {
+    match std::env::var("WVF_METAL_FFT_BACKEND")
+        .ok()
+        .as_deref()
+        .map(str::trim)
+    {
+        None | Some("") | Some("auto") => Ok(FftBackendMode::Auto),
+        Some("cpu") => Ok(FftBackendMode::Cpu),
+        Some("vkfft") | Some("metal") | Some("gpu") => Ok(FftBackendMode::Vkfft),
+        Some(other) => Err(format!(
+            "WVF_METAL_FFT_BACKEND must be auto, cpu, or vkfft, got {other}"
+        )),
+    }
+}
+
+fn should_use_cpu_fft_backend() -> Result<bool, String> {
+    match selected_fft_backend()? {
+        FftBackendMode::Cpu => Ok(true),
+        FftBackendMode::Vkfft => Ok(false),
+        FftBackendMode::Auto => match selected_metal_device() {
+            Ok(_) => Ok(false),
+            Err(message) if message == "no Metal device is available" => Ok(true),
+            Err(message) => Err(message),
+        },
+    }
 }
 
 fn threadgroup_2d(pipeline: &ComputePipelineState) -> MTLSize {
@@ -489,10 +525,10 @@ struct MagnitudeBuffers {
     angle: Buffer,
 }
 
-struct DenseConvolutionKernels {
-    kernel_width: c_uint,
-    kernel_x: Vec<c_float>,
-    kernel_y: Vec<c_float>,
+pub(crate) struct DenseConvolutionKernels {
+    pub(crate) kernel_width: c_uint,
+    pub(crate) kernel_x: Vec<c_float>,
+    pub(crate) kernel_y: Vec<c_float>,
 }
 
 fn build_vkfft_convolution_kernels(
@@ -1372,11 +1408,17 @@ pub unsafe extern "C" fn wvf_metal_gradients(
 ) -> c_int {
     let result = validate_generated(image, width, height, radius, degree, variant, out_x, out_y)
         .and_then(|()| {
-            run_checked(|state| {
-                run_generated_gradients_with_state(
-                    state, image, width, height, radius, degree, variant, out_x, out_y,
+            if variant == WVF_VARIANT_FFT && should_use_cpu_fft_backend()? {
+                fft_backend::run_fft_gradients_cpu(
+                    image, width, height, radius, degree, out_x, out_y,
                 )
-            })
+            } else {
+                run_checked(|state| {
+                    run_generated_gradients_with_state(
+                        state, image, width, height, radius, degree, variant, out_x, out_y,
+                    )
+                })
+            }
         });
     match result {
         Ok(()) => 0,
@@ -1406,12 +1448,18 @@ pub unsafe extern "C" fn wvf_metal_magnitude_angle(
         .and_then(|()| check_mut_ptr(magnitude, "magnitude"))
         .and_then(|()| check_mut_ptr(angle, "angle"))
         .and_then(|()| {
-            run_checked(|state| {
-                run_generated_magnitude_angle_with_state(
-                    state, image, width, height, radius, degree, variant, out_x, out_y, magnitude,
-                    angle,
+            if variant == WVF_VARIANT_FFT && should_use_cpu_fft_backend()? {
+                fft_backend::run_fft_magnitude_angle_cpu(
+                    image, width, height, radius, degree, out_x, out_y, magnitude, angle,
                 )
-            })
+            } else {
+                run_checked(|state| {
+                    run_generated_magnitude_angle_with_state(
+                        state, image, width, height, radius, degree, variant, out_x, out_y,
+                        magnitude, angle,
+                    )
+                })
+            }
         });
     match result {
         Ok(()) => 0,

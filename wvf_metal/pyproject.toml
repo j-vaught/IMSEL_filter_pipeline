@@ -29,6 +29,7 @@ wvf_metal = [
     "README.md",
     "rust/build.rs",
     "rust/src/*.rs",
+    "rust/src/fft_backend/*.rs",
     "rust/src/*.metal",
     "rust/src/*.cpp",
     "rust/third_party/VkFFT_LICENSE.txt",

@@ -40,7 +40,7 @@ def _load_array(path: Path, key: str | None) -> np.ndarray:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run standalone WVF gradients with VkFFT/Metal or CPU FFT."
+        description="Run standalone WVF gradients with VkFFT/Metal or Rust CPU FFT."
     )
     parser.add_argument("input", type=Path, help="Input .npy, .npz, or image path.")
     parser.add_argument("output", type=Path, help="Output .npz path.")
