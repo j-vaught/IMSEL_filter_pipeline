@@ -1,9 +1,10 @@
 # Standalone WVF Metal
 
 This folder is a copyable Apple Silicon implementation of radius-defined Wide
-View Filter gradients. WVF weights are built in Rust, convolution runs in
-Metal, and magnitude/angle recovery runs in Metal. Python only loads inputs,
-allocates output arrays, and calls the Rust dynamic library.
+View Filter gradients. WVF weights are built and cached in Rust, convolution
+runs in Metal, and magnitude/angle recovery is fused into the Metal convolution
+path. Python only loads inputs, allocates output arrays, and calls the Rust
+dynamic library.
 
 ## Requirements
 

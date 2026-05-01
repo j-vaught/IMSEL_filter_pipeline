@@ -28,18 +28,16 @@ struct SplitParams {
     radius: c_uint,
 }
 
-#[repr(C)]
-struct MagnitudeParams {
-    n_pixels: c_uint,
-}
-
 struct MetalState {
     device: Device,
     direct_pipeline: ComputePipelineState,
+    direct_magnitude_pipeline: ComputePipelineState,
     antipodal_pipeline: ComputePipelineState,
+    antipodal_magnitude_pipeline: ComputePipelineState,
     split_interior_pipeline: ComputePipelineState,
     split_boundary_pipeline: ComputePipelineState,
-    magnitude_pipeline: ComputePipelineState,
+    split_interior_magnitude_pipeline: ComputePipelineState,
+    split_boundary_magnitude_pipeline: ComputePipelineState,
     queue: CommandQueue,
 }
 
@@ -54,19 +52,28 @@ impl MetalState {
             .map_err(|err| format!("failed to compile Metal shader: {err}"))?;
 
         let direct_pipeline = pipeline(&device, &library, "wvf_direct")?;
+        let direct_magnitude_pipeline = pipeline(&device, &library, "wvf_direct_magnitude_angle")?;
         let antipodal_pipeline = pipeline(&device, &library, "wvf_antipodal")?;
+        let antipodal_magnitude_pipeline =
+            pipeline(&device, &library, "wvf_antipodal_magnitude_angle")?;
         let split_interior_pipeline = pipeline(&device, &library, "wvf_split_interior")?;
         let split_boundary_pipeline = pipeline(&device, &library, "wvf_split_boundary")?;
-        let magnitude_pipeline = pipeline(&device, &library, "wvf_magnitude_angle")?;
+        let split_interior_magnitude_pipeline =
+            pipeline(&device, &library, "wvf_split_interior_magnitude_angle")?;
+        let split_boundary_magnitude_pipeline =
+            pipeline(&device, &library, "wvf_split_boundary_magnitude_angle")?;
         let queue = device.new_command_queue();
 
         Ok(Self {
             device,
             direct_pipeline,
+            direct_magnitude_pipeline,
             antipodal_pipeline,
+            antipodal_magnitude_pipeline,
             split_interior_pipeline,
             split_boundary_pipeline,
-            magnitude_pipeline,
+            split_interior_magnitude_pipeline,
+            split_boundary_magnitude_pipeline,
             queue,
         })
     }
@@ -88,6 +95,7 @@ fn pipeline(
 thread_local! {
     static METAL_STATE: RefCell<Option<MetalState>> = const { RefCell::new(None) };
     static KERNEL_CACHE: RefCell<HashMap<(c_uint, c_uint, c_uint), GeneratedKernels>> = RefCell::new(HashMap::new());
+    static PLAN_CACHE: RefCell<HashMap<(c_uint, c_uint, c_uint), KernelPlan>> = RefCell::new(HashMap::new());
 }
 
 fn threadgroup_2d(pipeline: &ComputePipelineState) -> MTLSize {
@@ -98,18 +106,6 @@ fn threadgroup_2d(pipeline: &ComputePipelineState) -> MTLSize {
     MTLSize {
         width,
         height,
-        depth: 1,
-    }
-}
-
-fn threadgroup_1d(pipeline: &ComputePipelineState) -> MTLSize {
-    let execution_width = pipeline.thread_execution_width().max(1);
-    let max_threads = pipeline.max_total_threads_per_threadgroup().max(1);
-    let mut width = max_threads.min(256);
-    width = (width / execution_width).max(1) * execution_width;
-    MTLSize {
-        width,
-        height: 1,
         depth: 1,
     }
 }
@@ -420,6 +416,27 @@ struct BoundBuffers {
     out_y: Buffer,
 }
 
+#[derive(Clone)]
+struct KernelPlan {
+    radius: c_uint,
+    n_offsets: c_uint,
+    dx: Buffer,
+    dy: Buffer,
+    wx: Buffer,
+    wy: Buffer,
+}
+
+struct ImageOutputBuffers {
+    image: Buffer,
+    out_x: Buffer,
+    out_y: Buffer,
+}
+
+struct MagnitudeBuffers {
+    magnitude: Buffer,
+    angle: Buffer,
+}
+
 unsafe fn bind_buffers(
     state: &MetalState,
     image: *const c_float,
@@ -489,6 +506,69 @@ unsafe fn bind_buffers(
     })
 }
 
+unsafe fn bind_image_output_buffers(
+    state: &MetalState,
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+) -> Result<ImageOutputBuffers, String> {
+    let total_pixels = checked_image_pixels(width, height)?;
+    let image_len = checked_len(total_pixels, std::mem::size_of::<c_float>(), "image")?;
+    let options = MTLResourceOptions::StorageModeShared;
+    let image_buffer =
+        state
+            .device
+            .new_buffer_with_bytes_no_copy(image.cast(), image_len as u64, options, None);
+    let out_x_buffer = state.device.new_buffer_with_bytes_no_copy(
+        out_x.cast::<std::ffi::c_void>().cast_const(),
+        image_len as u64,
+        options,
+        None,
+    );
+    let out_y_buffer = state.device.new_buffer_with_bytes_no_copy(
+        out_y.cast::<std::ffi::c_void>().cast_const(),
+        image_len as u64,
+        options,
+        None,
+    );
+    image_buffer.did_modify_range(NSRange::new(0, image_len as u64));
+    Ok(ImageOutputBuffers {
+        image: image_buffer,
+        out_x: out_x_buffer,
+        out_y: out_y_buffer,
+    })
+}
+
+unsafe fn bind_magnitude_buffers(
+    state: &MetalState,
+    width: c_uint,
+    height: c_uint,
+    magnitude: *mut c_float,
+    angle: *mut c_float,
+) -> Result<MagnitudeBuffers, String> {
+    let total_pixels = checked_image_pixels(width, height)?;
+    let output_len = checked_len(total_pixels, std::mem::size_of::<c_float>(), "output")?;
+    let options = MTLResourceOptions::StorageModeShared;
+    let magnitude_buffer = state.device.new_buffer_with_bytes_no_copy(
+        magnitude.cast::<std::ffi::c_void>().cast_const(),
+        output_len as u64,
+        options,
+        None,
+    );
+    let angle_buffer = state.device.new_buffer_with_bytes_no_copy(
+        angle.cast::<std::ffi::c_void>().cast_const(),
+        output_len as u64,
+        options,
+        None,
+    );
+    Ok(MagnitudeBuffers {
+        magnitude: magnitude_buffer,
+        angle: angle_buffer,
+    })
+}
+
 fn set_common_buffers(encoder: &metal::ComputeCommandEncoderRef, buffers: &BoundBuffers) {
     encoder.set_buffer(0, Some(&buffers.image), 0);
     encoder.set_buffer(1, Some(&buffers.dx), 0);
@@ -497,6 +577,79 @@ fn set_common_buffers(encoder: &metal::ComputeCommandEncoderRef, buffers: &Bound
     encoder.set_buffer(4, Some(&buffers.wy), 0);
     encoder.set_buffer(5, Some(&buffers.out_x), 0);
     encoder.set_buffer(6, Some(&buffers.out_y), 0);
+}
+
+fn set_magnitude_buffers(encoder: &metal::ComputeCommandEncoderRef, buffers: &MagnitudeBuffers) {
+    encoder.set_buffer(8, Some(&buffers.magnitude), 0);
+    encoder.set_buffer(9, Some(&buffers.angle), 0);
+}
+
+fn set_plan_buffers(
+    encoder: &metal::ComputeCommandEncoderRef,
+    buffers: &ImageOutputBuffers,
+    plan: &KernelPlan,
+) {
+    encoder.set_buffer(0, Some(&buffers.image), 0);
+    encoder.set_buffer(1, Some(&plan.dx), 0);
+    encoder.set_buffer(2, Some(&plan.dy), 0);
+    encoder.set_buffer(3, Some(&plan.wx), 0);
+    encoder.set_buffer(4, Some(&plan.wy), 0);
+    encoder.set_buffer(5, Some(&buffers.out_x), 0);
+    encoder.set_buffer(6, Some(&buffers.out_y), 0);
+}
+
+fn build_kernel_plan(
+    state: &MetalState,
+    radius: c_uint,
+    degree: c_uint,
+    variant: c_uint,
+) -> Result<KernelPlan, String> {
+    let kernels = generated_kernels(radius, degree, variant)?;
+    let n_offsets = kernels.n_offsets()?;
+    let offset_len = checked_len(kernels.dx.len(), std::mem::size_of::<c_int>(), "offset")?;
+    let weight_len = checked_len(kernels.wx.len(), std::mem::size_of::<c_float>(), "weight")?;
+    let options = MTLResourceOptions::StorageModeShared;
+    let dx =
+        state
+            .device
+            .new_buffer_with_data(kernels.dx.as_ptr().cast(), offset_len as u64, options);
+    let dy =
+        state
+            .device
+            .new_buffer_with_data(kernels.dy.as_ptr().cast(), offset_len as u64, options);
+    let wx =
+        state
+            .device
+            .new_buffer_with_data(kernels.wx.as_ptr().cast(), weight_len as u64, options);
+    let wy =
+        state
+            .device
+            .new_buffer_with_data(kernels.wy.as_ptr().cast(), weight_len as u64, options);
+    Ok(KernelPlan {
+        radius: kernels.radius,
+        n_offsets,
+        dx,
+        dy,
+        wx,
+        wy,
+    })
+}
+
+fn generated_kernel_plan(
+    state: &MetalState,
+    radius: c_uint,
+    degree: c_uint,
+    variant: c_uint,
+) -> Result<KernelPlan, String> {
+    PLAN_CACHE.with(|cache_cell| {
+        let key = (radius, degree, variant);
+        if let Some(plan) = cache_cell.borrow().get(&key) {
+            return Ok(plan.clone());
+        }
+        let plan = build_kernel_plan(state, radius, degree, variant)?;
+        cache_cell.borrow_mut().insert(key, plan.clone());
+        Ok(plan)
+    })
 }
 
 unsafe fn run_convolve_with_state(
@@ -531,6 +684,92 @@ unsafe fn run_convolve_with_state(
     let encoder = command_buffer.new_compute_command_encoder();
     encoder.set_compute_pipeline_state(pipeline);
     set_common_buffers(encoder, &buffers);
+    encoder.set_buffer(7, Some(&params_buffer), 0);
+    encoder.dispatch_threads(
+        MTLSize {
+            width: width as u64,
+            height: height as u64,
+            depth: 1,
+        },
+        threadgroup_2d(pipeline),
+    );
+    encoder.end_encoding();
+    command_buffer.commit();
+    command_buffer.wait_until_completed();
+    Ok(())
+}
+
+unsafe fn run_plan_convolve_with_state(
+    state: &MetalState,
+    pipeline: &ComputePipelineState,
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    plan: &KernelPlan,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+) -> Result<(), String> {
+    let buffers = bind_image_output_buffers(state, image, width, height, out_x, out_y)?;
+    let params = KernelParams {
+        width,
+        height,
+        n_offsets: plan.n_offsets,
+    };
+    let params_buffer = state.device.new_buffer_with_data(
+        (&params as *const KernelParams).cast(),
+        std::mem::size_of::<KernelParams>() as u64,
+        MTLResourceOptions::StorageModeShared,
+    );
+
+    let command_buffer = state.queue.new_command_buffer();
+    let encoder = command_buffer.new_compute_command_encoder();
+    encoder.set_compute_pipeline_state(pipeline);
+    set_plan_buffers(encoder, &buffers, plan);
+    encoder.set_buffer(7, Some(&params_buffer), 0);
+    encoder.dispatch_threads(
+        MTLSize {
+            width: width as u64,
+            height: height as u64,
+            depth: 1,
+        },
+        threadgroup_2d(pipeline),
+    );
+    encoder.end_encoding();
+    command_buffer.commit();
+    command_buffer.wait_until_completed();
+    Ok(())
+}
+
+unsafe fn run_plan_convolve_magnitude_angle_with_state(
+    state: &MetalState,
+    pipeline: &ComputePipelineState,
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    plan: &KernelPlan,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+    magnitude: *mut c_float,
+    angle: *mut c_float,
+) -> Result<(), String> {
+    let buffers = bind_image_output_buffers(state, image, width, height, out_x, out_y)?;
+    let magnitude_buffers = bind_magnitude_buffers(state, width, height, magnitude, angle)?;
+    let params = KernelParams {
+        width,
+        height,
+        n_offsets: plan.n_offsets,
+    };
+    let params_buffer = state.device.new_buffer_with_data(
+        (&params as *const KernelParams).cast(),
+        std::mem::size_of::<KernelParams>() as u64,
+        MTLResourceOptions::StorageModeShared,
+    );
+
+    let command_buffer = state.queue.new_command_buffer();
+    let encoder = command_buffer.new_compute_command_encoder();
+    encoder.set_compute_pipeline_state(pipeline);
+    set_plan_buffers(encoder, &buffers, plan);
+    set_magnitude_buffers(encoder, &magnitude_buffers);
     encoder.set_buffer(7, Some(&params_buffer), 0);
     encoder.dispatch_threads(
         MTLSize {
@@ -625,58 +864,141 @@ unsafe fn run_split_with_state(
     Ok(())
 }
 
-unsafe fn run_magnitude_angle_with_state(
+unsafe fn run_plan_split_with_state(
     state: &MetalState,
-    gx: *const c_float,
-    gy: *const c_float,
-    n_pixels: c_uint,
-    magnitude: *mut c_float,
-    angle: *mut c_float,
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    plan: &KernelPlan,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
 ) -> Result<(), String> {
-    let float_len = checked_len(n_pixels as usize, std::mem::size_of::<c_float>(), "image")?;
-    let options = MTLResourceOptions::StorageModeShared;
-    let gx_buffer =
-        state
-            .device
-            .new_buffer_with_bytes_no_copy(gx.cast(), float_len as u64, options, None);
-    let gy_buffer =
-        state
-            .device
-            .new_buffer_with_bytes_no_copy(gy.cast(), float_len as u64, options, None);
-    let magnitude_buffer = state.device.new_buffer_with_bytes_no_copy(
-        magnitude.cast::<std::ffi::c_void>().cast_const(),
-        float_len as u64,
-        options,
-        None,
-    );
-    let angle_buffer = state.device.new_buffer_with_bytes_no_copy(
-        angle.cast::<std::ffi::c_void>().cast_const(),
-        float_len as u64,
-        options,
-        None,
-    );
-    let params = MagnitudeParams { n_pixels };
+    let double_radius = plan.radius.saturating_mul(2);
+    let interior_width = width.saturating_sub(double_radius);
+    let interior_height = height.saturating_sub(double_radius);
+    if plan.radius == 0 || interior_width == 0 || interior_height == 0 {
+        return run_plan_convolve_with_state(
+            state,
+            &state.antipodal_pipeline,
+            image,
+            width,
+            height,
+            plan,
+            out_x,
+            out_y,
+        );
+    }
+
+    let buffers = bind_image_output_buffers(state, image, width, height, out_x, out_y)?;
+    let params = SplitParams {
+        width,
+        height,
+        n_offsets: plan.n_offsets,
+        radius: plan.radius,
+    };
     let params_buffer = state.device.new_buffer_with_data(
-        (&params as *const MagnitudeParams).cast(),
-        std::mem::size_of::<MagnitudeParams>() as u64,
-        options,
+        (&params as *const SplitParams).cast(),
+        std::mem::size_of::<SplitParams>() as u64,
+        MTLResourceOptions::StorageModeShared,
     );
 
     let command_buffer = state.queue.new_command_buffer();
     let encoder = command_buffer.new_compute_command_encoder();
-    encoder.set_compute_pipeline_state(&state.magnitude_pipeline);
-    encoder.set_buffer(0, Some(&gx_buffer), 0);
-    encoder.set_buffer(1, Some(&gy_buffer), 0);
-    encoder.set_buffer(2, Some(&magnitude_buffer), 0);
-    encoder.set_buffer(3, Some(&angle_buffer), 0);
-    encoder.set_buffer(4, Some(&params_buffer), 0);
+    set_plan_buffers(encoder, &buffers, plan);
+    encoder.set_buffer(7, Some(&params_buffer), 0);
+
+    encoder.set_compute_pipeline_state(&state.split_interior_pipeline);
     encoder.dispatch_threads(
         MTLSize {
-            width: n_pixels as u64,
-            height: 1,
+            width: interior_width as u64,
+            height: interior_height as u64,
             depth: 1,
         },
-        threadgroup_1d(&state.magnitude_pipeline),
+        threadgroup_2d(&state.split_interior_pipeline),
+    );
+
+    encoder.set_compute_pipeline_state(&state.split_boundary_pipeline);
+    encoder.dispatch_threads(
+        MTLSize {
+            width: width as u64,
+            height: height as u64,
+            depth: 1,
+        },
+        threadgroup_2d(&state.split_boundary_pipeline),
+    );
+    encoder.end_encoding();
+    command_buffer.commit();
+    command_buffer.wait_until_completed();
+    Ok(())
+}
+
+unsafe fn run_plan_split_magnitude_angle_with_state(
+    state: &MetalState,
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    plan: &KernelPlan,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+    magnitude: *mut c_float,
+    angle: *mut c_float,
+) -> Result<(), String> {
+    let double_radius = plan.radius.saturating_mul(2);
+    let interior_width = width.saturating_sub(double_radius);
+    let interior_height = height.saturating_sub(double_radius);
+    if plan.radius == 0 || interior_width == 0 || interior_height == 0 {
+        return run_plan_convolve_magnitude_angle_with_state(
+            state,
+            &state.antipodal_magnitude_pipeline,
+            image,
+            width,
+            height,
+            plan,
+            out_x,
+            out_y,
+            magnitude,
+            angle,
+        );
+    }
+
+    let buffers = bind_image_output_buffers(state, image, width, height, out_x, out_y)?;
+    let magnitude_buffers = bind_magnitude_buffers(state, width, height, magnitude, angle)?;
+    let params = SplitParams {
+        width,
+        height,
+        n_offsets: plan.n_offsets,
+        radius: plan.radius,
+    };
+    let params_buffer = state.device.new_buffer_with_data(
+        (&params as *const SplitParams).cast(),
+        std::mem::size_of::<SplitParams>() as u64,
+        MTLResourceOptions::StorageModeShared,
+    );
+
+    let command_buffer = state.queue.new_command_buffer();
+    let encoder = command_buffer.new_compute_command_encoder();
+    set_plan_buffers(encoder, &buffers, plan);
+    set_magnitude_buffers(encoder, &magnitude_buffers);
+    encoder.set_buffer(7, Some(&params_buffer), 0);
+
+    encoder.set_compute_pipeline_state(&state.split_interior_magnitude_pipeline);
+    encoder.dispatch_threads(
+        MTLSize {
+            width: interior_width as u64,
+            height: interior_height as u64,
+            depth: 1,
+        },
+        threadgroup_2d(&state.split_interior_magnitude_pipeline),
+    );
+
+    encoder.set_compute_pipeline_state(&state.split_boundary_magnitude_pipeline);
+    encoder.dispatch_threads(
+        MTLSize {
+            width: width as u64,
+            height: height as u64,
+            depth: 1,
+        },
+        threadgroup_2d(&state.split_boundary_magnitude_pipeline),
     );
     encoder.end_encoding();
     command_buffer.commit();
@@ -768,50 +1090,76 @@ unsafe fn run_generated_gradients_with_state(
     out_x: *mut c_float,
     out_y: *mut c_float,
 ) -> Result<(), String> {
-    let kernels = generated_kernels(radius, degree, variant)?;
-    let n_offsets = kernels.n_offsets()?;
+    let plan = generated_kernel_plan(state, radius, degree, variant)?;
     match variant {
-        WVF_VARIANT_DIRECT => run_convolve_with_state(
+        WVF_VARIANT_DIRECT => run_plan_convolve_with_state(
             state,
             &state.direct_pipeline,
             image,
             width,
             height,
-            kernels.dx.as_ptr(),
-            kernels.dy.as_ptr(),
-            kernels.wx.as_ptr(),
-            kernels.wy.as_ptr(),
-            n_offsets,
+            &plan,
             out_x,
             out_y,
         ),
-        WVF_VARIANT_ANTIPODAL => run_convolve_with_state(
+        WVF_VARIANT_ANTIPODAL => run_plan_convolve_with_state(
             state,
             &state.antipodal_pipeline,
             image,
             width,
             height,
-            kernels.dx.as_ptr(),
-            kernels.dy.as_ptr(),
-            kernels.wx.as_ptr(),
-            kernels.wy.as_ptr(),
-            n_offsets,
+            &plan,
             out_x,
             out_y,
         ),
-        WVF_VARIANT_SPLIT => run_split_with_state(
+        WVF_VARIANT_SPLIT => {
+            run_plan_split_with_state(state, image, width, height, &plan, out_x, out_y)
+        }
+        _ => Err("variant must be 0=direct, 1=antipodal, or 2=split".to_string()),
+    }
+}
+
+unsafe fn run_generated_magnitude_angle_with_state(
+    state: &MetalState,
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    variant: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+    magnitude: *mut c_float,
+    angle: *mut c_float,
+) -> Result<(), String> {
+    let plan = generated_kernel_plan(state, radius, degree, variant)?;
+    match variant {
+        WVF_VARIANT_DIRECT => run_plan_convolve_magnitude_angle_with_state(
             state,
+            &state.direct_magnitude_pipeline,
             image,
             width,
             height,
-            kernels.dx.as_ptr(),
-            kernels.dy.as_ptr(),
-            kernels.wx.as_ptr(),
-            kernels.wy.as_ptr(),
-            n_offsets,
-            kernels.radius,
+            &plan,
             out_x,
             out_y,
+            magnitude,
+            angle,
+        ),
+        WVF_VARIANT_ANTIPODAL => run_plan_convolve_magnitude_angle_with_state(
+            state,
+            &state.antipodal_magnitude_pipeline,
+            image,
+            width,
+            height,
+            &plan,
+            out_x,
+            out_y,
+            magnitude,
+            angle,
+        ),
+        WVF_VARIANT_SPLIT => run_plan_split_magnitude_angle_with_state(
+            state, image, width, height, &plan, out_x, out_y, magnitude, angle,
         ),
         _ => Err("variant must be 0=direct, 1=antipodal, or 2=split".to_string()),
     }
@@ -866,13 +1214,11 @@ pub unsafe extern "C" fn wvf_metal_magnitude_angle(
         .and_then(|()| check_mut_ptr(magnitude, "magnitude"))
         .and_then(|()| check_mut_ptr(angle, "angle"))
         .and_then(|()| {
-            let n_pixels = c_uint::try_from(checked_image_pixels(width, height)?)
-                .map_err(|_| "image pixel count is too large for uint32".to_string())?;
             run_checked(|state| {
-                run_generated_gradients_with_state(
-                    state, image, width, height, radius, degree, variant, out_x, out_y,
-                )?;
-                run_magnitude_angle_with_state(state, out_x, out_y, n_pixels, magnitude, angle)
+                run_generated_magnitude_angle_with_state(
+                    state, image, width, height, radius, degree, variant, out_x, out_y, magnitude,
+                    angle,
+                )
             })
         });
     match result {
