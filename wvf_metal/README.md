@@ -105,6 +105,10 @@ Linux notes:
 - If `nvcc` needs an older host compiler than the system default, set
   `WVF_CUDA_HOST_CXX` or `CUDAHOSTCXX` to a compatible `g++` wrapper or binary
   before first use.
+- `WVF_CUDA_HOST_IO_MODE` can be set to `pageable`, `register`, or `pinned`
+  to experiment with Linux CUDA host-buffer transfer modes. The default `auto`
+  keeps the pageable path because the alternatives are device-dependent and are
+  not yet a universal win.
 
 ## CLI
 

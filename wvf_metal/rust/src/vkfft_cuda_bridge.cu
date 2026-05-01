@@ -15,6 +15,13 @@ namespace {
 
 constexpr float kPi = 3.14159265358979323846f;
 
+enum class HostIoMode {
+    Auto,
+    Pageable,
+    Register,
+    PinnedStaging,
+};
+
 struct VkFFTPlanHandle {
     VkFFTApplication app = {};
     bool initialized = false;
@@ -129,10 +136,14 @@ struct CudaRuntime {
     CUdevice device = 0;
     CUcontext context = nullptr;
     cudaStream_t stream = nullptr;
+    bool host_register_supported = false;
+    bool integrated = false;
+    bool pageable_memory_access_uses_host_page_tables = false;
     std::mutex mutex;
     std::unordered_map<PlanKey, std::unique_ptr<PlanBundle>, PlanKeyHash> plan_cache;
     std::unordered_map<KernelKey, std::unique_ptr<KernelSpectra>, KernelKeyHash> kernel_cache;
     struct ExternalBuffers* reusable_io = nullptr;
+    struct HostStagingBuffers* pinned_host_io = nullptr;
 
     ~CudaRuntime();
 };
@@ -184,6 +195,9 @@ CudaRuntime::~CudaRuntime() {
     if (reusable_io) {
         delete reusable_io;
     }
+    if (pinned_host_io) {
+        delete pinned_host_io;
+    }
     if (context) {
         CUcontext current = nullptr;
         if (cuCtxGetCurrent(&current) == CUDA_SUCCESS && current == context) {
@@ -192,6 +206,94 @@ CudaRuntime::~CudaRuntime() {
         cuDevicePrimaryCtxRelease(device);
     }
 }
+
+struct ScopedHostRegistration {
+    cudaStream_t stream = nullptr;
+    bool needs_sync = false;
+    std::vector<void*> ranges;
+
+    void set_stream(cudaStream_t value) {
+        stream = value;
+        needs_sync = true;
+    }
+
+    void clear_stream() {
+        needs_sync = false;
+    }
+
+    bool register_range(void* ptr, size_t byte_count) {
+        if (!ptr || byte_count == 0) {
+            return true;
+        }
+        const cudaError_t result = cudaHostRegister(ptr, byte_count, cudaHostRegisterDefault);
+        if (result != cudaSuccess) {
+            return false;
+        }
+        ranges.push_back(ptr);
+        return true;
+    }
+
+    void release() {
+        if (ranges.empty()) {
+            return;
+        }
+        if (needs_sync && stream) {
+            cudaStreamSynchronize(stream);
+        }
+        for (void* ptr : ranges) {
+            cudaHostUnregister(ptr);
+        }
+        ranges.clear();
+        needs_sync = false;
+    }
+
+    ~ScopedHostRegistration() {
+        release();
+    }
+};
+
+struct HostStagingBuffers {
+    float* image = nullptr;
+    float* out_x = nullptr;
+    float* out_y = nullptr;
+    float* magnitude = nullptr;
+    float* angle = nullptr;
+    uint64_t image_capacity = 0;
+    uint64_t output_capacity = 0;
+
+    void release_image() {
+        if (image) {
+            cudaFreeHost(image);
+            image = nullptr;
+        }
+        image_capacity = 0;
+    }
+
+    void release_outputs() {
+        if (angle) {
+            cudaFreeHost(angle);
+            angle = nullptr;
+        }
+        if (magnitude) {
+            cudaFreeHost(magnitude);
+            magnitude = nullptr;
+        }
+        if (out_y) {
+            cudaFreeHost(out_y);
+            out_y = nullptr;
+        }
+        if (out_x) {
+            cudaFreeHost(out_x);
+            out_x = nullptr;
+        }
+        output_capacity = 0;
+    }
+
+    ~HostStagingBuffers() {
+        release_outputs();
+        release_image();
+    }
+};
 
 struct WVFPadParams {
     uint32_t image_width = 0;
@@ -250,6 +352,33 @@ uint64_t next_smooth_fft_size(uint64_t value) {
 
 std::string vkfft_error(const std::string& prefix, VkFFTResult result) {
     return prefix + ": " + std::string(getVkFFTErrorString(result));
+}
+
+HostIoMode selected_host_io_mode(std::string* error_out) {
+    const char* raw_value = std::getenv("WVF_CUDA_HOST_IO_MODE");
+    if (!raw_value || std::strlen(raw_value) == 0) {
+        return HostIoMode::Auto;
+    }
+
+    const std::string value(raw_value);
+    if (value == "auto") {
+        return HostIoMode::Auto;
+    }
+    if (value == "pageable") {
+        return HostIoMode::Pageable;
+    }
+    if (value == "register") {
+        return HostIoMode::Register;
+    }
+    if (value == "pinned" || value == "pinned_staging") {
+        return HostIoMode::PinnedStaging;
+    }
+
+    if (error_out) {
+        *error_out =
+            "WVF_CUDA_HOST_IO_MODE must be auto, pageable, register, or pinned";
+    }
+    return HostIoMode::Auto;
 }
 
 uint64_t hash_bytes(const void* data, size_t byte_count, uint64_t seed = 14695981039346656037ull) {
@@ -364,6 +493,41 @@ bool initialize_runtime(CudaRuntime* runtime, std::string* error_out) {
             *error_out = "failed to activate CUDA primary context";
         }
         return false;
+    }
+
+    int host_register_supported = 0;
+    cuda_result = cudaDeviceGetAttribute(
+        &host_register_supported,
+        cudaDevAttrHostRegisterSupported,
+        requested_index
+    );
+    if (cuda_result == cudaSuccess) {
+        runtime->host_register_supported = host_register_supported != 0;
+    } else {
+        runtime->host_register_supported = false;
+        cudaGetLastError();
+    }
+
+    int integrated = 0;
+    cuda_result = cudaDeviceGetAttribute(&integrated, cudaDevAttrIntegrated, requested_index);
+    if (cuda_result == cudaSuccess) {
+        runtime->integrated = integrated != 0;
+    } else {
+        runtime->integrated = false;
+        cudaGetLastError();
+    }
+
+    int pageable_uses_host_pt = 0;
+    cuda_result = cudaDeviceGetAttribute(
+        &pageable_uses_host_pt,
+        cudaDevAttrPageableMemoryAccessUsesHostPageTables,
+        requested_index
+    );
+    if (cuda_result == cudaSuccess) {
+        runtime->pageable_memory_access_uses_host_page_tables = pageable_uses_host_pt != 0;
+    } else {
+        runtime->pageable_memory_access_uses_host_page_tables = false;
+        cudaGetLastError();
     }
 
     runtime->device_index = requested_index;
@@ -762,6 +926,97 @@ bool ensure_reusable_io_buffers(
     return true;
 }
 
+bool ensure_pinned_host_staging_buffers(
+    CudaRuntime& runtime,
+    uint64_t image_bytes,
+    uint64_t output_bytes
+) {
+    if (!runtime.pinned_host_io) {
+        runtime.pinned_host_io = new HostStagingBuffers();
+    }
+    HostStagingBuffers* buffers = runtime.pinned_host_io;
+    if (!buffers) {
+        return false;
+    }
+
+    if (buffers->image_capacity < image_bytes) {
+        buffers->release_image();
+    }
+    if (buffers->output_capacity < output_bytes) {
+        buffers->release_outputs();
+    }
+
+    cudaError_t cuda_result = cudaSuccess;
+    if (!buffers->image) {
+        cuda_result = cudaMallocHost(reinterpret_cast<void**>(&buffers->image), image_bytes);
+        if (cuda_result == cudaSuccess) {
+            buffers->image_capacity = image_bytes;
+        }
+    }
+    if (cuda_result == cudaSuccess && !buffers->out_x) {
+        cuda_result = cudaMallocHost(reinterpret_cast<void**>(&buffers->out_x), output_bytes);
+    }
+    if (cuda_result == cudaSuccess && !buffers->out_y) {
+        cuda_result = cudaMallocHost(reinterpret_cast<void**>(&buffers->out_y), output_bytes);
+    }
+    if (cuda_result == cudaSuccess && !buffers->magnitude) {
+        cuda_result = cudaMallocHost(reinterpret_cast<void**>(&buffers->magnitude), output_bytes);
+    }
+    if (cuda_result == cudaSuccess && !buffers->angle) {
+        cuda_result = cudaMallocHost(reinterpret_cast<void**>(&buffers->angle), output_bytes);
+    }
+    if (cuda_result == cudaSuccess) {
+        buffers->output_capacity = output_bytes;
+        return true;
+    }
+
+    if (!buffers->image) {
+        buffers->release_image();
+    }
+    if (!buffers->out_x || !buffers->out_y || !buffers->magnitude || !buffers->angle) {
+        buffers->release_outputs();
+    }
+    cudaGetLastError();
+    return false;
+}
+
+bool try_register_host_buffers(
+    CudaRuntime& runtime,
+    const float* image,
+    uint64_t image_bytes,
+    float* out_x,
+    float* out_y,
+    float* magnitude,
+    float* angle,
+    uint64_t output_bytes,
+    ScopedHostRegistration* registration,
+    std::string* error_out
+) {
+    if (!runtime.host_register_supported || !registration) {
+        if (error_out) {
+            *error_out = "CUDA host registration is not supported on this device";
+        }
+        return false;
+    }
+
+    if (!registration->register_range(const_cast<float*>(image), image_bytes) ||
+        !registration->register_range(out_x, output_bytes) ||
+        !registration->register_range(out_y, output_bytes) ||
+        !registration->register_range(magnitude, output_bytes) ||
+        !registration->register_range(angle, output_bytes)) {
+        const cudaError_t register_error = cudaGetLastError();
+        registration->release();
+        if (error_out) {
+            *error_out = std::string("failed to register CUDA host buffers: ") +
+                         cudaGetErrorString(register_error);
+        }
+        return false;
+    }
+
+    registration->set_stream(runtime.stream);
+    return true;
+}
+
 int run_wvf_vkfft(
     const float* image,
     uint32_t width,
@@ -873,9 +1128,62 @@ int run_wvf_vkfft(
     }
     ExternalBuffers& external = *runtime->reusable_io;
 
+    cache_error.clear();
+    const HostIoMode host_io_mode = selected_host_io_mode(&cache_error);
+    if (!cache_error.empty()) {
+        write_error(error_out, error_len, cache_error);
+        return 1;
+    }
+
+    HostStagingBuffers* host_staging = nullptr;
+    bool using_pinned_staging = false;
+    if (host_io_mode == HostIoMode::PinnedStaging) {
+        if (!ensure_pinned_host_staging_buffers(*runtime, image_bytes, output_bytes)) {
+            write_error(
+                error_out,
+                error_len,
+                "failed to allocate pinned CUDA host staging buffers"
+            );
+            return 1;
+        }
+        host_staging = runtime->pinned_host_io;
+        std::memcpy(host_staging->image, image, image_bytes);
+        using_pinned_staging = true;
+    }
+
+    ScopedHostRegistration host_registration;
+    const float* upload_image = image;
+    float* download_out_x = out_x;
+    float* download_out_y = out_y;
+    float* download_magnitude = magnitude;
+    float* download_angle = angle;
+    if (using_pinned_staging) {
+        upload_image = host_staging->image;
+        download_out_x = host_staging->out_x;
+        download_out_y = host_staging->out_y;
+        download_magnitude = host_staging->magnitude;
+        download_angle = host_staging->angle;
+    } else if (host_io_mode == HostIoMode::Register) {
+        if (!try_register_host_buffers(
+            *runtime,
+            image,
+            image_bytes,
+            out_x,
+            out_y,
+            magnitude,
+            angle,
+            output_bytes,
+            &host_registration,
+            &cache_error
+        )) {
+            write_error(error_out, error_len, cache_error);
+            return 1;
+        }
+    }
+
     cuda_result = cudaMemcpyAsync(
         external.image,
-        image,
+        upload_image,
         image_bytes,
         cudaMemcpyHostToDevice,
         runtime->stream
@@ -985,13 +1293,13 @@ int run_wvf_vkfft(
         return 1;
     }
 
-    cuda_result = cudaMemcpyAsync(out_x, external.out_x, output_bytes, cudaMemcpyDeviceToHost, runtime->stream);
+    cuda_result = cudaMemcpyAsync(download_out_x, external.out_x, output_bytes, cudaMemcpyDeviceToHost, runtime->stream);
     if (cuda_result == cudaSuccess) {
-        cuda_result = cudaMemcpyAsync(out_y, external.out_y, output_bytes, cudaMemcpyDeviceToHost, runtime->stream);
+        cuda_result = cudaMemcpyAsync(download_out_y, external.out_y, output_bytes, cudaMemcpyDeviceToHost, runtime->stream);
     }
     if (cuda_result == cudaSuccess) {
         cuda_result = cudaMemcpyAsync(
-            magnitude,
+            download_magnitude,
             external.magnitude,
             output_bytes,
             cudaMemcpyDeviceToHost,
@@ -999,7 +1307,7 @@ int run_wvf_vkfft(
         );
     }
     if (cuda_result == cudaSuccess) {
-        cuda_result = cudaMemcpyAsync(angle, external.angle, output_bytes, cudaMemcpyDeviceToHost, runtime->stream);
+        cuda_result = cudaMemcpyAsync(download_angle, external.angle, output_bytes, cudaMemcpyDeviceToHost, runtime->stream);
     }
     if (cuda_result != cudaSuccess) {
         write_error(
@@ -1018,6 +1326,13 @@ int run_wvf_vkfft(
             std::string("failed to synchronize CUDA stream: ") + cudaGetErrorString(cuda_result)
         );
         return 1;
+    }
+    host_registration.clear_stream();
+    if (using_pinned_staging) {
+        std::memcpy(out_x, host_staging->out_x, output_bytes);
+        std::memcpy(out_y, host_staging->out_y, output_bytes);
+        std::memcpy(magnitude, host_staging->magnitude, output_bytes);
+        std::memcpy(angle, host_staging->angle, output_bytes);
     }
 
     return 0;
