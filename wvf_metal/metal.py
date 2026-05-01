@@ -1,4 +1,4 @@
-"""Python bindings for the standalone WVF Metal backend."""
+"""Thin Python bindings for the standalone WVF Metal backend."""
 
 from __future__ import annotations
 
@@ -12,16 +12,19 @@ from pathlib import Path
 
 import numpy as np
 
-from .radius import (
-    WVFAntipodalKernels,
-    WVFRadiusKernels,
-    build_wvf_antipodal_kernels,
-    build_wvf_radius_kernels,
-)
-
 
 class MetalBackendError(RuntimeError):
     """Raised when the local Metal backend cannot run."""
+
+
+_VARIANTS = {
+    "direct": 0,
+    "baseline": 0,
+    "antipodal": 1,
+    "split": 2,
+    "optimized": 2,
+    "auto": 2,
+}
 
 
 def _package_root() -> Path:
@@ -81,26 +84,29 @@ def _needs_rebuild(dylib: Path) -> bool:
 @lru_cache(maxsize=1)
 def _load_library() -> ctypes.CDLL:
     lib = ctypes.CDLL(str(_library_path()))
-    direct_args = [
+    gradient_args = [
         ctypes.POINTER(ctypes.c_float),
         ctypes.c_uint,
         ctypes.c_uint,
-        ctypes.POINTER(ctypes.c_int),
-        ctypes.POINTER(ctypes.c_int),
-        ctypes.POINTER(ctypes.c_float),
-        ctypes.POINTER(ctypes.c_float),
+        ctypes.c_uint,
+        ctypes.c_uint,
         ctypes.c_uint,
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_char),
         ctypes.c_size_t,
     ]
-    lib.wvf_metal_convolve_direct.argtypes = direct_args
-    lib.wvf_metal_convolve_direct.restype = ctypes.c_int
-    lib.wvf_metal_convolve_antipodal.argtypes = direct_args
-    lib.wvf_metal_convolve_antipodal.restype = ctypes.c_int
-    lib.wvf_metal_convolve_split.argtypes = direct_args[:8] + [ctypes.c_uint] + direct_args[8:]
-    lib.wvf_metal_convolve_split.restype = ctypes.c_int
+    lib.wvf_metal_gradients.argtypes = gradient_args
+    lib.wvf_metal_gradients.restype = ctypes.c_int
+
+    magnitude_args = gradient_args[:8] + [
+        ctypes.POINTER(ctypes.c_float),
+        ctypes.POINTER(ctypes.c_float),
+        ctypes.POINTER(ctypes.c_char),
+        ctypes.c_size_t,
+    ]
+    lib.wvf_metal_magnitude_angle.argtypes = magnitude_args
+    lib.wvf_metal_magnitude_angle.restype = ctypes.c_int
     return lib
 
 
@@ -113,6 +119,13 @@ def metal_backend_available() -> bool:
     return True
 
 
+def _variant_id(variant: str) -> int:
+    try:
+        return _VARIANTS[str(variant).lower()]
+    except KeyError as exc:
+        raise ValueError("variant must be 'split', 'antipodal', or 'direct'") from exc
+
+
 def _as_float_image(image: np.ndarray) -> np.ndarray:
     img = np.ascontiguousarray(image, dtype=np.float32)
     if img.ndim != 2:
@@ -122,170 +135,81 @@ def _as_float_image(image: np.ndarray) -> np.ndarray:
     return img
 
 
-def _call_backend(
-    function_name: str,
-    image: np.ndarray,
-    dx: np.ndarray,
-    dy: np.ndarray,
-    wx: np.ndarray,
-    wy: np.ndarray,
-    n_offsets: int,
-    output_dtype: np.dtype | type,
-    radius: int | None = None,
-) -> tuple[np.ndarray, np.ndarray]:
-    img = _as_float_image(image)
-    out_x = np.empty(img.size, dtype=np.float32)
-    out_y = np.empty(img.size, dtype=np.float32)
-    error_buffer = ctypes.create_string_buffer(4096)
-    h, w = img.shape
+def _checked_uint(value: int, name: str) -> ctypes.c_uint:
+    intval = int(value)
+    if intval < 0 or intval > np.iinfo(np.uint32).max:
+        raise ValueError(f"{name} must fit in uint32")
+    return ctypes.c_uint(intval)
 
-    args = [
-        img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-        ctypes.c_uint(w),
-        ctypes.c_uint(h),
-        dx.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
-        dy.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
-        wx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-        wy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-        ctypes.c_uint(n_offsets),
-    ]
-    if radius is not None:
-        args.append(ctypes.c_uint(radius))
-    args.extend(
-        [
-            out_x.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            out_y.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-            error_buffer,
-            ctypes.c_size_t(len(error_buffer)),
-        ]
-    )
 
-    status = getattr(_load_library(), function_name)(*args)
+def _raise_if_failed(status: int, error_buffer: ctypes.Array[ctypes.c_char]) -> None:
     if status != 0:
         raise MetalBackendError(error_buffer.value.decode("utf-8", errors="replace"))
-
-    dtype = np.dtype(output_dtype)
-    gx = out_x.reshape(img.shape)
-    gy = out_y.reshape(img.shape)
-    if dtype == np.dtype(np.float32):
-        return gx, gy
-    return gx.astype(dtype), gy.astype(dtype)
-
-
-def wvf_direct_gradients_metal(
-    image: np.ndarray,
-    kernels: WVFRadiusKernels,
-    output_dtype: np.dtype | type = np.float64,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Compute WVF gradients with the direct sparse Metal kernel."""
-    offsets = kernels.offsets_xy.astype(np.int32, copy=False)
-    return _call_backend(
-        "wvf_metal_convolve_direct",
-        image,
-        np.ascontiguousarray(offsets[:, 0], dtype=np.int32),
-        np.ascontiguousarray(offsets[:, 1], dtype=np.int32),
-        np.ascontiguousarray(kernels.weights_x, dtype=np.float32),
-        np.ascontiguousarray(kernels.weights_y, dtype=np.float32),
-        kernels.support_size,
-        output_dtype,
-    )
-
-
-def wvf_antipodal_gradients_metal(
-    image: np.ndarray,
-    kernels: WVFAntipodalKernels,
-    output_dtype: np.dtype | type = np.float64,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Compute WVF gradients with antipodal Metal pairs."""
-    offsets = kernels.offsets_xy.astype(np.int32, copy=False)
-    return _call_backend(
-        "wvf_metal_convolve_antipodal",
-        image,
-        np.ascontiguousarray(offsets[:, 0], dtype=np.int32),
-        np.ascontiguousarray(offsets[:, 1], dtype=np.int32),
-        np.ascontiguousarray(kernels.weights_x, dtype=np.float32),
-        np.ascontiguousarray(kernels.weights_y, dtype=np.float32),
-        kernels.pair_count,
-        output_dtype,
-    )
-
-
-def wvf_split_gradients_metal(
-    image: np.ndarray,
-    kernels: WVFAntipodalKernels,
-    output_dtype: np.dtype | type = np.float64,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Compute WVF gradients with split interior and boundary Metal kernels."""
-    offsets = kernels.offsets_xy.astype(np.int32, copy=False)
-    return _call_backend(
-        "wvf_metal_convolve_split",
-        image,
-        np.ascontiguousarray(offsets[:, 0], dtype=np.int32),
-        np.ascontiguousarray(offsets[:, 1], dtype=np.int32),
-        np.ascontiguousarray(kernels.weights_x, dtype=np.float32),
-        np.ascontiguousarray(kernels.weights_y, dtype=np.float32),
-        kernels.pair_count,
-        output_dtype,
-        radius=kernels.radius,
-    )
-
-
-def wvf_radius_gradients_metal(
-    image: np.ndarray,
-    kernels: WVFRadiusKernels,
-    output_dtype: np.dtype | type = np.float64,
-    variant: str = "split",
-) -> tuple[np.ndarray, np.ndarray]:
-    """Compute WVF gradients for prebuilt radius kernels."""
-    mode = str(variant).lower()
-    if mode in {"direct", "baseline"}:
-        return wvf_direct_gradients_metal(image, kernels, output_dtype)
-    if mode not in {"split", "antipodal", "optimized", "auto"}:
-        raise ValueError("variant must be 'split', 'antipodal', or 'direct'")
-
-    antipodal = build_wvf_antipodal_kernels(kernels.radius, kernels.degree)
-    if mode == "antipodal":
-        return wvf_antipodal_gradients_metal(image, antipodal, output_dtype)
-    return wvf_split_gradients_metal(image, antipodal, output_dtype)
 
 
 def wvf_gradients_metal(
     image: np.ndarray,
     radius: int,
     degree: int = 4,
-    output_dtype: np.dtype | type = np.float32,
     variant: str = "split",
 ) -> tuple[np.ndarray, np.ndarray]:
     """Compute standalone WVF ``Gx`` and ``Gy`` on Metal."""
-    kernels = build_wvf_radius_kernels(radius=radius, degree=degree)
-    return wvf_radius_gradients_metal(
-        image,
-        kernels,
-        output_dtype=output_dtype,
-        variant=variant,
+    img = _as_float_image(image)
+    gx = np.empty(img.size, dtype=np.float32)
+    gy = np.empty(img.size, dtype=np.float32)
+    error_buffer = ctypes.create_string_buffer(4096)
+    h, w = img.shape
+
+    status = _load_library().wvf_metal_gradients(
+        img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        _checked_uint(w, "image width"),
+        _checked_uint(h, "image height"),
+        _checked_uint(radius, "radius"),
+        _checked_uint(degree, "degree"),
+        ctypes.c_uint(_variant_id(variant)),
+        gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        error_buffer,
+        ctypes.c_size_t(len(error_buffer)),
     )
+    _raise_if_failed(status, error_buffer)
+    return gx.reshape(img.shape), gy.reshape(img.shape)
 
 
 def wvf_magnitude_angle_metal(
     image: np.ndarray,
     radius: int,
     degree: int = 4,
-    output_dtype: np.dtype | type = np.float32,
     variant: str = "split",
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Compute WVF components, magnitude, and unsigned orientation angle."""
-    gx, gy = wvf_gradients_metal(
-        image,
-        radius=radius,
-        degree=degree,
-        output_dtype=output_dtype,
-        variant=variant,
+    """Compute WVF components, magnitude, and unsigned orientation angle on Metal."""
+    img = _as_float_image(image)
+    gx = np.empty(img.size, dtype=np.float32)
+    gy = np.empty(img.size, dtype=np.float32)
+    magnitude = np.empty(img.size, dtype=np.float32)
+    angle = np.empty(img.size, dtype=np.float32)
+    error_buffer = ctypes.create_string_buffer(4096)
+    h, w = img.shape
+
+    status = _load_library().wvf_metal_magnitude_angle(
+        img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        _checked_uint(w, "image width"),
+        _checked_uint(h, "image height"),
+        _checked_uint(radius, "radius"),
+        _checked_uint(degree, "degree"),
+        ctypes.c_uint(_variant_id(variant)),
+        gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        magnitude.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        angle.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        error_buffer,
+        ctypes.c_size_t(len(error_buffer)),
     )
-    mag = np.hypot(gx, gy)
-    angle = np.mod(np.arctan2(gy, gx), np.pi)
+    _raise_if_failed(status, error_buffer)
+    shape = img.shape
     return (
-        gx,
-        gy,
-        mag.astype(output_dtype, copy=False),
-        angle.astype(output_dtype, copy=False),
+        gx.reshape(shape),
+        gy.reshape(shape),
+        magnitude.reshape(shape),
+        angle.reshape(shape),
     )

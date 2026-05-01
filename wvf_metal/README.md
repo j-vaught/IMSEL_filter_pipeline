@@ -1,8 +1,9 @@
 # Standalone WVF Metal
 
 This folder is a copyable Apple Silicon implementation of radius-defined Wide
-View Filter gradients. It contains only the WVF kernel builder, the Metal
-compute kernels, Python bindings, and a small command line interface.
+View Filter gradients. WVF weights are built in Rust, convolution runs in
+Metal, and magnitude/angle recovery runs in Metal. Python only loads inputs,
+allocates output arrays, and calls the Rust dynamic library.
 
 ## Requirements
 
@@ -38,10 +39,24 @@ gx, gy = wvf_gradients_metal(image, radius=9, degree=3)
 gx, gy, magnitude, angle = wvf_magnitude_angle_metal(image, radius=9, degree=3)
 ```
 
-The default Metal variant is `split`, which uses antipodal WVF pairs and a
-separate interior kernel that avoids reflected-boundary math away from the
-image border. For comparisons, pass `variant="direct"` or
-`variant="antipodal"`.
+The default Metal variant is `split`. For comparisons, pass `variant="direct"`
+or `variant="antipodal"`.
+
+## Kernel Variants
+
+`direct` uses the full WVF support. Each Metal thread computes one output
+pixel and loops over every disk offset, sampling with reflected boundaries and
+accumulating both `Gx` and `Gy`.
+
+`antipodal` uses the odd symmetry of derivative weights. It stores each
+`(+dx,+dy)` and `(-dx,-dy)` pair once, samples both pixels, forms their
+difference, and applies one paired weight. This cuts the loop count roughly in
+half while producing the same derivative up to float32 roundoff.
+
+`split` uses the same antipodal pairs but dispatches two kernels. Interior
+pixels use a fast path with direct indexing and no reflected-boundary checks.
+Only the border band uses reflected indexing. This is the default because most
+pixels in normal images are interior pixels.
 
 ## CLI
 
@@ -55,9 +70,8 @@ The output archive contains `gx`, `gy`, `magnitude`, `angle`, `radius`,
 
 ## File Map
 
-- `radius.py` builds the Taylor design matrix, dense reference kernels, and
-  antipodal Metal weights.
 - `metal.py` builds and loads the Rust/Metal backend and exposes the Python API.
 - `cli.py` provides the command line wrapper.
-- `rust/src/lib.rs` is the minimal Rust host layer and C ABI.
+- `rust/src/lib.rs` builds WVF weights, owns the Metal dispatch code, and
+  exposes the C ABI.
 - `rust/src/wvf.metal` contains the Metal compute kernels.

@@ -14,6 +14,10 @@ struct SplitParams {
     uint radius;
 };
 
+struct MagnitudeParams {
+    uint n_pixels;
+};
+
 inline int reflect_index(int value, int limit) {
     if (limit <= 1) {
         return 0;
@@ -182,4 +186,30 @@ kernel void wvf_split_boundary(
 
     out_x[out_index] = sx;
     out_y[out_index] = sy;
+}
+
+kernel void wvf_magnitude_angle(
+    device const float* gx [[buffer(0)]],
+    device const float* gy [[buffer(1)]],
+    device float* magnitude [[buffer(2)]],
+    device float* angle [[buffer(3)]],
+    constant MagnitudeParams& params [[buffer(4)]],
+    uint gid [[thread_position_in_grid]]
+) {
+    if (gid >= params.n_pixels) {
+        return;
+    }
+
+    const float x = gx[gid];
+    const float y = gy[gid];
+    magnitude[gid] = sqrt(x * x + y * y);
+
+    float theta = atan2(y, x);
+    if (theta < 0.0f) {
+        theta += M_PI_F;
+    }
+    if (theta >= M_PI_F) {
+        theta -= M_PI_F;
+    }
+    angle[gid] = theta;
 }

@@ -52,23 +52,16 @@ def build_parser() -> argparse.ArgumentParser:
         default="split",
     )
     parser.add_argument("--key", default=None, help="Array key when input is .npz.")
-    parser.add_argument(
-        "--output-dtype",
-        choices=("float32", "float64"),
-        default="float32",
-    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     image = _load_array(args.input, args.key)
-    dtype = np.dtype(args.output_dtype)
     gx, gy, mag, angle = wvf_magnitude_angle_metal(
         image,
         radius=args.radius,
         degree=args.degree,
-        output_dtype=dtype,
         variant=args.variant,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)

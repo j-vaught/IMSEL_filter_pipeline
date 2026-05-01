@@ -3,11 +3,15 @@ use metal::{
     MTLSize, NSRange,
 };
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::ffi::c_char;
 use std::os::raw::{c_float, c_int, c_uint};
 use std::ptr;
 
 const SHADER_SOURCE: &str = include_str!("wvf.metal");
+const WVF_VARIANT_DIRECT: c_uint = 0;
+const WVF_VARIANT_ANTIPODAL: c_uint = 1;
+const WVF_VARIANT_SPLIT: c_uint = 2;
 
 #[repr(C)]
 struct KernelParams {
@@ -24,12 +28,18 @@ struct SplitParams {
     radius: c_uint,
 }
 
+#[repr(C)]
+struct MagnitudeParams {
+    n_pixels: c_uint,
+}
+
 struct MetalState {
     device: Device,
     direct_pipeline: ComputePipelineState,
     antipodal_pipeline: ComputePipelineState,
     split_interior_pipeline: ComputePipelineState,
     split_boundary_pipeline: ComputePipelineState,
+    magnitude_pipeline: ComputePipelineState,
     queue: CommandQueue,
 }
 
@@ -47,6 +57,7 @@ impl MetalState {
         let antipodal_pipeline = pipeline(&device, &library, "wvf_antipodal")?;
         let split_interior_pipeline = pipeline(&device, &library, "wvf_split_interior")?;
         let split_boundary_pipeline = pipeline(&device, &library, "wvf_split_boundary")?;
+        let magnitude_pipeline = pipeline(&device, &library, "wvf_magnitude_angle")?;
         let queue = device.new_command_queue();
 
         Ok(Self {
@@ -55,6 +66,7 @@ impl MetalState {
             antipodal_pipeline,
             split_interior_pipeline,
             split_boundary_pipeline,
+            magnitude_pipeline,
             queue,
         })
     }
@@ -75,6 +87,7 @@ fn pipeline(
 
 thread_local! {
     static METAL_STATE: RefCell<Option<MetalState>> = const { RefCell::new(None) };
+    static KERNEL_CACHE: RefCell<HashMap<(c_uint, c_uint, c_uint), GeneratedKernels>> = RefCell::new(HashMap::new());
 }
 
 fn threadgroup_2d(pipeline: &ComputePipelineState) -> MTLSize {
@@ -85,6 +98,18 @@ fn threadgroup_2d(pipeline: &ComputePipelineState) -> MTLSize {
     MTLSize {
         width,
         height,
+        depth: 1,
+    }
+}
+
+fn threadgroup_1d(pipeline: &ComputePipelineState) -> MTLSize {
+    let execution_width = pipeline.thread_execution_width().max(1);
+    let max_threads = pipeline.max_total_threads_per_threadgroup().max(1);
+    let mut width = max_threads.min(256);
+    width = (width / execution_width).max(1) * execution_width;
+    MTLSize {
+        width,
+        height: 1,
         depth: 1,
     }
 }
@@ -125,6 +150,264 @@ unsafe fn write_error(error_out: *mut c_char, error_len: usize, message: &str) {
     let copy_len = bytes.len().min(error_len.saturating_sub(1));
     ptr::copy_nonoverlapping(bytes.as_ptr().cast::<c_char>(), error_out, copy_len);
     *error_out.add(copy_len) = 0;
+}
+
+#[derive(Clone)]
+struct GeneratedKernels {
+    radius: c_uint,
+    dx: Vec<c_int>,
+    dy: Vec<c_int>,
+    wx: Vec<c_float>,
+    wy: Vec<c_float>,
+}
+
+impl GeneratedKernels {
+    fn n_offsets(&self) -> Result<c_uint, String> {
+        c_uint::try_from(self.dx.len())
+            .map_err(|_| "WVF support is too large for uint32".to_string())
+    }
+}
+
+fn taylor_exponents(degree: c_uint) -> Vec<(u32, u32)> {
+    let mut exponents = vec![(0, 0)];
+    if degree >= 1 {
+        exponents.push((1, 0));
+        exponents.push((0, 1));
+    }
+    for total_degree in 2..=degree {
+        exponents.push((total_degree, 0));
+        exponents.push((0, total_degree));
+        for px in (1..total_degree).rev() {
+            exponents.push((px, total_degree - px));
+        }
+    }
+    exponents
+}
+
+fn factorial(value: u32) -> f64 {
+    (2..=value).fold(1.0, |acc, x| acc * f64::from(x))
+}
+
+fn disk_offsets(radius: c_uint) -> Result<Vec<(c_int, c_int)>, String> {
+    let r = c_int::try_from(radius).map_err(|_| "radius is too large".to_string())?;
+    if r < 1 {
+        return Err("radius must be positive".to_string());
+    }
+    let radius2 = r
+        .checked_mul(r)
+        .ok_or_else(|| "radius is too large".to_string())?;
+
+    let mut offsets = Vec::new();
+    for dy in -r..=r {
+        for dx in -r..=r {
+            if dx == 0 && dy == 0 {
+                continue;
+            }
+            if dx
+                .checked_mul(dx)
+                .and_then(|x2| dy.checked_mul(dy).and_then(|y2| x2.checked_add(y2)))
+                .is_some_and(|dist2| dist2 <= radius2)
+            {
+                offsets.push((dx, dy));
+            }
+        }
+    }
+    Ok(offsets)
+}
+
+fn build_design(offsets: &[(c_int, c_int)], degree: c_uint) -> Vec<Vec<f64>> {
+    let exponents = taylor_exponents(degree);
+    offsets
+        .iter()
+        .map(|&(dx, dy)| {
+            let x = f64::from(dx);
+            let y = f64::from(dy);
+            exponents
+                .iter()
+                .map(|&(px, py)| {
+                    let scale = factorial(px) * factorial(py);
+                    x.powi(px as i32) * y.powi(py as i32) / scale
+                })
+                .collect()
+        })
+        .collect()
+}
+
+fn invert_square(matrix: &[f64], n: usize) -> Result<Vec<f64>, String> {
+    let mut aug = vec![0.0; n * 2 * n];
+    for row in 0..n {
+        for col in 0..n {
+            aug[row * 2 * n + col] = matrix[row * n + col];
+        }
+        aug[row * 2 * n + n + row] = 1.0;
+    }
+
+    for col in 0..n {
+        let mut pivot_row = col;
+        let mut pivot_abs = aug[pivot_row * 2 * n + col].abs();
+        for row in (col + 1)..n {
+            let candidate = aug[row * 2 * n + col].abs();
+            if candidate > pivot_abs {
+                pivot_abs = candidate;
+                pivot_row = row;
+            }
+        }
+        if pivot_abs <= 1.0e-14 {
+            return Err("Taylor normal matrix is singular".to_string());
+        }
+        if pivot_row != col {
+            for k in 0..(2 * n) {
+                aug.swap(col * 2 * n + k, pivot_row * 2 * n + k);
+            }
+        }
+
+        let pivot = aug[col * 2 * n + col];
+        for k in 0..(2 * n) {
+            aug[col * 2 * n + k] /= pivot;
+        }
+
+        for row in 0..n {
+            if row == col {
+                continue;
+            }
+            let factor = aug[row * 2 * n + col];
+            if factor == 0.0 {
+                continue;
+            }
+            for k in 0..(2 * n) {
+                aug[row * 2 * n + k] -= factor * aug[col * 2 * n + k];
+            }
+        }
+    }
+
+    let mut inverse = vec![0.0; n * n];
+    for row in 0..n {
+        for col in 0..n {
+            inverse[row * n + col] = aug[row * 2 * n + n + col];
+        }
+    }
+    Ok(inverse)
+}
+
+fn build_direct_kernels(radius: c_uint, degree: c_uint) -> Result<GeneratedKernels, String> {
+    if degree < 1 {
+        return Err("degree must be at least 1 for WVF gradients".to_string());
+    }
+
+    let offsets = disk_offsets(radius)?;
+    let design = build_design(&offsets, degree);
+    let n_samples = design.len();
+    let n_coeffs = taylor_exponents(degree).len();
+    if n_samples < n_coeffs {
+        return Err(format!(
+            "radius {radius} gives {n_samples} samples, fewer than {n_coeffs} Taylor coefficients for degree {degree}"
+        ));
+    }
+
+    let mut ata = vec![0.0; n_coeffs * n_coeffs];
+    for row in &design {
+        for i in 0..n_coeffs {
+            for j in 0..n_coeffs {
+                ata[i * n_coeffs + j] += row[i] * row[j];
+            }
+        }
+    }
+    let inv = invert_square(&ata, n_coeffs)?;
+
+    let mut dx = Vec::with_capacity(n_samples);
+    let mut dy = Vec::with_capacity(n_samples);
+    let mut wx = Vec::with_capacity(n_samples);
+    let mut wy = Vec::with_capacity(n_samples);
+    for (sample_idx, &(offset_x, offset_y)) in offsets.iter().enumerate() {
+        dx.push(offset_x);
+        dy.push(offset_y);
+        let row = &design[sample_idx];
+        let weight_x = (0..n_coeffs)
+            .map(|coeff| inv[n_coeffs + coeff] * row[coeff])
+            .sum::<f64>();
+        let weight_y = (0..n_coeffs)
+            .map(|coeff| inv[2 * n_coeffs + coeff] * row[coeff])
+            .sum::<f64>();
+        wx.push(weight_x as c_float);
+        wy.push(weight_y as c_float);
+    }
+
+    Ok(GeneratedKernels {
+        radius,
+        dx,
+        dy,
+        wx,
+        wy,
+    })
+}
+
+fn build_antipodal_kernels(radius: c_uint, degree: c_uint) -> Result<GeneratedKernels, String> {
+    let direct = build_direct_kernels(radius, degree)?;
+    let index: HashMap<(c_int, c_int), usize> = direct
+        .dx
+        .iter()
+        .zip(&direct.dy)
+        .enumerate()
+        .map(|(idx, (&dx, &dy))| ((dx, dy), idx))
+        .collect();
+    let mut used = vec![false; direct.dx.len()];
+    let mut dx = Vec::with_capacity(direct.dx.len() / 2);
+    let mut dy = Vec::with_capacity(direct.dy.len() / 2);
+    let mut wx = Vec::with_capacity(direct.wx.len() / 2);
+    let mut wy = Vec::with_capacity(direct.wy.len() / 2);
+
+    for i in 0..direct.dx.len() {
+        if used[i] {
+            continue;
+        }
+        let offset_x = direct.dx[i];
+        let offset_y = direct.dy[i];
+        let opposite = (-offset_x, -offset_y);
+        let j = *index
+            .get(&opposite)
+            .ok_or_else(|| format!("offset ({offset_x}, {offset_y}) has no antipodal partner"))?;
+        used[i] = true;
+        used[j] = true;
+
+        let (pos, neg, pair_dx, pair_dy) = if offset_y > 0 || (offset_y == 0 && offset_x > 0) {
+            (i, j, offset_x, offset_y)
+        } else {
+            (j, i, opposite.0, opposite.1)
+        };
+        dx.push(pair_dx);
+        dy.push(pair_dy);
+        wx.push(0.5 * (direct.wx[pos] - direct.wx[neg]));
+        wy.push(0.5 * (direct.wy[pos] - direct.wy[neg]));
+    }
+
+    Ok(GeneratedKernels {
+        radius,
+        dx,
+        dy,
+        wx,
+        wy,
+    })
+}
+
+fn generated_kernels(
+    radius: c_uint,
+    degree: c_uint,
+    variant: c_uint,
+) -> Result<GeneratedKernels, String> {
+    KERNEL_CACHE.with(|cache_cell| {
+        let key = (radius, degree, variant);
+        if let Some(kernels) = cache_cell.borrow().get(&key) {
+            return Ok(kernels.clone());
+        }
+
+        let kernels = match variant {
+            WVF_VARIANT_DIRECT => build_direct_kernels(radius, degree),
+            WVF_VARIANT_ANTIPODAL | WVF_VARIANT_SPLIT => build_antipodal_kernels(radius, degree),
+            _ => Err("variant must be 0=direct, 1=antipodal, or 2=split".to_string()),
+        }?;
+        cache_cell.borrow_mut().insert(key, kernels.clone());
+        Ok(kernels)
+    })
 }
 
 struct BoundBuffers {
@@ -342,6 +625,65 @@ unsafe fn run_split_with_state(
     Ok(())
 }
 
+unsafe fn run_magnitude_angle_with_state(
+    state: &MetalState,
+    gx: *const c_float,
+    gy: *const c_float,
+    n_pixels: c_uint,
+    magnitude: *mut c_float,
+    angle: *mut c_float,
+) -> Result<(), String> {
+    let float_len = checked_len(n_pixels as usize, std::mem::size_of::<c_float>(), "image")?;
+    let options = MTLResourceOptions::StorageModeShared;
+    let gx_buffer =
+        state
+            .device
+            .new_buffer_with_bytes_no_copy(gx.cast(), float_len as u64, options, None);
+    let gy_buffer =
+        state
+            .device
+            .new_buffer_with_bytes_no_copy(gy.cast(), float_len as u64, options, None);
+    let magnitude_buffer = state.device.new_buffer_with_bytes_no_copy(
+        magnitude.cast::<std::ffi::c_void>().cast_const(),
+        float_len as u64,
+        options,
+        None,
+    );
+    let angle_buffer = state.device.new_buffer_with_bytes_no_copy(
+        angle.cast::<std::ffi::c_void>().cast_const(),
+        float_len as u64,
+        options,
+        None,
+    );
+    let params = MagnitudeParams { n_pixels };
+    let params_buffer = state.device.new_buffer_with_data(
+        (&params as *const MagnitudeParams).cast(),
+        std::mem::size_of::<MagnitudeParams>() as u64,
+        options,
+    );
+
+    let command_buffer = state.queue.new_command_buffer();
+    let encoder = command_buffer.new_compute_command_encoder();
+    encoder.set_compute_pipeline_state(&state.magnitude_pipeline);
+    encoder.set_buffer(0, Some(&gx_buffer), 0);
+    encoder.set_buffer(1, Some(&gy_buffer), 0);
+    encoder.set_buffer(2, Some(&magnitude_buffer), 0);
+    encoder.set_buffer(3, Some(&angle_buffer), 0);
+    encoder.set_buffer(4, Some(&params_buffer), 0);
+    encoder.dispatch_threads(
+        MTLSize {
+            width: n_pixels as u64,
+            height: 1,
+            depth: 1,
+        },
+        threadgroup_1d(&state.magnitude_pipeline),
+    );
+    encoder.end_encoding();
+    command_buffer.commit();
+    command_buffer.wait_until_completed();
+    Ok(())
+}
+
 unsafe fn run_checked<F>(runner: F) -> Result<(), String>
 where
     F: FnOnce(&MetalState) -> Result<(), String>,
@@ -382,6 +724,164 @@ unsafe fn validate_common(
         return Err("n_offsets must be positive".to_string());
     }
     Ok(())
+}
+
+unsafe fn validate_generated(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    variant: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+) -> Result<(), String> {
+    check_ptr(image, "image")?;
+    check_mut_ptr(out_x, "out_x")?;
+    check_mut_ptr(out_y, "out_y")?;
+    if width == 0 || height == 0 {
+        return Err("image width and height must be positive".to_string());
+    }
+    if radius == 0 {
+        return Err("radius must be positive".to_string());
+    }
+    if degree < 1 {
+        return Err("degree must be at least 1".to_string());
+    }
+    if !matches!(
+        variant,
+        WVF_VARIANT_DIRECT | WVF_VARIANT_ANTIPODAL | WVF_VARIANT_SPLIT
+    ) {
+        return Err("variant must be 0=direct, 1=antipodal, or 2=split".to_string());
+    }
+    Ok(())
+}
+
+unsafe fn run_generated_gradients_with_state(
+    state: &MetalState,
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    variant: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+) -> Result<(), String> {
+    let kernels = generated_kernels(radius, degree, variant)?;
+    let n_offsets = kernels.n_offsets()?;
+    match variant {
+        WVF_VARIANT_DIRECT => run_convolve_with_state(
+            state,
+            &state.direct_pipeline,
+            image,
+            width,
+            height,
+            kernels.dx.as_ptr(),
+            kernels.dy.as_ptr(),
+            kernels.wx.as_ptr(),
+            kernels.wy.as_ptr(),
+            n_offsets,
+            out_x,
+            out_y,
+        ),
+        WVF_VARIANT_ANTIPODAL => run_convolve_with_state(
+            state,
+            &state.antipodal_pipeline,
+            image,
+            width,
+            height,
+            kernels.dx.as_ptr(),
+            kernels.dy.as_ptr(),
+            kernels.wx.as_ptr(),
+            kernels.wy.as_ptr(),
+            n_offsets,
+            out_x,
+            out_y,
+        ),
+        WVF_VARIANT_SPLIT => run_split_with_state(
+            state,
+            image,
+            width,
+            height,
+            kernels.dx.as_ptr(),
+            kernels.dy.as_ptr(),
+            kernels.wx.as_ptr(),
+            kernels.wy.as_ptr(),
+            n_offsets,
+            kernels.radius,
+            out_x,
+            out_y,
+        ),
+        _ => Err("variant must be 0=direct, 1=antipodal, or 2=split".to_string()),
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wvf_metal_gradients(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    variant: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+    error_out: *mut c_char,
+    error_len: usize,
+) -> c_int {
+    let result = validate_generated(image, width, height, radius, degree, variant, out_x, out_y)
+        .and_then(|()| {
+            run_checked(|state| {
+                run_generated_gradients_with_state(
+                    state, image, width, height, radius, degree, variant, out_x, out_y,
+                )
+            })
+        });
+    match result {
+        Ok(()) => 0,
+        Err(message) => {
+            write_error(error_out, error_len, &message);
+            1
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wvf_metal_magnitude_angle(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    variant: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+    magnitude: *mut c_float,
+    angle: *mut c_float,
+    error_out: *mut c_char,
+    error_len: usize,
+) -> c_int {
+    let result = validate_generated(image, width, height, radius, degree, variant, out_x, out_y)
+        .and_then(|()| check_mut_ptr(magnitude, "magnitude"))
+        .and_then(|()| check_mut_ptr(angle, "angle"))
+        .and_then(|()| {
+            let n_pixels = c_uint::try_from(checked_image_pixels(width, height)?)
+                .map_err(|_| "image pixel count is too large for uint32".to_string())?;
+            run_checked(|state| {
+                run_generated_gradients_with_state(
+                    state, image, width, height, radius, degree, variant, out_x, out_y,
+                )?;
+                run_magnitude_angle_with_state(state, out_x, out_y, n_pixels, magnitude, angle)
+            })
+        });
+    match result {
+        Ok(()) => 0,
+        Err(message) => {
+            write_error(error_out, error_len, &message);
+            1
+        }
+    }
 }
 
 #[no_mangle]
