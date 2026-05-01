@@ -5,9 +5,10 @@ View Filter gradients. WVF weights are built and cached in Rust, convolution
 runs in Metal, and magnitude/angle recovery stays on the GPU. The spatial
 variants use the `metal` crate directly. Backend `3`, exposed as `fft` and the
 compatibility alias `vkfft`, currently keeps the legacy VkFFT bridge for the
-best warm performance while a pure Rust FFT path remains available as an
-opt-in. Python only loads inputs, allocates output arrays, and calls the Rust
-dynamic library.
+best warm performance. A pure Rust CPU FFT fallback and a pure Metal GPU FFT
+path are both available as opt-in backends while performance work continues.
+Python only loads inputs, allocates output arrays, and calls the Rust dynamic
+library.
 
 ## Requirements
 
@@ -67,12 +68,13 @@ pixels in normal images are interior pixels.
 VkFFT bridge because that path still wins the recorded warm benchmark gate.
 `vkfft` is kept as a compatibility alias for the same backend id and behavior.
 
-Use `WVF_METAL_FFT_BACKEND=rust` to route backend `3` through the pure Rust FFT
-implementation. Use `WVF_METAL_FFT_BACKEND=legacy` to force the existing VkFFT
-bridge. `WVF_METAL_FFT_BACKEND=auto` is the default and currently selects the
-legacy path until the Rust backend clears the warm-performance gate. The older
-`WVF_METAL_EXPERIMENTAL_MPSGRAPH=1` flag is kept as a temporary compatibility
-alias for `WVF_METAL_FFT_BACKEND=rust`.
+Use `WVF_METAL_FFT_BACKEND=auto|legacy|cpu|gpu|rust` to select backend `3`.
+`auto` is the default and currently selects the legacy VkFFT bridge. `cpu`
+selects the pure Rust `rustfft` fallback. `gpu` selects the pure Metal FFT
+path implemented in Rust host code plus Metal compute kernels. `rust` is kept
+as a compatibility alias for `gpu`. The older
+`WVF_METAL_EXPERIMENTAL_MPSGRAPH=1` flag is also kept as a temporary alias for
+`gpu`.
 
 ## CLI
 
@@ -94,8 +96,8 @@ The output archive contains `gx`, `gy`, `magnitude`, `angle`, `radius`,
   warm performance.
 - `rust/src/lib.rs` builds WVF weights, owns the Metal dispatch code, and
   exposes the C ABI.
-- `rust/src/fft_backend/` contains the Rust FFT backend and its plan/cache
-  ownership.
+- `rust/src/fft_backend/` contains the CPU Rust FFT fallback, the GPU Metal FFT
+  backend, and their plan/cache ownership.
 - `rust/src/wvf.metal` contains the Metal compute kernels.
 - `rust/src/vkfft_bridge.cpp` contains the active legacy FFT bridge.
 - `rust/third_party/` contains the vendored headers needed by that bridge.

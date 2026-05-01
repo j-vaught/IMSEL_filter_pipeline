@@ -1100,7 +1100,7 @@ where
     })
 }
 
-unsafe fn run_rust_fft_backend_magnitude_angle(
+unsafe fn run_cpu_fft_backend_magnitude_angle(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -1111,12 +1111,12 @@ unsafe fn run_rust_fft_backend_magnitude_angle(
     magnitude: *mut c_float,
     angle: *mut c_float,
 ) -> Result<(), String> {
-    fft_backend::run_fft_magnitude_angle(
+    fft_backend::run_fft_magnitude_angle_cpu(
         image, width, height, radius, degree, out_x, out_y, magnitude, angle,
     )
 }
 
-unsafe fn run_rust_fft_backend_gradients(
+unsafe fn run_cpu_fft_backend_gradients(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -1125,7 +1125,35 @@ unsafe fn run_rust_fft_backend_gradients(
     out_x: *mut c_float,
     out_y: *mut c_float,
 ) -> Result<(), String> {
-    fft_backend::run_fft_gradients(image, width, height, radius, degree, out_x, out_y)
+    fft_backend::run_fft_gradients_cpu(image, width, height, radius, degree, out_x, out_y)
+}
+
+unsafe fn run_gpu_fft_backend_magnitude_angle(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+    magnitude: *mut c_float,
+    angle: *mut c_float,
+) -> Result<(), String> {
+    fft_backend::run_fft_magnitude_angle_gpu(
+        image, width, height, radius, degree, out_x, out_y, magnitude, angle,
+    )
+}
+
+unsafe fn run_gpu_fft_backend_gradients(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+) -> Result<(), String> {
+    fft_backend::run_fft_gradients_gpu(image, width, height, radius, degree, out_x, out_y)
 }
 
 fn use_split_crossover_for_fft_variant(radius: c_uint) -> bool {
@@ -1136,6 +1164,8 @@ fn use_split_crossover_for_fft_variant(radius: c_uint) -> bool {
 enum FftBackendMode {
     Auto,
     Legacy,
+    Cpu,
+    Gpu,
     Rust,
 }
 
@@ -1153,12 +1183,14 @@ fn fft_backend_mode() -> FftBackendMode {
         match value.trim().to_ascii_lowercase().as_str() {
             "" | "auto" => return FftBackendMode::Auto,
             "legacy" | "vkfft" => return FftBackendMode::Legacy,
+            "cpu" => return FftBackendMode::Cpu,
+            "gpu" => return FftBackendMode::Gpu,
             "rust" => return FftBackendMode::Rust,
             _ => {}
         }
     }
     if truthy_env("WVF_METAL_EXPERIMENTAL_MPSGRAPH") {
-        return FftBackendMode::Rust;
+        return FftBackendMode::Gpu;
     }
     FftBackendMode::Auto
 }
@@ -1303,15 +1335,22 @@ unsafe fn run_generated_gradients_with_state(
     out_y: *mut c_float,
 ) -> Result<(), String> {
     if variant == WVF_VARIANT_FFT {
-        match fft_backend_mode() {
-            FftBackendMode::Rust => {
+        let fft_mode = fft_backend_mode();
+        match fft_mode {
+            FftBackendMode::Cpu | FftBackendMode::Gpu | FftBackendMode::Rust => {
                 if use_split_crossover_for_fft_variant(radius) {
                     let plan = generated_kernel_plan(state, radius, degree, WVF_VARIANT_SPLIT)?;
                     return run_plan_split_with_state(state, image, width, height, &plan, out_x, out_y);
                 }
-                return run_rust_fft_backend_gradients(
-                    image, width, height, radius, degree, out_x, out_y,
-                );
+                return match fft_mode {
+                    FftBackendMode::Cpu => run_cpu_fft_backend_gradients(
+                        image, width, height, radius, degree, out_x, out_y,
+                    ),
+                    FftBackendMode::Gpu | FftBackendMode::Rust => run_gpu_fft_backend_gradients(
+                        image, width, height, radius, degree, out_x, out_y,
+                    ),
+                    FftBackendMode::Auto | FftBackendMode::Legacy => unreachable!(),
+                };
             }
             FftBackendMode::Auto | FftBackendMode::Legacy => {}
         }
@@ -1361,17 +1400,24 @@ unsafe fn run_generated_magnitude_angle_with_state(
     angle: *mut c_float,
 ) -> Result<(), String> {
     if variant == WVF_VARIANT_FFT {
-        match fft_backend_mode() {
-            FftBackendMode::Rust => {
+        let fft_mode = fft_backend_mode();
+        match fft_mode {
+            FftBackendMode::Cpu | FftBackendMode::Gpu | FftBackendMode::Rust => {
                 if use_split_crossover_for_fft_variant(radius) {
                     let plan = generated_kernel_plan(state, radius, degree, WVF_VARIANT_SPLIT)?;
                     return run_plan_split_magnitude_angle_with_state(
                         state, image, width, height, &plan, out_x, out_y, magnitude, angle,
                     );
                 }
-                return run_rust_fft_backend_magnitude_angle(
-                    image, width, height, radius, degree, out_x, out_y, magnitude, angle,
-                );
+                return match fft_mode {
+                    FftBackendMode::Cpu => run_cpu_fft_backend_magnitude_angle(
+                        image, width, height, radius, degree, out_x, out_y, magnitude, angle,
+                    ),
+                    FftBackendMode::Gpu | FftBackendMode::Rust => run_gpu_fft_backend_magnitude_angle(
+                        image, width, height, radius, degree, out_x, out_y, magnitude, angle,
+                    ),
+                    FftBackendMode::Auto | FftBackendMode::Legacy => unreachable!(),
+                };
             }
             FftBackendMode::Auto | FftBackendMode::Legacy => {}
         }

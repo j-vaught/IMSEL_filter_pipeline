@@ -36,13 +36,13 @@ struct KernelSpectra {
     values: Arc<[Complex32]>,
 }
 
-pub(super) struct RustFftBackend {
+pub(super) struct CpuFftBackend {
     planner: FftPlanner<f32>,
     plan_cache: HashMap<PlanKey, FftPlan>,
     kernel_cache: HashMap<KernelKey, KernelSpectra>,
 }
 
-impl RustFftBackend {
+impl CpuFftBackend {
     pub(super) fn new() -> Result<Self, String> {
         Ok(Self {
             planner: FftPlanner::new(),

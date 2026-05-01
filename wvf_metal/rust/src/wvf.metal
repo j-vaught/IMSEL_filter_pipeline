@@ -30,6 +30,21 @@ struct WvfFftPostprocessParams {
     uint crop;
     uint fft_width;
     uint plane_stride;
+    float scale;
+};
+
+struct WvfFftStageParams {
+    uint row_len;
+    uint row_count;
+    uint stride;
+    uint prev;
+    uint radix;
+};
+
+struct WvfFftTransposeParams {
+    uint width;
+    uint height;
+    uint batch_count;
 };
 
 inline int reflect_index(int value, int limit) {
@@ -55,6 +70,14 @@ inline float wvf_unsigned_angle(float y, float x) {
         theta -= M_PI_F;
     }
     return theta;
+}
+
+inline float2 complex_mul(float2 a, float2 b) {
+    return float2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+}
+
+inline float2 complex_add(float2 a, float2 b) {
+    return float2(a.x + b.x, a.y + b.y);
 }
 
 inline void write_wvf_outputs(
@@ -95,6 +118,80 @@ kernel void wvf_fft_reflect_pad_real_dense(
     padded[dst_index] = image[uint(src_y) * params.image_width + uint(src_x)];
 }
 
+kernel void wvf_fft_reflect_pad_complex_dense(
+    device const float* image [[buffer(0)]],
+    device float2* padded [[buffer(1)]],
+    constant WvfFftPadParams& params [[buffer(2)]],
+    uint2 gid [[thread_position_in_grid]]
+) {
+    if (gid.x >= params.fft_width || gid.y >= params.fft_height) {
+        return;
+    }
+
+    const uint dst_index = gid.y * params.fft_width + gid.x;
+    if (gid.x >= params.padded_width || gid.y >= params.padded_height) {
+        padded[dst_index] = float2(0.0f, 0.0f);
+        return;
+    }
+
+    const int src_x =
+        reflect_index(int(gid.x) - int(params.radius), int(params.image_width));
+    const int src_y =
+        reflect_index(int(gid.y) - int(params.radius), int(params.image_height));
+    padded[dst_index] = float2(
+        image[uint(src_y) * params.image_width + uint(src_x)],
+        0.0f
+    );
+}
+
+kernel void wvf_fft_stage_c2c(
+    device const float2* src [[buffer(0)]],
+    device float2* dst [[buffer(1)]],
+    constant WvfFftStageParams& params [[buffer(2)]],
+    device const float2* weights [[buffer(3)]],
+    uint2 gid [[thread_position_in_grid]]
+) {
+    if (gid.x >= params.row_len || gid.y >= params.row_count) {
+        return;
+    }
+
+    const uint group = gid.x / params.stride;
+    const uint q = gid.x - group * params.stride;
+    const uint p = group % params.prev;
+    const uint row_base = gid.y * params.row_len;
+    const uint input_group_base = params.radix * p;
+    const uint weight_base = group * params.radix;
+
+    float2 sum = float2(0.0f, 0.0f);
+    for (uint l = 0; l < 8; ++l) {
+        if (l >= params.radix) {
+            break;
+        }
+        const uint input_index =
+            row_base + q + params.stride * (input_group_base + l);
+        sum = complex_add(sum, complex_mul(src[input_index], weights[weight_base + l]));
+    }
+
+    dst[row_base + gid.x] = sum;
+}
+
+kernel void wvf_fft_transpose_c2c(
+    device const float2* src [[buffer(0)]],
+    device float2* dst [[buffer(1)]],
+    constant WvfFftTransposeParams& params [[buffer(2)]],
+    uint3 gid [[thread_position_in_grid]]
+) {
+    if (gid.x >= params.width || gid.y >= params.height || gid.z >= params.batch_count) {
+        return;
+    }
+
+    const uint plane_stride = params.width * params.height;
+    const uint batch_offset = gid.z * plane_stride;
+    const uint src_index = batch_offset + gid.y * params.width + gid.x;
+    const uint dst_index = batch_offset + gid.x * params.height + gid.y;
+    dst[dst_index] = src[src_index];
+}
+
 kernel void wvf_fft_multiply_spectra(
     device const float2* input [[buffer(0)]],
     device const float2* kernels [[buffer(1)]],
@@ -130,8 +227,29 @@ kernel void wvf_fft_postprocess_dense(
     const uint out_index = gid.y * params.width + gid.x;
     const uint src_index =
         (gid.y + params.crop) * params.fft_width + gid.x + params.crop;
-    const float gx = planes[src_index];
-    const float gy = planes[params.plane_stride + src_index];
+    const float gx = planes[src_index] * params.scale;
+    const float gy = planes[params.plane_stride + src_index] * params.scale;
+    write_wvf_outputs(out_index, gx, gy, out_x, out_y, magnitude, angle);
+}
+
+kernel void wvf_fft_postprocess_complex_dense(
+    device const float2* planes [[buffer(0)]],
+    device float* out_x [[buffer(1)]],
+    device float* out_y [[buffer(2)]],
+    device float* magnitude [[buffer(3)]],
+    device float* angle [[buffer(4)]],
+    constant WvfFftPostprocessParams& params [[buffer(5)]],
+    uint2 gid [[thread_position_in_grid]]
+) {
+    if (gid.x >= params.width || gid.y >= params.height) {
+        return;
+    }
+
+    const uint out_index = gid.y * params.width + gid.x;
+    const uint src_index =
+        (gid.y + params.crop) * params.fft_width + gid.x + params.crop;
+    const float gx = planes[src_index].x * params.scale;
+    const float gy = planes[params.plane_stride + src_index].x * params.scale;
     write_wvf_outputs(out_index, gx, gy, out_x, out_y, magnitude, angle);
 }
 

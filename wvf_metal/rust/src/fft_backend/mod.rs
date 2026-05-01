@@ -3,11 +3,13 @@ use std::collections::HashMap;
 use std::os::raw::{c_float, c_int, c_uint};
 
 mod custom_fft;
+mod gpu_fft;
 
 thread_local! {
     static DENSE_KERNEL_CACHE: RefCell<HashMap<(c_uint, c_uint), DenseConvolutionKernels>> =
         RefCell::new(HashMap::new());
-    static FFT_BACKEND: RefCell<Option<custom_fft::RustFftBackend>> = const { RefCell::new(None) };
+    static CPU_FFT_BACKEND: RefCell<Option<custom_fft::CpuFftBackend>> = const { RefCell::new(None) };
+    static GPU_FFT_BACKEND: RefCell<Option<gpu_fft::GpuFftBackend>> = const { RefCell::new(None) };
 }
 
 #[derive(Clone)]
@@ -73,13 +75,13 @@ fn with_dense_convolution_kernels<T>(
     })
 }
 
-fn with_backend<T>(
-    f: impl FnOnce(&mut custom_fft::RustFftBackend) -> Result<T, String>,
+fn with_cpu_backend<T>(
+    f: impl FnOnce(&mut custom_fft::CpuFftBackend) -> Result<T, String>,
 ) -> Result<T, String> {
-    FFT_BACKEND.with(|backend_cell| {
+    CPU_FFT_BACKEND.with(|backend_cell| {
         let mut backend_slot = backend_cell.borrow_mut();
         if backend_slot.is_none() {
-            *backend_slot = Some(custom_fft::RustFftBackend::new()?);
+            *backend_slot = Some(custom_fft::CpuFftBackend::new()?);
         }
         let backend = backend_slot
             .as_mut()
@@ -88,7 +90,22 @@ fn with_backend<T>(
     })
 }
 
-pub(crate) unsafe fn run_fft_magnitude_angle(
+fn with_gpu_backend<T>(
+    f: impl FnOnce(&mut gpu_fft::GpuFftBackend) -> Result<T, String>,
+) -> Result<T, String> {
+    GPU_FFT_BACKEND.with(|backend_cell| {
+        let mut backend_slot = backend_cell.borrow_mut();
+        if backend_slot.is_none() {
+            *backend_slot = Some(gpu_fft::GpuFftBackend::new()?);
+        }
+        let backend = backend_slot
+            .as_mut()
+            .ok_or_else(|| "GPU FFT backend initialization failed".to_string())?;
+        f(backend)
+    })
+}
+
+pub(crate) unsafe fn run_fft_magnitude_angle_cpu(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -100,7 +117,7 @@ pub(crate) unsafe fn run_fft_magnitude_angle(
     angle: *mut c_float,
 ) -> Result<(), String> {
     with_dense_convolution_kernels(radius, degree, |kernels| {
-        with_backend(|backend| {
+        with_cpu_backend(|backend| {
             backend.run_magnitude_angle(
                 image, width, height, radius, kernels, out_x, out_y, magnitude, angle,
             )
@@ -109,7 +126,7 @@ pub(crate) unsafe fn run_fft_magnitude_angle(
     Ok(())
 }
 
-pub(crate) unsafe fn run_fft_gradients(
+pub(crate) unsafe fn run_fft_gradients_cpu(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -121,7 +138,53 @@ pub(crate) unsafe fn run_fft_gradients(
     let total_pixels = crate::checked_image_pixels(width, height)?;
     let mut magnitude = vec![0.0; total_pixels];
     let mut angle = vec![0.0; total_pixels];
-    run_fft_magnitude_angle(
+    run_fft_magnitude_angle_cpu(
+        image,
+        width,
+        height,
+        radius,
+        degree,
+        out_x,
+        out_y,
+        magnitude.as_mut_ptr(),
+        angle.as_mut_ptr(),
+    )
+}
+
+pub(crate) unsafe fn run_fft_magnitude_angle_gpu(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+    magnitude: *mut c_float,
+    angle: *mut c_float,
+) -> Result<(), String> {
+    with_dense_convolution_kernels(radius, degree, |kernels| {
+        with_gpu_backend(|backend| {
+            backend.run_magnitude_angle(
+                image, width, height, radius, kernels, out_x, out_y, magnitude, angle,
+            )
+        })
+    })??;
+    Ok(())
+}
+
+pub(crate) unsafe fn run_fft_gradients_gpu(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+) -> Result<(), String> {
+    let total_pixels = crate::checked_image_pixels(width, height)?;
+    let mut magnitude = vec![0.0; total_pixels];
+    let mut angle = vec![0.0; total_pixels];
+    run_fft_magnitude_angle_gpu(
         image,
         width,
         height,
