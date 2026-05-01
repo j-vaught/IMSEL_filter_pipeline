@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wvf-metal"
+version = "0.1.0"
+description = "Standalone Metal implementation of radius-defined Wide View Filter gradients"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+image = ["imageio>=2.31"]
+
+[project.scripts]
+wvf-metal = "wvf_metal.cli:main"
+
+[tool.setuptools]
+packages = ["wvf_metal"]
+package-dir = {"wvf_metal" = "."}
+
+[tool.setuptools.package-data]
+wvf_metal = [
+    "Cargo.toml",
+    "Cargo.lock",
+    "README.md",
+    "rust/src/*.rs",
+    "rust/src/*.metal",
+]
