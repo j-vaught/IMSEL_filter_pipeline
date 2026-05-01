@@ -2,6 +2,7 @@
 name = "wvf_metal_backend"
 version = "0.1.0"
 edition = "2021"
+build = "rust/build.rs"
 
 [lib]
 crate-type = ["cdylib"]
@@ -9,3 +10,6 @@ path = "rust/src/lib.rs"
 
 [dependencies]
 metal = "0.29"
+
+[build-dependencies]
+cc = "1.0"

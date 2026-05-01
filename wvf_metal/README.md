@@ -40,8 +40,8 @@ gx, gy = wvf_gradients_metal(image, radius=9, degree=3)
 gx, gy, magnitude, angle = wvf_magnitude_angle_metal(image, radius=9, degree=3)
 ```
 
-The default Metal variant is `split`. For comparisons, pass `variant="direct"`
-or `variant="antipodal"`.
+The default Metal variant is `split`. For comparisons, pass `variant="direct"`,
+`variant="antipodal"`, or `variant="vkfft"`.
 
 ## Kernel Variants
 
@@ -59,11 +59,19 @@ pixels use a fast path with direct indexing and no reflected-boundary checks.
 Only the border band uses reflected indexing. This is the default because most
 pixels in normal images are interior pixels.
 
+`vkfft` uses a small Rust/C++ bridge around the vendored VkFFT Metal backend.
+It builds the WVF kernels in Rust, pads the FFT domain to power-of-two extents,
+runs forward real FFTs for the image and dense `Gx/Gy` kernels, multiplies the
+spectra in a minimal Metal kernel, runs the inverse real FFT, then crops and
+returns the same output arrays as the spatial variants. This path is intended
+for large radii where FFT convolution can beat direct spatial convolution.
+
 ## CLI
 
 ```bash
 wvf-metal input.npy output.npz --radius 9 --degree 3
 wvf-metal input.npz output.npz --key image --radius 15 --degree 3 --variant direct
+wvf-metal input.npy output.npz --radius 44 --degree 3 --variant vkfft
 ```
 
 The output archive contains `gx`, `gy`, `magnitude`, `angle`, `radius`,
@@ -76,3 +84,6 @@ The output archive contains `gx`, `gy`, `magnitude`, `angle`, `radius`,
 - `rust/src/lib.rs` builds WVF weights, owns the Metal dispatch code, and
   exposes the C ABI.
 - `rust/src/wvf.metal` contains the Metal compute kernels.
+- `rust/src/vkfft_bridge.cpp` contains the minimal VkFFT/Metal bridge.
+- `rust/third_party/` contains the vendored VkFFT and metal-cpp headers needed
+  by the bridge.

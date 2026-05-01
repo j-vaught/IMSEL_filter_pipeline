@@ -26,6 +26,12 @@ wvf_metal = [
     "Cargo.toml",
     "Cargo.lock",
     "README.md",
+    "rust/build.rs",
     "rust/src/*.rs",
     "rust/src/*.metal",
+    "rust/src/*.cpp",
+    "rust/third_party/VkFFT_LICENSE.txt",
+    "rust/third_party/vkFFT/**/*.h",
+    "rust/third_party/metal-cpp/**/*.hpp",
+    "rust/third_party/metal-cpp/LICENSE.txt",
 ]

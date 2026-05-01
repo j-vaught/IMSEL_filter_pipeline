@@ -4,7 +4,7 @@ use metal::{
 };
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::ffi::c_char;
+use std::ffi::{c_char, CStr};
 use std::os::raw::{c_float, c_int, c_uint};
 use std::ptr;
 
@@ -12,6 +12,25 @@ const SHADER_SOURCE: &str = include_str!("wvf.metal");
 const WVF_VARIANT_DIRECT: c_uint = 0;
 const WVF_VARIANT_ANTIPODAL: c_uint = 1;
 const WVF_VARIANT_SPLIT: c_uint = 2;
+const WVF_VARIANT_VKFFT: c_uint = 3;
+
+extern "C" {
+    fn wvf_vkfft_magnitude_angle(
+        image: *const c_float,
+        width: c_uint,
+        height: c_uint,
+        radius: c_uint,
+        kernel_x: *const c_float,
+        kernel_y: *const c_float,
+        kernel_width: c_uint,
+        out_x: *mut c_float,
+        out_y: *mut c_float,
+        magnitude: *mut c_float,
+        angle: *mut c_float,
+        error_out: *mut c_char,
+        error_len: usize,
+    ) -> c_int;
+}
 
 #[repr(C)]
 struct KernelParams {
@@ -435,6 +454,45 @@ struct ImageOutputBuffers {
 struct MagnitudeBuffers {
     magnitude: Buffer,
     angle: Buffer,
+}
+
+struct DenseConvolutionKernels {
+    kernel_width: c_uint,
+    kernel_x: Vec<c_float>,
+    kernel_y: Vec<c_float>,
+}
+
+fn build_vkfft_convolution_kernels(
+    radius: c_uint,
+    degree: c_uint,
+) -> Result<DenseConvolutionKernels, String> {
+    let direct = generated_kernels(radius, degree, WVF_VARIANT_DIRECT)?;
+    let kernel_width = radius
+        .checked_mul(2)
+        .and_then(|value| value.checked_add(1))
+        .ok_or_else(|| "radius is too large".to_string())?;
+    let dense_len = checked_len(kernel_width as usize, kernel_width as usize, "dense kernel")?;
+    let mut kernel_x = vec![0.0; dense_len];
+    let mut kernel_y = vec![0.0; dense_len];
+    let r = c_int::try_from(radius).map_err(|_| "radius is too large".to_string())?;
+    let width_i = c_int::try_from(kernel_width).map_err(|_| "radius is too large".to_string())?;
+
+    for idx in 0..direct.dx.len() {
+        let x = r - direct.dx[idx];
+        let y = r - direct.dy[idx];
+        if x < 0 || y < 0 || x >= width_i || y >= width_i {
+            return Err("WVF offset fell outside dense convolution kernel".to_string());
+        }
+        let dense_idx = y as usize * kernel_width as usize + x as usize;
+        kernel_x[dense_idx] += direct.wx[idx];
+        kernel_y[dense_idx] += direct.wy[idx];
+    }
+
+    Ok(DenseConvolutionKernels {
+        kernel_width,
+        kernel_x,
+        kernel_y,
+    })
 }
 
 unsafe fn bind_buffers(
@@ -1020,6 +1078,74 @@ where
     })
 }
 
+unsafe fn run_vkfft_magnitude_angle(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+    magnitude: *mut c_float,
+    angle: *mut c_float,
+) -> Result<(), String> {
+    let kernels = build_vkfft_convolution_kernels(radius, degree)?;
+    let mut error = vec![0 as c_char; 4096];
+    let status = wvf_vkfft_magnitude_angle(
+        image,
+        width,
+        height,
+        radius,
+        kernels.kernel_x.as_ptr(),
+        kernels.kernel_y.as_ptr(),
+        kernels.kernel_width,
+        out_x,
+        out_y,
+        magnitude,
+        angle,
+        error.as_mut_ptr(),
+        error.len(),
+    );
+    if status == 0 {
+        return Ok(());
+    }
+
+    let message = CStr::from_ptr(error.as_ptr())
+        .to_string_lossy()
+        .trim()
+        .to_string();
+    if message.is_empty() {
+        Err(format!("VkFFT WVF backend failed with status {status}"))
+    } else {
+        Err(message)
+    }
+}
+
+unsafe fn run_vkfft_gradients(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    degree: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+) -> Result<(), String> {
+    let total_pixels = checked_image_pixels(width, height)?;
+    let mut magnitude = vec![0.0; total_pixels];
+    let mut angle = vec![0.0; total_pixels];
+    run_vkfft_magnitude_angle(
+        image,
+        width,
+        height,
+        radius,
+        degree,
+        out_x,
+        out_y,
+        magnitude.as_mut_ptr(),
+        angle.as_mut_ptr(),
+    )
+}
+
 unsafe fn validate_common(
     image: *const c_float,
     width: c_uint,
@@ -1072,9 +1198,9 @@ unsafe fn validate_generated(
     }
     if !matches!(
         variant,
-        WVF_VARIANT_DIRECT | WVF_VARIANT_ANTIPODAL | WVF_VARIANT_SPLIT
+        WVF_VARIANT_DIRECT | WVF_VARIANT_ANTIPODAL | WVF_VARIANT_SPLIT | WVF_VARIANT_VKFFT
     ) {
-        return Err("variant must be 0=direct, 1=antipodal, or 2=split".to_string());
+        return Err("variant must be 0=direct, 1=antipodal, 2=split, or 3=vkfft".to_string());
     }
     Ok(())
 }
@@ -1090,6 +1216,10 @@ unsafe fn run_generated_gradients_with_state(
     out_x: *mut c_float,
     out_y: *mut c_float,
 ) -> Result<(), String> {
+    if variant == WVF_VARIANT_VKFFT {
+        return run_vkfft_gradients(image, width, height, radius, degree, out_x, out_y);
+    }
+
     let plan = generated_kernel_plan(state, radius, degree, variant)?;
     match variant {
         WVF_VARIANT_DIRECT => run_plan_convolve_with_state(
@@ -1115,7 +1245,7 @@ unsafe fn run_generated_gradients_with_state(
         WVF_VARIANT_SPLIT => {
             run_plan_split_with_state(state, image, width, height, &plan, out_x, out_y)
         }
-        _ => Err("variant must be 0=direct, 1=antipodal, or 2=split".to_string()),
+        _ => Err("variant must be 0=direct, 1=antipodal, 2=split, or 3=vkfft".to_string()),
     }
 }
 
@@ -1132,6 +1262,12 @@ unsafe fn run_generated_magnitude_angle_with_state(
     magnitude: *mut c_float,
     angle: *mut c_float,
 ) -> Result<(), String> {
+    if variant == WVF_VARIANT_VKFFT {
+        return run_vkfft_magnitude_angle(
+            image, width, height, radius, degree, out_x, out_y, magnitude, angle,
+        );
+    }
+
     let plan = generated_kernel_plan(state, radius, degree, variant)?;
     match variant {
         WVF_VARIANT_DIRECT => run_plan_convolve_magnitude_angle_with_state(
@@ -1161,7 +1297,7 @@ unsafe fn run_generated_magnitude_angle_with_state(
         WVF_VARIANT_SPLIT => run_plan_split_magnitude_angle_with_state(
             state, image, width, height, &plan, out_x, out_y, magnitude, angle,
         ),
-        _ => Err("variant must be 0=direct, 1=antipodal, or 2=split".to_string()),
+        _ => Err("variant must be 0=direct, 1=antipodal, 2=split, or 3=vkfft".to_string()),
     }
 }
 

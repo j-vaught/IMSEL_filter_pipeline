@@ -24,6 +24,8 @@ _VARIANTS = {
     "split": 2,
     "optimized": 2,
     "auto": 2,
+    "vkfft": 3,
+    "fft": 3,
 }
 
 
@@ -76,8 +78,12 @@ def _needs_rebuild(dylib: Path) -> bool:
     dylib_mtime = dylib.stat().st_mtime
     root = _package_root()
     build_inputs = [root / "Cargo.toml", root / "Cargo.lock"]
+    build_inputs.extend((root / "rust").glob("build.rs"))
     build_inputs.extend((root / "rust").rglob("*.rs"))
     build_inputs.extend((root / "rust").rglob("*.metal"))
+    build_inputs.extend((root / "rust").rglob("*.cpp"))
+    build_inputs.extend((root / "rust" / "third_party").rglob("*.h"))
+    build_inputs.extend((root / "rust" / "third_party").rglob("*.hpp"))
     return any(path.exists() and path.stat().st_mtime > dylib_mtime for path in build_inputs)
 
 
@@ -123,7 +129,9 @@ def _variant_id(variant: str) -> int:
     try:
         return _VARIANTS[str(variant).lower()]
     except KeyError as exc:
-        raise ValueError("variant must be 'split', 'antipodal', or 'direct'") from exc
+        raise ValueError(
+            "variant must be 'split', 'antipodal', 'direct', or 'vkfft'"
+        ) from exc
 
 
 def _as_float_image(image: np.ndarray) -> np.ndarray:
