@@ -1,4 +1,4 @@
-"""Command line interface for the standalone WVF Metal package."""
+"""Command line interface for the standalone WVF native package."""
 
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ def _load_array(path: Path, key: str | None) -> np.ndarray:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run standalone WVF gradients with VkFFT/Metal or Rust CPU FFT."
+        description="Run standalone WVF gradients with native GPU or Rust CPU FFT backends."
     )
     parser.add_argument("input", type=Path, help="Input .npy, .npz, or image path.")
     parser.add_argument("output", type=Path, help="Output .npz path.")
@@ -61,7 +61,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--device-index",
         type=int,
         default=None,
-        help="Metal device index for direct/antipodal/split or VkFFT GPU execution.",
+        help="GPU device index for native GPU execution.",
     )
     parser.add_argument("--key", default=None, help="Array key when input is .npz.")
     return parser

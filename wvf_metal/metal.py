@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ctypes
 import contextlib
+import json
 import os
 import platform
 import shutil
@@ -45,20 +46,140 @@ def _target_dir() -> Path:
     return _package_root() / "build" / "target"
 
 
+def _build_fingerprint_path() -> Path:
+    return _target_dir() / "release" / ".wvf_build_fingerprint.json"
+
+
+def _build_fingerprint() -> dict[str, object]:
+    env_keys = (
+        "WVF_CUDA_HOME",
+        "CUDA_HOME",
+        "CUDA_PATH",
+        "WVF_CUDA_HOST_CXX",
+        "CUDAHOSTCXX",
+        "CXX",
+    )
+    return {
+        "system": platform.system(),
+        "env": {key: os.environ.get(key) for key in env_keys},
+    }
+
+
+def _stored_build_fingerprint(path: Path) -> dict[str, object] | None:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+
+
+def _candidate_linux_cuda_lib_dirs() -> list[Path]:
+    candidates: list[Path] = []
+    direct = os.environ.get("WVF_CUDA_LIB_DIR")
+    if direct:
+        candidates.append(Path(direct))
+
+    for key in ("WVF_CUDA_HOME", "CUDA_HOME", "CUDA_PATH"):
+        raw_root = os.environ.get(key)
+        if not raw_root:
+            continue
+        root = Path(raw_root)
+        candidates.append(root / "lib64")
+        candidates.append(root / "targets" / "x86_64-linux" / "lib")
+
+    for root in (
+        Path("/usr/local/cuda"),
+        Path("/usr/local/MATLAB/R2024b/sys/cuda/glnxa64/cuda"),
+        Path("/usr/local/MATLAB/R2025a/sys/cuda/glnxa64/cuda"),
+    ):
+        candidates.append(root / "lib64")
+        candidates.append(root / "targets" / "x86_64-linux" / "lib")
+
+    for matlab_root in (
+        Path("/usr/local/MATLAB/R2024b"),
+        Path("/usr/local/MATLAB/R2025a"),
+    ):
+        candidates.append(matlab_root / "bin" / "glnxa64")
+
+    deduped: list[Path] = []
+    seen: set[Path] = set()
+    for candidate in candidates:
+        if candidate not in seen:
+            deduped.append(candidate)
+            seen.add(candidate)
+    return deduped
+
+
+@lru_cache(maxsize=1)
+def _linux_cuda_runtime_lib_dir() -> Path | None:
+    if platform.system() != "Linux":
+        return None
+
+    for candidate in _candidate_linux_cuda_lib_dirs():
+        if not candidate.is_dir():
+            continue
+        has_cudart = any((candidate / name).exists() for name in ("libcudart.so", "libcudart.so.12"))
+        has_nvrtc = any((candidate / name).exists() for name in ("libnvrtc.so", "libnvrtc.so.12"))
+        if has_cudart and has_nvrtc:
+            return candidate
+    return None
+
+
+def _resolve_versioned_cuda_library(directory: Path, base_name: str) -> Path | None:
+    exact = directory / base_name
+    if exact.exists():
+        return exact
+    matches = sorted(directory.glob(f"{base_name}.*"))
+    return matches[0] if matches else None
+
+
+def _prepend_env_path(name: str, entry: Path) -> None:
+    if not entry:
+        return
+    current = os.environ.get(name, "")
+    parts = [str(entry)]
+    if current:
+        parts.append(current)
+    os.environ[name] = os.pathsep.join(parts)
+
+
+@lru_cache(maxsize=1)
+def _prepare_linux_cuda_runtime() -> None:
+    lib_dir = _linux_cuda_runtime_lib_dir()
+    if lib_dir is None:
+        return
+
+    _prepend_env_path("LD_LIBRARY_PATH", lib_dir)
+    for library in ("libcudart.so", "libnvrtc.so", "libnvrtc-builtins.so"):
+        resolved = _resolve_versioned_cuda_library(lib_dir, library)
+        if resolved is None:
+            continue
+        try:
+            ctypes.CDLL(str(resolved), mode=getattr(ctypes, "RTLD_GLOBAL", 0))
+        except OSError:
+            continue
+
+
 def _library_path() -> Path:
-    if platform.system() != "Darwin":
-        raise MetalBackendError("Metal backend is only available on macOS")
+    system = platform.system()
+    if system not in {"Darwin", "Linux"}:
+        raise MetalBackendError("native WVF backend is only available on macOS or Linux")
     if shutil.which("cargo") is None:
-        raise MetalBackendError("cargo is required to build the Metal backend")
+        raise MetalBackendError("cargo is required to build the native WVF backend")
 
     manifest = _crate_manifest()
     if not manifest.exists():
         raise MetalBackendError(f"Cargo manifest not found at {manifest}")
 
     target_dir = _target_dir()
-    dylib = target_dir / "release" / "libwvf_metal_backend.dylib"
-    if dylib.exists() and not _needs_rebuild(dylib):
-        return dylib
+    suffix = ".dylib" if system == "Darwin" else ".so"
+    library = target_dir / "release" / f"libwvf_metal_backend{suffix}"
+    fingerprint = _build_fingerprint()
+    if (
+        library.exists()
+        and not _needs_rebuild(library)
+        and _stored_build_fingerprint(_build_fingerprint_path()) == fingerprint
+    ):
+        return library
 
     env = dict(os.environ)
     env["CARGO_TARGET_DIR"] = str(target_dir)
@@ -72,20 +193,24 @@ def _library_path() -> Path:
     )
     if result.returncode != 0:
         message = (result.stderr or result.stdout).strip()
-        raise MetalBackendError(f"failed to build Metal backend: {message}")
-    if not dylib.exists():
-        raise MetalBackendError(f"Metal build succeeded but {dylib} was not produced")
-    return dylib
+        raise MetalBackendError(f"failed to build native backend: {message}")
+    if not library.exists():
+        raise MetalBackendError(f"native build succeeded but {library} was not produced")
+    fingerprint_path = _build_fingerprint_path()
+    fingerprint_path.parent.mkdir(parents=True, exist_ok=True)
+    fingerprint_path.write_text(json.dumps(fingerprint, sort_keys=True), encoding="utf-8")
+    return library
 
 
-def _needs_rebuild(dylib: Path) -> bool:
-    dylib_mtime = dylib.stat().st_mtime
+def _needs_rebuild(library: Path) -> bool:
+    dylib_mtime = library.stat().st_mtime
     root = _package_root()
     build_inputs = [root / "Cargo.toml", root / "Cargo.lock"]
     build_inputs.extend((root / "rust").glob("build.rs"))
     build_inputs.extend((root / "rust").rglob("*.rs"))
     build_inputs.extend((root / "rust").rglob("*.metal"))
     build_inputs.extend((root / "rust").rglob("*.cpp"))
+    build_inputs.extend((root / "rust").rglob("*.cu"))
     build_inputs.extend((root / "rust" / "third_party").rglob("*.h"))
     build_inputs.extend((root / "rust" / "third_party").rglob("*.hpp"))
     return any(path.exists() and path.stat().st_mtime > dylib_mtime for path in build_inputs)
@@ -93,6 +218,7 @@ def _needs_rebuild(dylib: Path) -> bool:
 
 @lru_cache(maxsize=1)
 def _load_library() -> ctypes.CDLL:
+    _prepare_linux_cuda_runtime()
     lib = ctypes.CDLL(str(_library_path()))
     gradient_args = [
         ctypes.POINTER(ctypes.c_float),
@@ -121,7 +247,7 @@ def _load_library() -> ctypes.CDLL:
 
 
 def metal_backend_available() -> bool:
-    """Return whether this machine can build and load the Metal backend."""
+    """Return whether this machine can build and load the native backend."""
     try:
         _load_library()
     except (MetalBackendError, OSError):
@@ -222,21 +348,25 @@ def _run_native_gradients(
 
     with _temporary_env_var("WVF_METAL_FFT_BACKEND", fft_backend):
         with _temporary_env_var(
-            "WVF_METAL_DEVICE_INDEX",
+            "WVF_GPU_DEVICE_INDEX",
             None if device_index is None else str(device_index),
         ):
-            status = _load_library().wvf_metal_gradients(
-                img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-                _checked_uint(w, "image width"),
-                _checked_uint(h, "image height"),
-                _checked_uint(radius, "radius"),
-                _checked_uint(degree, "degree"),
-                ctypes.c_uint(_variant_id(variant)),
-                gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-                gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-                error_buffer,
-                ctypes.c_size_t(len(error_buffer)),
-            )
+            with _temporary_env_var(
+                "WVF_METAL_DEVICE_INDEX",
+                None if device_index is None else str(device_index),
+            ):
+                status = _load_library().wvf_metal_gradients(
+                    img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                    _checked_uint(w, "image width"),
+                    _checked_uint(h, "image height"),
+                    _checked_uint(radius, "radius"),
+                    _checked_uint(degree, "degree"),
+                    ctypes.c_uint(_variant_id(variant)),
+                    gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                    gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                    error_buffer,
+                    ctypes.c_size_t(len(error_buffer)),
+                )
     _raise_if_failed(status, error_buffer)
     return gx.reshape(img.shape), gy.reshape(img.shape)
 
@@ -258,23 +388,27 @@ def _run_native_magnitude_angle(
 
     with _temporary_env_var("WVF_METAL_FFT_BACKEND", fft_backend):
         with _temporary_env_var(
-            "WVF_METAL_DEVICE_INDEX",
+            "WVF_GPU_DEVICE_INDEX",
             None if device_index is None else str(device_index),
         ):
-            status = _load_library().wvf_metal_magnitude_angle(
-                img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-                _checked_uint(w, "image width"),
-                _checked_uint(h, "image height"),
-                _checked_uint(radius, "radius"),
-                _checked_uint(degree, "degree"),
-                ctypes.c_uint(_variant_id(variant)),
-                gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-                gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-                magnitude.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-                angle.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-                error_buffer,
-                ctypes.c_size_t(len(error_buffer)),
-            )
+            with _temporary_env_var(
+                "WVF_METAL_DEVICE_INDEX",
+                None if device_index is None else str(device_index),
+            ):
+                status = _load_library().wvf_metal_magnitude_angle(
+                    img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                    _checked_uint(w, "image width"),
+                    _checked_uint(h, "image height"),
+                    _checked_uint(radius, "radius"),
+                    _checked_uint(degree, "degree"),
+                    ctypes.c_uint(_variant_id(variant)),
+                    gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                    gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                    magnitude.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                    angle.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                    error_buffer,
+                    ctypes.c_size_t(len(error_buffer)),
+                )
     _raise_if_failed(status, error_buffer)
     shape = img.shape
     return (
@@ -298,9 +432,9 @@ def wvf_gradients_metal(
     chosen_fft_backend = _resolve_fft_backend(variant, fft_backend)
     checked_device_index = _checked_device_index(device_index)
 
-    if platform.system() != "Darwin":
+    if platform.system() not in {"Darwin", "Linux"}:
         raise MetalBackendError(
-            "wvf_metal requires macOS. The restored Rust CPU FFT backend is part of the native extension."
+            "wvf_metal requires macOS or Linux for the native extension."
         )
     return _run_native_gradients(
         img,
@@ -325,9 +459,9 @@ def wvf_magnitude_angle_metal(
     chosen_fft_backend = _resolve_fft_backend(variant, fft_backend)
     checked_device_index = _checked_device_index(device_index)
 
-    if platform.system() != "Darwin":
+    if platform.system() not in {"Darwin", "Linux"}:
         raise MetalBackendError(
-            "wvf_metal requires macOS. The restored Rust CPU FFT backend is part of the native extension."
+            "wvf_metal requires macOS or Linux for the native extension."
         )
     return _run_native_magnitude_angle(
         img,

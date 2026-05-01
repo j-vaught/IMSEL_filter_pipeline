@@ -1,23 +1,26 @@
 # Standalone WVF Metal
 
-This folder is a copyable WVF package with native macOS backends for backend
+This folder is a copyable WVF package with native FFT backends for backend
 `3`. WVF weights are built and cached in Rust for both the bundled VkFFT path
-and the restored Rust CPU FFT path. The spatial variants use the `metal` crate
-directly, while magnitude and angle recovery stays in the native extension.
-Backend `3`, exposed as `fft` and the compatibility alias `vkfft`, can run
-through the bundled VkFFT bridge or through the restored Rust CPU FFT backend.
-Python only loads inputs, allocates output arrays, and calls the Rust dynamic
-library.
+and the restored Rust CPU FFT path. On macOS, the spatial variants use the
+`metal` crate directly. On Linux, `variant="fft"` and `variant="vkfft"` are
+available through the bundled VkFFT CUDA bridge or the restored Rust CPU FFT
+backend. Python only loads inputs, allocates output arrays, and calls the Rust
+dynamic library.
 
 ## Requirements
 
 - Python 3.10 or newer.
 - NumPy.
-- macOS.
-- Xcode command line tools.
+- macOS or Linux.
 - Rust with Cargo.
-- For Metal or VkFFT GPU execution:
+- For macOS spatial variants:
+  - Xcode command line tools.
   - A Metal-capable GPU.
+- For Linux VkFFT GPU execution:
+  - An NVIDIA GPU with a working CUDA driver.
+  - A CUDA toolkit discoverable through `WVF_CUDA_HOME`, `CUDA_HOME`,
+    `CUDA_PATH`, `/usr/local/cuda`, or a supported MATLAB CUDA bundle.
 
 Image-file input for the CLI also needs `imageio`. Array input through `.npy`
 or `.npz` does not.
@@ -52,13 +55,14 @@ gx, gy, magnitude, angle = wvf_magnitude_angle_metal(
 )
 ```
 
-The default Metal variant is `split`. For comparisons, pass `variant="direct"`,
-`variant="antipodal"`, or `variant="fft"`. `variant="vkfft"` remains as a
-compatibility alias for backend `3`.
+The default variant is `split` on macOS. For comparisons, pass
+`variant="direct"`, `variant="antipodal"`, or `variant="fft"`.
+`variant="vkfft"` remains as a compatibility alias for backend `3`.
 
-This standalone package remains macOS-native. `fft_backend="cpu"` selects the
-restored Rust `rustfft` backend inside the native extension instead of the
-VkFFT GPU path.
+On Linux, only `variant="fft"` and `variant="vkfft"` are available. The
+spatial variants require macOS Metal. `fft_backend="cpu"` selects the restored
+Rust `rustfft` backend inside the native extension instead of the VkFFT GPU
+path.
 
 ## Kernel Variants
 
@@ -77,16 +81,27 @@ Only the border band uses reflected indexing. This is the default because most
 pixels in normal images are interior pixels.
 
 `fft` is the preferred public name for backend `3`. By default it uses the
-bundled VkFFT bridge when a Metal device is available and falls back to the
-restored Rust CPU FFT backend when it is not. `vkfft` is kept as a
+bundled VkFFT bridge when the native GPU path is available and falls back to
+the restored Rust CPU FFT backend when it is not. `vkfft` is kept as a
 compatibility alias for the same backend id and behavior.
 
 For `variant="fft"` or `variant="vkfft"`, pass `fft_backend="auto"`,
 `fft_backend="cpu"`, or `fft_backend="vkfft"`. `auto` is the default.
 
-For Metal or VkFFT GPU execution on macOS, you can choose the GPU with
-`device_index=` in Python or `WVF_METAL_DEVICE_INDEX` in the environment.
-Index `0` is the first device returned by Metal's device enumeration.
+For Metal or VkFFT GPU execution, you can choose the GPU with `device_index=`
+in Python or `WVF_GPU_DEVICE_INDEX` in the environment. `WVF_METAL_DEVICE_INDEX`
+remains accepted as a compatibility alias. Index `0` is the first GPU returned
+by the native backend enumeration.
+
+Linux notes:
+- The Python wrapper auto-discovers common CUDA runtime library locations and
+  preloads `cudart`, `nvrtc`, and `nvrtc-builtins` when needed.
+- If no compatible CUDA host C++ compiler is found, the native extension builds
+  in CPU-only mode and `fft_backend="auto"` falls back to the Rust CPU FFT
+  backend.
+- If `nvcc` needs an older host compiler than the system default, set
+  `WVF_CUDA_HOST_CXX` or `CUDAHOSTCXX` to a compatible `g++` wrapper or binary
+  before first use.
 
 ## CLI
 
@@ -112,5 +127,7 @@ The output archive contains `gx`, `gy`, `magnitude`, `angle`, `radius`,
   exposes the C ABI.
 - `rust/src/fft_backend/` contains the restored Rust CPU FFT backend.
 - `rust/src/wvf.metal` contains the Metal compute kernels.
-- `rust/src/vkfft_bridge.cpp` contains the active VkFFT bridge.
+- `rust/src/platform_metal.rs` contains the macOS Metal spatial path.
+- `rust/src/vkfft_bridge.cpp` contains the macOS VkFFT Metal bridge.
+- `rust/src/vkfft_cuda_bridge.cu` contains the Linux VkFFT CUDA bridge.
 - `rust/third_party/` contains the vendored headers needed by that bridge.
