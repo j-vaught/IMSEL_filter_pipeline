@@ -40,6 +40,7 @@ edgecritic-pipeline-full-dump
 edgecritic-pipeline-fusion-dump
 edgecritic-pipeline-synthetic-eval
 edgecritic-pipeline-verify
+wvf-metal
 ```
 
 The retained implementation covers WVF, LF, hybrid orientation recovery,

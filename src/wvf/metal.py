@@ -12,6 +12,7 @@ from pathlib import Path
 
 import numpy as np
 
+from wvf.radius import build_wvf_radius_kernels
 from wvf.radius import WVFRadiusKernels
 
 
@@ -149,3 +150,41 @@ def wvf_radius_gradients_metal(
     if dtype == np.dtype(np.float32):
         return gx, gy
     return gx.astype(dtype), gy.astype(dtype)
+
+
+def wvf_gradients_metal(
+    image: np.ndarray,
+    radius: int,
+    degree: int = 4,
+    output_dtype: np.dtype | type = np.float32,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Compute standalone WVF ``Gx`` and ``Gy`` on Metal for radius/degree."""
+    kernels = build_wvf_radius_kernels(radius=radius, order=degree)
+    return wvf_radius_gradients_metal(
+        image,
+        kernels,
+        output_dtype=output_dtype,
+    )
+
+
+def wvf_magnitude_angle_metal(
+    image: np.ndarray,
+    radius: int,
+    degree: int = 4,
+    output_dtype: np.dtype | type = np.float32,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Compute standalone WVF components, magnitude, and angle on Metal."""
+    gx, gy = wvf_gradients_metal(
+        image,
+        radius=radius,
+        degree=degree,
+        output_dtype=output_dtype,
+    )
+    mag = np.hypot(gx, gy)
+    angle = np.mod(np.arctan2(gy, gx), np.pi)
+    return (
+        gx,
+        gy,
+        mag.astype(output_dtype, copy=False),
+        angle.astype(output_dtype, copy=False),
+    )

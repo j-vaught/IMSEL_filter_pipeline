@@ -14,6 +14,7 @@ from wvf.radius import (
     disk_offsets,
     wvf_radius_gradients_cpu,
 )
+from wvf.metal import wvf_gradients_metal, wvf_magnitude_angle_metal
 
 
 def _select_backend(backend: str) -> str:
@@ -79,7 +80,9 @@ __all__ = [
     "WVFRadiusKernels",
     "wvf_component_backend",
     "wvf_component_gradients",
+    "wvf_gradients_metal",
     "wvf_image",
+    "wvf_magnitude_angle_metal",
     "wvf_radius_gradients_cpu",
     "wvf_single_pixel",
 ]
