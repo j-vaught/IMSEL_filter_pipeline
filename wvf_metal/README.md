@@ -1,18 +1,15 @@
 # Standalone WVF Metal
 
-This folder is a copyable Apple Silicon implementation of radius-defined Wide
+This folder is a copyable macOS Metal implementation of radius-defined Wide
 View Filter gradients. WVF weights are built and cached in Rust, convolution
 runs in Metal, and magnitude/angle recovery stays on the GPU. The spatial
 variants use the `metal` crate directly. Backend `3`, exposed as `fft` and the
-compatibility alias `vkfft`, currently keeps the legacy VkFFT bridge for the
-best warm performance. A pure Rust CPU FFT fallback and a pure Metal GPU FFT
-path are both available as opt-in backends while performance work continues.
-Python only loads inputs, allocates output arrays, and calls the Rust dynamic
-library.
+compatibility alias `vkfft`, uses the bundled VkFFT bridge. Python only loads
+inputs, allocates output arrays, and calls the Rust dynamic library.
 
 ## Requirements
 
-- macOS on an Apple Silicon machine.
+- macOS with a Metal-capable GPU.
 - Xcode command line tools.
 - Rust with Cargo.
 - Python 3.10 or newer.
@@ -64,17 +61,9 @@ pixels use a fast path with direct indexing and no reflected-boundary checks.
 Only the border band uses reflected indexing. This is the default because most
 pixels in normal images are interior pixels.
 
-`fft` is the preferred public name for backend `3`. Today it uses the existing
-VkFFT bridge because that path still wins the recorded warm benchmark gate.
-`vkfft` is kept as a compatibility alias for the same backend id and behavior.
-
-Use `WVF_METAL_FFT_BACKEND=auto|legacy|cpu|gpu|rust` to select backend `3`.
-`auto` is the default and currently selects the legacy VkFFT bridge. `cpu`
-selects the pure Rust `rustfft` fallback. `gpu` selects the pure Metal FFT
-path implemented in Rust host code plus Metal compute kernels. `rust` is kept
-as a compatibility alias for `gpu`. The older
-`WVF_METAL_EXPERIMENTAL_MPSGRAPH=1` flag is also kept as a temporary alias for
-`gpu`.
+`fft` is the preferred public name for backend `3`. It uses the bundled VkFFT
+bridge. `vkfft` is kept as a compatibility alias for the same backend id and
+behavior.
 
 ## CLI
 
@@ -92,12 +81,10 @@ The output archive contains `gx`, `gy`, `magnitude`, `angle`, `radius`,
 
 - `metal.py` builds and loads the Rust/Metal backend and exposes the Python API.
 - `cli.py` provides the command line wrapper.
-- `fft_regression.py` compares `split` against backend `3` for correctness and
-  warm performance.
+- `fft_regression.py` compares `split` against the VkFFT backend for
+  correctness and warm performance.
 - `rust/src/lib.rs` builds WVF weights, owns the Metal dispatch code, and
   exposes the C ABI.
-- `rust/src/fft_backend/` contains the CPU Rust FFT fallback, the GPU Metal FFT
-  backend, and their plan/cache ownership.
 - `rust/src/wvf.metal` contains the Metal compute kernels.
-- `rust/src/vkfft_bridge.cpp` contains the active legacy FFT bridge.
+- `rust/src/vkfft_bridge.cpp` contains the active VkFFT bridge.
 - `rust/third_party/` contains the vendored headers needed by that bridge.
