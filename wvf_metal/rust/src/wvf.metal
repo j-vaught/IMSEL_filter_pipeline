@@ -68,6 +68,13 @@ struct WvfFftRowPlanParams {
     uint weight_offset[WVF_MAX_FFT_STAGES];
 };
 
+struct WvfFftStridedParams {
+    uint row_stride;
+    uint rows_per_batch;
+    uint plane_stride;
+    uint _reserved;
+};
+
 struct WvfFftRealWidthParams {
     uint fft_width;
     uint half_width;
@@ -263,6 +270,76 @@ kernel void wvf_fft_row_c2c_fused(
     if (source_in_shared) {
         for (uint idx = tid; idx < plan.row_len; idx += threads_per_group) {
             dst[row_base + idx] = shared_row[idx];
+        }
+    }
+}
+
+kernel void wvf_fft_row_c2c_strided_fused(
+    device const float2* src [[buffer(0)]],
+    device float2* dst [[buffer(1)]],
+    constant WvfFftRowPlanParams& plan [[buffer(2)]],
+    constant WvfFftStridedParams& layout [[buffer(3)]],
+    device const float2* weights [[buffer(4)]],
+    threadgroup float2* shared_row [[threadgroup(0)]],
+    uint3 thread_position_in_threadgroup [[thread_position_in_threadgroup]],
+    uint3 threads_per_threadgroup [[threads_per_threadgroup]],
+    uint3 threadgroup_position [[threadgroup_position_in_grid]]
+) {
+    const uint tid = thread_position_in_threadgroup.x;
+    const uint threads_per_group = threads_per_threadgroup.x;
+    const uint logical_row = threadgroup_position.y;
+    if (logical_row >= plan.row_count) {
+        return;
+    }
+
+    const uint batch = logical_row / layout.rows_per_batch;
+    const uint row_in_batch = logical_row - batch * layout.rows_per_batch;
+    const uint row_base = batch * layout.plane_stride + row_in_batch;
+    const uint row_stride = layout.row_stride;
+
+    for (uint idx = tid; idx < plan.row_len; idx += threads_per_group) {
+        shared_row[idx] = src[row_base + idx * row_stride];
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    bool source_in_shared = true;
+    for (uint stage = 0; stage < plan.stage_count; ++stage) {
+        const uint radix = plan.radix[stage];
+        const uint stride = plan.stride[stage];
+        const uint prev = plan.prev[stage];
+        const uint weight_offset = plan.weight_offset[stage];
+
+        for (uint idx = tid; idx < plan.row_len; idx += threads_per_group) {
+            const uint group = idx / stride;
+            const uint q = idx - group * stride;
+            const uint p = group % prev;
+
+            float2 sum = float2(0.0f, 0.0f);
+            for (uint l = 0; l < WVF_MAX_FFT_STAGES; ++l) {
+                if (l >= radix) {
+                    break;
+                }
+                const uint input_index = q + stride * (radix * p + l);
+                const float2 value = source_in_shared
+                    ? shared_row[input_index]
+                    : dst[row_base + input_index * row_stride];
+                sum = complex_add(sum, complex_mul(value, weights[weight_offset + group * radix + l]));
+            }
+
+            if (source_in_shared) {
+                dst[row_base + idx * row_stride] = sum;
+            } else {
+                shared_row[idx] = sum;
+            }
+        }
+
+        threadgroup_barrier(mem_flags::mem_device | mem_flags::mem_threadgroup);
+        source_in_shared = !source_in_shared;
+    }
+
+    if (source_in_shared) {
+        for (uint idx = tid; idx < plan.row_len; idx += threads_per_group) {
+            dst[row_base + idx * row_stride] = shared_row[idx];
         }
     }
 }

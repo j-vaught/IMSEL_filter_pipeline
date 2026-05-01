@@ -66,6 +66,15 @@ struct WvfFftRowPlanParams {
     weight_offset: [c_uint; MAX_STAGES],
 }
 
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct WvfFftStridedParams {
+    row_stride: c_uint,
+    rows_per_batch: c_uint,
+    plane_stride: c_uint,
+    _reserved: c_uint,
+}
+
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 struct PlanKey {
     width: c_uint,
@@ -119,6 +128,8 @@ struct ImagePlan {
     real_width_single_buffer: Buffer,
     real_width_double_buffer: Buffer,
     real_width_twiddles_buffer: Buffer,
+    height_strided_single_buffer: Buffer,
+    height_strided_double_buffer: Buffer,
     width_forward_single: RowPlan,
     width_forward_double: RowPlan,
     width_inverse_double: RowPlan,
@@ -132,11 +143,18 @@ struct KernelSpectra {
     buffer: Buffer,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum HeightFftMode {
+    Transpose,
+    Strided,
+}
+
 pub(super) struct GpuFftBackend {
     device: Device,
     queue: CommandQueue,
     pad_pipeline: ComputePipelineState,
     row_pipeline: ComputePipelineState,
+    row_strided_pipeline: ComputePipelineState,
     pack_real_pipeline: ComputePipelineState,
     finalize_r2c_pipeline: ComputePipelineState,
     prepare_c2r_pipeline: ComputePipelineState,
@@ -157,6 +175,7 @@ impl GpuFftBackend {
         let library = compile_library(&device, FFT_SHADER_SOURCE)?;
         let pad_pipeline = pipeline(&device, &library, "wvf_fft_reflect_pad_real_dense")?;
         let row_pipeline = pipeline(&device, &library, "wvf_fft_row_c2c_fused")?;
+        let row_strided_pipeline = pipeline(&device, &library, "wvf_fft_row_c2c_strided_fused")?;
         let pack_real_pipeline = pipeline(&device, &library, "wvf_fft_pack_real_pairs")?;
         let finalize_r2c_pipeline = pipeline(&device, &library, "wvf_fft_finalize_r2c")?;
         let prepare_c2r_pipeline = pipeline(&device, &library, "wvf_fft_prepare_c2r")?;
@@ -169,6 +188,7 @@ impl GpuFftBackend {
             queue,
             pad_pipeline,
             row_pipeline,
+            row_strided_pipeline,
             pack_real_pipeline,
             finalize_r2c_pipeline,
             prepare_c2r_pipeline,
@@ -230,6 +250,12 @@ impl GpuFftBackend {
             .image_plans
             .get(&key)
             .ok_or_else(|| "GPU FFT image plan cache insertion failed".to_string())?;
+        let forward_height_mode = HeightFftMode::Transpose;
+        let inverse_height_mode = height_inverse_mode();
+        let single_spectrum = match forward_height_mode {
+            HeightFftMode::Transpose => &plan.single_reduced_a,
+            HeightFftMode::Strided => &plan.single_reduced_b,
+        };
 
         let image_len = crate::checked_image_pixels(width, height)?;
         let image_bytes = crate::checked_len(image_len, size_of::<c_float>(), "image")?;
@@ -281,6 +307,7 @@ impl GpuFftBackend {
         );
         encode_forward_2d_real(
             &self.row_pipeline,
+            &self.row_strided_pipeline,
             &self.pack_real_pipeline,
             &self.finalize_r2c_pipeline,
             &self.transpose_pipeline,
@@ -298,13 +325,15 @@ impl GpuFftBackend {
             &plan.real_width_twiddles_buffer,
             &plan.transpose_forward_single_buffer,
             &plan.transpose_reverse_single_buffer,
+            &plan.height_strided_single_buffer,
+            forward_height_mode,
             plan.complex_w,
             1,
         );
         encode_multiply(
             &self.multiply_pipeline,
             &command_buffer,
-            &plan.single_reduced_a,
+            single_spectrum,
             &spectrum_buffer,
             &plan.double_reduced_a,
             &plan.reduced_complex_count_buffer,
@@ -312,6 +341,7 @@ impl GpuFftBackend {
         );
         encode_inverse_2d_real(
             &self.row_pipeline,
+            &self.row_strided_pipeline,
             &self.prepare_c2r_pipeline,
             &self.unpack_real_pipeline,
             &self.transpose_pipeline,
@@ -327,6 +357,8 @@ impl GpuFftBackend {
             &plan.real_width_twiddles_buffer,
             &plan.transpose_forward_double_buffer,
             &plan.transpose_reverse_double_buffer,
+            &plan.height_strided_double_buffer,
+            inverse_height_mode,
             plan.complex_w,
             plan.fft_h,
             2,
@@ -390,6 +422,7 @@ impl GpuFftBackend {
             let command_buffer = self.queue.new_command_buffer();
             encode_forward_2d_real(
                 &self.row_pipeline,
+                &self.row_strided_pipeline,
                 &self.pack_real_pipeline,
                 &self.finalize_r2c_pipeline,
                 &self.transpose_pipeline,
@@ -407,6 +440,8 @@ impl GpuFftBackend {
                 &plan.real_width_twiddles_buffer,
                 &plan.transpose_forward_double_buffer,
                 &plan.transpose_reverse_double_buffer,
+                &plan.height_strided_double_buffer,
+                HeightFftMode::Transpose,
                 plan.complex_w,
                 2,
             );
@@ -473,11 +508,11 @@ impl GpuFftBackend {
         let width_inverse_double =
             build_row_plan(&self.device, &self.row_pipeline, half_w, fft_h, 2, &width_radices, true)?;
         let height_forward_single =
-            build_row_plan(&self.device, &self.row_pipeline, fft_h, complex_w, 1, &height_radices, false)?;
+            build_row_plan(&self.device, &self.row_strided_pipeline, fft_h, complex_w, 1, &height_radices, false)?;
         let height_forward_double =
-            build_row_plan(&self.device, &self.row_pipeline, fft_h, complex_w, 2, &height_radices, false)?;
+            build_row_plan(&self.device, &self.row_strided_pipeline, fft_h, complex_w, 2, &height_radices, false)?;
         let height_inverse_double =
-            build_row_plan(&self.device, &self.row_pipeline, fft_h, complex_w, 2, &height_radices, true)?;
+            build_row_plan(&self.device, &self.row_strided_pipeline, fft_h, complex_w, 2, &height_radices, true)?;
         let real_width_twiddles = build_real_width_twiddles(fft_w);
 
         let private = MTLResourceOptions::StorageModePrivate;
@@ -544,6 +579,18 @@ impl GpuFftBackend {
             height: complex_w as c_uint,
             batch_count: 2,
         };
+        let height_strided_single = WvfFftStridedParams {
+            row_stride: complex_w as c_uint,
+            rows_per_batch: complex_w as c_uint,
+            plane_stride: reduced_plane_len as c_uint,
+            _reserved: 0,
+        };
+        let height_strided_double = WvfFftStridedParams {
+            row_stride: complex_w as c_uint,
+            rows_per_batch: complex_w as c_uint,
+            plane_stride: reduced_plane_len as c_uint,
+            _reserved: 0,
+        };
 
         Ok(ImagePlan {
             fft_w,
@@ -575,6 +622,8 @@ impl GpuFftBackend {
                 (real_width_twiddles.len() * size_of::<Complex32>()) as u64,
                 MTLResourceOptions::StorageModeShared,
             ),
+            height_strided_single_buffer: param_buffer(&self.device, &height_strided_single),
+            height_strided_double_buffer: param_buffer(&self.device, &height_strided_double),
             width_forward_single,
             width_forward_double,
             width_inverse_double,
@@ -793,6 +842,37 @@ fn encode_row_fft(
     encoder.end_encoding();
 }
 
+fn encode_row_fft_strided(
+    pipeline: &ComputePipelineState,
+    command_buffer: &metal::CommandBufferRef,
+    plan: &RowPlan,
+    layout: &Buffer,
+    input: &Buffer,
+    output: &Buffer,
+) {
+    let encoder = command_buffer.new_compute_command_encoder();
+    encoder.set_compute_pipeline_state(pipeline);
+    encoder.set_threadgroup_memory_length(0, plan.threadgroup_bytes);
+    encoder.set_buffer(0, Some(input), 0);
+    encoder.set_buffer(1, Some(output), 0);
+    encoder.set_buffer(2, Some(&plan.params_buffer), 0);
+    encoder.set_buffer(3, Some(layout), 0);
+    encoder.set_buffer(4, Some(&plan.weights_buffer), 0);
+    encoder.dispatch_thread_groups(
+        MTLSize {
+            width: 1,
+            height: plan.row_count as u64,
+            depth: 1,
+        },
+        MTLSize {
+            width: plan.threadgroup_width,
+            height: 1,
+            depth: 1,
+        },
+    );
+    encoder.end_encoding();
+}
+
 fn encode_transpose(
     pipeline: &ComputePipelineState,
     command_buffer: &metal::CommandBufferRef,
@@ -877,6 +957,7 @@ fn encode_real_width_twiddled_stage(
 
 fn encode_forward_2d_real(
     row_pipeline: &ComputePipelineState,
+    row_strided_pipeline: &ComputePipelineState,
     pack_real_pipeline: &ComputePipelineState,
     finalize_r2c_pipeline: &ComputePipelineState,
     transpose_pipeline: &ComputePipelineState,
@@ -894,6 +975,8 @@ fn encode_forward_2d_real(
     twiddles: &Buffer,
     transpose_forward_params: &Buffer,
     transpose_reverse_params: &Buffer,
+    height_strided_params: &Buffer,
+    height_mode: HeightFftMode,
     complex_w: usize,
     batch_count: usize,
 ) {
@@ -918,31 +1001,46 @@ fn encode_forward_2d_real(
         complex_w,
         row_count,
     );
-    encode_transpose(
-        transpose_pipeline,
-        command_buffer,
-        reduced_a,
-        transpose,
-        transpose_forward_params,
-        complex_w,
-        height_plan.len,
-        batch_count,
-    );
-    encode_row_fft(row_pipeline, command_buffer, height_plan, transpose, reduced_b);
-    encode_transpose(
-        transpose_pipeline,
-        command_buffer,
-        reduced_b,
-        output,
-        transpose_reverse_params,
-        height_plan.len,
-        complex_w,
-        batch_count,
-    );
+    match height_mode {
+        HeightFftMode::Transpose => {
+            encode_transpose(
+                transpose_pipeline,
+                command_buffer,
+                reduced_a,
+                transpose,
+                transpose_forward_params,
+                complex_w,
+                height_plan.len,
+                batch_count,
+            );
+            encode_row_fft(row_pipeline, command_buffer, height_plan, transpose, reduced_b);
+            encode_transpose(
+                transpose_pipeline,
+                command_buffer,
+                reduced_b,
+                output,
+                transpose_reverse_params,
+                height_plan.len,
+                complex_w,
+                batch_count,
+            );
+        }
+        HeightFftMode::Strided => {
+            encode_row_fft_strided(
+                row_strided_pipeline,
+                command_buffer,
+                height_plan,
+                height_strided_params,
+                reduced_a,
+                output,
+            );
+        }
+    }
 }
 
 fn encode_inverse_2d_real(
     row_pipeline: &ComputePipelineState,
+    row_strided_pipeline: &ComputePipelineState,
     prepare_c2r_pipeline: &ComputePipelineState,
     unpack_real_pipeline: &ComputePipelineState,
     transpose_pipeline: &ComputePipelineState,
@@ -958,35 +1056,53 @@ fn encode_inverse_2d_real(
     twiddles: &Buffer,
     transpose_forward_params: &Buffer,
     transpose_reverse_params: &Buffer,
+    height_strided_params: &Buffer,
+    height_mode: HeightFftMode,
     complex_w: usize,
     fft_h: usize,
     batch_count: usize,
 ) {
-    encode_transpose(
-        transpose_pipeline,
-        command_buffer,
-        input,
-        transpose,
-        transpose_forward_params,
-        complex_w,
-        fft_h,
-        batch_count,
-    );
-    encode_row_fft(row_pipeline, command_buffer, height_plan, transpose, reduced_b);
-    encode_transpose(
-        transpose_pipeline,
-        command_buffer,
-        reduced_b,
-        input,
-        transpose_reverse_params,
-        height_plan.len,
-        complex_w,
-        batch_count,
-    );
+    let width_inverse_input = match height_mode {
+        HeightFftMode::Transpose => {
+            encode_transpose(
+                transpose_pipeline,
+                command_buffer,
+                input,
+                transpose,
+                transpose_forward_params,
+                complex_w,
+                fft_h,
+                batch_count,
+            );
+            encode_row_fft(row_pipeline, command_buffer, height_plan, transpose, reduced_b);
+            encode_transpose(
+                transpose_pipeline,
+                command_buffer,
+                reduced_b,
+                input,
+                transpose_reverse_params,
+                height_plan.len,
+                complex_w,
+                batch_count,
+            );
+            input
+        }
+        HeightFftMode::Strided => {
+            encode_row_fft_strided(
+                row_strided_pipeline,
+                command_buffer,
+                height_plan,
+                height_strided_params,
+                input,
+                reduced_b,
+            );
+            reduced_b
+        }
+    };
     encode_real_width_twiddled_stage(
         prepare_c2r_pipeline,
         command_buffer,
-        input,
+        width_inverse_input,
         half_buffer,
         real_width_params,
         twiddles,
@@ -1096,6 +1212,14 @@ fn choose_row_threadgroup_width(
         .min(max_threads)
         .max(execution_width);
     preferred.min(row_len as u64).max(1)
+}
+
+fn height_inverse_mode() -> HeightFftMode {
+    match std::env::var("WVF_METAL_GPU_HEIGHT_INVERSE_MODE").ok().as_deref() {
+        Some("strided") => HeightFftMode::Strided,
+        Some("transpose") => HeightFftMode::Transpose,
+        _ => HeightFftMode::Transpose,
+    }
 }
 
 fn next_smooth_fft_size(mut value: u64) -> u64 {
