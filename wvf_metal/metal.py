@@ -22,17 +22,13 @@ class MetalBackendError(RuntimeError):
 
 _VARIANTS = {
     "direct": 0,
-    "baseline": 0,
     "antipodal": 1,
     "split": 2,
-    "optimized": 2,
-    "auto": 2,
-    "vkfft": 3,
     "fft": 3,
 }
 
 _FFT_VARIANT_IDS = {3}
-_FFT_BACKENDS = {"auto", "cpu", "vkfft", "metal", "gpu"}
+_FFT_BACKENDS = {"auto", "cpu", "vkfft"}
 _AUTO_FFT_CACHE_VERSION = 2
 _AUTO_FFT_CACHE: dict[str, str] | None = None
 
@@ -416,8 +412,6 @@ def _normalize_fft_backend(fft_backend: str | None) -> str:
     normalized = "auto" if fft_backend is None else str(fft_backend).strip().lower()
     if normalized not in _FFT_BACKENDS:
         raise ValueError("fft_backend must be 'auto', 'cpu', or 'vkfft'")
-    if normalized in {"metal", "gpu"}:
-        return "vkfft"
     return normalized
 
 
@@ -429,7 +423,7 @@ def _resolve_fft_backend(variant: str, fft_backend: str | None) -> str | None:
     if not _variant_is_fft(variant):
         chosen = _normalize_fft_backend(fft_backend)
         if chosen != "auto":
-            raise ValueError("fft_backend only applies to variant='fft' or variant='vkfft'")
+            raise ValueError("fft_backend only applies to variant='fft'")
         return None
 
     return _normalize_fft_backend(fft_backend)
@@ -465,7 +459,7 @@ def _variant_id(variant: str) -> int:
         return _VARIANTS[str(variant).lower()]
     except KeyError as exc:
         raise ValueError(
-            "variant must be 'split', 'antipodal', 'direct', or 'fft'/'vkfft'"
+            "variant must be 'split', 'antipodal', 'direct', or 'fft'"
         ) from exc
 
 

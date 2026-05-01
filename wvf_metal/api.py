@@ -33,13 +33,9 @@ __all__ = [
 
 Variant = Literal[
     "direct",
-    "baseline",
     "antipodal",
     "split",
-    "optimized",
-    "auto",
     "fft",
-    "vkfft",
 ]
 FftBackend = Literal["auto", "cpu", "vkfft"]
 

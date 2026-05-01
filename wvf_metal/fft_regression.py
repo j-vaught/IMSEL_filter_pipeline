@@ -46,6 +46,24 @@ class PerformanceCase:
     split_median: float | None = None
 
 
+def _components(
+    module: ModuleType,
+    image: np.ndarray,
+    radius: int,
+    degree: int,
+    variant: str,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    if hasattr(module, "components"):
+        result = module.components(image, radius=radius, degree=degree, variant=variant)
+        return result.gx, result.gy, result.magnitude, result.angle
+    return module.wvf_magnitude_angle_metal(
+        image,
+        radius=radius,
+        degree=degree,
+        variant=variant,
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Run standalone WVF Metal FFT correctness and warm-performance checks."
@@ -162,17 +180,11 @@ def run_correctness(module: ModuleType) -> list[CorrectnessCase]:
         rng = np.random.default_rng(1000 + size_index)
         image = rng.random((height, width), dtype=np.float32)
         for radius in CORRECTNESS_RADII:
-            gx_ref, gy_ref, mag_ref, angle_ref = module.wvf_magnitude_angle_metal(
-                image,
-                radius=radius,
-                degree=DEGREE,
-                variant="split",
+            gx_ref, gy_ref, mag_ref, angle_ref = _components(
+                module, image, radius, DEGREE, "split"
             )
-            gx_fft, gy_fft, mag_fft, angle_fft = module.wvf_magnitude_angle_metal(
-                image,
-                radius=radius,
-                degree=DEGREE,
-                variant="fft",
+            gx_fft, gy_fft, mag_fft, angle_fft = _components(
+                module, image, radius, DEGREE, "fft"
             )
             mask = mag_ref > MAGNITUDE_MASK
             angle_error = wrapped_angle_error(angle_ref, angle_fft)
@@ -224,7 +236,7 @@ def run_performance(
         baseline,
         image,
         radius=9,
-        variant="vkfft",
+        variant="fft",
         warm_runs=warm_runs,
     )
     current_small = benchmark_variant(
@@ -248,7 +260,7 @@ def run_performance(
             baseline,
             image,
             radius=radius,
-            variant="vkfft",
+            variant="fft",
             warm_runs=warm_runs,
         )
         current_times = benchmark_variant(
@@ -275,11 +287,11 @@ def benchmark_variant(
     variant: str,
     warm_runs: int,
 ) -> list[float]:
-    module.wvf_magnitude_angle_metal(image, radius=radius, degree=DEGREE, variant=variant)
+    _components(module, image, radius, DEGREE, variant)
     times: list[float] = []
     for _ in range(warm_runs):
         start = time.perf_counter()
-        module.wvf_magnitude_angle_metal(image, radius=radius, degree=DEGREE, variant=variant)
+        _components(module, image, radius, DEGREE, variant)
         times.append(time.perf_counter() - start)
     return times
 

@@ -49,14 +49,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("-d", "--degree", type=int, required=True)
     parser.add_argument(
         "--variant",
-        choices=("split", "antipodal", "direct", "fft", "vkfft"),
+        choices=("split", "antipodal", "direct", "fft"),
         default="split",
     )
     parser.add_argument(
         "--fft-backend",
         choices=("auto", "cpu", "vkfft"),
         default="auto",
-        help="FFT backend for variant=fft/vkfft. auto benchmarks CPU and VkFFT once per workload.",
+        help="FFT backend for variant=fft. auto benchmarks CPU and VkFFT once per workload.",
     )
     parser.add_argument(
         "--device-index",

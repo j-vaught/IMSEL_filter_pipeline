@@ -19,13 +19,9 @@ from .metal import (
     VARIANT_NAMES,
     MetalBackendError,
     metal_backend_available,
-    wvf_gradients_metal,
-    wvf_magnitude_angle_metal,
-    wvf_magnitude_metal,
-    wvf_magnitude_orientation_metal,
 )
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "__version__",
@@ -43,8 +39,4 @@ __all__ = [
     "magnitude",
     "magnitude_orientation",
     "metal_backend_available",
-    "wvf_gradients_metal",
-    "wvf_magnitude_angle_metal",
-    "wvf_magnitude_metal",
-    "wvf_magnitude_orientation_metal",
 ]

@@ -25,26 +25,54 @@ or `.npz` does not.
 
 ## Install
 
+### Quick Start
+
 ```bash
 cd wvf_metal
 python -m venv .venv
 source .venv/bin/activate
-pip install -e .
+python -m pip install --upgrade pip
+python -m pip install .
 ```
 
 If you want image-file CLI input, install the `image` extra:
 
 ```bash
-pip install -e .[image]
+python -m pip install .[image]
 ```
 
 The Rust dynamic library builds automatically on first use and is cached under
 `wvf_metal/build/target`.
 
-For an installation report, run:
+### Platform Notes
+
+- macOS:
+  - Install Xcode command line tools first.
+  - `variant="split"`, `variant="antipodal"`, `variant="direct"`, and `variant="fft"` are available.
+- Linux:
+  - `variant="fft"` is available.
+  - If CUDA and a compatible host compiler are present, `fft_backend="vkfft"` uses the GPU.
+  - Otherwise the package still installs and `fft_backend="cpu"` remains available.
+
+### Installation Check
+
+Run this after install:
 
 ```bash
 wvf-metal-doctor
+```
+
+Then run a minimal smoke test:
+
+```bash
+python - <<'PY'
+import numpy as np
+from wvf_metal import components
+
+image = np.random.default_rng(0).random((128, 128), dtype=np.float32)
+result = components(image, radius=9, degree=3, variant="fft", fft_backend="cpu")
+print(result.gx.shape, result.magnitude.shape)
+PY
 ```
 
 ## Python API
@@ -72,20 +100,12 @@ gx, gy, mag, angle = components(
 )
 ```
 
-Compatibility aliases remain available:
-- `wvf_gradients_metal`
-- `wvf_magnitude_metal`
-- `wvf_magnitude_orientation_metal`
-- `wvf_magnitude_angle_metal`
-
 The default variant is `split` on macOS. For comparisons, pass
 `variant="direct"`, `variant="antipodal"`, or `variant="fft"`.
-`variant="vkfft"` remains as a compatibility alias for backend `3`.
 
-On Linux, only `variant="fft"` and `variant="vkfft"` are available. The
-spatial variants require macOS Metal. `fft_backend="cpu"` selects the restored
-Rust `rustfft` backend inside the native extension instead of the VkFFT GPU
-path.
+On Linux, only `variant="fft"` is available. The spatial variants require
+macOS Metal. `fft_backend="cpu"` selects the restored Rust `rustfft` backend
+inside the native extension instead of the VkFFT GPU path.
 
 ## Kernel Variants
 
@@ -103,22 +123,20 @@ pixels use a fast path with direct indexing and no reflected-boundary checks.
 Only the border band uses reflected indexing. This is the default because most
 pixels in normal images are interior pixels.
 
-`fft` is the preferred public name for backend `3`. By default it uses the
-bundled VkFFT bridge or the restored Rust CPU FFT backend, depending on which
-one benchmarks faster for the current workload on the current device. `vkfft`
-is kept as a compatibility alias for the same backend id and behavior.
+`fft` is backend `3`. By default it uses the bundled VkFFT bridge or the
+restored Rust CPU FFT backend, depending on which one benchmarks faster for the
+current workload on the current device.
 
-For `variant="fft"` or `variant="vkfft"`, pass `fft_backend="auto"`,
-`fft_backend="cpu"`, or `fft_backend="vkfft"`. `auto` is the default.
+For `variant="fft"`, pass `fft_backend="auto"`, `fft_backend="cpu"`, or
+`fft_backend="vkfft"`. `auto` is the default.
 The first `auto` call for a given image shape, radius, degree, GPU device, and
 requested output shape warms both FFT backends once, times the next call, and
 caches the faster choice under the user cache directory. Later calls reuse that
 choice until the native build fingerprint or workload key changes.
 
 For Metal or VkFFT GPU execution, you can choose the GPU with `device_index=`
-in Python or `WVF_GPU_DEVICE_INDEX` in the environment. `WVF_METAL_DEVICE_INDEX`
-remains accepted as a compatibility alias. Index `0` is the first GPU returned
-by the native backend enumeration.
+in Python or `WVF_GPU_DEVICE_INDEX` in the environment. Index `0` is the first
+GPU returned by the native backend enumeration.
 
 Linux notes:
 - The Python wrapper auto-discovers common CUDA runtime library locations and

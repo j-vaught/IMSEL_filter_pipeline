@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wvf-metal"
-version = "0.2.0"
+version = "0.3.0"
 description = "Standalone native WVF gradients with macOS Metal, VkFFT, CUDA, and Rust CPU FFT backends"
 readme = "README.md"
 requires-python = ">=3.10"
