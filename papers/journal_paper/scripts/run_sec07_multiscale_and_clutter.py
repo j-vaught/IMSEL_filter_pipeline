@@ -39,6 +39,7 @@ PATCH_HALF_SIZE = 192
 PROFILE_STEP_PX = 0.25
 PROFILE_MARGIN_PX = 8.0
 WINDOW_SCALE = 0.125
+EDGE_WINDOW_HALF_PX = 3.0
 NORMALIZE_COORDS = True
 INSTANCE_OFFSETS = ((-0.25, 0.20), (0.30, -0.15))
 DEFAULT_FFT_BACKEND = "vkfft"
@@ -65,6 +66,16 @@ class KernelPlan:
 @dataclass(frozen=True)
 class BarCase:
     separation_px: int
+    orientation_deg: float
+    phase_px: float
+    image: np.ndarray
+    t_coords: np.ndarray
+    sample_x: np.ndarray
+    sample_y: np.ndarray
+
+
+@dataclass(frozen=True)
+class EdgeCase:
     orientation_deg: float
     phase_px: float
     image: np.ndarray
@@ -234,6 +245,12 @@ def _render_bar_patch(xx: np.ndarray, yy: np.ndarray, width_px: float, angle_deg
     )
 
 
+def _render_step_patch(xx: np.ndarray, yy: np.ndarray, angle_deg: float, phase_px: float) -> np.ndarray:
+    theta = math.radians(float(angle_deg))
+    normal = np.asarray(xx, dtype=np.float64) * math.cos(theta) + np.asarray(yy, dtype=np.float64) * math.sin(theta) - float(phase_px)
+    return 0.5 * float(CONTRAST) * (1.0 + np.tanh(normal / float(EDGE_WIDTH_PX)))
+
+
 def _bar_profile_geometry(width_px: float, angle_deg: float, phase_px: float, max_radius: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     theta = math.radians(float(angle_deg))
     search_half = 0.5 * float(width_px) + float(max_radius) + float(PROFILE_MARGIN_PX)
@@ -282,6 +299,40 @@ def _build_bar_cases(separations: tuple[int, ...]) -> list[BarCase]:
     return cases
 
 
+def _build_edge_reference_cases() -> list[EdgeCase]:
+    xx, yy = _local_patch_coords()
+    cases: list[EdgeCase] = []
+    max_radius = max(int(radius) for radius in RADIUS_SCHEDULE)
+    max_separation = max(int(value) for value in CLOSE_EDGE_SEPARATIONS)
+    for angle_deg in _orientation_values():
+        for phase_px in _phase_values():
+            t_coords, sample_x, sample_y = _bar_profile_geometry(
+                width_px=float(max_separation),
+                angle_deg=float(angle_deg),
+                phase_px=float(phase_px),
+                max_radius=int(max_radius),
+            )
+            cases.append(
+                EdgeCase(
+                    orientation_deg=float(angle_deg),
+                    phase_px=float(phase_px),
+                    image=np.asarray(
+                        _render_step_patch(
+                            xx,
+                            yy,
+                            angle_deg=float(angle_deg),
+                            phase_px=float(phase_px),
+                        ),
+                        dtype=np.float32,
+                    ),
+                    t_coords=np.asarray(t_coords, dtype=np.float64),
+                    sample_x=np.asarray(sample_x, dtype=np.float64),
+                    sample_y=np.asarray(sample_y, dtype=np.float64),
+                )
+            )
+    return cases
+
+
 def _sample_profile(image: np.ndarray, sample_x: np.ndarray, sample_y: np.ndarray) -> np.ndarray:
     return np.asarray(
         ndimage.map_coordinates(
@@ -294,41 +345,13 @@ def _sample_profile(image: np.ndarray, sample_x: np.ndarray, sample_y: np.ndarra
     )
 
 
-def _local_maxima_indices(profile: np.ndarray) -> np.ndarray:
-    values = np.asarray(profile, dtype=np.float64)
-    if values.shape[0] < 3:
-        return np.zeros(0, dtype=np.int64)
-    is_peak = np.zeros(values.shape[0], dtype=bool)
-    is_peak[1:-1] = (
-        ((values[1:-1] > values[:-2]) & (values[1:-1] >= values[2:]))
-        | ((values[1:-1] >= values[:-2]) & (values[1:-1] > values[2:]))
-    )
-    return np.flatnonzero(is_peak)
-
-
-def _resolve_two_peaks(t_coords: np.ndarray, profile: np.ndarray) -> tuple[bool, float]:
+def _windowed_profile_peak(t_coords: np.ndarray, profile: np.ndarray, center_pos: float, half_width: float) -> float:
     t = np.asarray(t_coords, dtype=np.float64)
     values = np.asarray(profile, dtype=np.float64)
-    candidates = _local_maxima_indices(values)
-    left_candidates = candidates[t[candidates] < 0.0]
-    right_candidates = candidates[t[candidates] > 0.0]
-    if left_candidates.size == 0 or right_candidates.size == 0:
-        return False, 0.0
-    left_idx = int(left_candidates[np.argmax(values[left_candidates])])
-    right_idx = int(right_candidates[np.argmax(values[right_candidates])])
-    if left_idx + 1 >= right_idx:
-        return False, 0.0
-    left_peak = float(values[left_idx])
-    right_peak = float(values[right_idx])
-    valley_values = values[left_idx : right_idx + 1]
-    valley_rel = int(np.argmin(valley_values))
-    valley_idx = int(left_idx + valley_rel)
-    if valley_idx <= left_idx or valley_idx >= right_idx:
-        return False, 0.0
-    valley = float(values[valley_idx])
-    if valley >= 0.95 * min(left_peak, right_peak):
-        return False, 0.0
-    return True, float(t[right_idx] - t[left_idx])
+    mask = np.abs(t - float(center_pos)) <= float(half_width)
+    if not bool(np.any(mask)):
+        return 0.0
+    return float(np.max(values[mask]))
 
 
 def _multiscale_rows(
@@ -400,9 +423,11 @@ def _clutter_rows(
     separations: tuple[int, ...],
 ) -> tuple[list[dict[str, float]], list[dict[str, float]]]:
     cases = _build_bar_cases(separations)
+    ref_cases = _build_edge_reference_cases()
     rows: list[dict[str, float]] = []
     thresholds: list[dict[str, float]] = []
     images = [case.image for case in cases]
+    ref_images = [case.image for case in ref_cases]
     for radius in radii:
         plan = _build_kernel_plan(int(radius))
         magnitudes: list[np.ndarray] = []
@@ -418,35 +443,61 @@ def _clutter_rows(
                     device_index=device_index,
                 )
             )
+        reference_magnitudes: list[np.ndarray] = []
+        for batch_start in range(0, len(ref_images), int(BATCH_CASES)):
+            batch_images = ref_images[batch_start : batch_start + int(BATCH_CASES)]
+            reference_magnitudes.extend(
+                _apply_batched_magnitude(
+                    batch_images,
+                    radius=int(plan.radius),
+                    kernel_x=plan.kernel_x,
+                    kernel_y=plan.kernel_y,
+                    fft_backend=fft_backend,
+                    device_index=device_index,
+                )
+            )
+        reference_lookup: dict[tuple[float, float], float] = {}
+        for case, mag in zip(ref_cases, reference_magnitudes, strict=True):
+            profile = _sample_profile(mag, case.sample_x, case.sample_y)
+            reference_lookup[(float(case.orientation_deg), float(case.phase_px))] = _windowed_profile_peak(
+                t_coords=case.t_coords,
+                profile=profile,
+                center_pos=0.0,
+                half_width=float(EDGE_WINDOW_HALF_PX),
+            )
         threshold_sep: int | None = None
         for separation in separations:
-            resolved_flags = []
-            resolved_separations = []
+            retention_values = []
             for case, mag in zip(cases, magnitudes, strict=True):
                 if int(case.separation_px) != int(separation):
                     continue
                 profile = _sample_profile(mag, case.sample_x, case.sample_y)
-                resolved, peak_sep = _resolve_two_peaks(
+                left_peak = _windowed_profile_peak(
                     t_coords=case.t_coords,
                     profile=profile,
+                    center_pos=-0.5 * float(separation),
+                    half_width=float(EDGE_WINDOW_HALF_PX),
                 )
-                resolved_flags.append(1.0 if resolved else 0.0)
-                if resolved:
-                    resolved_separations.append(float(peak_sep))
-            resolution_rate = float(np.mean(np.asarray(resolved_flags, dtype=np.float64)))
-            detected = bool(resolution_rate >= 0.5)
-            mean_peak_sep = float(np.mean(np.asarray(resolved_separations, dtype=np.float64))) if resolved_separations else 0.0
+                right_peak = _windowed_profile_peak(
+                    t_coords=case.t_coords,
+                    profile=profile,
+                    center_pos=0.5 * float(separation),
+                    half_width=float(EDGE_WINDOW_HALF_PX),
+                )
+                ref_peak = float(reference_lookup[(float(case.orientation_deg), float(case.phase_px))])
+                bar_peak = 0.5 * (float(left_peak) + float(right_peak))
+                retention = 0.0 if ref_peak <= 0.0 else float(bar_peak) / float(ref_peak)
+                retention_values.append(float(retention))
+            retention_ratio = float(np.mean(np.asarray(retention_values, dtype=np.float64)))
             rows.append(
                 {
                     "radius": float(radius),
                     "degree": float(plan.degree),
                     "separation_px": float(separation),
-                    "two_peaks_detected": 1.0 if detected else 0.0,
-                    "resolution_rate": float(resolution_rate),
-                    "peak_separation_px": float(mean_peak_sep),
+                    "retention_ratio": float(retention_ratio),
                 }
             )
-            if detected and threshold_sep is None:
+            if retention_ratio > 0.9 and threshold_sep is None:
                 threshold_sep = int(separation)
         thresholds.append(
             {
@@ -485,17 +536,15 @@ def _write_clutter_csv(path: Path, rows: list[dict[str, float]]) -> None:
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(
             handle,
-            fieldnames=("radius", "degree", "separation_px", "two_peaks_detected", "peak_separation_px"),
+            fieldnames=("radius", "separation", "retention_ratio"),
         )
         writer.writeheader()
         for row in rows:
             writer.writerow(
                 {
                     "radius": f"{int(round(float(row['radius'])))}",
-                    "degree": f"{int(round(float(row['degree'])))}",
-                    "separation_px": f"{int(round(float(row['separation_px'])))}",
-                    "two_peaks_detected": "true" if float(row["two_peaks_detected"]) >= 0.5 else "false",
-                    "peak_separation_px": f"{float(row['peak_separation_px']):.17e}",
+                    "separation": f"{int(round(float(row['separation_px'])))}",
+                    "retention_ratio": f"{float(row['retention_ratio']):.17e}",
                 }
             )
 
@@ -530,7 +579,7 @@ def run_experiment(
     )
 
     multiscale_csv = output_dir / "sec07_multiscale_stress_detection_rate.csv"
-    clutter_csv = output_dir / "sec07_close_edge_clutter_resolution.csv"
+    clutter_csv = output_dir / "sec07_close_edge_clutter_retention.csv"
     _write_multiscale_csv(multiscale_csv, multiscale_rows)
     _write_clutter_csv(clutter_csv, clutter_rows)
 
@@ -553,7 +602,8 @@ def run_experiment(
             "device_index": None if device_index is None else int(device_index),
             "noise_floor_sigma": float(NOISE_FLOOR_SIGMA),
             "multiscale_threshold_definition": "5 * (1/255) * sqrt(2 * white_noise_gain)",
-            "clutter_two_peak_rule": "One peak must lie on each side of the centerline and the minimum between them must be below 95% of the weaker peak height.",
+            "clutter_retention_definition": "Mean of the two bar-edge peak magnitudes divided by the isolated single-edge peak magnitude for the same orientation and phase.",
+            "clutter_threshold_rule": "Smallest separation with retention_ratio > 0.9",
         },
         "multiscale_stress": {
             "rows": multiscale_rows,
