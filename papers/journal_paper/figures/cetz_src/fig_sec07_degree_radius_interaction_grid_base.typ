@@ -68,7 +68,7 @@
     metric-bounds.push((key, min-value, max-value))
   }
 
-  #cetz.canvas({
+  cetz.canvas({
     import cetz.draw: *
 
     let cell-w = 0.48
