@@ -50,9 +50,14 @@ def design_condition_number(design: np.ndarray) -> float:
     return float("inf") if sigma_min <= 0.0 else sigma_max / sigma_min
 
 
-def square_offsets(half_side: int, include_center: bool = False) -> np.ndarray:
-    h = int(half_side)
-    coords = [(dx, dy) for dy in range(-h, h + 1) for dx in range(-h, h + 1)]
+def square_offsets(half_side: float, include_center: bool = False) -> np.ndarray:
+    h = float(half_side)
+    limit = int(math.ceil(h))
+    coords: list[tuple[int, int]] = []
+    for dy in range(-limit, limit + 1):
+        for dx in range(-limit, limit + 1):
+            if abs(dx) <= h + 1.0e-12 and abs(dy) <= h + 1.0e-12:
+                coords.append((dx, dy))
     offsets_xy = np.asarray(coords, dtype=np.float64)
     if include_center:
         return offsets_xy
@@ -167,18 +172,18 @@ def build_support_kernels(
 
 
 def build_square_support_kernels(
-    half_side: int,
+    half_side: float,
     degree: int = 3,
     normalize_coords: bool = False,
 ) -> SquareSupportKernels:
-    h = int(half_side)
+    h = float(half_side)
     return build_support_kernels(
         offsets_xy=square_offsets(h, include_center=False),
         support_name="square",
-        support_value=float(h),
+        support_value=h,
         degree=int(degree),
         normalize_coords=bool(normalize_coords),
-        kernel_half_extent=h,
+        kernel_half_extent=int(math.ceil(h)),
     )
 
 
