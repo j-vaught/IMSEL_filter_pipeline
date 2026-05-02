@@ -17,8 +17,11 @@ ROOT = Path(__file__).resolve().parents[3]
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from weighted_disk_sg import build_weighted_disk_kernels
+from wvf_metal.metal import fft_gradients_with_kernel
 
 
 RADIUS = 15
@@ -48,6 +51,7 @@ PADDING_LABELS = {
     "constant_value": "Border-constant",
     "edge": "Clamp",
 }
+DEFAULT_FFT_BACKEND = "vkfft"
 
 
 def _orientation_values(step_deg: float) -> tuple[float, ...]:
@@ -114,10 +118,28 @@ def _prepad_image(image: np.ndarray, pad: int, mode: str) -> np.ndarray:
     raise ValueError(f"unsupported padding mode {mode!r}")
 
 
-def _apply_kernel(image: np.ndarray, kernel: np.ndarray, pad: int, mode: str) -> np.ndarray:
+def _apply_gradients(
+    image: np.ndarray,
+    kernel_x: np.ndarray,
+    kernel_y: np.ndarray,
+    pad: int,
+    mode: str,
+    fft_backend: str,
+    device_index: int | None,
+) -> tuple[np.ndarray, np.ndarray]:
     padded = _prepad_image(image, pad, mode)
-    response = ndimage.correlate(padded, np.asarray(kernel, dtype=np.float64), mode="constant", cval=0.0)
-    return np.asarray(response[pad:-pad, pad:-pad], dtype=np.float64)
+    gx_padded, gy_padded = fft_gradients_with_kernel(
+        np.asarray(padded, dtype=np.float32),
+        radius=int(RADIUS),
+        kernel_x=np.asarray(kernel_x, dtype=np.float64),
+        kernel_y=np.asarray(kernel_y, dtype=np.float64),
+        fft_backend=fft_backend,
+        device_index=device_index,
+    )
+    return (
+        np.asarray(gx_padded[pad:-pad, pad:-pad], dtype=np.float64),
+        np.asarray(gy_padded[pad:-pad, pad:-pad], dtype=np.float64),
+    )
 
 
 def _signal_noise_sigma(snr_db: float | str) -> float:
@@ -190,7 +212,12 @@ def compile_plot(figure_src: Path, figure_pdf: Path) -> None:
     )
 
 
-def run_experiment(output_dir: Path, summary_json: Path) -> dict[str, Path]:
+def run_experiment(
+    output_dir: Path,
+    summary_json: Path,
+    fft_backend: str,
+    device_index: int | None,
+) -> dict[str, Path]:
     output_dir.mkdir(parents=True, exist_ok=True)
     summary_json.parent.mkdir(parents=True, exist_ok=True)
 
@@ -223,8 +250,15 @@ def run_experiment(output_dir: Path, summary_json: Path) -> dict[str, Path]:
                 flat = np.full((PATCH_SIZE, PATCH_SIZE), 0.5 * float(CONTRAST), dtype=np.float64)
                 if sigma_noise > 0.0:
                     flat = flat + sigma_noise * rng.normal(size=flat.shape)
-                gx = _apply_kernel(flat, kernels.kernel_x, pad, mode)
-                gy = _apply_kernel(flat, kernels.kernel_y, pad, mode)
+                gx, gy = _apply_gradients(
+                    flat,
+                    kernels.kernel_x,
+                    kernels.kernel_y,
+                    pad,
+                    mode,
+                    fft_backend,
+                    device_index,
+                )
                 magnitude = np.sqrt(gx * gx + gy * gy)
                 fp_values.append(float(np.mean(magnitude[border_mask] > threshold)))
             fp_rates[(mode, _snr_slug(snr_db))] = float(np.mean(np.asarray(fp_values, dtype=np.float64)))
@@ -262,8 +296,15 @@ def run_experiment(output_dir: Path, summary_json: Path) -> dict[str, Path]:
                         if sigma_noise > 0.0:
                             noisy_image = noisy_image + sigma_noise * rng.normal(size=noisy_image.shape)
                         for mode in PADDING_MODES:
-                            gx = _apply_kernel(noisy_image, kernels.kernel_x, pad, mode)
-                            gy = _apply_kernel(noisy_image, kernels.kernel_y, pad, mode)
+                            gx, gy = _apply_gradients(
+                                noisy_image,
+                                kernels.kernel_x,
+                                kernels.kernel_y,
+                                pad,
+                                mode,
+                                fft_backend,
+                                device_index,
+                            )
                             diff_sq = (gx - true_gx) ** 2 + (gy - true_gy) ** 2
                             directional = gx * cos_t + gy * sin_t
                             record = cell_records[(mode, offset_label, _snr_slug(snr_db))]
@@ -271,6 +312,7 @@ def run_experiment(output_dir: Path, summary_json: Path) -> dict[str, Path]:
                             record["grad_count"] += int(np.count_nonzero(eval_mask))
                             masked = np.asarray(directional[response_mask_base], dtype=np.float64)
                             record["orientation_peaks"][f"{orientation_deg:g}"].append(float(np.max(np.abs(masked))))
+            print(f"offset={offset_label} snr={_snr_label(snr_db)} status=done")
 
     summary_records = []
     for mode in PADDING_MODES:
@@ -365,11 +407,25 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Compile the RMSE-vs-offset plot after writing the data files.",
     )
+    parser.add_argument(
+        "--fft-backend",
+        default=DEFAULT_FFT_BACKEND,
+        choices=("cpu", "vkfft", "auto"),
+        help="FFT backend for the padded-kernel application path.",
+    )
+    parser.add_argument(
+        "--device-index",
+        type=int,
+        default=None,
+        help="Optional device index for the GPU FFT backend.",
+    )
     args = parser.parse_args(argv)
 
     run_experiment(
         output_dir=args.output_dir.resolve(),
         summary_json=args.summary_json.resolve(),
+        fft_backend=str(args.fft_backend),
+        device_index=args.device_index,
     )
 
     if args.compile_plot:
