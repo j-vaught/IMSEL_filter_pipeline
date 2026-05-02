@@ -1,0 +1,27 @@
+{
+  "title": "Section 7.6 weighting",
+  "subtitle": "Gaussian pixel weighting on disk support, r = 15, d = 3, normalize_coords = True",
+  "config": {
+    "radius": 15,
+    "degree": 3,
+    "normalize_coords": true,
+    "patch_size": 257,
+    "contrast": 1.0,
+    "edge_width_px": 1.5,
+    "orientation_step_deg": 5.0,
+    "phase_count": 4,
+    "phase_step_px": 0.25
+  },
+  "record": {
+    "sigma_label": "sigma_w = 7.5 px",
+    "sigma_w_px": 7.5,
+    "localisation_offset": 0.03940240958265518,
+    "fwhm": 9.983126088981757,
+    "white_noise_gain": 0.0002687259925604825,
+    "condition_number": 63.58945784278972,
+    "anisotropy_ratio": 1.014468365084906,
+    "support_cardinality": 708,
+    "rank_deficient_count": 0,
+    "sigma_min": 0.2766298491997847
+  }
+}

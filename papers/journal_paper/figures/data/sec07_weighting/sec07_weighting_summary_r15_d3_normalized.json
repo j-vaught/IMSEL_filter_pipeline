@@ -1,0 +1,77 @@
+{
+  "title": "Section 7.6 weighting",
+  "subtitle": "Uniform versus Gaussian-weighted local polynomial fit on disk support",
+  "config": {
+    "radius": 15,
+    "degree": 3,
+    "normalize_coords": true,
+    "patch_size": 257,
+    "contrast": 1.0,
+    "edge_width_px": 1.5,
+    "orientation_step_deg": 5.0,
+    "phase_count": 4,
+    "phase_step_px": 0.25
+  },
+  "records": [
+    {
+      "sigma_label": "uniform",
+      "sigma_w_px": null,
+      "localisation_offset": 0.039447639689308034,
+      "fwhm": 11.389165096593311,
+      "white_noise_gain": 0.00022458866818021153,
+      "condition_number": 56.39722904761618,
+      "anisotropy_ratio": 1.0261384796296833,
+      "support_cardinality": 708,
+      "rank_deficient_count": 0,
+      "sigma_min": 0.47926110777281955
+    },
+    {
+      "sigma_label": "sigma_w = 30 px",
+      "sigma_w_px": 30.0,
+      "localisation_offset": 0.03944453903367971,
+      "fwhm": 11.295103103900829,
+      "white_noise_gain": 0.0002247770892483027,
+      "condition_number": 56.5422919312794,
+      "anisotropy_ratio": 1.0251594933333026,
+      "support_cardinality": 708,
+      "rank_deficient_count": 0,
+      "sigma_min": 0.4631109749893487
+    },
+    {
+      "sigma_label": "sigma_w = 15 px",
+      "sigma_w_px": 15.0,
+      "localisation_offset": 0.03943544794159424,
+      "fwhm": 11.017728912465568,
+      "white_noise_gain": 0.00022753509099877287,
+      "condition_number": 57.20572860052036,
+      "anisotropy_ratio": 1.0224526935868146,
+      "support_cardinality": 708,
+      "rank_deficient_count": 0,
+      "sigma_min": 0.41787048477434774
+    },
+    {
+      "sigma_label": "sigma_w = 7.5 px",
+      "sigma_w_px": 7.5,
+      "localisation_offset": 0.03940240958265518,
+      "fwhm": 9.983126088981757,
+      "white_noise_gain": 0.0002687259925604825,
+      "condition_number": 63.58945784278972,
+      "anisotropy_ratio": 1.014468365084906,
+      "support_cardinality": 708,
+      "rank_deficient_count": 0,
+      "sigma_min": 0.2766298491997847
+    },
+    {
+      "sigma_label": "sigma_w = 5 px",
+      "sigma_w_px": 5.0,
+      "localisation_offset": 0.039361009325357306,
+      "fwhm": 8.550556055712326,
+      "white_noise_gain": 0.00044233682246343567,
+      "condition_number": 89.66874467051514,
+      "anisotropy_ratio": 1.0075790456337332,
+      "support_cardinality": 708,
+      "rank_deficient_count": 0,
+      "sigma_min": 0.13894505168579904
+    }
+  ]
+}
