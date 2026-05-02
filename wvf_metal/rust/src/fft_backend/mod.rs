@@ -150,7 +150,7 @@ pub(crate) unsafe fn run_fft_gradients_with_kernel_cpu(
     };
     with_cpu_backend(|backend| {
         backend.run_gradients(image, width, height, radius, &kernels, out_x, out_y)
-    })??;
+    })?;
     Ok(())
 }
 
