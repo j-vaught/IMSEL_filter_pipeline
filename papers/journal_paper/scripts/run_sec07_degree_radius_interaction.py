@@ -390,19 +390,21 @@ def run_experiment(
     output_dir.mkdir(parents=True, exist_ok=True)
     summary_json.parent.mkdir(parents=True, exist_ok=True)
 
-    cases_by_radius = {int(radius): _generate_cases(int(radius)) for radius in radii}
     state_payloads = []
     for normalize_coords in NORMALIZE_STATES:
         cells = []
         recommendation = []
         for radius in radii:
+            print(f"normalize={int(bool(normalize_coords))} r={int(radius)} phase=generate_cases status=begin")
+            cases_for_radius = _generate_cases(int(radius))
+            print(f"normalize={int(bool(normalize_coords))} r={int(radius)} phase=generate_cases status=end")
             radius_cells = []
             for degree in degrees:
                 cell = _evaluate_cell(
                     radius=int(radius),
                     degree=int(degree),
                     normalize_coords=bool(normalize_coords),
-                    cases_by_radius=cases_by_radius,
+                    cases_by_radius={int(radius): cases_for_radius},
                     fft_backend=fft_backend,
                     device_index=device_index,
                     use_scipy_fallback=bool(use_scipy_fallback),
