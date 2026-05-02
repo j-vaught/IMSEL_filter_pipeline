@@ -4,6 +4,8 @@ use std::ffi::{c_char, CStr};
 use std::os::raw::{c_float, c_int, c_uint};
 use std::ptr;
 
+use nalgebra::DMatrix;
+
 mod fft_backend;
 #[cfg(target_os = "macos")]
 mod platform_metal;
@@ -84,9 +86,11 @@ extern "C" {
 }
 
 thread_local! {
-    static KERNEL_CACHE: RefCell<HashMap<(c_uint, c_uint, c_uint), GeneratedKernels>> = RefCell::new(HashMap::new());
-    static DENSE_KERNEL_CACHE: RefCell<HashMap<(c_uint, c_uint), DenseConvolutionKernels>> = RefCell::new(HashMap::new());
+    static KERNEL_CACHE: RefCell<HashMap<(c_uint, c_uint, c_uint, bool, u8), GeneratedKernels>> = RefCell::new(HashMap::new());
+    static DENSE_KERNEL_CACHE: RefCell<HashMap<(c_uint, c_uint, bool, u8), DenseConvolutionKernels>> = RefCell::new(HashMap::new());
 }
+
+const KERNEL_WEIGHT_PRECISION_F32: u8 = 0;
 
 fn selected_gpu_device_index() -> Result<Option<usize>, String> {
     let raw_index = std::env::var("WVF_GPU_DEVICE_INDEX")
@@ -181,11 +185,47 @@ struct GeneratedKernels {
     wy: Vec<c_float>,
 }
 
+#[derive(Clone)]
+struct GeneratedKernels64 {
+    radius: c_uint,
+    dx: Vec<c_int>,
+    dy: Vec<c_int>,
+    wx: Vec<f64>,
+    wy: Vec<f64>,
+}
+
 impl GeneratedKernels {
     fn n_offsets(&self) -> Result<c_uint, String> {
         c_uint::try_from(self.dx.len())
             .map_err(|_| "WVF support is too large for uint32".to_string())
     }
+}
+
+impl From<GeneratedKernels64> for GeneratedKernels {
+    fn from(source: GeneratedKernels64) -> Self {
+        Self {
+            radius: source.radius,
+            dx: source.dx,
+            dy: source.dy,
+            wx: source
+                .wx
+                .into_iter()
+                .map(|value| value as c_float)
+                .collect(),
+            wy: source
+                .wy
+                .into_iter()
+                .map(|value| value as c_float)
+                .collect(),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+#[cfg_attr(not(test), allow(dead_code))]
+enum KernelSolver {
+    SvdPseudoinverse,
+    NormalEquationsGaussJordan,
 }
 
 fn taylor_exponents(degree: c_uint) -> Vec<(u32, u32)> {
@@ -235,22 +275,30 @@ fn disk_offsets(radius: c_uint) -> Result<Vec<(c_int, c_int)>, String> {
     Ok(offsets)
 }
 
-fn build_design(offsets: &[(c_int, c_int)], degree: c_uint) -> Vec<Vec<f64>> {
+fn build_design(
+    offsets: &[(c_int, c_int)],
+    degree: c_uint,
+    normalize_coords: bool,
+    radius: c_uint,
+) -> DMatrix<f64> {
     let exponents = taylor_exponents(degree);
-    offsets
+    let coordinate_scale = if normalize_coords {
+        1.0 / f64::from(radius)
+    } else {
+        1.0
+    };
+    let data = offsets
         .iter()
-        .map(|&(dx, dy)| {
-            let x = f64::from(dx);
-            let y = f64::from(dy);
-            exponents
-                .iter()
-                .map(|&(px, py)| {
-                    let scale = factorial(px) * factorial(py);
-                    x.powi(px as i32) * y.powi(py as i32) / scale
-                })
-                .collect()
+        .flat_map(|&(dx, dy)| {
+            let x = f64::from(dx) * coordinate_scale;
+            let y = f64::from(dy) * coordinate_scale;
+            exponents.iter().map(move |&(px, py)| {
+                let scale = factorial(px) * factorial(py);
+                x.powi(px as i32) * y.powi(py as i32) / scale
+            })
         })
-        .collect()
+        .collect::<Vec<_>>();
+    DMatrix::from_row_slice(offsets.len(), exponents.len(), &data)
 }
 
 fn invert_square(matrix: &[f64], n: usize) -> Result<Vec<f64>, String> {
@@ -309,30 +357,102 @@ fn invert_square(matrix: &[f64], n: usize) -> Result<Vec<f64>, String> {
     Ok(inverse)
 }
 
-fn build_direct_kernels(radius: c_uint, degree: c_uint) -> Result<GeneratedKernels, String> {
+fn default_pinv_rcond(rows: usize, cols: usize) -> f64 {
+    rows.max(cols) as f64 * f64::EPSILON
+}
+
+fn normalized_derivative_rescale(px: u32, py: u32, radius: c_uint, normalize_coords: bool) -> f64 {
+    if !normalize_coords {
+        return 1.0;
+    }
+    f64::from(radius).powi(-((px + py) as i32))
+}
+
+fn svd_pseudoinverse(design: &DMatrix<f64>) -> Result<DMatrix<f64>, String> {
+    let svd = design.clone().svd(true, true);
+    let u = svd
+        .u
+        .ok_or_else(|| "failed to compute left singular vectors".to_string())?;
+    let v_t = svd
+        .v_t
+        .ok_or_else(|| "failed to compute right singular vectors".to_string())?;
+    let mut singular_values = svd.singular_values;
+    let max_sv = singular_values.iter().copied().fold(0.0, f64::max);
+    if max_sv == 0.0 {
+        return Ok(DMatrix::zeros(design.ncols(), design.nrows()));
+    }
+
+    let cutoff = default_pinv_rcond(design.nrows(), design.ncols()) * max_sv;
+    for value in singular_values.iter_mut() {
+        *value = if *value > cutoff { 1.0 / *value } else { 0.0 };
+    }
+
+    let sigma_inv = DMatrix::from_diagonal(&singular_values);
+    Ok(v_t.transpose() * sigma_inv * u.transpose())
+}
+
+fn normal_equations_pseudoinverse(design: &DMatrix<f64>) -> Result<DMatrix<f64>, String> {
+    let n_samples = design.nrows();
+    let n_coeffs = design.ncols();
+    let mut ata = vec![0.0; n_coeffs * n_coeffs];
+    for row in 0..n_samples {
+        for i in 0..n_coeffs {
+            let value_i = design[(row, i)];
+            for j in 0..n_coeffs {
+                ata[i * n_coeffs + j] += value_i * design[(row, j)];
+            }
+        }
+    }
+    let inv = invert_square(&ata, n_coeffs)?;
+
+    let mut pinv = DMatrix::zeros(n_coeffs, n_samples);
+    for sample_idx in 0..n_samples {
+        for deriv_idx in 0..n_coeffs {
+            let weight = (0..n_coeffs)
+                .map(|coeff| inv[deriv_idx * n_coeffs + coeff] * design[(sample_idx, coeff)])
+                .sum::<f64>();
+            pinv[(deriv_idx, sample_idx)] = weight;
+        }
+    }
+    Ok(pinv)
+}
+
+fn compute_design_pseudoinverse(
+    design: &DMatrix<f64>,
+    solver: KernelSolver,
+) -> Result<DMatrix<f64>, String> {
+    match solver {
+        KernelSolver::SvdPseudoinverse => svd_pseudoinverse(design),
+        KernelSolver::NormalEquationsGaussJordan => normal_equations_pseudoinverse(design),
+    }
+}
+
+fn build_direct_kernels_f64(
+    radius: c_uint,
+    degree: c_uint,
+    normalize_coords: bool,
+    solver: KernelSolver,
+) -> Result<GeneratedKernels64, String> {
     if degree < 1 {
         return Err("degree must be at least 1 for WVF gradients".to_string());
     }
 
     let offsets = disk_offsets(radius)?;
-    let design = build_design(&offsets, degree);
-    let n_samples = design.len();
-    let n_coeffs = taylor_exponents(degree).len();
+    let exponents = taylor_exponents(degree);
+    let design = build_design(&offsets, degree, normalize_coords, radius);
+    let n_samples = design.nrows();
+    let n_coeffs = design.ncols();
     if n_samples < n_coeffs {
         return Err(format!(
             "radius {radius} gives {n_samples} samples, fewer than {n_coeffs} Taylor coefficients for degree {degree}"
         ));
     }
 
-    let mut ata = vec![0.0; n_coeffs * n_coeffs];
-    for row in &design {
-        for i in 0..n_coeffs {
-            for j in 0..n_coeffs {
-                ata[i * n_coeffs + j] += row[i] * row[j];
-            }
-        }
-    }
-    let inv = invert_square(&ata, n_coeffs)?;
+    let pinv = compute_design_pseudoinverse(&design, solver)?;
+    let derivative_x_scale =
+        normalized_derivative_rescale(exponents[1].0, exponents[1].1, radius, normalize_coords);
+    let derivative_y_scale =
+        normalized_derivative_rescale(exponents[2].0, exponents[2].1, radius, normalize_coords);
 
     let mut dx = Vec::with_capacity(n_samples);
     let mut dy = Vec::with_capacity(n_samples);
@@ -341,18 +461,11 @@ fn build_direct_kernels(radius: c_uint, degree: c_uint) -> Result<GeneratedKerne
     for (sample_idx, &(offset_x, offset_y)) in offsets.iter().enumerate() {
         dx.push(offset_x);
         dy.push(offset_y);
-        let row = &design[sample_idx];
-        let weight_x = (0..n_coeffs)
-            .map(|coeff| inv[n_coeffs + coeff] * row[coeff])
-            .sum::<f64>();
-        let weight_y = (0..n_coeffs)
-            .map(|coeff| inv[2 * n_coeffs + coeff] * row[coeff])
-            .sum::<f64>();
-        wx.push(weight_x as c_float);
-        wy.push(weight_y as c_float);
+        wx.push(pinv[(1, sample_idx)] * derivative_x_scale);
+        wy.push(pinv[(2, sample_idx)] * derivative_y_scale);
     }
 
-    Ok(GeneratedKernels {
+    Ok(GeneratedKernels64 {
         radius,
         dx,
         dy,
@@ -361,8 +474,13 @@ fn build_direct_kernels(radius: c_uint, degree: c_uint) -> Result<GeneratedKerne
     })
 }
 
-fn build_antipodal_kernels(radius: c_uint, degree: c_uint) -> Result<GeneratedKernels, String> {
-    let direct = build_direct_kernels(radius, degree)?;
+fn build_antipodal_kernels_f64(
+    radius: c_uint,
+    degree: c_uint,
+    normalize_coords: bool,
+    solver: KernelSolver,
+) -> Result<GeneratedKernels64, String> {
+    let direct = build_direct_kernels_f64(radius, degree, normalize_coords, solver)?;
     let index: HashMap<(c_int, c_int), usize> = direct
         .dx
         .iter()
@@ -400,7 +518,7 @@ fn build_antipodal_kernels(radius: c_uint, degree: c_uint) -> Result<GeneratedKe
         wy.push(0.5 * (direct.wy[pos] - direct.wy[neg]));
     }
 
-    Ok(GeneratedKernels {
+    Ok(GeneratedKernels64 {
         radius,
         dx,
         dy,
@@ -409,20 +527,55 @@ fn build_antipodal_kernels(radius: c_uint, degree: c_uint) -> Result<GeneratedKe
     })
 }
 
+fn build_direct_kernels(
+    radius: c_uint,
+    degree: c_uint,
+    normalize_coords: bool,
+) -> Result<GeneratedKernels, String> {
+    Ok(GeneratedKernels::from(build_direct_kernels_f64(
+        radius,
+        degree,
+        normalize_coords,
+        KernelSolver::SvdPseudoinverse,
+    )?))
+}
+
+fn build_antipodal_kernels(
+    radius: c_uint,
+    degree: c_uint,
+    normalize_coords: bool,
+) -> Result<GeneratedKernels, String> {
+    Ok(GeneratedKernels::from(build_antipodal_kernels_f64(
+        radius,
+        degree,
+        normalize_coords,
+        KernelSolver::SvdPseudoinverse,
+    )?))
+}
+
 fn generated_kernels(
     radius: c_uint,
     degree: c_uint,
     variant: c_uint,
+    normalize_coords: bool,
 ) -> Result<GeneratedKernels, String> {
     KERNEL_CACHE.with(|cache_cell| {
-        let key = (radius, degree, variant);
+        let key = (
+            radius,
+            degree,
+            variant,
+            normalize_coords,
+            KERNEL_WEIGHT_PRECISION_F32,
+        );
         if let Some(kernels) = cache_cell.borrow().get(&key) {
             return Ok(kernels.clone());
         }
 
         let kernels = match variant {
-            WVF_VARIANT_DIRECT => build_direct_kernels(radius, degree),
-            WVF_VARIANT_ANTIPODAL | WVF_VARIANT_SPLIT => build_antipodal_kernels(radius, degree),
+            WVF_VARIANT_DIRECT => build_direct_kernels(radius, degree, normalize_coords),
+            WVF_VARIANT_ANTIPODAL | WVF_VARIANT_SPLIT => {
+                build_antipodal_kernels(radius, degree, normalize_coords)
+            }
             _ => Err("variant must be 0=direct, 1=antipodal, or 2=split".to_string()),
         }?;
         cache_cell.borrow_mut().insert(key, kernels.clone());
@@ -439,8 +592,9 @@ pub(crate) struct DenseConvolutionKernels {
 fn build_vkfft_convolution_kernels(
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: bool,
 ) -> Result<DenseConvolutionKernels, String> {
-    let direct = generated_kernels(radius, degree, WVF_VARIANT_DIRECT)?;
+    let direct = generated_kernels(radius, degree, WVF_VARIANT_DIRECT, normalize_coords)?;
     let kernel_width = radius
         .checked_mul(2)
         .and_then(|value| value.checked_add(1))
@@ -472,12 +626,18 @@ fn build_vkfft_convolution_kernels(
 fn with_vkfft_convolution_kernels<T>(
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: bool,
     f: impl FnOnce(&DenseConvolutionKernels) -> T,
 ) -> Result<T, String> {
     DENSE_KERNEL_CACHE.with(|cache_cell| {
-        let key = (radius, degree);
+        let key = (
+            radius,
+            degree,
+            normalize_coords,
+            KERNEL_WEIGHT_PRECISION_F32,
+        );
         if !cache_cell.borrow().contains_key(&key) {
-            let kernels = build_vkfft_convolution_kernels(radius, degree)?;
+            let kernels = build_vkfft_convolution_kernels(radius, degree, normalize_coords)?;
             cache_cell.borrow_mut().insert(key, kernels);
         }
         let cache = cache_cell.borrow();
@@ -512,12 +672,13 @@ unsafe fn run_vkfft_magnitude_angle(
     height: c_uint,
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: bool,
     out_x: *mut c_float,
     out_y: *mut c_float,
     magnitude: *mut c_float,
     angle: *mut c_float,
 ) -> Result<(), String> {
-    with_vkfft_convolution_kernels(radius, degree, |kernels| {
+    with_vkfft_convolution_kernels(radius, degree, normalize_coords, |kernels| {
         let mut error = vec![0 as c_char; 4096];
         let status = wvf_vkfft_magnitude_angle(
             image,
@@ -545,6 +706,7 @@ unsafe fn run_vkfft_magnitude_angle(
     _height: c_uint,
     _radius: c_uint,
     _degree: c_uint,
+    _normalize_coords: bool,
     _out_x: *mut c_float,
     _out_y: *mut c_float,
     _magnitude: *mut c_float,
@@ -559,12 +721,13 @@ unsafe fn run_vkfft_magnitude_orientation(
     height: c_uint,
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: bool,
     magnitude: *mut c_float,
     angle: *mut c_float,
 ) -> Result<(), String> {
     #[cfg(wvf_has_vkfft)]
     {
-        return with_vkfft_convolution_kernels(radius, degree, |kernels| {
+        return with_vkfft_convolution_kernels(radius, degree, normalize_coords, |kernels| {
             let mut error = vec![0 as c_char; 4096];
             let status = wvf_vkfft_magnitude_orientation(
                 image,
@@ -585,7 +748,16 @@ unsafe fn run_vkfft_magnitude_orientation(
 
     #[cfg(not(wvf_has_vkfft))]
     {
-        let _ = (image, width, height, radius, degree, magnitude, angle);
+        let _ = (
+            image,
+            width,
+            height,
+            radius,
+            degree,
+            normalize_coords,
+            magnitude,
+            angle,
+        );
         Err("VkFFT GPU backend is not available in this build".to_string())
     }
 }
@@ -596,11 +768,12 @@ unsafe fn run_vkfft_magnitude(
     height: c_uint,
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: bool,
     magnitude: *mut c_float,
 ) -> Result<(), String> {
     #[cfg(wvf_has_vkfft)]
     {
-        return with_vkfft_convolution_kernels(radius, degree, |kernels| {
+        return with_vkfft_convolution_kernels(radius, degree, normalize_coords, |kernels| {
             let mut error = vec![0 as c_char; 4096];
             let status = wvf_vkfft_magnitude(
                 image,
@@ -620,7 +793,15 @@ unsafe fn run_vkfft_magnitude(
 
     #[cfg(not(wvf_has_vkfft))]
     {
-        let _ = (image, width, height, radius, degree, magnitude);
+        let _ = (
+            image,
+            width,
+            height,
+            radius,
+            degree,
+            normalize_coords,
+            magnitude,
+        );
         Err("VkFFT GPU backend is not available in this build".to_string())
     }
 }
@@ -631,12 +812,13 @@ unsafe fn run_vkfft_gradients(
     height: c_uint,
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: bool,
     out_x: *mut c_float,
     out_y: *mut c_float,
 ) -> Result<(), String> {
     #[cfg(wvf_has_vkfft)]
     {
-        return with_vkfft_convolution_kernels(radius, degree, |kernels| {
+        return with_vkfft_convolution_kernels(radius, degree, normalize_coords, |kernels| {
             let mut error = vec![0 as c_char; 4096];
             let status = wvf_vkfft_gradients(
                 image,
@@ -657,7 +839,16 @@ unsafe fn run_vkfft_gradients(
 
     #[cfg(not(wvf_has_vkfft))]
     {
-        let _ = (image, width, height, radius, degree, out_x, out_y);
+        let _ = (
+            image,
+            width,
+            height,
+            radius,
+            degree,
+            normalize_coords,
+            out_x,
+            out_y,
+        );
         Err("VkFFT GPU backend is not available in this build".to_string())
     }
 }
@@ -696,6 +887,7 @@ unsafe fn validate_generated_common(
     height: c_uint,
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: c_uint,
     variant: c_uint,
 ) -> Result<(), String> {
     check_ptr(image, "image")?;
@@ -707,6 +899,9 @@ unsafe fn validate_generated_common(
     }
     if degree < 1 {
         return Err("degree must be at least 1".to_string());
+    }
+    if normalize_coords > 1 {
+        return Err("normalize_coords must be 0 or 1".to_string());
     }
     if !matches!(
         variant,
@@ -723,11 +918,20 @@ unsafe fn validate_generated(
     height: c_uint,
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: c_uint,
     variant: c_uint,
     out_x: *mut c_float,
     out_y: *mut c_float,
 ) -> Result<(), String> {
-    validate_generated_common(image, width, height, radius, degree, variant)?;
+    validate_generated_common(
+        image,
+        width,
+        height,
+        radius,
+        degree,
+        normalize_coords,
+        variant,
+    )?;
     check_mut_ptr(out_x, "out_x")?;
     check_mut_ptr(out_y, "out_y")?;
     Ok(())
@@ -740,35 +944,50 @@ pub unsafe extern "C" fn wvf_metal_gradients(
     height: c_uint,
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: c_uint,
     variant: c_uint,
     out_x: *mut c_float,
     out_y: *mut c_float,
     error_out: *mut c_char,
     error_len: usize,
 ) -> c_int {
-    let result = validate_generated(image, width, height, radius, degree, variant, out_x, out_y)
-        .and_then(|()| {
-            if variant == WVF_VARIANT_FFT && should_use_cpu_fft_backend()? {
-                fft_backend::run_fft_gradients_cpu(
-                    image, width, height, radius, degree, out_x, out_y,
-                )
-            } else if variant == WVF_VARIANT_FFT {
-                run_vkfft_gradients(image, width, height, radius, degree, out_x, out_y)
-            } else {
-                #[cfg(target_os = "macos")]
-                {
-                    platform_metal::run_checked(|state| {
-                        platform_metal::run_generated_gradients_with_state(
-                            state, image, width, height, radius, degree, variant, out_x, out_y,
-                        )
-                    })
-                }
-                #[cfg(not(target_os = "macos"))]
-                {
-                    Err("direct, antipodal, and split variants require macOS Metal".to_string())
-                }
+    let normalized = normalize_coords != 0;
+    let result = validate_generated(
+        image,
+        width,
+        height,
+        radius,
+        degree,
+        normalize_coords,
+        variant,
+        out_x,
+        out_y,
+    )
+    .and_then(|()| {
+        if variant == WVF_VARIANT_FFT && should_use_cpu_fft_backend()? {
+            fft_backend::run_fft_gradients_cpu(
+                image, width, height, radius, degree, normalized, out_x, out_y,
+            )
+        } else if variant == WVF_VARIANT_FFT {
+            run_vkfft_gradients(
+                image, width, height, radius, degree, normalized, out_x, out_y,
+            )
+        } else {
+            #[cfg(target_os = "macos")]
+            {
+                platform_metal::run_checked(|state| {
+                    platform_metal::run_generated_gradients_with_state(
+                        state, image, width, height, radius, degree, normalized, variant, out_x,
+                        out_y,
+                    )
+                })
             }
-        });
+            #[cfg(not(target_os = "macos"))]
+            {
+                Err("direct, antipodal, and split variants require macOS Metal".to_string())
+            }
+        }
+    });
     match result {
         Ok(()) => 0,
         Err(message) => {
@@ -785,6 +1004,7 @@ pub unsafe extern "C" fn wvf_metal_magnitude_angle(
     height: c_uint,
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: c_uint,
     variant: c_uint,
     out_x: *mut c_float,
     out_y: *mut c_float,
@@ -793,34 +1013,45 @@ pub unsafe extern "C" fn wvf_metal_magnitude_angle(
     error_out: *mut c_char,
     error_len: usize,
 ) -> c_int {
-    let result = validate_generated(image, width, height, radius, degree, variant, out_x, out_y)
-        .and_then(|()| check_mut_ptr(magnitude, "magnitude"))
-        .and_then(|()| check_mut_ptr(angle, "angle"))
-        .and_then(|()| {
-            if variant == WVF_VARIANT_FFT && should_use_cpu_fft_backend()? {
-                fft_backend::run_fft_magnitude_angle_cpu(
-                    image, width, height, radius, degree, out_x, out_y, magnitude, angle,
-                )
-            } else if variant == WVF_VARIANT_FFT {
-                run_vkfft_magnitude_angle(
-                    image, width, height, radius, degree, out_x, out_y, magnitude, angle,
-                )
-            } else {
-                #[cfg(target_os = "macos")]
-                {
-                    platform_metal::run_checked(|state| {
-                        platform_metal::run_generated_magnitude_angle_with_state(
-                            state, image, width, height, radius, degree, variant, out_x, out_y,
-                            magnitude, angle,
-                        )
-                    })
-                }
-                #[cfg(not(target_os = "macos"))]
-                {
-                    Err("direct, antipodal, and split variants require macOS Metal".to_string())
-                }
+    let normalized = normalize_coords != 0;
+    let result = validate_generated(
+        image,
+        width,
+        height,
+        radius,
+        degree,
+        normalize_coords,
+        variant,
+        out_x,
+        out_y,
+    )
+    .and_then(|()| check_mut_ptr(magnitude, "magnitude"))
+    .and_then(|()| check_mut_ptr(angle, "angle"))
+    .and_then(|()| {
+        if variant == WVF_VARIANT_FFT && should_use_cpu_fft_backend()? {
+            fft_backend::run_fft_magnitude_angle_cpu(
+                image, width, height, radius, degree, normalized, out_x, out_y, magnitude, angle,
+            )
+        } else if variant == WVF_VARIANT_FFT {
+            run_vkfft_magnitude_angle(
+                image, width, height, radius, degree, normalized, out_x, out_y, magnitude, angle,
+            )
+        } else {
+            #[cfg(target_os = "macos")]
+            {
+                platform_metal::run_checked(|state| {
+                    platform_metal::run_generated_magnitude_angle_with_state(
+                        state, image, width, height, radius, degree, normalized, variant, out_x,
+                        out_y, magnitude, angle,
+                    )
+                })
             }
-        });
+            #[cfg(not(target_os = "macos"))]
+            {
+                Err("direct, antipodal, and split variants require macOS Metal".to_string())
+            }
+        }
+    });
     match result {
         Ok(()) => 0,
         Err(message) => {
@@ -837,47 +1068,60 @@ pub unsafe extern "C" fn wvf_metal_magnitude(
     height: c_uint,
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: c_uint,
     variant: c_uint,
     magnitude: *mut c_float,
     error_out: *mut c_char,
     error_len: usize,
 ) -> c_int {
-    let result = validate_generated_common(image, width, height, radius, degree, variant)
-        .and_then(|()| check_mut_ptr(magnitude, "magnitude"))
-        .and_then(|()| {
-            if variant == WVF_VARIANT_FFT && should_use_cpu_fft_backend()? {
-                fft_backend::run_fft_magnitude_cpu(image, width, height, radius, degree, magnitude)
-            } else if variant == WVF_VARIANT_FFT {
-                run_vkfft_magnitude(image, width, height, radius, degree, magnitude)
-            } else {
-                #[cfg(target_os = "macos")]
-                {
-                    let total_pixels = checked_image_pixels(width, height)?;
-                    let mut out_x = vec![0.0; total_pixels];
-                    let mut out_y = vec![0.0; total_pixels];
-                    let mut angle = vec![0.0; total_pixels];
-                    platform_metal::run_checked(|state| {
-                        platform_metal::run_generated_magnitude_angle_with_state(
-                            state,
-                            image,
-                            width,
-                            height,
-                            radius,
-                            degree,
-                            variant,
-                            out_x.as_mut_ptr(),
-                            out_y.as_mut_ptr(),
-                            magnitude,
-                            angle.as_mut_ptr(),
-                        )
-                    })
-                }
-                #[cfg(not(target_os = "macos"))]
-                {
-                    Err("direct, antipodal, and split variants require macOS Metal".to_string())
-                }
+    let normalized = normalize_coords != 0;
+    let result = validate_generated_common(
+        image,
+        width,
+        height,
+        radius,
+        degree,
+        normalize_coords,
+        variant,
+    )
+    .and_then(|()| check_mut_ptr(magnitude, "magnitude"))
+    .and_then(|()| {
+        if variant == WVF_VARIANT_FFT && should_use_cpu_fft_backend()? {
+            fft_backend::run_fft_magnitude_cpu(
+                image, width, height, radius, degree, normalized, magnitude,
+            )
+        } else if variant == WVF_VARIANT_FFT {
+            run_vkfft_magnitude(image, width, height, radius, degree, normalized, magnitude)
+        } else {
+            #[cfg(target_os = "macos")]
+            {
+                let total_pixels = checked_image_pixels(width, height)?;
+                let mut out_x = vec![0.0; total_pixels];
+                let mut out_y = vec![0.0; total_pixels];
+                let mut angle = vec![0.0; total_pixels];
+                platform_metal::run_checked(|state| {
+                    platform_metal::run_generated_magnitude_angle_with_state(
+                        state,
+                        image,
+                        width,
+                        height,
+                        radius,
+                        degree,
+                        normalized,
+                        variant,
+                        out_x.as_mut_ptr(),
+                        out_y.as_mut_ptr(),
+                        magnitude,
+                        angle.as_mut_ptr(),
+                    )
+                })
             }
-        });
+            #[cfg(not(target_os = "macos"))]
+            {
+                Err("direct, antipodal, and split variants require macOS Metal".to_string())
+            }
+        }
+    });
     match result {
         Ok(()) => 0,
         Err(message) => {
@@ -894,52 +1138,63 @@ pub unsafe extern "C" fn wvf_metal_magnitude_orientation(
     height: c_uint,
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: c_uint,
     variant: c_uint,
     magnitude: *mut c_float,
     angle: *mut c_float,
     error_out: *mut c_char,
     error_len: usize,
 ) -> c_int {
-    let result = validate_generated_common(image, width, height, radius, degree, variant)
-        .and_then(|()| check_mut_ptr(magnitude, "magnitude"))
-        .and_then(|()| check_mut_ptr(angle, "angle"))
-        .and_then(|()| {
-            if variant == WVF_VARIANT_FFT && should_use_cpu_fft_backend()? {
-                fft_backend::run_fft_magnitude_orientation_cpu(
-                    image, width, height, radius, degree, magnitude, angle,
-                )
-            } else if variant == WVF_VARIANT_FFT {
-                run_vkfft_magnitude_orientation(
-                    image, width, height, radius, degree, magnitude, angle,
-                )
-            } else {
-                #[cfg(target_os = "macos")]
-                {
-                    let total_pixels = checked_image_pixels(width, height)?;
-                    let mut out_x = vec![0.0; total_pixels];
-                    let mut out_y = vec![0.0; total_pixels];
-                    platform_metal::run_checked(|state| {
-                        platform_metal::run_generated_magnitude_angle_with_state(
-                            state,
-                            image,
-                            width,
-                            height,
-                            radius,
-                            degree,
-                            variant,
-                            out_x.as_mut_ptr(),
-                            out_y.as_mut_ptr(),
-                            magnitude,
-                            angle,
-                        )
-                    })
-                }
-                #[cfg(not(target_os = "macos"))]
-                {
-                    Err("direct, antipodal, and split variants require macOS Metal".to_string())
-                }
+    let normalized = normalize_coords != 0;
+    let result = validate_generated_common(
+        image,
+        width,
+        height,
+        radius,
+        degree,
+        normalize_coords,
+        variant,
+    )
+    .and_then(|()| check_mut_ptr(magnitude, "magnitude"))
+    .and_then(|()| check_mut_ptr(angle, "angle"))
+    .and_then(|()| {
+        if variant == WVF_VARIANT_FFT && should_use_cpu_fft_backend()? {
+            fft_backend::run_fft_magnitude_orientation_cpu(
+                image, width, height, radius, degree, normalized, magnitude, angle,
+            )
+        } else if variant == WVF_VARIANT_FFT {
+            run_vkfft_magnitude_orientation(
+                image, width, height, radius, degree, normalized, magnitude, angle,
+            )
+        } else {
+            #[cfg(target_os = "macos")]
+            {
+                let total_pixels = checked_image_pixels(width, height)?;
+                let mut out_x = vec![0.0; total_pixels];
+                let mut out_y = vec![0.0; total_pixels];
+                platform_metal::run_checked(|state| {
+                    platform_metal::run_generated_magnitude_angle_with_state(
+                        state,
+                        image,
+                        width,
+                        height,
+                        radius,
+                        degree,
+                        normalized,
+                        variant,
+                        out_x.as_mut_ptr(),
+                        out_y.as_mut_ptr(),
+                        magnitude,
+                        angle,
+                    )
+                })
             }
-        });
+            #[cfg(not(target_os = "macos"))]
+            {
+                Err("direct, antipodal, and split variants require macOS Metal".to_string())
+            }
+        }
+    });
     match result {
         Ok(()) => 0,
         Err(message) => {
@@ -1063,6 +1318,70 @@ pub unsafe extern "C" fn wvf_metal_convolve_split(
         Err(message) => {
             write_error(error_out, error_len, &message);
             1
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const TEST_CASES: &[(c_uint, c_uint)] = &[(5, 3), (9, 3), (15, 5)];
+
+    fn max_abs_diff(lhs: &[f64], rhs: &[f64]) -> f64 {
+        lhs.iter()
+            .zip(rhs.iter())
+            .map(|(left, right)| (left - right).abs())
+            .fold(0.0, f64::max)
+    }
+
+    #[test]
+    fn svd_solver_matches_old_solver_in_easy_regime() {
+        for &(radius, degree) in TEST_CASES {
+            let svd =
+                build_direct_kernels_f64(radius, degree, false, KernelSolver::SvdPseudoinverse)
+                    .expect("svd synthesis should succeed");
+            let legacy = build_direct_kernels_f64(
+                radius,
+                degree,
+                false,
+                KernelSolver::NormalEquationsGaussJordan,
+            )
+            .expect("legacy synthesis should succeed");
+
+            assert_eq!(svd.dx, legacy.dx);
+            assert_eq!(svd.dy, legacy.dy);
+            assert!(
+                max_abs_diff(&svd.wx, &legacy.wx) <= 1.0e-6,
+                "solver parity failed for radius={radius} degree={degree} on wx"
+            );
+            assert!(
+                max_abs_diff(&svd.wy, &legacy.wy) <= 1.0e-6,
+                "solver parity failed for radius={radius} degree={degree} on wy"
+            );
+        }
+    }
+
+    #[test]
+    fn normalized_and_unnormalized_match_in_easy_regime() {
+        for &(radius, degree) in TEST_CASES {
+            let raw =
+                build_direct_kernels_f64(radius, degree, false, KernelSolver::SvdPseudoinverse)
+                    .expect("unnormalized synthesis should succeed");
+            let normalized =
+                build_direct_kernels_f64(radius, degree, true, KernelSolver::SvdPseudoinverse)
+                    .expect("normalized synthesis should succeed");
+
+            assert_eq!(raw.dx, normalized.dx);
+            assert_eq!(raw.dy, normalized.dy);
+            assert!(
+                max_abs_diff(&raw.wx, &normalized.wx) <= 1.0e-6,
+                "normalize parity failed for radius={radius} degree={degree} on wx"
+            );
+            assert!(
+                max_abs_diff(&raw.wy, &normalized.wy) <= 1.0e-6,
+                "normalize parity failed for radius={radius} degree={degree} on wy"
+            );
         }
     }
 }

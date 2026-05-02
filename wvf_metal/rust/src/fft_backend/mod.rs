@@ -7,7 +7,7 @@ use crate::DenseConvolutionKernels;
 mod custom_fft;
 
 thread_local! {
-    static DENSE_KERNEL_CACHE: RefCell<HashMap<(c_uint, c_uint), DenseConvolutionKernels>> =
+    static DENSE_KERNEL_CACHE: RefCell<HashMap<(c_uint, c_uint, bool, u8), DenseConvolutionKernels>> =
         RefCell::new(HashMap::new());
     static CPU_FFT_BACKEND: RefCell<Option<custom_fft::CpuFftBackend>> = const { RefCell::new(None) };
 }
@@ -15,8 +15,10 @@ thread_local! {
 fn build_dense_convolution_kernels(
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: bool,
 ) -> Result<DenseConvolutionKernels, String> {
-    let direct = crate::generated_kernels(radius, degree, crate::WVF_VARIANT_DIRECT)?;
+    let direct =
+        crate::generated_kernels(radius, degree, crate::WVF_VARIANT_DIRECT, normalize_coords)?;
     let kernel_width = radius
         .checked_mul(2)
         .and_then(|value| value.checked_add(1))
@@ -49,12 +51,18 @@ fn build_dense_convolution_kernels(
 fn with_dense_convolution_kernels<T>(
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: bool,
     f: impl FnOnce(&DenseConvolutionKernels) -> T,
 ) -> Result<T, String> {
     DENSE_KERNEL_CACHE.with(|cache_cell| {
-        let key = (radius, degree);
+        let key = (
+            radius,
+            degree,
+            normalize_coords,
+            crate::KERNEL_WEIGHT_PRECISION_F32,
+        );
         if !cache_cell.borrow().contains_key(&key) {
-            let kernels = build_dense_convolution_kernels(radius, degree)?;
+            let kernels = build_dense_convolution_kernels(radius, degree, normalize_coords)?;
             cache_cell.borrow_mut().insert(key, kernels);
         }
         let cache = cache_cell.borrow();
@@ -86,12 +94,13 @@ pub(crate) unsafe fn run_fft_magnitude_angle_cpu(
     height: c_uint,
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: bool,
     out_x: *mut c_float,
     out_y: *mut c_float,
     magnitude: *mut c_float,
     angle: *mut c_float,
 ) -> Result<(), String> {
-    with_dense_convolution_kernels(radius, degree, |kernels| {
+    with_dense_convolution_kernels(radius, degree, normalize_coords, |kernels| {
         with_cpu_backend(|backend| {
             backend.run_magnitude_angle(
                 image, width, height, radius, kernels, out_x, out_y, magnitude, angle,
@@ -107,10 +116,11 @@ pub(crate) unsafe fn run_fft_gradients_cpu(
     height: c_uint,
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: bool,
     out_x: *mut c_float,
     out_y: *mut c_float,
 ) -> Result<(), String> {
-    with_dense_convolution_kernels(radius, degree, |kernels| {
+    with_dense_convolution_kernels(radius, degree, normalize_coords, |kernels| {
         with_cpu_backend(|backend| {
             backend.run_gradients(image, width, height, radius, kernels, out_x, out_y)
         })
@@ -124,9 +134,10 @@ pub(crate) unsafe fn run_fft_magnitude_cpu(
     height: c_uint,
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: bool,
     magnitude: *mut c_float,
 ) -> Result<(), String> {
-    with_dense_convolution_kernels(radius, degree, |kernels| {
+    with_dense_convolution_kernels(radius, degree, normalize_coords, |kernels| {
         with_cpu_backend(|backend| {
             backend.run_magnitude(image, width, height, radius, kernels, magnitude)
         })
@@ -140,10 +151,11 @@ pub(crate) unsafe fn run_fft_magnitude_orientation_cpu(
     height: c_uint,
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: bool,
     magnitude: *mut c_float,
     angle: *mut c_float,
 ) -> Result<(), String> {
-    with_dense_convolution_kernels(radius, degree, |kernels| {
+    with_dense_convolution_kernels(radius, degree, normalize_coords, |kernels| {
         with_cpu_backend(|backend| {
             backend
                 .run_magnitude_orientation(image, width, height, radius, kernels, magnitude, angle)

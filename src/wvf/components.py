@@ -30,6 +30,7 @@ def wvf_component_gradients(
     image: np.ndarray,
     radius: int,
     order: int = 4,
+    normalize_coords: bool = False,
     backend: str = "auto",
     mode: str = "reflect",
     output_dtype: np.dtype | type = np.float64,
@@ -40,7 +41,11 @@ def wvf_component_gradients(
     ``radius`` defines the complete integer disk support. No ``Np`` value is
     accepted or inferred.
     """
-    kernels = build_wvf_radius_kernels(radius=radius, order=order)
+    kernels = build_wvf_radius_kernels(
+        radius=radius,
+        order=order,
+        normalize_coords=normalize_coords,
+    )
     chosen = _select_component_backend(backend)
 
     if chosen == "metal":
@@ -54,6 +59,7 @@ def wvf_component_gradients(
         image,
         radius=radius,
         order=order,
+        normalize_coords=normalize_coords,
         mode=mode,
         output_dtype=output_dtype,
     )

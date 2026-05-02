@@ -152,7 +152,11 @@ def wvf_radius_gradients_metal(
         return _wvf_radius_gradients_direct_metal(image, kernels, output_dtype)
     if mode not in {"antipodal", "optimized", "auto", "split"}:
         raise ValueError("variant must be 'antipodal', 'split', or 'direct'")
-    pair_kernels = build_wvf_antipodal_kernels(kernels.radius, kernels.order)
+    pair_kernels = build_wvf_antipodal_kernels(
+        kernels.radius,
+        kernels.order,
+        normalize_coords=kernels.normalize_coords,
+    )
     if mode == "split":
         return wvf_antipodal_split_gradients_metal(image, pair_kernels, output_dtype)
     return wvf_antipodal_gradients_metal(image, pair_kernels, output_dtype)
@@ -297,11 +301,16 @@ def wvf_gradients_metal(
     image: np.ndarray,
     radius: int,
     degree: int = 4,
+    normalize_coords: bool = False,
     output_dtype: np.dtype | type = np.float32,
     variant: str = "split",
 ) -> tuple[np.ndarray, np.ndarray]:
     """Compute standalone WVF ``Gx`` and ``Gy`` on Metal for radius/degree."""
-    kernels = build_wvf_radius_kernels(radius=radius, order=degree)
+    kernels = build_wvf_radius_kernels(
+        radius=radius,
+        order=degree,
+        normalize_coords=normalize_coords,
+    )
     return wvf_radius_gradients_metal(
         image,
         kernels,
@@ -314,6 +323,7 @@ def wvf_magnitude_angle_metal(
     image: np.ndarray,
     radius: int,
     degree: int = 4,
+    normalize_coords: bool = False,
     output_dtype: np.dtype | type = np.float32,
     variant: str = "split",
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -322,6 +332,7 @@ def wvf_magnitude_angle_metal(
         image,
         radius=radius,
         degree=degree,
+        normalize_coords=normalize_coords,
         output_dtype=output_dtype,
         variant=variant,
     )

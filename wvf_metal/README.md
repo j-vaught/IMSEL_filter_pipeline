@@ -75,6 +75,10 @@ print(result.gx.shape, result.magnitude.shape)
 PY
 ```
 
+Set `normalize_coords=True` when you want kernel synthesis to divide `(x, y)`
+offsets by `radius` before the polynomial fit, then rescale the derivative rows
+back to pixel units. This is useful for large-radius, high-degree ablations.
+
 ## Python API
 
 ```python
@@ -97,6 +101,7 @@ gx, gy, mag, angle = components(
     degree=3,
     variant="fft",
     fft_backend="cpu",
+    normalize_coords=True,
 )
 ```
 
@@ -151,10 +156,18 @@ Linux notes:
   keeps the pageable path because the alternatives are device-dependent and are
   not yet a universal win.
 
+Kernel synthesis notes:
+- Native WVF kernel synthesis now builds the design matrix in `float64` and
+  computes a pseudoinverse with an SVD-based cutoff before casting cached
+  kernels to `float32` for application.
+- `normalize_coords=True` changes the kernel cache key, so normalized and
+  unnormalized kernels are cached independently.
+
 ## CLI
 
 ```bash
 wvf-metal input.npy output.npz --radius 9 --degree 3
+wvf-metal input.npy output.npz --radius 9 --degree 3 --normalize-coords
 wvf-metal input.npy output.npz --radius 9 --degree 3 --mode gradients
 wvf-metal input.npy output.npz --radius 9 --degree 3 --mode magnitude
 wvf-metal input.npy output.npz --radius 9 --degree 3 --mode magnitude-angle
@@ -166,7 +179,8 @@ wvf-metal-regression
 ```
 
 The output archive always contains `radius`, `degree`, `variant`, `mode`, and
-`input_path`, plus whichever arrays match the requested `--mode`.
+`input_path`, plus whichever arrays match the requested `--mode`. If
+`--normalize-coords` is set, the archive also records `normalize_coords=true`.
 
 ## File Map
 

@@ -5,6 +5,22 @@ import math
 import numpy as np
 
 
+def default_pinv_rcond(shape, dtype=np.float64):
+    """Return the scaled-epsilon cutoff used for WVF pseudoinverses."""
+    rows, cols = int(shape[-2]), int(shape[-1])
+    return max(rows, cols) * np.finfo(dtype).eps
+
+
+def compute_pseudoinverse(matrix, rcond=None):
+    """Compute a WVF pseudoinverse with an explicit singular-value cutoff."""
+    mat = np.asarray(matrix, dtype=np.float64)
+    if mat.ndim != 2:
+        raise ValueError("matrix must be two-dimensional")
+
+    cutoff = default_pinv_rcond(mat.shape, dtype=mat.dtype) if rcond is None else float(rcond)
+    return np.linalg.pinv(mat, rcond=cutoff)
+
+
 def _taylor_exponents(order):
     """Return WVF Taylor exponents through ``order`` with stable ordering."""
     if order < 0:
@@ -23,7 +39,7 @@ def _taylor_exponents(order):
     return exponents
 
 
-def build_taylor_matrix(coords, order=4):
+def build_taylor_matrix(coords, order=4, normalize_radius=None):
     """Build the design matrix A for the 2D Taylor expansion.
 
     Given neighbor pixel positions (x_i, y_i) in the local coordinate system,
@@ -50,9 +66,19 @@ def build_taylor_matrix(coords, order=4):
     A : ndarray, shape (Np, num_coefficients)
         Design matrix for the least-squares system.
     """
+    coords = np.asarray(coords, dtype=np.float64)
+    if coords.ndim != 2 or coords.shape[1] != 2:
+        raise ValueError("coords must have shape (n, 2)")
+
     d = int(order)
     x = coords[:, 0]
     y = coords[:, 1]
+    if normalize_radius is not None:
+        radius = float(normalize_radius)
+        if not np.isfinite(radius) or radius <= 0.0:
+            raise ValueError("normalize_radius must be a positive finite value")
+        x = x / radius
+        y = y / radius
 
     columns = []
     for px, py in _taylor_exponents(d):
@@ -160,7 +186,7 @@ def get_square_neighbors(np_count, radius=None):
     return coords
 
 
-def compute_wvf_pseudoinverse(coords, order=4):
+def compute_wvf_pseudoinverse(coords, order=4, normalize_radius=None, rcond=None):
     """Compute the pseudo-inverse A* = (A^T A)^{-1} A^T.
 
     Parameters
@@ -177,8 +203,8 @@ def compute_wvf_pseudoinverse(coords, order=4):
     cond_number : float
         Condition number of A^T A.
     """
-    A = build_taylor_matrix(coords, order=order)
+    A = build_taylor_matrix(coords, order=order, normalize_radius=normalize_radius)
     ATA = A.T @ A
     cond = np.linalg.cond(ATA)
-    A_pinv = np.linalg.pinv(A)
+    A_pinv = compute_pseudoinverse(A, rcond=rcond)
     return A_pinv, cond

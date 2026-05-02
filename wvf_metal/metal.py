@@ -29,7 +29,7 @@ _VARIANTS = {
 
 _FFT_VARIANT_IDS = {3}
 _FFT_BACKENDS = {"auto", "cpu", "vkfft"}
-_AUTO_FFT_CACHE_VERSION = 2
+_AUTO_FFT_CACHE_VERSION = 3
 _AUTO_FFT_CACHE: dict[str, str] | None = None
 
 VARIANT_NAMES = tuple(dict.fromkeys(_VARIANTS))
@@ -130,6 +130,7 @@ def _auto_fft_cache_key(
     image: np.ndarray,
     radius: int,
     degree: int,
+    normalize_coords: bool,
     device_index: int | None,
     output_mode: str,
 ) -> str:
@@ -140,6 +141,7 @@ def _auto_fft_cache_key(
         "height": int(image.shape[0]),
         "host": platform.node(),
         "machine": platform.machine(),
+        "normalize_coords": bool(normalize_coords),
         "output_mode": output_mode,
         "radius": int(radius),
         "system": platform.system(),
@@ -152,12 +154,20 @@ def _cached_auto_fft_backend(
     image: np.ndarray,
     radius: int,
     degree: int,
+    normalize_coords: bool,
     device_index: int | None,
     output_mode: str,
 ) -> str | None:
     cache = _load_auto_fft_cache()
     return cache.get(
-        _auto_fft_cache_key(image, radius, degree, device_index, output_mode)
+        _auto_fft_cache_key(
+            image,
+            radius,
+            degree,
+            normalize_coords,
+            device_index,
+            output_mode,
+        )
     )
 
 
@@ -165,6 +175,7 @@ def _cache_auto_fft_backend(
     image: np.ndarray,
     radius: int,
     degree: int,
+    normalize_coords: bool,
     device_index: int | None,
     output_mode: str,
     backend: str,
@@ -172,7 +183,16 @@ def _cache_auto_fft_backend(
     if backend not in {"cpu", "vkfft"}:
         return
     cache = _load_auto_fft_cache()
-    cache[_auto_fft_cache_key(image, radius, degree, device_index, output_mode)] = backend
+    cache[
+        _auto_fft_cache_key(
+            image,
+            radius,
+            degree,
+            normalize_coords,
+            device_index,
+            output_mode,
+        )
+    ] = backend
     _store_auto_fft_cache()
 
 
@@ -331,6 +351,7 @@ def _load_library() -> ctypes.CDLL:
         ctypes.c_uint,
         ctypes.c_uint,
         ctypes.c_uint,
+        ctypes.c_uint,
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_char),
@@ -339,7 +360,7 @@ def _load_library() -> ctypes.CDLL:
     lib.wvf_metal_gradients.argtypes = gradient_args
     lib.wvf_metal_gradients.restype = ctypes.c_int
 
-    magnitude_angle_args = gradient_args[:8] + [
+    magnitude_angle_args = gradient_args[:9] + [
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_char),
@@ -348,7 +369,7 @@ def _load_library() -> ctypes.CDLL:
     lib.wvf_metal_magnitude_angle.argtypes = magnitude_angle_args
     lib.wvf_metal_magnitude_angle.restype = ctypes.c_int
 
-    magnitude_args = gradient_args[:6] + [
+    magnitude_args = gradient_args[:7] + [
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_char),
         ctypes.c_size_t,
@@ -356,7 +377,7 @@ def _load_library() -> ctypes.CDLL:
     lib.wvf_metal_magnitude.argtypes = magnitude_args
     lib.wvf_metal_magnitude.restype = ctypes.c_int
 
-    magnitude_orientation_args = gradient_args[:6] + [
+    magnitude_orientation_args = gradient_args[:7] + [
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_char),
@@ -438,6 +459,10 @@ def _checked_device_index(device_index: int | None) -> int | None:
     return checked
 
 
+def _checked_normalize_coords(normalize_coords: bool) -> ctypes.c_uint:
+    return ctypes.c_uint(1 if bool(normalize_coords) else 0)
+
+
 @contextlib.contextmanager
 def _temporary_env_var(name: str, value: str | None):
     previous = os.environ.get(name)
@@ -488,6 +513,7 @@ def _run_native_gradients(
     img: np.ndarray,
     radius: int,
     degree: int,
+    normalize_coords: bool,
     variant: str,
     fft_backend: str | None,
     device_index: int | None,
@@ -512,6 +538,7 @@ def _run_native_gradients(
                     _checked_uint(h, "image height"),
                     _checked_uint(radius, "radius"),
                     _checked_uint(degree, "degree"),
+                    _checked_normalize_coords(normalize_coords),
                     ctypes.c_uint(_variant_id(variant)),
                     gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
                     gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
@@ -526,6 +553,7 @@ def _run_native_magnitude(
     img: np.ndarray,
     radius: int,
     degree: int,
+    normalize_coords: bool,
     variant: str,
     fft_backend: str | None,
     device_index: int | None,
@@ -549,6 +577,7 @@ def _run_native_magnitude(
                     _checked_uint(h, "image height"),
                     _checked_uint(radius, "radius"),
                     _checked_uint(degree, "degree"),
+                    _checked_normalize_coords(normalize_coords),
                     ctypes.c_uint(_variant_id(variant)),
                     magnitude.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
                     error_buffer,
@@ -562,6 +591,7 @@ def _run_native_magnitude_orientation(
     img: np.ndarray,
     radius: int,
     degree: int,
+    normalize_coords: bool,
     variant: str,
     fft_backend: str | None,
     device_index: int | None,
@@ -586,6 +616,7 @@ def _run_native_magnitude_orientation(
                     _checked_uint(h, "image height"),
                     _checked_uint(radius, "radius"),
                     _checked_uint(degree, "degree"),
+                    _checked_normalize_coords(normalize_coords),
                     ctypes.c_uint(_variant_id(variant)),
                     magnitude.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
                     angle.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
@@ -600,6 +631,7 @@ def _run_native_magnitude_angle(
     img: np.ndarray,
     radius: int,
     degree: int,
+    normalize_coords: bool,
     variant: str,
     fft_backend: str | None,
     device_index: int | None,
@@ -626,6 +658,7 @@ def _run_native_magnitude_angle(
                     _checked_uint(h, "image height"),
                     _checked_uint(radius, "radius"),
                     _checked_uint(degree, "degree"),
+                    _checked_normalize_coords(normalize_coords),
                     ctypes.c_uint(_variant_id(variant)),
                     gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
                     gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
@@ -648,6 +681,7 @@ def _benchmark_auto_fft_backend(
     img: np.ndarray,
     radius: int,
     degree: int,
+    normalize_coords: bool,
     variant: str,
     device_index: int | None,
     output_mode: str,
@@ -664,6 +698,7 @@ def _benchmark_auto_fft_backend(
                 img,
                 radius=radius,
                 degree=degree,
+                normalize_coords=normalize_coords,
                 variant=variant,
                 fft_backend=backend,
                 device_index=device_index,
@@ -673,6 +708,7 @@ def _benchmark_auto_fft_backend(
                 img,
                 radius=radius,
                 degree=degree,
+                normalize_coords=normalize_coords,
                 variant=variant,
                 fft_backend=backend,
                 device_index=device_index,
@@ -692,6 +728,7 @@ def _benchmark_auto_fft_backend(
         img,
         radius=radius,
         degree=degree,
+        normalize_coords=normalize_coords,
         device_index=device_index,
         output_mode=output_mode,
         backend=chosen_backend,
@@ -703,6 +740,7 @@ def _run_auto_fft(
     img: np.ndarray,
     radius: int,
     degree: int,
+    normalize_coords: bool,
     variant: str,
     device_index: int | None,
     output_mode: str,
@@ -712,6 +750,7 @@ def _run_auto_fft(
         img,
         radius=radius,
         degree=degree,
+        normalize_coords=normalize_coords,
         device_index=device_index,
         output_mode=output_mode,
     )
@@ -721,6 +760,7 @@ def _run_auto_fft(
                 img,
                 radius=radius,
                 degree=degree,
+                normalize_coords=normalize_coords,
                 variant=variant,
                 fft_backend=cached_backend,
                 device_index=device_index,
@@ -732,6 +772,7 @@ def _run_auto_fft(
         img,
         radius=radius,
         degree=degree,
+        normalize_coords=normalize_coords,
         variant=variant,
         device_index=device_index,
         output_mode=output_mode,
@@ -744,6 +785,7 @@ def wvf_gradients_metal(
     image: np.ndarray,
     radius: int,
     degree: int = 4,
+    normalize_coords: bool = False,
     variant: str = "split",
     fft_backend: str | None = "auto",
     device_index: int | None = None,
@@ -762,6 +804,7 @@ def wvf_gradients_metal(
             img,
             radius=radius,
             degree=degree,
+            normalize_coords=normalize_coords,
             variant=variant,
             device_index=checked_device_index,
             output_mode="gradients",
@@ -771,6 +814,7 @@ def wvf_gradients_metal(
         img,
         radius=radius,
         degree=degree,
+        normalize_coords=normalize_coords,
         variant=variant,
         fft_backend=chosen_fft_backend,
         device_index=checked_device_index,
@@ -781,6 +825,7 @@ def wvf_magnitude_metal(
     image: np.ndarray,
     radius: int,
     degree: int = 4,
+    normalize_coords: bool = False,
     variant: str = "split",
     fft_backend: str | None = "auto",
     device_index: int | None = None,
@@ -799,6 +844,7 @@ def wvf_magnitude_metal(
             img,
             radius=radius,
             degree=degree,
+            normalize_coords=normalize_coords,
             variant=variant,
             device_index=checked_device_index,
             output_mode="magnitude",
@@ -808,6 +854,7 @@ def wvf_magnitude_metal(
         img,
         radius=radius,
         degree=degree,
+        normalize_coords=normalize_coords,
         variant=variant,
         fft_backend=chosen_fft_backend,
         device_index=checked_device_index,
@@ -818,6 +865,7 @@ def wvf_magnitude_orientation_metal(
     image: np.ndarray,
     radius: int,
     degree: int = 4,
+    normalize_coords: bool = False,
     variant: str = "split",
     fft_backend: str | None = "auto",
     device_index: int | None = None,
@@ -836,6 +884,7 @@ def wvf_magnitude_orientation_metal(
             img,
             radius=radius,
             degree=degree,
+            normalize_coords=normalize_coords,
             variant=variant,
             device_index=checked_device_index,
             output_mode="magnitude_orientation",
@@ -845,6 +894,7 @@ def wvf_magnitude_orientation_metal(
         img,
         radius=radius,
         degree=degree,
+        normalize_coords=normalize_coords,
         variant=variant,
         fft_backend=chosen_fft_backend,
         device_index=checked_device_index,
@@ -855,6 +905,7 @@ def wvf_magnitude_angle_metal(
     image: np.ndarray,
     radius: int,
     degree: int = 4,
+    normalize_coords: bool = False,
     variant: str = "split",
     fft_backend: str | None = "auto",
     device_index: int | None = None,
@@ -873,6 +924,7 @@ def wvf_magnitude_angle_metal(
             img,
             radius=radius,
             degree=degree,
+            normalize_coords=normalize_coords,
             variant=variant,
             device_index=checked_device_index,
             output_mode="magnitude_angle",
@@ -882,6 +934,7 @@ def wvf_magnitude_angle_metal(
         img,
         radius=radius,
         degree=degree,
+        normalize_coords=normalize_coords,
         variant=variant,
         fft_backend=chosen_fft_backend,
         device_index=checked_device_index,

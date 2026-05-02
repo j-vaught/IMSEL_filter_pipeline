@@ -9,6 +9,7 @@ crate-type = ["cdylib"]
 path = "rust/src/lib.rs"
 
 [dependencies]
+nalgebra = "0.33"
 num-complex = "0.4"
 rayon = "1.11"
 rustfft = "6.4"

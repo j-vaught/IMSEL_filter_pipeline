@@ -87,7 +87,7 @@ fn pipeline(
 
 thread_local! {
     static METAL_STATE: RefCell<HashMap<i32, MetalState>> = RefCell::new(HashMap::new());
-    static PLAN_CACHE: RefCell<HashMap<(c_uint, c_uint, c_uint), KernelPlan>> = RefCell::new(HashMap::new());
+    static PLAN_CACHE: RefCell<HashMap<(c_uint, c_uint, c_uint, bool, u8), KernelPlan>> = RefCell::new(HashMap::new());
 }
 
 fn selected_metal_device() -> Result<(i32, Device), String> {
@@ -337,9 +337,10 @@ fn build_kernel_plan(
     state: &MetalState,
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: bool,
     variant: c_uint,
 ) -> Result<KernelPlan, String> {
-    let kernels = generated_kernels(radius, degree, variant)?;
+    let kernels = generated_kernels(radius, degree, variant, normalize_coords)?;
     let n_offsets = kernels.n_offsets()?;
     let offset_len = checked_len(kernels.dx.len(), std::mem::size_of::<c_int>(), "offset")?;
     let weight_len = checked_len(kernels.wx.len(), std::mem::size_of::<c_float>(), "weight")?;
@@ -374,14 +375,21 @@ fn generated_kernel_plan(
     state: &MetalState,
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: bool,
     variant: c_uint,
 ) -> Result<KernelPlan, String> {
     PLAN_CACHE.with(|cache_cell| {
-        let key = (radius, degree, variant);
+        let key = (
+            radius,
+            degree,
+            variant,
+            normalize_coords,
+            KERNEL_WEIGHT_PRECISION_F32,
+        );
         if let Some(plan) = cache_cell.borrow().get(&key) {
             return Ok(plan.clone());
         }
-        let plan = build_kernel_plan(state, radius, degree, variant)?;
+        let plan = build_kernel_plan(state, radius, degree, normalize_coords, variant)?;
         cache_cell.borrow_mut().insert(key, plan.clone());
         Ok(plan)
     })
@@ -765,11 +773,12 @@ pub(crate) unsafe fn run_generated_gradients_with_state(
     height: c_uint,
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: bool,
     variant: c_uint,
     out_x: *mut c_float,
     out_y: *mut c_float,
 ) -> Result<(), String> {
-    let plan = generated_kernel_plan(state, radius, degree, variant)?;
+    let plan = generated_kernel_plan(state, radius, degree, normalize_coords, variant)?;
     match variant {
         WVF_VARIANT_DIRECT => run_plan_convolve_with_state(
             state,
@@ -805,13 +814,14 @@ pub(crate) unsafe fn run_generated_magnitude_angle_with_state(
     height: c_uint,
     radius: c_uint,
     degree: c_uint,
+    normalize_coords: bool,
     variant: c_uint,
     out_x: *mut c_float,
     out_y: *mut c_float,
     magnitude: *mut c_float,
     angle: *mut c_float,
 ) -> Result<(), String> {
-    let plan = generated_kernel_plan(state, radius, degree, variant)?;
+    let plan = generated_kernel_plan(state, radius, degree, normalize_coords, variant)?;
     match variant {
         WVF_VARIANT_DIRECT => run_plan_convolve_magnitude_angle_with_state(
             state,

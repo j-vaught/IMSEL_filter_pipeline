@@ -48,6 +48,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("-r", "--radius", type=int, required=True)
     parser.add_argument("-d", "--degree", type=int, required=True)
     parser.add_argument(
+        "--normalize-coords",
+        action="store_true",
+        help="Normalize WVF polynomial coordinates by radius before fitting.",
+    )
+    parser.add_argument(
         "--variant",
         choices=("split", "antipodal", "direct", "fft"),
         default="split",
@@ -81,6 +86,7 @@ def main(argv: list[str] | None = None) -> int:
     payload: dict[str, object] = {
         "radius": np.int32(args.radius),
         "degree": np.int32(args.degree),
+        "normalize_coords": bool(args.normalize_coords),
         "variant": args.variant,
         "mode": args.mode,
         "input_path": str(args.input),
@@ -88,6 +94,7 @@ def main(argv: list[str] | None = None) -> int:
     common_kwargs = {
         "radius": args.radius,
         "degree": args.degree,
+        "normalize_coords": args.normalize_coords,
         "variant": args.variant,
         "fft_backend": args.fft_backend,
         "device_index": args.device_index,

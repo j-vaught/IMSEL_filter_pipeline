@@ -8,7 +8,10 @@ from functools import lru_cache
 import numpy as np
 from scipy import ndimage
 
-from core.taylor import build_taylor_matrix
+from core.taylor import build_taylor_matrix, compute_pseudoinverse
+
+
+_DEFAULT_KERNEL_PRECISION = "f64"
 
 
 @dataclass(frozen=True)
@@ -17,6 +20,7 @@ class WVFRadiusKernels:
 
     radius: int
     order: int
+    normalize_coords: bool
     offsets_xy: np.ndarray
     weights_x: np.ndarray
     weights_y: np.ndarray
@@ -34,6 +38,7 @@ class WVFAntipodalKernels:
 
     radius: int
     order: int
+    normalize_coords: bool
     offsets_xy: np.ndarray
     weights_x: np.ndarray
     weights_y: np.ndarray
@@ -68,28 +73,47 @@ def _dense_kernel(offsets_xy: np.ndarray, weights: np.ndarray, radius: int) -> n
     return kernel
 
 
+def _normalized_first_derivative_scale(radius: int, normalize_coords: bool) -> float:
+    return 1.0 / float(radius) if normalize_coords else 1.0
+
+
 @lru_cache(maxsize=64)
-def build_wvf_radius_kernels(radius: int, order: int = 4) -> WVFRadiusKernels:
+def _build_wvf_radius_kernels_cached(
+    radius: int,
+    order: int,
+    normalize_coords: bool,
+    kernel_precision: str,
+) -> WVFRadiusKernels:
     """Build isotropic WVF ``Gx`` and ``Gy`` kernels from an integer disk."""
+    if kernel_precision != _DEFAULT_KERNEL_PRECISION:
+        raise ValueError(f"unsupported kernel precision {kernel_precision!r}")
+
     r = int(radius)
     d = int(order)
+    normalized = bool(normalize_coords)
     offsets = disk_offsets(r, include_center=False)
-    design = build_taylor_matrix(offsets, order=d)
+    design = build_taylor_matrix(
+        offsets,
+        order=d,
+        normalize_radius=r if normalized else None,
+    )
     if design.shape[0] < design.shape[1]:
         raise ValueError(
             f"radius {r} gives {design.shape[0]} samples, fewer than "
             f"the {design.shape[1]} Taylor coefficients for order {d}"
         )
 
-    pinv = np.linalg.pinv(design)
-    weights_x = np.ascontiguousarray(pinv[1, :], dtype=np.float64)
-    weights_y = np.ascontiguousarray(pinv[2, :], dtype=np.float64)
+    pinv = compute_pseudoinverse(design)
+    derivative_scale = _normalized_first_derivative_scale(r, normalized)
+    weights_x = np.ascontiguousarray(pinv[1, :] * derivative_scale, dtype=np.float64)
+    weights_y = np.ascontiguousarray(pinv[2, :] * derivative_scale, dtype=np.float64)
     kernel_x = _dense_kernel(offsets, weights_x, r)
     kernel_y = _dense_kernel(offsets, weights_y, r)
 
     return WVFRadiusKernels(
         radius=r,
         order=d,
+        normalize_coords=normalized,
         offsets_xy=np.ascontiguousarray(offsets, dtype=np.float64),
         weights_x=weights_x,
         weights_y=weights_y,
@@ -99,9 +123,19 @@ def build_wvf_radius_kernels(radius: int, order: int = 4) -> WVFRadiusKernels:
 
 
 @lru_cache(maxsize=64)
-def build_wvf_antipodal_kernels(radius: int, order: int = 4) -> WVFAntipodalKernels:
+def _build_wvf_antipodal_kernels_cached(
+    radius: int,
+    order: int,
+    normalize_coords: bool,
+    kernel_precision: str,
+) -> WVFAntipodalKernels:
     """Build symmetric WVF derivative pairs for Metal acceleration."""
-    kernels = build_wvf_radius_kernels(radius=radius, order=order)
+    kernels = _build_wvf_radius_kernels_cached(
+        int(radius),
+        int(order),
+        bool(normalize_coords),
+        kernel_precision,
+    )
     offsets = kernels.offsets_xy.astype(np.int64, copy=False)
     index = {tuple(offset): i for i, offset in enumerate(offsets)}
     used: set[int] = set()
@@ -137,9 +171,36 @@ def build_wvf_antipodal_kernels(radius: int, order: int = 4) -> WVFAntipodalKern
     return WVFAntipodalKernels(
         radius=int(radius),
         order=int(order),
+        normalize_coords=bool(normalize_coords),
         offsets_xy=np.ascontiguousarray(pair_offsets, dtype=np.int32),
         weights_x=np.ascontiguousarray(pair_weights_x, dtype=np.float64),
         weights_y=np.ascontiguousarray(pair_weights_y, dtype=np.float64),
+    )
+
+
+def build_wvf_radius_kernels(
+    radius: int,
+    order: int = 4,
+    normalize_coords: bool = False,
+) -> WVFRadiusKernels:
+    return _build_wvf_radius_kernels_cached(
+        int(radius),
+        int(order),
+        bool(normalize_coords),
+        _DEFAULT_KERNEL_PRECISION,
+    )
+
+
+def build_wvf_antipodal_kernels(
+    radius: int,
+    order: int = 4,
+    normalize_coords: bool = False,
+) -> WVFAntipodalKernels:
+    return _build_wvf_antipodal_kernels_cached(
+        int(radius),
+        int(order),
+        bool(normalize_coords),
+        _DEFAULT_KERNEL_PRECISION,
     )
 
 
@@ -147,6 +208,7 @@ def wvf_radius_gradients_cpu(
     image: np.ndarray,
     radius: int,
     order: int = 4,
+    normalize_coords: bool = False,
     mode: str = "reflect",
     output_dtype: np.dtype | type = np.float64,
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -155,7 +217,11 @@ def wvf_radius_gradients_cpu(
     if img.ndim != 2:
         raise ValueError("wvf_radius_gradients_cpu expects a 2-D image")
 
-    kernels = build_wvf_radius_kernels(radius=radius, order=order)
+    kernels = build_wvf_radius_kernels(
+        radius=radius,
+        order=order,
+        normalize_coords=normalize_coords,
+    )
     gx = ndimage.correlate(img, kernels.kernel_x, mode=mode)
     gy = ndimage.correlate(img, kernels.kernel_y, mode=mode)
     dtype = np.dtype(output_dtype)
