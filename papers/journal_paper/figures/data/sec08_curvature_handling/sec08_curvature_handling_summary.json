@@ -1,0 +1,257 @@
+{
+  "title": "Section 8.3.3 curvature handling",
+  "subtitle": "Validation-tuned head-to-head comparison on smoothed arcs and S-curves at AWGN 10 dB",
+  "config": {
+    "curvature_radii": [
+      20,
+      50,
+      100,
+      200
+    ],
+    "orientation_step_deg": 5.0,
+    "phase_count": 4,
+    "phase_step_px": 0.25,
+    "snr_db": 10.0,
+    "fft_backend": "vkfft"
+  },
+  "method_order": [
+    "roberts",
+    "prewitt",
+    "sobel",
+    "scharr",
+    "dog",
+    "farid_simoncelli",
+    "square_sg",
+    "wvf"
+  ],
+  "methods": {
+    "roberts": {
+      "label": "Roberts",
+      "config": {
+        "window": "2x2-embedded"
+      },
+      "curvature_metrics": {
+        "20": {
+          "grad_rmse": 0.489479528100286,
+          "ang_mae_deg": 44.96405708813907,
+          "mag_bias": 0.13398983938282596
+        },
+        "50": {
+          "grad_rmse": 0.3622181179917554,
+          "ang_mae_deg": 44.99034335948065,
+          "mag_bias": 0.18671903426460965
+        },
+        "100": {
+          "grad_rmse": 0.33361789673369935,
+          "ang_mae_deg": 45.01473984895049,
+          "mag_bias": 0.20479117785623802
+        },
+        "200": {
+          "grad_rmse": 0.33162073087541966,
+          "ang_mae_deg": 45.03170891331254,
+          "mag_bias": 0.2086524996210912
+        }
+      }
+    },
+    "prewitt": {
+      "label": "Prewitt",
+      "config": {
+        "window": "3x3"
+      },
+      "curvature_metrics": {
+        "20": {
+          "grad_rmse": 0.33920644666265165,
+          "ang_mae_deg": 33.53322827276937,
+          "mag_bias": 0.06196676017019996
+        },
+        "50": {
+          "grad_rmse": 0.2044720827504557,
+          "ang_mae_deg": 36.94510140571144,
+          "mag_bias": 0.09994684116168523
+        },
+        "100": {
+          "grad_rmse": 0.1845136442746338,
+          "ang_mae_deg": 38.81054959833792,
+          "mag_bias": 0.11004535795371477
+        },
+        "200": {
+          "grad_rmse": 0.18325844896392418,
+          "ang_mae_deg": 39.36504538093036,
+          "mag_bias": 0.11168370681419518
+        }
+      }
+    },
+    "sobel": {
+      "label": "Sobel",
+      "config": {
+        "window": "3x3"
+      },
+      "curvature_metrics": {
+        "20": {
+          "grad_rmse": 0.343185398721759,
+          "ang_mae_deg": 34.00984802126959,
+          "mag_bias": 0.07219039191452084
+        },
+        "50": {
+          "grad_rmse": 0.2125946058965502,
+          "ang_mae_deg": 37.42279887091427,
+          "mag_bias": 0.10838539500792801
+        },
+        "100": {
+          "grad_rmse": 0.19533181706969133,
+          "ang_mae_deg": 39.28977698053244,
+          "mag_bias": 0.1186626099085892
+        },
+        "200": {
+          "grad_rmse": 0.19413099947832146,
+          "ang_mae_deg": 39.75101654103582,
+          "mag_bias": 0.12036415139060447
+        }
+      }
+    },
+    "scharr": {
+      "label": "Scharr",
+      "config": {
+        "window": "3x3"
+      },
+      "curvature_metrics": {
+        "20": {
+          "grad_rmse": 0.3558348990000703,
+          "ang_mae_deg": 34.931808210816094,
+          "mag_bias": 0.0886049471994667
+        },
+        "50": {
+          "grad_rmse": 0.23089192571093933,
+          "ang_mae_deg": 38.23322056589117,
+          "mag_bias": 0.12414599890041117
+        },
+        "100": {
+          "grad_rmse": 0.21610997037948662,
+          "ang_mae_deg": 40.01331088895318,
+          "mag_bias": 0.13495093149631954
+        },
+        "200": {
+          "grad_rmse": 0.21504841883278392,
+          "ang_mae_deg": 40.41913543143321,
+          "mag_bias": 0.13682029137602028
+        }
+      }
+    },
+    "dog": {
+      "label": "DoG",
+      "config": {
+        "sigma": 3.0
+      },
+      "curvature_metrics": {
+        "20": {
+          "grad_rmse": 0.3242775465857968,
+          "ang_mae_deg": 4.651960355853877,
+          "mag_bias": -0.10041525570822524
+        },
+        "50": {
+          "grad_rmse": 0.15486293827587327,
+          "ang_mae_deg": 4.638032686745782,
+          "mag_bias": -0.02928790655979986
+        },
+        "100": {
+          "grad_rmse": 0.09056089850948942,
+          "ang_mae_deg": 5.1228787711956505,
+          "mag_bias": -0.007581187329033736
+        },
+        "200": {
+          "grad_rmse": 0.08363931912376442,
+          "ang_mae_deg": 5.318156797556792,
+          "mag_bias": -0.005358587850381887
+        }
+      }
+    },
+    "farid_simoncelli": {
+      "label": "Farid-Simoncelli",
+      "config": {
+        "window": "7tap"
+      },
+      "curvature_metrics": {
+        "20": {
+          "grad_rmse": 0.2914215498268573,
+          "ang_mae_deg": 25.044941185035455,
+          "mag_bias": -0.024237845437293418
+        },
+        "50": {
+          "grad_rmse": 0.13180336377384824,
+          "ang_mae_deg": 27.9511307515504,
+          "mag_bias": 0.023383001795840196
+        },
+        "100": {
+          "grad_rmse": 0.08461647073024348,
+          "ang_mae_deg": 30.915230816008343,
+          "mag_bias": 0.03257560122176803
+        },
+        "200": {
+          "grad_rmse": 0.08142577790031051,
+          "ang_mae_deg": 31.75330641482895,
+          "mag_bias": 0.03340253577401934
+        }
+      }
+    },
+    "square_sg": {
+      "label": "Square SG",
+      "config": {
+        "N": 11,
+        "d": 1,
+        "normalize_coords": true
+      },
+      "curvature_metrics": {
+        "20": {
+          "grad_rmse": 0.3243844108312443,
+          "ang_mae_deg": 7.0017244606824525,
+          "mag_bias": -0.09701776463396636
+        },
+        "50": {
+          "grad_rmse": 0.15520303780288763,
+          "ang_mae_deg": 6.917554096893827,
+          "mag_bias": -0.025561307900621687
+        },
+        "100": {
+          "grad_rmse": 0.09098699773132006,
+          "ang_mae_deg": 7.451353599917793,
+          "mag_bias": -0.003954761234224217
+        },
+        "200": {
+          "grad_rmse": 0.08388498803605682,
+          "ang_mae_deg": 7.863014408378812,
+          "mag_bias": -0.0020638895363180474
+        }
+      }
+    },
+    "wvf": {
+      "label": "WVF",
+      "config": {
+        "r": 50,
+        "d": 11,
+        "normalize_coords": true
+      },
+      "curvature_metrics": {
+        "20": {
+          "grad_rmse": 0.3425926244355769,
+          "ang_mae_deg": 2.524868488837174,
+          "mag_bias": -0.12014787193925978
+        },
+        "50": {
+          "grad_rmse": 0.1731958577567556,
+          "ang_mae_deg": 2.0460565591592736,
+          "mag_bias": -0.04465486742771743
+        },
+        "100": {
+          "grad_rmse": 0.10936798620639472,
+          "ang_mae_deg": 2.167481816026783,
+          "mag_bias": -0.016992025002348563
+        },
+        "200": {
+          "grad_rmse": 0.10255852430330273,
+          "ang_mae_deg": 1.9751696518202546,
+          "mag_bias": -0.012801448900575352
+        }
+      }
+    }
+  }
+}
