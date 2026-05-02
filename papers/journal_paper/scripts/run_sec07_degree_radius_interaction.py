@@ -299,29 +299,49 @@ def _cell_diagnostics(radius: int, degree: int, normalize_coords: bool) -> dict[
         order=int(degree),
         normalize_radius=int(radius) if normalize_coords else None,
     )
+    n_samples = int(design.shape[0])
+    n_coeffs = int(design.shape[1])
     singular_values = np.linalg.svd(design, compute_uv=False, hermitian=False)
     sigma_max = float(np.max(singular_values))
     sigma_min = float(np.min(singular_values))
     cutoff = float(default_pinv_rcond(design.shape, dtype=np.float64)) * sigma_max
-    rank_deficient_count = int(np.count_nonzero(singular_values <= cutoff))
+    numerical_rank = int(np.count_nonzero(singular_values > cutoff))
+    rank_deficient_count = int(max(0, n_coeffs - numerical_rank))
     kappa = float(sigma_max / sigma_min) if sigma_min > 0.0 else float("inf")
-    kernels = build_wvf_radius_kernels(int(radius), order=int(degree), normalize_coords=bool(normalize_coords))
-    kernel_x = np.asarray(kernels.kernel_x, dtype=np.float64)
-    kernel_y = np.asarray(kernels.kernel_y, dtype=np.float64)
-    white_noise_gain = float(np.sum(np.asarray(kernels.weights_x, dtype=np.float64) ** 2))
+    status = "ok"
+    error = None
+    kernel_x = None
+    kernel_y = None
+    white_noise_gain = None
+    kernel_max = None
+    if n_samples >= n_coeffs:
+        kernels = build_wvf_radius_kernels(int(radius), order=int(degree), normalize_coords=bool(normalize_coords))
+        kernel_x = np.asarray(kernels.kernel_x, dtype=np.float64)
+        kernel_y = np.asarray(kernels.kernel_y, dtype=np.float64)
+        white_noise_gain = float(np.sum(np.asarray(kernels.weights_x, dtype=np.float64) ** 2))
+        kernel_max = float(np.max(np.abs(kernel_x)))
+    else:
+        status = "underdetermined"
+        error = (
+            f"radius {int(radius)} gives {n_samples} samples, fewer than the {n_coeffs} Taylor coefficients "
+            f"for degree {int(degree)}"
+        )
     return {
         "radius": int(radius),
         "degree": int(degree),
         "normalize_coords": bool(normalize_coords),
         "support_cardinality": int(offsets.shape[0]),
+        "coefficient_count": int(n_coeffs),
         "kappa_design_matrix": float(kappa),
         "sigma_min": float(sigma_min),
         "sigma_max": float(sigma_max),
         "rank_deficient_count": int(rank_deficient_count),
-        "white_noise_gain": float(white_noise_gain),
+        "white_noise_gain": white_noise_gain,
         "kernel_x": kernel_x,
         "kernel_y": kernel_y,
-        "kernel_max": float(np.max(np.abs(kernel_x))),
+        "kernel_max": kernel_max,
+        "status": status,
+        "error": error,
     }
 
 
@@ -335,6 +355,19 @@ def _evaluate_cell(
     use_scipy_fallback: bool,
 ) -> dict[str, object]:
     info = _cell_diagnostics(int(radius), int(degree), bool(normalize_coords))
+    if info["status"] != "ok":
+        return {
+            **{key: value for key, value in info.items() if key not in {"kernel_x", "kernel_y"}},
+            "application_method": "not_run",
+            "application_error": info["error"],
+            "step_grad_rmse": None,
+            "step_ang_mae_deg": None,
+            "arc_grad_rmse": None,
+            "arc_ang_mae_deg": None,
+            "s_curve_grad_rmse": None,
+            "s_curve_ang_mae_deg": None,
+        }
+
     kernel_x = np.asarray(info["kernel_x"], dtype=np.float64)
     kernel_y = np.asarray(info["kernel_y"], dtype=np.float64)
     result: dict[str, object] = {
@@ -411,11 +444,17 @@ def run_experiment(
                 )
                 cells.append(cell)
                 radius_cells.append(cell)
-                print(
-                    f"normalize={int(bool(normalize_coords))} r={int(radius)} d={int(degree)} "
-                    f"arc_rmse={cell['arc_grad_rmse']:.6e} step_rmse={cell['step_grad_rmse']:.6e} "
-                    f"kappa={cell['kappa_design_matrix']:.6e} rank_def={int(cell['rank_deficient_count'])}"
-                )
+                if cell["status"] == "ok":
+                    print(
+                        f"normalize={int(bool(normalize_coords))} r={int(radius)} d={int(degree)} "
+                        f"arc_rmse={cell['arc_grad_rmse']:.6e} step_rmse={cell['step_grad_rmse']:.6e} "
+                        f"kappa={cell['kappa_design_matrix']:.6e} rank_def={int(cell['rank_deficient_count'])}"
+                    )
+                else:
+                    print(
+                        f"normalize={int(bool(normalize_coords))} r={int(radius)} d={int(degree)} "
+                        f"status={cell['status']} error={cell['error']}"
+                    )
             zero_rank = [int(entry["degree"]) for entry in radius_cells if int(entry["rank_deficient_count"]) == 0]
             recommendation.append(
                 {

@@ -54,6 +54,9 @@
     for state in states {
       for cell in state.at("cells") {
         let value = cell.at(key)
+        if value == none {
+          continue
+        }
         if min-value == none or value < min-value {
           min-value = value
         }
@@ -124,9 +127,20 @@
             if found == none {
               continue
             }
-            let value = found.at(metric-key)
             let x0 = px + col-index * cell-w
             let y0 = py + (radii.len() - 1 - row-index) * cell-h
+            let value = found.at(metric-key)
+            if value == none {
+              rect(
+                (x0, y0),
+                (x0 + cell-w, y0 + cell-h),
+                fill: white,
+                stroke: 0.22pt + black50,
+              )
+              line((x0, y0), (x0 + cell-w, y0 + cell-h), stroke: 0.18pt + atlantic)
+              line((x0 + cell-w, y0), (x0, y0 + cell-h), stroke: 0.18pt + atlantic)
+              continue
+            }
             rect(
               (x0, y0),
               (x0 + cell-w, y0 + cell-h),
@@ -167,8 +181,10 @@
           )
         }
         rect((bar-x, py), (bar-x + bar-w, py + panel-h), stroke: 0.35pt + black50)
-        content((bar-x + bar-w + 0.10, py), text(fill: black70, size: 6.3pt)[#fmt-short(min-value)], anchor: "west")
-        content((bar-x + bar-w + 0.10, py + panel-h), text(fill: black70, size: 6.3pt)[#fmt-short(max-value)], anchor: "west")
+        if min-value != none and max-value != none {
+          content((bar-x + bar-w + 0.10, py), text(fill: black70, size: 6.3pt)[#fmt-short(min-value)], anchor: "west")
+          content((bar-x + bar-w + 0.10, py + panel-h), text(fill: black70, size: 6.3pt)[#fmt-short(max-value)], anchor: "west")
+        }
         if metric-key == "kappa_design_matrix" {
           content((bar-x + 0.34, py + panel-h + 0.08), text(fill: atlantic, size: 6.5pt)[log scale])
         }
