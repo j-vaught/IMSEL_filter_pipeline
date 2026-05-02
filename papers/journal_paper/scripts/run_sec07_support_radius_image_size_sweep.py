@@ -73,12 +73,16 @@ def _scene_layout(image_size: int, baseline_scales: tuple[int, ...]) -> list[Fea
     scaled = _scaled_feature_scales(int(image_size), baseline_scales)
     instances: list[FeatureInstance] = []
     for pass_index, offset_xy in enumerate(INSTANCE_OFFSETS):
-        row_offset = 0 if pass_index == 0 else 2
         for scale_index, (baseline_scale, feature_scale) in enumerate(zip(baseline_scales, scaled, strict=True)):
-            row = row_offset + scale_index // 2
+            row = scale_index // 2
             col = scale_index % 2 + 2 * pass_index
             center_x = (float(col) + 0.5) * cell_size + float(offset_xy[0])
             center_y = (float(row) + 0.5) * cell_size + float(offset_xy[1])
+            if not (0.0 <= center_x < float(image_size) and 0.0 <= center_y < float(image_size)):
+                raise ValueError(
+                    f"feature center escaped the image frame for size={image_size}, "
+                    f"baseline_scale={baseline_scale}, pass={pass_index}, row={row}, col={col}"
+                )
             instances.append(
                 FeatureInstance(
                     baseline_scale_px=int(baseline_scale),
