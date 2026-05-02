@@ -88,12 +88,20 @@ def recommended_wvf_degree(radius: int) -> int:
 
 
 def build_roberts() -> KernelSpec:
-    kernel_x = 0.5 * np.asarray([[-1.0, 0.0], [0.0, 1.0]], dtype=np.float64)
-    kernel_y = 0.5 * np.asarray([[0.0, -1.0], [1.0, 0.0]], dtype=np.float64)
+    # Embed the canonical 2x2 Roberts pair in a 3x3 carrier so it can flow through
+    # the same odd-support FFT application path as the rest of the paper baselines.
+    kernel_x = 0.5 * np.asarray(
+        [[-1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 0.0]],
+        dtype=np.float64,
+    )
+    kernel_y = 0.5 * np.asarray(
+        [[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
+        dtype=np.float64,
+    )
     return KernelSpec(
         method="roberts",
         label="Roberts",
-        config={"window": "2x2"},
+        config={"window": "2x2-embedded"},
         kernel_x=_as_contiguous(kernel_x),
         kernel_y=_as_contiguous(kernel_y),
         support_half_extent=1,
