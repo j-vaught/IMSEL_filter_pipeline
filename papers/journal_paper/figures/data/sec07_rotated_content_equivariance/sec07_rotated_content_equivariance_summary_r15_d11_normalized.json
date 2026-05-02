@@ -1,0 +1,142 @@
+{
+  "title": "Section 7.11 rotated-content equivariance",
+  "subtitle": "Disk support, (r, d) = (15, 11), normalize_coords = True, content-rich synthetic scene",
+  "config": {
+    "radius": 15,
+    "degree": 11,
+    "normalize_coords": true,
+    "image_size_px": 1024,
+    "rotation_angles_deg": [
+      0.0,
+      15.0,
+      30.0,
+      45.0,
+      60.0,
+      75.0,
+      90.0,
+      105.0,
+      120.0,
+      135.0,
+      150.0,
+      165.0,
+      180.0,
+      195.0,
+      210.0,
+      225.0,
+      240.0,
+      255.0,
+      270.0,
+      285.0,
+      300.0,
+      315.0,
+      330.0,
+      345.0
+    ],
+    "contrast": 1.0,
+    "edge_width_px": 1.5,
+    "fft_backend": "vkfft",
+    "device_index": null,
+    "valid_mask": "Metrics are evaluated on a centered circular mask to avoid rotation-induced boundary interpolation artifacts."
+  },
+  "mean_cross_rotation_variance": 8.94791628407078e-08,
+  "p95_cross_rotation_variance": 1.2440292807196684e-07,
+  "per_rotation_error": [
+    {
+      "angle_deg": 0.0,
+      "mean_error_magnitude": 0.0
+    },
+    {
+      "angle_deg": 15.0,
+      "mean_error_magnitude": 0.000110317843005362
+    },
+    {
+      "angle_deg": 30.0,
+      "mean_error_magnitude": 9.203770679502055e-05
+    },
+    {
+      "angle_deg": 45.0,
+      "mean_error_magnitude": 9.344064871627495e-05
+    },
+    {
+      "angle_deg": 60.0,
+      "mean_error_magnitude": 9.660479235438475e-05
+    },
+    {
+      "angle_deg": 75.0,
+      "mean_error_magnitude": 9.980333450245626e-05
+    },
+    {
+      "angle_deg": 90.0,
+      "mean_error_magnitude": 3.3398830498090716e-08
+    },
+    {
+      "angle_deg": 105.0,
+      "mean_error_magnitude": 0.00011031829675356817
+    },
+    {
+      "angle_deg": 120.0,
+      "mean_error_magnitude": 9.203835463757922e-05
+    },
+    {
+      "angle_deg": 135.0,
+      "mean_error_magnitude": 9.344017697929037e-05
+    },
+    {
+      "angle_deg": 150.0,
+      "mean_error_magnitude": 9.660374378713164e-05
+    },
+    {
+      "angle_deg": 165.0,
+      "mean_error_magnitude": 9.980135733912189e-05
+    },
+    {
+      "angle_deg": 180.0,
+      "mean_error_magnitude": 3.393372895046908e-08
+    },
+    {
+      "angle_deg": 195.0,
+      "mean_error_magnitude": 0.0001103175867169431
+    },
+    {
+      "angle_deg": 210.0,
+      "mean_error_magnitude": 9.20386237999311e-05
+    },
+    {
+      "angle_deg": 225.0,
+      "mean_error_magnitude": 9.3440670201873e-05
+    },
+    {
+      "angle_deg": 240.0,
+      "mean_error_magnitude": 9.660352945547402e-05
+    },
+    {
+      "angle_deg": 255.0,
+      "mean_error_magnitude": 9.980193021093709e-05
+    },
+    {
+      "angle_deg": 270.0,
+      "mean_error_magnitude": 3.1046361252099244e-08
+    },
+    {
+      "angle_deg": 285.0,
+      "mean_error_magnitude": 0.00011031787644244516
+    },
+    {
+      "angle_deg": 300.0,
+      "mean_error_magnitude": 9.20394758868473e-05
+    },
+    {
+      "angle_deg": 315.0,
+      "mean_error_magnitude": 9.344171274159814e-05
+    },
+    {
+      "angle_deg": 330.0,
+      "mean_error_magnitude": 9.660457607961561e-05
+    },
+    {
+      "angle_deg": 345.0,
+      "mean_error_magnitude": 9.980339397537689e-05
+    }
+  ],
+  "square_overlay_included": false
+}
