@@ -1,0 +1,2410 @@
+{
+  "title": "Section 7.9 multi-scale stress and close-edge clutter",
+  "subtitle": "Disk support, normalize_coords = True, recommended degree defaults, precomputed-kernel FFT application",
+  "config": {
+    "image_size_px": 1024,
+    "radii": [
+      2,
+      3,
+      4,
+      5,
+      7,
+      9,
+      11,
+      13,
+      16,
+      20,
+      25,
+      32,
+      40,
+      50,
+      64,
+      80,
+      100,
+      128
+    ],
+    "feature_scales_px": [
+      2,
+      4,
+      8,
+      16,
+      32,
+      64,
+      128,
+      256
+    ],
+    "close_edge_separations_px": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      32
+    ],
+    "degree_rule": "r < 5 -> target d=5, 5 <= r < 9 -> target d=9, r >= 9 -> target d=11, capped to the largest feasible odd degree for the disk support",
+    "normalize_coords": true,
+    "orientation_step_deg": 5.0,
+    "phase_count": 4,
+    "phase_step_px": 0.25,
+    "contrast": 1.0,
+    "edge_width_px": 1.5,
+    "fft_backend": "vkfft",
+    "device_index": null,
+    "noise_floor_sigma": 0.00392156862745098,
+    "multiscale_threshold_definition": "5 * (1/255) * sqrt(2 * white_noise_gain)",
+    "clutter_retention_definition": "Mean of the two bar-edge peak magnitudes divided by the isolated single-edge peak magnitude for the same orientation and phase.",
+    "clutter_threshold_rule": "Smallest separation with retention_ratio > 0.9"
+  },
+  "multiscale_stress": {
+    "rows": [
+      {
+        "radius": 2.0,
+        "degree": 3.0,
+        "feature_scale_px": 2.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.9428084164038129,
+        "white_noise_gain": 0.9027777777777772,
+        "threshold": 0.026347247543459306
+      },
+      {
+        "radius": 2.0,
+        "degree": 3.0,
+        "feature_scale_px": 4.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.8858450545143586,
+        "white_noise_gain": 0.9027777777777772,
+        "threshold": 0.026347247543459306
+      },
+      {
+        "radius": 2.0,
+        "degree": 3.0,
+        "feature_scale_px": 8.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.8249573775242286,
+        "white_noise_gain": 0.9027777777777772,
+        "threshold": 0.026347247543459306
+      },
+      {
+        "radius": 2.0,
+        "degree": 3.0,
+        "feature_scale_px": 16.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 2.126805609536241e-07,
+        "white_noise_gain": 0.9027777777777772,
+        "threshold": 0.026347247543459306
+      },
+      {
+        "radius": 2.0,
+        "degree": 3.0,
+        "feature_scale_px": 32.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 2.3860274891692915e-07,
+        "white_noise_gain": 0.9027777777777772,
+        "threshold": 0.026347247543459306
+      },
+      {
+        "radius": 2.0,
+        "degree": 3.0,
+        "feature_scale_px": 64.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 2.0008566385274354e-07,
+        "white_noise_gain": 0.9027777777777772,
+        "threshold": 0.026347247543459306
+      },
+      {
+        "radius": 2.0,
+        "degree": 3.0,
+        "feature_scale_px": 128.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 2.723288598200042e-07,
+        "white_noise_gain": 0.9027777777777772,
+        "threshold": 0.026347247543459306
+      },
+      {
+        "radius": 2.0,
+        "degree": 3.0,
+        "feature_scale_px": 256.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 3.0829998774817545e-07,
+        "white_noise_gain": 0.9027777777777772,
+        "threshold": 0.026347247543459306
+      },
+      {
+        "radius": 3.0,
+        "degree": 5.0,
+        "feature_scale_px": 2.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.9006513262087288,
+        "white_noise_gain": 0.6104984126984087,
+        "threshold": 0.02166641669092615
+      },
+      {
+        "radius": 3.0,
+        "degree": 5.0,
+        "feature_scale_px": 4.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.7404003905219128,
+        "white_noise_gain": 0.6104984126984087,
+        "threshold": 0.02166641669092615
+      },
+      {
+        "radius": 3.0,
+        "degree": 5.0,
+        "feature_scale_px": 8.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.7443872134508771,
+        "white_noise_gain": 0.6104984126984087,
+        "threshold": 0.02166641669092615
+      },
+      {
+        "radius": 3.0,
+        "degree": 5.0,
+        "feature_scale_px": 16.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 2.072991097458814e-07,
+        "white_noise_gain": 0.6104984126984087,
+        "threshold": 0.02166641669092615
+      },
+      {
+        "radius": 3.0,
+        "degree": 5.0,
+        "feature_scale_px": 32.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 2.6755607030649795e-07,
+        "white_noise_gain": 0.6104984126984087,
+        "threshold": 0.02166641669092615
+      },
+      {
+        "radius": 3.0,
+        "degree": 5.0,
+        "feature_scale_px": 64.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 2.1753233277027956e-07,
+        "white_noise_gain": 0.6104984126984087,
+        "threshold": 0.02166641669092615
+      },
+      {
+        "radius": 3.0,
+        "degree": 5.0,
+        "feature_scale_px": 128.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 3.1105043674755514e-07,
+        "white_noise_gain": 0.6104984126984087,
+        "threshold": 0.02166641669092615
+      },
+      {
+        "radius": 3.0,
+        "degree": 5.0,
+        "feature_scale_px": 256.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 3.334094418124917e-07,
+        "white_noise_gain": 0.6104984126984087,
+        "threshold": 0.02166641669092615
+      },
+      {
+        "radius": 4.0,
+        "degree": 5.0,
+        "feature_scale_px": 2.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.42246572154951445,
+        "white_noise_gain": 0.1956977201229207,
+        "threshold": 0.012266981344784057
+      },
+      {
+        "radius": 4.0,
+        "degree": 5.0,
+        "feature_scale_px": 4.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.6168001353793631,
+        "white_noise_gain": 0.1956977201229207,
+        "threshold": 0.012266981344784057
+      },
+      {
+        "radius": 4.0,
+        "degree": 5.0,
+        "feature_scale_px": 8.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.5996646787660427,
+        "white_noise_gain": 0.1956977201229207,
+        "threshold": 0.012266981344784057
+      },
+      {
+        "radius": 4.0,
+        "degree": 5.0,
+        "feature_scale_px": 16.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 1.490195809528525e-07,
+        "white_noise_gain": 0.1956977201229207,
+        "threshold": 0.012266981344784057
+      },
+      {
+        "radius": 4.0,
+        "degree": 5.0,
+        "feature_scale_px": 32.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 1.7783185581987935e-07,
+        "white_noise_gain": 0.1956977201229207,
+        "threshold": 0.012266981344784057
+      },
+      {
+        "radius": 4.0,
+        "degree": 5.0,
+        "feature_scale_px": 64.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 2.002617299218423e-07,
+        "white_noise_gain": 0.1956977201229207,
+        "threshold": 0.012266981344784057
+      },
+      {
+        "radius": 4.0,
+        "degree": 5.0,
+        "feature_scale_px": 128.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 1.4959938131082247e-07,
+        "white_noise_gain": 0.1956977201229207,
+        "threshold": 0.012266981344784057
+      },
+      {
+        "radius": 4.0,
+        "degree": 5.0,
+        "feature_scale_px": 256.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 2.548924869856319e-07,
+        "white_noise_gain": 0.1956977201229207,
+        "threshold": 0.012266981344784057
+      },
+      {
+        "radius": 5.0,
+        "degree": 9.0,
+        "feature_scale_px": 2.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.8605746466029929,
+        "white_noise_gain": 0.6165697650287709,
+        "threshold": 0.021773885452089522
+      },
+      {
+        "radius": 5.0,
+        "degree": 9.0,
+        "feature_scale_px": 4.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.8211088223461545,
+        "white_noise_gain": 0.6165697650287709,
+        "threshold": 0.021773885452089522
+      },
+      {
+        "radius": 5.0,
+        "degree": 9.0,
+        "feature_scale_px": 8.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.6825477884549274,
+        "white_noise_gain": 0.6165697650287709,
+        "threshold": 0.021773885452089522
+      },
+      {
+        "radius": 5.0,
+        "degree": 9.0,
+        "feature_scale_px": 16.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.039292565806723856,
+        "white_noise_gain": 0.6165697650287709,
+        "threshold": 0.021773885452089522
+      },
+      {
+        "radius": 5.0,
+        "degree": 9.0,
+        "feature_scale_px": 32.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 2.763771719071231e-07,
+        "white_noise_gain": 0.6165697650287709,
+        "threshold": 0.021773885452089522
+      },
+      {
+        "radius": 5.0,
+        "degree": 9.0,
+        "feature_scale_px": 64.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 2.9822649416364447e-07,
+        "white_noise_gain": 0.6165697650287709,
+        "threshold": 0.021773885452089522
+      },
+      {
+        "radius": 5.0,
+        "degree": 9.0,
+        "feature_scale_px": 128.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 3.4731735160717835e-07,
+        "white_noise_gain": 0.6165697650287709,
+        "threshold": 0.021773885452089522
+      },
+      {
+        "radius": 5.0,
+        "degree": 9.0,
+        "feature_scale_px": 256.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 4.2493360704337956e-07,
+        "white_noise_gain": 0.6165697650287709,
+        "threshold": 0.021773885452089522
+      },
+      {
+        "radius": 7.0,
+        "degree": 9.0,
+        "feature_scale_px": 2.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.3112909833903492,
+        "white_noise_gain": 0.13394722176909934,
+        "threshold": 0.010148729492819064
+      },
+      {
+        "radius": 7.0,
+        "degree": 9.0,
+        "feature_scale_px": 4.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.658628445394525,
+        "white_noise_gain": 0.13394722176909934,
+        "threshold": 0.010148729492819064
+      },
+      {
+        "radius": 7.0,
+        "degree": 9.0,
+        "feature_scale_px": 8.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.5274328181197192,
+        "white_noise_gain": 0.13394722176909934,
+        "threshold": 0.010148729492819064
+      },
+      {
+        "radius": 7.0,
+        "degree": 9.0,
+        "feature_scale_px": 16.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.08523075556685358,
+        "white_noise_gain": 0.13394722176909934,
+        "threshold": 0.010148729492819064
+      },
+      {
+        "radius": 7.0,
+        "degree": 9.0,
+        "feature_scale_px": 32.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 1.6514727260329442e-07,
+        "white_noise_gain": 0.13394722176909934,
+        "threshold": 0.010148729492819064
+      },
+      {
+        "radius": 7.0,
+        "degree": 9.0,
+        "feature_scale_px": 64.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 1.5735179715420433e-07,
+        "white_noise_gain": 0.13394722176909934,
+        "threshold": 0.010148729492819064
+      },
+      {
+        "radius": 7.0,
+        "degree": 9.0,
+        "feature_scale_px": 128.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 1.4000981961494314e-07,
+        "white_noise_gain": 0.13394722176909934,
+        "threshold": 0.010148729492819064
+      },
+      {
+        "radius": 7.0,
+        "degree": 9.0,
+        "feature_scale_px": 256.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 1.7507332970689733e-07,
+        "white_noise_gain": 0.13394722176909934,
+        "threshold": 0.010148729492819064
+      },
+      {
+        "radius": 9.0,
+        "degree": 11.0,
+        "feature_scale_px": 2.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.23132090504642824,
+        "white_noise_gain": 0.08868650620066386,
+        "threshold": 0.008257975591010044
+      },
+      {
+        "radius": 9.0,
+        "degree": 11.0,
+        "feature_scale_px": 4.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.5773308003648682,
+        "white_noise_gain": 0.08868650620066386,
+        "threshold": 0.008257975591010044
+      },
+      {
+        "radius": 9.0,
+        "degree": 11.0,
+        "feature_scale_px": 8.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.496337880692105,
+        "white_noise_gain": 0.08868650620066386,
+        "threshold": 0.008257975591010044
+      },
+      {
+        "radius": 9.0,
+        "degree": 11.0,
+        "feature_scale_px": 16.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.10376106744016178,
+        "white_noise_gain": 0.08868650620066386,
+        "threshold": 0.008257975591010044
+      },
+      {
+        "radius": 9.0,
+        "degree": 11.0,
+        "feature_scale_px": 32.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 1.5761636864619546e-07,
+        "white_noise_gain": 0.08868650620066386,
+        "threshold": 0.008257975591010044
+      },
+      {
+        "radius": 9.0,
+        "degree": 11.0,
+        "feature_scale_px": 64.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 1.7587497735032213e-07,
+        "white_noise_gain": 0.08868650620066386,
+        "threshold": 0.008257975591010044
+      },
+      {
+        "radius": 9.0,
+        "degree": 11.0,
+        "feature_scale_px": 128.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 1.526556447509588e-07,
+        "white_noise_gain": 0.08868650620066386,
+        "threshold": 0.008257975591010044
+      },
+      {
+        "radius": 9.0,
+        "degree": 11.0,
+        "feature_scale_px": 256.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 1.788589223746395e-07,
+        "white_noise_gain": 0.08868650620066386,
+        "threshold": 0.008257975591010044
+      },
+      {
+        "radius": 11.0,
+        "degree": 11.0,
+        "feature_scale_px": 2.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.13512024644159218,
+        "white_noise_gain": 0.039886574776238796,
+        "threshold": 0.005538066844337306
+      },
+      {
+        "radius": 11.0,
+        "degree": 11.0,
+        "feature_scale_px": 4.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.4037438427082597,
+        "white_noise_gain": 0.039886574776238796,
+        "threshold": 0.005538066844337306
+      },
+      {
+        "radius": 11.0,
+        "degree": 11.0,
+        "feature_scale_px": 8.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.3719478799240483,
+        "white_noise_gain": 0.039886574776238796,
+        "threshold": 0.005538066844337306
+      },
+      {
+        "radius": 11.0,
+        "degree": 11.0,
+        "feature_scale_px": 16.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.12504393803544803,
+        "white_noise_gain": 0.039886574776238796,
+        "threshold": 0.005538066844337306
+      },
+      {
+        "radius": 11.0,
+        "degree": 11.0,
+        "feature_scale_px": 32.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.02831122725876243,
+        "white_noise_gain": 0.039886574776238796,
+        "threshold": 0.005538066844337306
+      },
+      {
+        "radius": 11.0,
+        "degree": 11.0,
+        "feature_scale_px": 64.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 1.0134709187943603e-07,
+        "white_noise_gain": 0.039886574776238796,
+        "threshold": 0.005538066844337306
+      },
+      {
+        "radius": 11.0,
+        "degree": 11.0,
+        "feature_scale_px": 128.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 1.1241414571908231e-07,
+        "white_noise_gain": 0.039886574776238796,
+        "threshold": 0.005538066844337306
+      },
+      {
+        "radius": 11.0,
+        "degree": 11.0,
+        "feature_scale_px": 256.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 1.3231385457643213e-07,
+        "white_noise_gain": 0.039886574776238796,
+        "threshold": 0.005538066844337306
+      },
+      {
+        "radius": 13.0,
+        "degree": 11.0,
+        "feature_scale_px": 2.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.08121322469388813,
+        "white_noise_gain": 0.01947108421368192,
+        "threshold": 0.003869366695783363
+      },
+      {
+        "radius": 13.0,
+        "degree": 11.0,
+        "feature_scale_px": 4.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.2723424845989111,
+        "white_noise_gain": 0.01947108421368192,
+        "threshold": 0.003869366695783363
+      },
+      {
+        "radius": 13.0,
+        "degree": 11.0,
+        "feature_scale_px": 8.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.3268018957730236,
+        "white_noise_gain": 0.01947108421368192,
+        "threshold": 0.003869366695783363
+      },
+      {
+        "radius": 13.0,
+        "degree": 11.0,
+        "feature_scale_px": 16.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.1013607320719962,
+        "white_noise_gain": 0.01947108421368192,
+        "threshold": 0.003869366695783363
+      },
+      {
+        "radius": 13.0,
+        "degree": 11.0,
+        "feature_scale_px": 32.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.03782879335875622,
+        "white_noise_gain": 0.01947108421368192,
+        "threshold": 0.003869366695783363
+      },
+      {
+        "radius": 13.0,
+        "degree": 11.0,
+        "feature_scale_px": 64.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 1.0352918192539068e-07,
+        "white_noise_gain": 0.01947108421368192,
+        "threshold": 0.003869366695783363
+      },
+      {
+        "radius": 13.0,
+        "degree": 11.0,
+        "feature_scale_px": 128.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 9.821250244304127e-08,
+        "white_noise_gain": 0.01947108421368192,
+        "threshold": 0.003869366695783363
+      },
+      {
+        "radius": 13.0,
+        "degree": 11.0,
+        "feature_scale_px": 256.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 1.1980998670515984e-07,
+        "white_noise_gain": 0.01947108421368192,
+        "threshold": 0.003869366695783363
+      },
+      {
+        "radius": 16.0,
+        "degree": 11.0,
+        "feature_scale_px": 2.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.045024209667803634,
+        "white_noise_gain": 0.00869626897467827,
+        "threshold": 0.002585897484697987
+      },
+      {
+        "radius": 16.0,
+        "degree": 11.0,
+        "feature_scale_px": 4.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.16615081282280536,
+        "white_noise_gain": 0.00869626897467827,
+        "threshold": 0.002585897484697987
+      },
+      {
+        "radius": 16.0,
+        "degree": 11.0,
+        "feature_scale_px": 8.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.31176560002190334,
+        "white_noise_gain": 0.00869626897467827,
+        "threshold": 0.002585897484697987
+      },
+      {
+        "radius": 16.0,
+        "degree": 11.0,
+        "feature_scale_px": 16.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.14812314521113798,
+        "white_noise_gain": 0.00869626897467827,
+        "threshold": 0.002585897484697987
+      },
+      {
+        "radius": 16.0,
+        "degree": 11.0,
+        "feature_scale_px": 32.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.0450760015002262,
+        "white_noise_gain": 0.00869626897467827,
+        "threshold": 0.002585897484697987
+      },
+      {
+        "radius": 16.0,
+        "degree": 11.0,
+        "feature_scale_px": 64.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 7.60753419611618e-08,
+        "white_noise_gain": 0.00869626897467827,
+        "threshold": 0.002585897484697987
+      },
+      {
+        "radius": 16.0,
+        "degree": 11.0,
+        "feature_scale_px": 128.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 7.045962185664239e-08,
+        "white_noise_gain": 0.00869626897467827,
+        "threshold": 0.002585897484697987
+      },
+      {
+        "radius": 16.0,
+        "degree": 11.0,
+        "feature_scale_px": 256.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 1.0118109027609396e-07,
+        "white_noise_gain": 0.00869626897467827,
+        "threshold": 0.002585897484697987
+      },
+      {
+        "radius": 20.0,
+        "degree": 11.0,
+        "feature_scale_px": 2.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.02302087141591332,
+        "white_noise_gain": 0.0034812395643027466,
+        "threshold": 0.0016361072799100495
+      },
+      {
+        "radius": 20.0,
+        "degree": 11.0,
+        "feature_scale_px": 4.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.09029353148680169,
+        "white_noise_gain": 0.0034812395643027466,
+        "threshold": 0.0016361072799100495
+      },
+      {
+        "radius": 20.0,
+        "degree": 11.0,
+        "feature_scale_px": 8.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.22883269101727802,
+        "white_noise_gain": 0.0034812395643027466,
+        "threshold": 0.0016361072799100495
+      },
+      {
+        "radius": 20.0,
+        "degree": 11.0,
+        "feature_scale_px": 16.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.042599908958152605,
+        "white_noise_gain": 0.0034812395643027466,
+        "threshold": 0.0016361072799100495
+      },
+      {
+        "radius": 20.0,
+        "degree": 11.0,
+        "feature_scale_px": 32.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.04642724687183009,
+        "white_noise_gain": 0.0034812395643027466,
+        "threshold": 0.0016361072799100495
+      },
+      {
+        "radius": 20.0,
+        "degree": 11.0,
+        "feature_scale_px": 64.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.005339536822661717,
+        "white_noise_gain": 0.0034812395643027466,
+        "threshold": 0.0016361072799100495
+      },
+      {
+        "radius": 20.0,
+        "degree": 11.0,
+        "feature_scale_px": 128.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 7.016260400733542e-08,
+        "white_noise_gain": 0.0034812395643027466,
+        "threshold": 0.0016361072799100495
+      },
+      {
+        "radius": 20.0,
+        "degree": 11.0,
+        "feature_scale_px": 256.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 7.381442542985774e-08,
+        "white_noise_gain": 0.0034812395643027466,
+        "threshold": 0.0016361072799100495
+      },
+      {
+        "radius": 25.0,
+        "degree": 11.0,
+        "feature_scale_px": 2.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.01159160856255817,
+        "white_noise_gain": 0.0014297399791228117,
+        "threshold": 0.001048511872406105
+      },
+      {
+        "radius": 25.0,
+        "degree": 11.0,
+        "feature_scale_px": 4.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.04618081821228236,
+        "white_noise_gain": 0.0014297399791228117,
+        "threshold": 0.001048511872406105
+      },
+      {
+        "radius": 25.0,
+        "degree": 11.0,
+        "feature_scale_px": 8.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.1397035074989036,
+        "white_noise_gain": 0.0014297399791228117,
+        "threshold": 0.001048511872406105
+      },
+      {
+        "radius": 25.0,
+        "degree": 11.0,
+        "feature_scale_px": 16.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.1343183587481606,
+        "white_noise_gain": 0.0014297399791228117,
+        "threshold": 0.001048511872406105
+      },
+      {
+        "radius": 25.0,
+        "degree": 11.0,
+        "feature_scale_px": 32.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.05222782328820833,
+        "white_noise_gain": 0.0014297399791228117,
+        "threshold": 0.001048511872406105
+      },
+      {
+        "radius": 25.0,
+        "degree": 11.0,
+        "feature_scale_px": 64.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.014297507634615661,
+        "white_noise_gain": 0.0014297399791228117,
+        "threshold": 0.001048511872406105
+      },
+      {
+        "radius": 25.0,
+        "degree": 11.0,
+        "feature_scale_px": 128.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 3.8812698304323395e-08,
+        "white_noise_gain": 0.0014297399791228117,
+        "threshold": 0.001048511872406105
+      },
+      {
+        "radius": 25.0,
+        "degree": 11.0,
+        "feature_scale_px": 256.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 7.36741816207983e-08,
+        "white_noise_gain": 0.0014297399791228117,
+        "threshold": 0.001048511872406105
+      },
+      {
+        "radius": 32.0,
+        "degree": 11.0,
+        "feature_scale_px": 2.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.004972232470862787,
+        "white_noise_gain": 0.0005365797010445353,
+        "threshold": 0.0006423355243422356
+      },
+      {
+        "radius": 32.0,
+        "degree": 11.0,
+        "feature_scale_px": 4.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.020296828729691213,
+        "white_noise_gain": 0.0005365797010445353,
+        "threshold": 0.0006423355243422356
+      },
+      {
+        "radius": 32.0,
+        "degree": 11.0,
+        "feature_scale_px": 8.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.06935880242681283,
+        "white_noise_gain": 0.0005365797010445353,
+        "threshold": 0.0006423355243422356
+      },
+      {
+        "radius": 32.0,
+        "degree": 11.0,
+        "feature_scale_px": 16.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.12991033462244894,
+        "white_noise_gain": 0.0005365797010445353,
+        "threshold": 0.0006423355243422356
+      },
+      {
+        "radius": 32.0,
+        "degree": 11.0,
+        "feature_scale_px": 32.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.07366490704950751,
+        "white_noise_gain": 0.0005365797010445353,
+        "threshold": 0.0006423355243422356
+      },
+      {
+        "radius": 32.0,
+        "degree": 11.0,
+        "feature_scale_px": 64.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.01795468954330625,
+        "white_noise_gain": 0.0005365797010445353,
+        "threshold": 0.0006423355243422356
+      },
+      {
+        "radius": 32.0,
+        "degree": 11.0,
+        "feature_scale_px": 128.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 4.409643377413492e-08,
+        "white_noise_gain": 0.0005365797010445353,
+        "threshold": 0.0006423355243422356
+      },
+      {
+        "radius": 32.0,
+        "degree": 11.0,
+        "feature_scale_px": 256.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 5.373894264329119e-08,
+        "white_noise_gain": 0.0005365797010445353,
+        "threshold": 0.0006423355243422356
+      },
+      {
+        "radius": 40.0,
+        "degree": 11.0,
+        "feature_scale_px": 2.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.0021889521009645896,
+        "white_noise_gain": 0.00021948804320888845,
+        "threshold": 0.0004108187483427674
+      },
+      {
+        "radius": 40.0,
+        "degree": 11.0,
+        "feature_scale_px": 4.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.009064381945355263,
+        "white_noise_gain": 0.00021948804320888845,
+        "threshold": 0.0004108187483427674
+      },
+      {
+        "radius": 40.0,
+        "degree": 11.0,
+        "feature_scale_px": 8.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.033138831454483125,
+        "white_noise_gain": 0.00021948804320888845,
+        "threshold": 0.0004108187483427674
+      },
+      {
+        "radius": 40.0,
+        "degree": 11.0,
+        "feature_scale_px": 16.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.083929103261636,
+        "white_noise_gain": 0.00021948804320888845,
+        "threshold": 0.0004108187483427674
+      },
+      {
+        "radius": 40.0,
+        "degree": 11.0,
+        "feature_scale_px": 32.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.008441704702244786,
+        "white_noise_gain": 0.00021948804320888845,
+        "threshold": 0.0004108187483427674
+      },
+      {
+        "radius": 40.0,
+        "degree": 11.0,
+        "feature_scale_px": 64.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.02223029115246085,
+        "white_noise_gain": 0.00021948804320888845,
+        "threshold": 0.0004108187483427674
+      },
+      {
+        "radius": 40.0,
+        "degree": 11.0,
+        "feature_scale_px": 128.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 3.7510594944850655e-08,
+        "white_noise_gain": 0.00021948804320888845,
+        "threshold": 0.0004108187483427674
+      },
+      {
+        "radius": 40.0,
+        "degree": 11.0,
+        "feature_scale_px": 256.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 3.5986365596168744e-08,
+        "white_noise_gain": 0.00021948804320888845,
+        "threshold": 0.0004108187483427674
+      },
+      {
+        "radius": 50.0,
+        "degree": 11.0,
+        "feature_scale_px": 2.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.0009395207129697665,
+        "white_noise_gain": 8.998553150423675e-05,
+        "threshold": 0.00026304567458139975
+      },
+      {
+        "radius": 50.0,
+        "degree": 11.0,
+        "feature_scale_px": 4.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.0039267421918776375,
+        "white_noise_gain": 8.998553150423675e-05,
+        "threshold": 0.00026304567458139975
+      },
+      {
+        "radius": 50.0,
+        "degree": 11.0,
+        "feature_scale_px": 8.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.014974718875027248,
+        "white_noise_gain": 8.998553150423675e-05,
+        "threshold": 0.00026304567458139975
+      },
+      {
+        "radius": 50.0,
+        "degree": 11.0,
+        "feature_scale_px": 16.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.04499756194153278,
+        "white_noise_gain": 8.998553150423675e-05,
+        "threshold": 0.00026304567458139975
+      },
+      {
+        "radius": 50.0,
+        "degree": 11.0,
+        "feature_scale_px": 32.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.06011068965025712,
+        "white_noise_gain": 8.998553150423675e-05,
+        "threshold": 0.00026304567458139975
+      },
+      {
+        "radius": 50.0,
+        "degree": 11.0,
+        "feature_scale_px": 64.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.021479987028647507,
+        "white_noise_gain": 8.998553150423675e-05,
+        "threshold": 0.00026304567458139975
+      },
+      {
+        "radius": 50.0,
+        "degree": 11.0,
+        "feature_scale_px": 128.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.006274553178648104,
+        "white_noise_gain": 8.998553150423675e-05,
+        "threshold": 0.00026304567458139975
+      },
+      {
+        "radius": 50.0,
+        "degree": 11.0,
+        "feature_scale_px": 256.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 3.8669133866143235e-08,
+        "white_noise_gain": 8.998553150423675e-05,
+        "threshold": 0.00026304567458139975
+      },
+      {
+        "radius": 64.0,
+        "degree": 11.0,
+        "feature_scale_px": 2.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.0003613225862388004,
+        "white_noise_gain": 3.3534245506131844e-05,
+        "threshold": 0.00016057912662077628
+      },
+      {
+        "radius": 64.0,
+        "degree": 11.0,
+        "feature_scale_px": 4.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.0015199910240581984,
+        "white_noise_gain": 3.3534245506131844e-05,
+        "threshold": 0.00016057912662077628
+      },
+      {
+        "radius": 64.0,
+        "degree": 11.0,
+        "feature_scale_px": 8.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.005966125052461145,
+        "white_noise_gain": 3.3534245506131844e-05,
+        "threshold": 0.00016057912662077628
+      },
+      {
+        "radius": 64.0,
+        "degree": 11.0,
+        "feature_scale_px": 16.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.020015530956489634,
+        "white_noise_gain": 3.3534245506131844e-05,
+        "threshold": 0.00016057912662077628
+      },
+      {
+        "radius": 64.0,
+        "degree": 11.0,
+        "feature_scale_px": 32.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.058693625164906005,
+        "white_noise_gain": 3.3534245506131844e-05,
+        "threshold": 0.00016057912662077628
+      },
+      {
+        "radius": 64.0,
+        "degree": 11.0,
+        "feature_scale_px": 64.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.03674004063850584,
+        "white_noise_gain": 3.3534245506131844e-05,
+        "threshold": 0.00016057912662077628
+      },
+      {
+        "radius": 64.0,
+        "degree": 11.0,
+        "feature_scale_px": 128.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.008849469383842607,
+        "white_noise_gain": 3.3534245506131844e-05,
+        "threshold": 0.00016057912662077628
+      },
+      {
+        "radius": 64.0,
+        "degree": 11.0,
+        "feature_scale_px": 256.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 2.4158270184652627e-08,
+        "white_noise_gain": 3.3534245506131844e-05,
+        "threshold": 0.00016057912662077628
+      },
+      {
+        "radius": 80.0,
+        "degree": 11.0,
+        "feature_scale_px": 2.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.00015069307542484153,
+        "white_noise_gain": 1.3740806424515192e-05,
+        "threshold": 0.0001027900157185642
+      },
+      {
+        "radius": 80.0,
+        "degree": 11.0,
+        "feature_scale_px": 4.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.0006362580035865065,
+        "white_noise_gain": 1.3740806424515192e-05,
+        "threshold": 0.0001027900157185642
+      },
+      {
+        "radius": 80.0,
+        "degree": 11.0,
+        "feature_scale_px": 8.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.002537941702843963,
+        "white_noise_gain": 1.3740806424515192e-05,
+        "threshold": 0.0001027900157185642
+      },
+      {
+        "radius": 80.0,
+        "degree": 11.0,
+        "feature_scale_px": 16.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.009035452177196457,
+        "white_noise_gain": 1.3740806424515192e-05,
+        "threshold": 0.0001027900157185642
+      },
+      {
+        "radius": 80.0,
+        "degree": 11.0,
+        "feature_scale_px": 32.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.037533703582803904,
+        "white_noise_gain": 1.3740806424515192e-05,
+        "threshold": 0.0001027900157185642
+      },
+      {
+        "radius": 80.0,
+        "degree": 11.0,
+        "feature_scale_px": 64.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.003989693743179717,
+        "white_noise_gain": 1.3740806424515192e-05,
+        "threshold": 0.0001027900157185642
+      },
+      {
+        "radius": 80.0,
+        "degree": 11.0,
+        "feature_scale_px": 128.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.01096948920353066,
+        "white_noise_gain": 1.3740806424515192e-05,
+        "threshold": 0.0001027900157185642
+      },
+      {
+        "radius": 80.0,
+        "degree": 11.0,
+        "feature_scale_px": 256.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 2.1772872903678823e-08,
+        "white_noise_gain": 1.3740806424515192e-05,
+        "threshold": 0.0001027900157185642
+      },
+      {
+        "radius": 100.0,
+        "degree": 11.0,
+        "feature_scale_px": 2.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 6.226977446751895e-05,
+        "white_noise_gain": 5.614313850628294e-06,
+        "threshold": 6.570420504835859e-05
+      },
+      {
+        "radius": 100.0,
+        "degree": 11.0,
+        "feature_scale_px": 4.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.000263531623371283,
+        "white_noise_gain": 5.614313850628294e-06,
+        "threshold": 6.570420504835859e-05
+      },
+      {
+        "radius": 100.0,
+        "degree": 11.0,
+        "feature_scale_px": 8.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.0010620465266087571,
+        "white_noise_gain": 5.614313850628294e-06,
+        "threshold": 6.570420504835859e-05
+      },
+      {
+        "radius": 100.0,
+        "degree": 11.0,
+        "feature_scale_px": 16.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.003924110580573743,
+        "white_noise_gain": 5.614313850628294e-06,
+        "threshold": 6.570420504835859e-05
+      },
+      {
+        "radius": 100.0,
+        "degree": 11.0,
+        "feature_scale_px": 32.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.01990052528273594,
+        "white_noise_gain": 5.614313850628294e-06,
+        "threshold": 6.570420504835859e-05
+      },
+      {
+        "radius": 100.0,
+        "degree": 11.0,
+        "feature_scale_px": 64.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.028591609456280753,
+        "white_noise_gain": 5.614313850628294e-06,
+        "threshold": 6.570420504835859e-05
+      },
+      {
+        "radius": 100.0,
+        "degree": 11.0,
+        "feature_scale_px": 128.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.009585993191186845,
+        "white_noise_gain": 5.614313850628294e-06,
+        "threshold": 6.570420504835859e-05
+      },
+      {
+        "radius": 100.0,
+        "degree": 11.0,
+        "feature_scale_px": 256.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.0033293703907079876,
+        "white_noise_gain": 5.614313850628294e-06,
+        "threshold": 6.570420504835859e-05
+      },
+      {
+        "radius": 128.0,
+        "degree": 11.0,
+        "feature_scale_px": 2.0,
+        "detection_rate": 0.0,
+        "detection_magnitude": 1.646795497780408e-05,
+        "white_noise_gain": 1.4729831131205971e-06,
+        "threshold": 3.365454362932004e-05
+      },
+      {
+        "radius": 128.0,
+        "degree": 11.0,
+        "feature_scale_px": 4.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 6.981789835659572e-05,
+        "white_noise_gain": 1.4729831131205971e-06,
+        "threshold": 3.365454362932004e-05
+      },
+      {
+        "radius": 128.0,
+        "degree": 11.0,
+        "feature_scale_px": 8.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.00028371892663238326,
+        "white_noise_gain": 1.4729831131205971e-06,
+        "threshold": 3.365454362932004e-05
+      },
+      {
+        "radius": 128.0,
+        "degree": 11.0,
+        "feature_scale_px": 16.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.001080819365130142,
+        "white_noise_gain": 1.4729831131205971e-06,
+        "threshold": 3.365454362932004e-05
+      },
+      {
+        "radius": 128.0,
+        "degree": 11.0,
+        "feature_scale_px": 32.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.006378111829286066,
+        "white_noise_gain": 1.4729831131205971e-06,
+        "threshold": 3.365454362932004e-05
+      },
+      {
+        "radius": 128.0,
+        "degree": 11.0,
+        "feature_scale_px": 64.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.022727330666147762,
+        "white_noise_gain": 1.4729831131205971e-06,
+        "threshold": 3.365454362932004e-05
+      },
+      {
+        "radius": 128.0,
+        "degree": 11.0,
+        "feature_scale_px": 128.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.012806730328205302,
+        "white_noise_gain": 1.4729831131205971e-06,
+        "threshold": 3.365454362932004e-05
+      },
+      {
+        "radius": 128.0,
+        "degree": 11.0,
+        "feature_scale_px": 256.0,
+        "detection_rate": 1.0,
+        "detection_magnitude": 0.005984662806331655,
+        "white_noise_gain": 1.4729831131205971e-06,
+        "threshold": 3.365454362932004e-05
+      }
+    ],
+    "csv_path": "/tmp/edge-detection-filter-critique-sec75max/papers/journal_paper/figures/data/sec07_multiscale_and_clutter/sec07_multiscale_stress_detection_rate.csv",
+    "heatmap": {
+      "radii": [
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        11,
+        13,
+        16,
+        20,
+        25,
+        32,
+        40,
+        50,
+        64,
+        80,
+        100,
+        128
+      ],
+      "feature_scales_px": [
+        2,
+        4,
+        8,
+        16,
+        32,
+        64,
+        128,
+        256
+      ],
+      "detection_rate": [
+        [
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        [
+          0.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      ]
+    },
+    "full_coverage_by_radius": [
+      {
+        "radius": 2,
+        "degree": 3,
+        "all_feature_scales_detected": false
+      },
+      {
+        "radius": 3,
+        "degree": 5,
+        "all_feature_scales_detected": false
+      },
+      {
+        "radius": 4,
+        "degree": 5,
+        "all_feature_scales_detected": false
+      },
+      {
+        "radius": 5,
+        "degree": 9,
+        "all_feature_scales_detected": false
+      },
+      {
+        "radius": 7,
+        "degree": 9,
+        "all_feature_scales_detected": false
+      },
+      {
+        "radius": 9,
+        "degree": 11,
+        "all_feature_scales_detected": false
+      },
+      {
+        "radius": 11,
+        "degree": 11,
+        "all_feature_scales_detected": false
+      },
+      {
+        "radius": 13,
+        "degree": 11,
+        "all_feature_scales_detected": false
+      },
+      {
+        "radius": 16,
+        "degree": 11,
+        "all_feature_scales_detected": false
+      },
+      {
+        "radius": 20,
+        "degree": 11,
+        "all_feature_scales_detected": false
+      },
+      {
+        "radius": 25,
+        "degree": 11,
+        "all_feature_scales_detected": false
+      },
+      {
+        "radius": 32,
+        "degree": 11,
+        "all_feature_scales_detected": false
+      },
+      {
+        "radius": 40,
+        "degree": 11,
+        "all_feature_scales_detected": false
+      },
+      {
+        "radius": 50,
+        "degree": 11,
+        "all_feature_scales_detected": false
+      },
+      {
+        "radius": 64,
+        "degree": 11,
+        "all_feature_scales_detected": false
+      },
+      {
+        "radius": 80,
+        "degree": 11,
+        "all_feature_scales_detected": false
+      },
+      {
+        "radius": 100,
+        "degree": 11,
+        "all_feature_scales_detected": false
+      },
+      {
+        "radius": 128,
+        "degree": 11,
+        "all_feature_scales_detected": false
+      }
+    ]
+  },
+  "close_edge_clutter": {
+    "rows": [
+      {
+        "radius": 2.0,
+        "degree": 3.0,
+        "separation_px": 1.0,
+        "retention_ratio": 0.45468590591870395
+      },
+      {
+        "radius": 2.0,
+        "degree": 3.0,
+        "separation_px": 2.0,
+        "retention_ratio": 0.7735198495971011
+      },
+      {
+        "radius": 2.0,
+        "degree": 3.0,
+        "separation_px": 4.0,
+        "retention_ratio": 0.9707878225254729
+      },
+      {
+        "radius": 2.0,
+        "degree": 3.0,
+        "separation_px": 8.0,
+        "retention_ratio": 0.9927620332037096
+      },
+      {
+        "radius": 2.0,
+        "degree": 3.0,
+        "separation_px": 16.0,
+        "retention_ratio": 0.9942754463483783
+      },
+      {
+        "radius": 2.0,
+        "degree": 3.0,
+        "separation_px": 32.0,
+        "retention_ratio": 0.9943107305533978
+      },
+      {
+        "radius": 3.0,
+        "degree": 5.0,
+        "separation_px": 1.0,
+        "retention_ratio": 0.4596673181564911
+      },
+      {
+        "radius": 3.0,
+        "degree": 5.0,
+        "separation_px": 2.0,
+        "retention_ratio": 0.7813095238046802
+      },
+      {
+        "radius": 3.0,
+        "degree": 5.0,
+        "separation_px": 4.0,
+        "retention_ratio": 0.9700307879615444
+      },
+      {
+        "radius": 3.0,
+        "degree": 5.0,
+        "separation_px": 8.0,
+        "retention_ratio": 0.9927949815752286
+      },
+      {
+        "radius": 3.0,
+        "degree": 5.0,
+        "separation_px": 16.0,
+        "retention_ratio": 0.9942558762226122
+      },
+      {
+        "radius": 3.0,
+        "degree": 5.0,
+        "separation_px": 32.0,
+        "retention_ratio": 0.9943681059251644
+      },
+      {
+        "radius": 4.0,
+        "degree": 5.0,
+        "separation_px": 1.0,
+        "retention_ratio": 0.44179728461086426
+      },
+      {
+        "radius": 4.0,
+        "degree": 5.0,
+        "separation_px": 2.0,
+        "retention_ratio": 0.7679060491395284
+      },
+      {
+        "radius": 4.0,
+        "degree": 5.0,
+        "separation_px": 4.0,
+        "retention_ratio": 0.9750229199551946
+      },
+      {
+        "radius": 4.0,
+        "degree": 5.0,
+        "separation_px": 8.0,
+        "retention_ratio": 0.9938719510023305
+      },
+      {
+        "radius": 4.0,
+        "degree": 5.0,
+        "separation_px": 16.0,
+        "retention_ratio": 0.9951242768867701
+      },
+      {
+        "radius": 4.0,
+        "degree": 5.0,
+        "separation_px": 32.0,
+        "retention_ratio": 0.9951912544398864
+      },
+      {
+        "radius": 5.0,
+        "degree": 9.0,
+        "separation_px": 1.0,
+        "retention_ratio": 0.4647619584499163
+      },
+      {
+        "radius": 5.0,
+        "degree": 9.0,
+        "separation_px": 2.0,
+        "retention_ratio": 0.7871969794403207
+      },
+      {
+        "radius": 5.0,
+        "degree": 9.0,
+        "separation_px": 4.0,
+        "retention_ratio": 0.9684478559746211
+      },
+      {
+        "radius": 5.0,
+        "degree": 9.0,
+        "separation_px": 8.0,
+        "retention_ratio": 0.9927667702085508
+      },
+      {
+        "radius": 5.0,
+        "degree": 9.0,
+        "separation_px": 16.0,
+        "retention_ratio": 0.9942165264562652
+      },
+      {
+        "radius": 5.0,
+        "degree": 9.0,
+        "separation_px": 32.0,
+        "retention_ratio": 0.9943794669238025
+      },
+      {
+        "radius": 7.0,
+        "degree": 9.0,
+        "separation_px": 1.0,
+        "retention_ratio": 0.43851540392957244
+      },
+      {
+        "radius": 7.0,
+        "degree": 9.0,
+        "separation_px": 2.0,
+        "retention_ratio": 0.7760586859540903
+      },
+      {
+        "radius": 7.0,
+        "degree": 9.0,
+        "separation_px": 4.0,
+        "retention_ratio": 0.9800474100166263
+      },
+      {
+        "radius": 7.0,
+        "degree": 9.0,
+        "separation_px": 8.0,
+        "retention_ratio": 0.9945417239000496
+      },
+      {
+        "radius": 7.0,
+        "degree": 9.0,
+        "separation_px": 16.0,
+        "retention_ratio": 0.9954494853539413
+      },
+      {
+        "radius": 7.0,
+        "degree": 9.0,
+        "separation_px": 32.0,
+        "retention_ratio": 0.99554966740134
+      },
+      {
+        "radius": 9.0,
+        "degree": 11.0,
+        "separation_px": 1.0,
+        "retention_ratio": 0.42860230347237216
+      },
+      {
+        "radius": 9.0,
+        "degree": 11.0,
+        "separation_px": 2.0,
+        "retention_ratio": 0.7704957829796445
+      },
+      {
+        "radius": 9.0,
+        "degree": 11.0,
+        "separation_px": 4.0,
+        "retention_ratio": 1.000680923443532
+      },
+      {
+        "radius": 9.0,
+        "degree": 11.0,
+        "separation_px": 8.0,
+        "retention_ratio": 0.9966916220846207
+      },
+      {
+        "radius": 9.0,
+        "degree": 11.0,
+        "separation_px": 16.0,
+        "retention_ratio": 0.9958760599560651
+      },
+      {
+        "radius": 9.0,
+        "degree": 11.0,
+        "separation_px": 32.0,
+        "retention_ratio": 0.9959943526808025
+      },
+      {
+        "radius": 11.0,
+        "degree": 11.0,
+        "separation_px": 1.0,
+        "retention_ratio": 0.3944477521734824
+      },
+      {
+        "radius": 11.0,
+        "degree": 11.0,
+        "separation_px": 2.0,
+        "retention_ratio": 0.7265770454922591
+      },
+      {
+        "radius": 11.0,
+        "degree": 11.0,
+        "separation_px": 4.0,
+        "retention_ratio": 1.038089576873882
+      },
+      {
+        "radius": 11.0,
+        "degree": 11.0,
+        "separation_px": 8.0,
+        "retention_ratio": 1.0020016111966332
+      },
+      {
+        "radius": 11.0,
+        "degree": 11.0,
+        "separation_px": 16.0,
+        "retention_ratio": 0.9967289718947873
+      },
+      {
+        "radius": 11.0,
+        "degree": 11.0,
+        "separation_px": 32.0,
+        "retention_ratio": 0.9968051353608745
+      },
+      {
+        "radius": 13.0,
+        "degree": 11.0,
+        "separation_px": 1.0,
+        "retention_ratio": 0.3551941526737333
+      },
+      {
+        "radius": 13.0,
+        "degree": 11.0,
+        "separation_px": 2.0,
+        "retention_ratio": 0.6650586179347573
+      },
+      {
+        "radius": 13.0,
+        "degree": 11.0,
+        "separation_px": 4.0,
+        "retention_ratio": 1.0408399480202946
+      },
+      {
+        "radius": 13.0,
+        "degree": 11.0,
+        "separation_px": 8.0,
+        "retention_ratio": 0.960527516323887
+      },
+      {
+        "radius": 13.0,
+        "degree": 11.0,
+        "separation_px": 16.0,
+        "retention_ratio": 0.9974800999854742
+      },
+      {
+        "radius": 13.0,
+        "degree": 11.0,
+        "separation_px": 32.0,
+        "retention_ratio": 0.9974994123564428
+      },
+      {
+        "radius": 16.0,
+        "degree": 11.0,
+        "separation_px": 1.0,
+        "retention_ratio": 0.30901678998923177
+      },
+      {
+        "radius": 16.0,
+        "degree": 11.0,
+        "separation_px": 2.0,
+        "retention_ratio": 0.5915031838906084
+      },
+      {
+        "radius": 16.0,
+        "degree": 11.0,
+        "separation_px": 4.0,
+        "retention_ratio": 0.9967372957613178
+      },
+      {
+        "radius": 16.0,
+        "degree": 11.0,
+        "separation_px": 8.0,
+        "retention_ratio": 0.9938036920212967
+      },
+      {
+        "radius": 16.0,
+        "degree": 11.0,
+        "separation_px": 16.0,
+        "retention_ratio": 0.9972311890816982
+      },
+      {
+        "radius": 16.0,
+        "degree": 11.0,
+        "separation_px": 32.0,
+        "retention_ratio": 0.9981632430282958
+      },
+      {
+        "radius": 20.0,
+        "degree": 11.0,
+        "separation_px": 1.0,
+        "retention_ratio": 0.2584345867791508
+      },
+      {
+        "radius": 20.0,
+        "degree": 11.0,
+        "separation_px": 2.0,
+        "retention_ratio": 0.5029069088462503
+      },
+      {
+        "radius": 20.0,
+        "degree": 11.0,
+        "separation_px": 4.0,
+        "retention_ratio": 0.8999036584847193
+      },
+      {
+        "radius": 20.0,
+        "degree": 11.0,
+        "separation_px": 8.0,
+        "retention_ratio": 1.1267584216514928
+      },
+      {
+        "radius": 20.0,
+        "degree": 11.0,
+        "separation_px": 16.0,
+        "retention_ratio": 1.0235218698513688
+      },
+      {
+        "radius": 20.0,
+        "degree": 11.0,
+        "separation_px": 32.0,
+        "retention_ratio": 0.9987504669880715
+      },
+      {
+        "radius": 25.0,
+        "degree": 11.0,
+        "separation_px": 1.0,
+        "retention_ratio": 0.2086194473627643
+      },
+      {
+        "radius": 25.0,
+        "degree": 11.0,
+        "separation_px": 2.0,
+        "retention_ratio": 0.4195799857783512
+      },
+      {
+        "radius": 25.0,
+        "degree": 11.0,
+        "separation_px": 4.0,
+        "retention_ratio": 0.7821681448364143
+      },
+      {
+        "radius": 25.0,
+        "degree": 11.0,
+        "separation_px": 8.0,
+        "retention_ratio": 1.1569484240551775
+      },
+      {
+        "radius": 25.0,
+        "degree": 11.0,
+        "separation_px": 16.0,
+        "retention_ratio": 0.972106264064808
+      },
+      {
+        "radius": 25.0,
+        "degree": 11.0,
+        "separation_px": 32.0,
+        "retention_ratio": 0.9991619906011123
+      },
+      {
+        "radius": 32.0,
+        "degree": 11.0,
+        "separation_px": 1.0,
+        "retention_ratio": 0.15022308399655485
+      },
+      {
+        "radius": 32.0,
+        "degree": 11.0,
+        "separation_px": 2.0,
+        "retention_ratio": 0.31815801515989783
+      },
+      {
+        "radius": 32.0,
+        "degree": 11.0,
+        "separation_px": 4.0,
+        "retention_ratio": 0.6471228102657078
+      },
+      {
+        "radius": 32.0,
+        "degree": 11.0,
+        "separation_px": 8.0,
+        "retention_ratio": 1.080065013458584
+      },
+      {
+        "radius": 32.0,
+        "degree": 11.0,
+        "separation_px": 16.0,
+        "retention_ratio": 0.9797675370965462
+      },
+      {
+        "radius": 32.0,
+        "degree": 11.0,
+        "separation_px": 32.0,
+        "retention_ratio": 1.0031176192648827
+      },
+      {
+        "radius": 40.0,
+        "degree": 11.0,
+        "separation_px": 1.0,
+        "retention_ratio": 0.10520781000652736
+      },
+      {
+        "radius": 40.0,
+        "degree": 11.0,
+        "separation_px": 2.0,
+        "retention_ratio": 0.22921988664141013
+      },
+      {
+        "radius": 40.0,
+        "degree": 11.0,
+        "separation_px": 4.0,
+        "retention_ratio": 0.5036887284976755
+      },
+      {
+        "radius": 40.0,
+        "degree": 11.0,
+        "separation_px": 8.0,
+        "retention_ratio": 0.9552013046303585
+      },
+      {
+        "radius": 40.0,
+        "degree": 11.0,
+        "separation_px": 16.0,
+        "retention_ratio": 1.1566363666272925
+      },
+      {
+        "radius": 40.0,
+        "degree": 11.0,
+        "separation_px": 32.0,
+        "retention_ratio": 1.0350296981004317
+      },
+      {
+        "radius": 50.0,
+        "degree": 11.0,
+        "separation_px": 1.0,
+        "retention_ratio": 0.07133827906938411
+      },
+      {
+        "radius": 50.0,
+        "degree": 11.0,
+        "separation_px": 2.0,
+        "retention_ratio": 0.1581861417765301
+      },
+      {
+        "radius": 50.0,
+        "degree": 11.0,
+        "separation_px": 4.0,
+        "retention_ratio": 0.3645717669684113
+      },
+      {
+        "radius": 50.0,
+        "degree": 11.0,
+        "separation_px": 8.0,
+        "retention_ratio": 0.7964108649603414
+      },
+      {
+        "radius": 50.0,
+        "degree": 11.0,
+        "separation_px": 16.0,
+        "retention_ratio": 1.1919816852475607
+      },
+      {
+        "radius": 50.0,
+        "degree": 11.0,
+        "separation_px": 32.0,
+        "retention_ratio": 0.9776128711902364
+      },
+      {
+        "radius": 64.0,
+        "degree": 11.0,
+        "separation_px": 1.0,
+        "retention_ratio": 0.04531043804884975
+      },
+      {
+        "radius": 64.0,
+        "degree": 11.0,
+        "separation_px": 2.0,
+        "retention_ratio": 0.10167736537723947
+      },
+      {
+        "radius": 64.0,
+        "degree": 11.0,
+        "separation_px": 4.0,
+        "retention_ratio": 0.2419849265917851
+      },
+      {
+        "radius": 64.0,
+        "degree": 11.0,
+        "separation_px": 8.0,
+        "retention_ratio": 0.5837121148972364
+      },
+      {
+        "radius": 64.0,
+        "degree": 11.0,
+        "separation_px": 16.0,
+        "retention_ratio": 1.1040227188833605
+      },
+      {
+        "radius": 64.0,
+        "degree": 11.0,
+        "separation_px": 32.0,
+        "retention_ratio": 0.9735247122029672
+      },
+      {
+        "radius": 80.0,
+        "degree": 11.0,
+        "separation_px": 1.0,
+        "retention_ratio": 0.029651738083166915
+      },
+      {
+        "radius": 80.0,
+        "degree": 11.0,
+        "separation_px": 2.0,
+        "retention_ratio": 0.06698916123697042
+      },
+      {
+        "radius": 80.0,
+        "degree": 11.0,
+        "separation_px": 4.0,
+        "retention_ratio": 0.16232093090295407
+      },
+      {
+        "radius": 80.0,
+        "degree": 11.0,
+        "separation_px": 8.0,
+        "retention_ratio": 0.4134822291637507
+      },
+      {
+        "radius": 80.0,
+        "degree": 11.0,
+        "separation_px": 16.0,
+        "retention_ratio": 0.9422348995625273
+      },
+      {
+        "radius": 80.0,
+        "degree": 11.0,
+        "separation_px": 32.0,
+        "retention_ratio": 1.1647528268436946
+      },
+      {
+        "radius": 100.0,
+        "degree": 11.0,
+        "separation_px": 1.0,
+        "retention_ratio": 0.019226056327482508
+      },
+      {
+        "radius": 100.0,
+        "degree": 11.0,
+        "separation_px": 2.0,
+        "retention_ratio": 0.04361831069815489
+      },
+      {
+        "radius": 100.0,
+        "degree": 11.0,
+        "separation_px": 4.0,
+        "retention_ratio": 0.10689531009387596
+      },
+      {
+        "radius": 100.0,
+        "degree": 11.0,
+        "separation_px": 8.0,
+        "retention_ratio": 0.28186513255686335
+      },
+      {
+        "radius": 100.0,
+        "degree": 11.0,
+        "separation_px": 16.0,
+        "retention_ratio": 0.7231224621547491
+      },
+      {
+        "radius": 100.0,
+        "degree": 11.0,
+        "separation_px": 32.0,
+        "retention_ratio": 1.2009179537123738
+      },
+      {
+        "radius": 128.0,
+        "degree": 11.0,
+        "separation_px": 1.0,
+        "retention_ratio": 0.009869095330264933
+      },
+      {
+        "radius": 128.0,
+        "degree": 11.0,
+        "separation_px": 2.0,
+        "retention_ratio": 0.022474330390855033
+      },
+      {
+        "radius": 128.0,
+        "degree": 11.0,
+        "separation_px": 4.0,
+        "retention_ratio": 0.05565242312930553
+      },
+      {
+        "radius": 128.0,
+        "degree": 11.0,
+        "separation_px": 8.0,
+        "retention_ratio": 0.1511287531444946
+      },
+      {
+        "radius": 128.0,
+        "degree": 11.0,
+        "separation_px": 16.0,
+        "retention_ratio": 0.4278786632770934
+      },
+      {
+        "radius": 128.0,
+        "degree": 11.0,
+        "separation_px": 32.0,
+        "retention_ratio": 1.0090428412552828
+      }
+    ],
+    "csv_path": "/tmp/edge-detection-filter-critique-sec75max/papers/journal_paper/figures/data/sec07_multiscale_and_clutter/sec07_close_edge_clutter_retention.csv",
+    "threshold_by_radius": [
+      {
+        "radius": 2,
+        "degree": 3,
+        "resolution_threshold_px": 4
+      },
+      {
+        "radius": 3,
+        "degree": 5,
+        "resolution_threshold_px": 4
+      },
+      {
+        "radius": 4,
+        "degree": 5,
+        "resolution_threshold_px": 4
+      },
+      {
+        "radius": 5,
+        "degree": 9,
+        "resolution_threshold_px": 4
+      },
+      {
+        "radius": 7,
+        "degree": 9,
+        "resolution_threshold_px": 4
+      },
+      {
+        "radius": 9,
+        "degree": 11,
+        "resolution_threshold_px": 4
+      },
+      {
+        "radius": 11,
+        "degree": 11,
+        "resolution_threshold_px": 4
+      },
+      {
+        "radius": 13,
+        "degree": 11,
+        "resolution_threshold_px": 4
+      },
+      {
+        "radius": 16,
+        "degree": 11,
+        "resolution_threshold_px": 4
+      },
+      {
+        "radius": 20,
+        "degree": 11,
+        "resolution_threshold_px": 8
+      },
+      {
+        "radius": 25,
+        "degree": 11,
+        "resolution_threshold_px": 8
+      },
+      {
+        "radius": 32,
+        "degree": 11,
+        "resolution_threshold_px": 8
+      },
+      {
+        "radius": 40,
+        "degree": 11,
+        "resolution_threshold_px": 8
+      },
+      {
+        "radius": 50,
+        "degree": 11,
+        "resolution_threshold_px": 16
+      },
+      {
+        "radius": 64,
+        "degree": 11,
+        "resolution_threshold_px": 16
+      },
+      {
+        "radius": 80,
+        "degree": 11,
+        "resolution_threshold_px": 16
+      },
+      {
+        "radius": 100,
+        "degree": 11,
+        "resolution_threshold_px": 32
+      },
+      {
+        "radius": 128,
+        "degree": 11,
+        "resolution_threshold_px": 32
+      }
+    ]
+  }
+}
