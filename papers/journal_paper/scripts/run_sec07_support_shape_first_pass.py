@@ -23,7 +23,14 @@ if str(SRC) not in sys.path:
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from square_support_sg import build_design_matrix, build_square_support_kernels, design_condition_number
+from square_support_sg import (
+    SupportKernels,
+    build_polygon_support_kernels,
+    build_square_support_kernels,
+    build_design_matrix,
+    design_condition_number,
+    regular_polygon_vertices,
+)
 from wvf.radius import build_wvf_radius_kernels
 
 
@@ -33,27 +40,31 @@ IMAGE_SIZE = 1024
 ANGLE_STEP_DEG = 0.5
 PHASE_STEP_PX = 0.25
 PHASE_COUNT = 4
-DISK_RADIUS = 15
+BOUNDING_RADIUS = 15
 SQUARE_HALF_SIDE = 15
 DEGREE = 3
 NORMALIZE_COORDS = True
+SHAPE_ORDER = ("triangle", "square", "diamond", "hexagon", "octagon", "disk")
 
 
 @dataclass(frozen=True)
 class ShapeResponseSpec:
     name: str
     label: str
-    support_value: int
+    support_value: float
     support_key: str
+    symmetry_order: int
     kernel_x: np.ndarray
     kernel_y: np.ndarray
     offsets_xy: np.ndarray
+    support_cardinality: int
     design_matrix_shape: tuple[int, int]
     kappa_design_matrix: float
 
     @property
     def slug(self) -> str:
-        return f"{self.name}_{self.support_key}{self.support_value}_d{DEGREE}_normalized"
+        value_label = str(int(self.support_value))
+        return f"{self.name}_{self.support_key}{value_label}_d{DEGREE}_normalized"
 
 
 def _angles_deg(step_deg: float) -> np.ndarray:
@@ -74,52 +85,101 @@ def _render_smoothed_step(
     return 0.5 * float(contrast) * (1.0 + np.tanh((projection - float(phase_px)) / float(width_px)))
 
 
-def _shape_specs(radius: int, half_side: int, degree: int, normalize_coords: bool) -> tuple[ShapeResponseSpec, ShapeResponseSpec]:
+def _spec_from_generic(
+    kernels: SupportKernels,
+    label: str,
+    support_key: str,
+    symmetry_order: int,
+) -> ShapeResponseSpec:
+    return ShapeResponseSpec(
+        name=kernels.support_name,
+        label=label,
+        support_value=float(kernels.support_value),
+        support_key=support_key,
+        symmetry_order=int(symmetry_order),
+        kernel_x=np.asarray(kernels.kernel_x, dtype=np.float64),
+        kernel_y=np.asarray(kernels.kernel_y, dtype=np.float64),
+        offsets_xy=np.asarray(kernels.offsets_xy, dtype=np.float64),
+        support_cardinality=int(kernels.support_cardinality),
+        design_matrix_shape=(
+            int(kernels.design_matrix_shape[0]),
+            int(kernels.design_matrix_shape[1]),
+        ),
+        kappa_design_matrix=float(kernels.kappa_design_matrix),
+    )
+
+
+def _disk_spec(radius: int, degree: int, normalize_coords: bool) -> ShapeResponseSpec:
     disk = build_wvf_radius_kernels(radius=radius, order=degree, normalize_coords=normalize_coords)
     disk_design = build_design_matrix(
         disk.offsets_xy,
         degree=degree,
         normalize_radius=float(radius) if normalize_coords else None,
     )
+    return ShapeResponseSpec(
+        name="disk",
+        label="Disk",
+        support_value=float(radius),
+        support_key="r",
+        symmetry_order=999,
+        kernel_x=np.asarray(disk.kernel_x, dtype=np.float64),
+        kernel_y=np.asarray(disk.kernel_y, dtype=np.float64),
+        offsets_xy=np.asarray(disk.offsets_xy, dtype=np.float64),
+        support_cardinality=int(disk.offsets_xy.shape[0]),
+        design_matrix_shape=(int(disk_design.shape[0]), int(disk_design.shape[1])),
+        kappa_design_matrix=design_condition_number(disk_design),
+    )
+
+
+def _shape_specs(radius: int, half_side: int, degree: int, normalize_coords: bool) -> tuple[ShapeResponseSpec, ...]:
     square = build_square_support_kernels(
         half_side=half_side,
         degree=degree,
         normalize_coords=normalize_coords,
     )
-    return (
-        ShapeResponseSpec(
-            name="disk",
-            label="Disk",
-            support_value=radius,
-            support_key="r",
-            kernel_x=np.asarray(disk.kernel_x, dtype=np.float64),
-            kernel_y=np.asarray(disk.kernel_y, dtype=np.float64),
-            offsets_xy=np.asarray(disk.offsets_xy, dtype=np.float64),
-            design_matrix_shape=(int(disk_design.shape[0]), int(disk_design.shape[1])),
-            kappa_design_matrix=design_condition_number(disk_design),
-        ),
-        ShapeResponseSpec(
-            name="square",
-            label="Square",
-            support_value=half_side,
-            support_key="h",
-            kernel_x=np.asarray(square.kernel_x, dtype=np.float64),
-            kernel_y=np.asarray(square.kernel_y, dtype=np.float64),
-            offsets_xy=np.asarray(square.offsets_xy, dtype=np.float64),
-            design_matrix_shape=(
-                int(square.offsets_xy.shape[0]),
-                int(build_design_matrix(
-                    square.offsets_xy,
-                    degree=degree,
-                    normalize_radius=float(half_side) if normalize_coords else None,
-                ).shape[1]),
-            ),
-            kappa_design_matrix=float(square.kappa_design_matrix),
-        ),
+    triangle = build_polygon_support_kernels(
+        name="triangle",
+        vertices_xy=regular_polygon_vertices(3, radius, rotation_deg=90.0),
+        bounding_radius=radius,
+        degree=degree,
+        normalize_coords=normalize_coords,
     )
+    diamond = build_polygon_support_kernels(
+        name="diamond",
+        vertices_xy=regular_polygon_vertices(4, radius, rotation_deg=0.0),
+        bounding_radius=radius,
+        degree=degree,
+        normalize_coords=normalize_coords,
+    )
+    hexagon = build_polygon_support_kernels(
+        name="hexagon",
+        vertices_xy=regular_polygon_vertices(6, radius, rotation_deg=0.0),
+        bounding_radius=radius,
+        degree=degree,
+        normalize_coords=normalize_coords,
+    )
+    octagon = build_polygon_support_kernels(
+        name="octagon",
+        vertices_xy=regular_polygon_vertices(8, radius, rotation_deg=0.0),
+        bounding_radius=radius,
+        degree=degree,
+        normalize_coords=normalize_coords,
+    )
+    specs = (
+        _spec_from_generic(triangle, label="Triangle", support_key="r", symmetry_order=3),
+        _spec_from_generic(square, label="Square", support_key="h", symmetry_order=4),
+        _spec_from_generic(diamond, label="Diamond", support_key="r", symmetry_order=4),
+        _spec_from_generic(hexagon, label="Hexagon", support_key="r", symmetry_order=6),
+        _spec_from_generic(octagon, label="Octagon", support_key="r", symmetry_order=8),
+        _disk_spec(radius=radius, degree=degree, normalize_coords=normalize_coords),
+    )
+    return tuple(sorted(specs, key=lambda spec: SHAPE_ORDER.index(spec.name)))
 
 
-def _fft_support(kernel_shapes: list[tuple[int, int]], image_shape: tuple[int, int]) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
+def _fft_support(
+    kernel_shapes: list[tuple[int, int]],
+    image_shape: tuple[int, int],
+) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int]]:
     max_kh = max(shape[0] for shape in kernel_shapes)
     max_kw = max(shape[1] for shape in kernel_shapes)
     pad_y = max_kh // 2
@@ -191,13 +251,12 @@ def run_experiment(
     width_px: float,
     workers: int,
 ) -> dict[str, Path]:
-    disk_spec, square_spec = _shape_specs(
-        radius=DISK_RADIUS,
+    specs = _shape_specs(
+        radius=BOUNDING_RADIUS,
         half_side=SQUARE_HALF_SIDE,
         degree=DEGREE,
         normalize_coords=NORMALIZE_COORDS,
     )
-    specs = (disk_spec, square_spec)
 
     image_shape = (int(image_size), int(image_size))
     kernel_shapes = [spec.kernel_x.shape for spec in specs]
@@ -254,9 +313,9 @@ def run_experiment(
 
     outputs: dict[str, Path] = {}
     overlay_payload = {
-        "title": "Section 7.3 support-shape first pass",
-        "disk": None,
-        "square": None,
+        "title": "Section 7.3 support-shape six-shape sweep",
+        "shape_order": list(SHAPE_ORDER),
+        "shapes": {},
     }
 
     for spec in specs:
@@ -279,6 +338,8 @@ def run_experiment(
                 "normalize_coords": NORMALIZE_COORDS,
                 "support_key": spec.support_key,
                 "support_value": spec.support_value,
+                "support_cardinality": spec.support_cardinality,
+                "symmetry_order": spec.symmetry_order,
                 "anisotropy_ratio": anisotropy_ratio,
                 "theta_max_deg": float(theta_values[max_index]),
                 "theta_min_deg": float(theta_values[min_index]),
@@ -298,10 +359,11 @@ def run_experiment(
                 "curve": records,
             },
         )
-        overlay_payload[spec.name] = {
-            "json_path": str(json_path),
+        overlay_payload["shapes"][spec.name] = {
             "label": spec.label,
+            "symmetry_order": spec.symmetry_order,
             "anisotropy_ratio": anisotropy_ratio,
+            "support_cardinality": spec.support_cardinality,
             "curve": records,
         }
         outputs[f"{spec.name}_csv"] = csv_path
@@ -310,7 +372,8 @@ def run_experiment(
             f"{spec.label}: anisotropy={anisotropy_ratio:.6f}, "
             f"theta_max={theta_values[max_index]:.1f} deg, "
             f"theta_min={theta_values[min_index]:.1f} deg, "
-            f"kappa={spec.kappa_design_matrix:.6e}"
+            f"kappa={spec.kappa_design_matrix:.6e}, "
+            f"cardinality={spec.support_cardinality}"
         )
 
     _write_json(figure_data_path, overlay_payload)
@@ -330,17 +393,17 @@ def compile_plot(figure_src: Path, figure_pdf: Path) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the first Section 7.3 support-shape comparison.")
+    parser = argparse.ArgumentParser(description="Run the Section 7.3 six-shape support comparison.")
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=ROOT / "papers" / "journal_paper" / "figures" / "data" / "sec07_support_shape",
+        default=ROOT / "papers" / "journal_paper" / "figures" / "data" / "sec07_support_shape_six_shape",
         help="Directory for CSV and JSON outputs.",
     )
     parser.add_argument(
         "--overlay-json",
         type=Path,
-        default=ROOT / "papers" / "journal_paper" / "figures" / "data" / "sec07_support_shape" / "sec07_support_shape_overlay_r15_h15_d3_normalized.json",
+        default=ROOT / "papers" / "journal_paper" / "figures" / "data" / "sec07_support_shape_six_shape" / "sec07_support_shape_overlay_six_shape_r15_d3_normalized.json",
         help="Path for the combined overlay-plot JSON payload.",
     )
     parser.add_argument(
@@ -412,8 +475,8 @@ def main() -> int:
     )
 
     if args.compile_plot:
-        figure_src = ROOT / "papers" / "journal_paper" / "figures" / "cetz_src" / "fig_sec07_support_shape_disk_r15_square_h15_d3_normalized.typ"
-        figure_pdf = ROOT / "papers" / "journal_paper" / "figures" / "fig_sec07_support_shape_disk_r15_square_h15_d3_normalized.pdf"
+        figure_src = ROOT / "papers" / "journal_paper" / "figures" / "cetz_src" / "fig_sec07_support_shape_six_shape_r15_d3_normalized.typ"
+        figure_pdf = ROOT / "papers" / "journal_paper" / "figures" / "fig_sec07_support_shape_six_shape_r15_d3_normalized.pdf"
         compile_plot(figure_src, figure_pdf)
         outputs["overlay_pdf"] = figure_pdf
 
