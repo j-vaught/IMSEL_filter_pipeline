@@ -887,8 +887,10 @@ def fft_gradients_with_kernel(
     device_index: int | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     img = _as_float_image(image)
-    kernel_x32 = np.ascontiguousarray(kernel_x, dtype=np.float32)
-    kernel_y32 = np.ascontiguousarray(kernel_y, dtype=np.float32)
+    kernel_x_arr = np.asarray(kernel_x, dtype=np.float32)
+    kernel_y_arr = np.asarray(kernel_y, dtype=np.float32)
+    kernel_x32 = np.ascontiguousarray(np.flip(kernel_x_arr, axis=(0, 1)))
+    kernel_y32 = np.ascontiguousarray(np.flip(kernel_y_arr, axis=(0, 1)))
     if kernel_x32.ndim != 2 or kernel_y32.ndim != 2:
         raise ValueError("kernel_x and kernel_y must be 2D arrays")
     if kernel_x32.shape != kernel_y32.shape:
