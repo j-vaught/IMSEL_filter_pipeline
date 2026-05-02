@@ -1,0 +1,111 @@
+{
+  "title": "Section 7.10 sub-pixel localisation accuracy",
+  "subtitle": "Disk support, (r, d) = (9, 3), normalize_coords = True, batched local-patch FFT evaluation",
+  "config": {
+    "radius": 9,
+    "degree": 3,
+    "normalize_coords": true,
+    "patch_size_px": 257,
+    "orientation_step_deg": 5.0,
+    "phase_count": 16,
+    "phase_step_px": 0.0625,
+    "snr_db_values": [
+      "clean",
+      "30 dB",
+      "20 dB",
+      "10 dB"
+    ],
+    "noise_draws": 100,
+    "batch_cases": 64,
+    "contrast": 1.0,
+    "edge_width_px": 1.5,
+    "fft_backend": "vkfft",
+    "device_index": null,
+    "apparatus_reduction": "The subsection is evaluated on centered local patches rather than full 1024^2 frames because the localisation metric depends only on the normal profile near the target edge. Reflection padding is preserved on each patch."
+  },
+  "csv_path": "/tmp/edge-detection-filter-critique-sec75max/papers/journal_paper/figures/data/sec07_subpixel_localization/sec07_subpixel_localization_r9_d3_normalized.csv",
+  "rms_by_snr": [
+    {
+      "snr_db": "clean",
+      "localisation_rms": 0.14461041709190242
+    },
+    {
+      "snr_db": "30",
+      "localisation_rms": 0.15254926366504912
+    },
+    {
+      "snr_db": "20",
+      "localisation_rms": 0.178618757350922
+    },
+    {
+      "snr_db": "10",
+      "localisation_rms": 0.3119462349538112
+    }
+  ],
+  "clean_phase_curve": [
+    {
+      "phase_px": 0.0,
+      "mean_localisation_offset": 2.823023213389684e-08
+    },
+    {
+      "phase_px": 0.0625,
+      "mean_localisation_offset": -0.02135714530535621
+    },
+    {
+      "phase_px": 0.125,
+      "mean_localisation_offset": -0.06129408994744994
+    },
+    {
+      "phase_px": 0.1875,
+      "mean_localisation_offset": -0.1397349351110022
+    },
+    {
+      "phase_px": 0.25,
+      "mean_localisation_offset": -0.18164395226340674
+    },
+    {
+      "phase_px": 0.3125,
+      "mean_localisation_offset": -0.18219388163720518
+    },
+    {
+      "phase_px": 0.375,
+      "mean_localisation_offset": -0.1830743795944906
+    },
+    {
+      "phase_px": 0.4375,
+      "mean_localisation_offset": -0.1848338785866362
+    },
+    {
+      "phase_px": 0.5,
+      "mean_localisation_offset": -0.15251177356698997
+    },
+    {
+      "phase_px": 0.5625,
+      "mean_localisation_offset": 0.02329869656638546
+    },
+    {
+      "phase_px": 0.625,
+      "mean_localisation_offset": 0.0849179468784726
+    },
+    {
+      "phase_px": 0.6875,
+      "mean_localisation_offset": 0.12282339496269569
+    },
+    {
+      "phase_px": 0.75,
+      "mean_localisation_offset": 0.14820135118927458
+    },
+    {
+      "phase_px": 0.8125,
+      "mean_localisation_offset": 0.15354647779122757
+    },
+    {
+      "phase_px": 0.875,
+      "mean_localisation_offset": 0.12746554734020216
+    },
+    {
+      "phase_px": 0.9375,
+      "mean_localisation_offset": 0.0932888501989277
+    }
+  ]
+}
