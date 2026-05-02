@@ -98,7 +98,11 @@
             values.push(rec.at("mag_error"))
           }
         }
-        mean-series.push((freq, calc.sum(..values) / values.len()))
+        let total = 0.0
+        for value in values {
+          total += value
+        }
+        mean-series.push((freq, total / values.len()))
       }
 
       for orientation in orientations {
