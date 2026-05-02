@@ -1,0 +1,2983 @@
+{
+  "title": "Section 7.5 polynomial degree first pass",
+  "subtitle": "Disk support, arcs and S-curves, normalize_coords = True, clean local-patch evaluation",
+  "config": {
+    "image_size_px": 1024,
+    "patch_size_px": 257,
+    "apparatus_reduction": "Metrics are measured on centered local patches rather than full 1024^2 frames. The features are isolated, the largest support radius is 25 px, and the evaluation mask is confined to a local tangent-normal neighborhood around the curved edge, so the reduced patch fully contains every neighborhood that can influence the reported errors.",
+    "radii": [
+      5,
+      9,
+      15,
+      25
+    ],
+    "degrees": [
+      1,
+      3,
+      5,
+      7,
+      9
+    ],
+    "curvature_radii_px": [
+      20,
+      50,
+      100,
+      200
+    ],
+    "orientation_step_deg": 5.0,
+    "phase_count": 4,
+    "phase_step_px": 0.25,
+    "contrast": 1.0,
+    "edge_width_px": 1.5,
+    "normalize_coords": true,
+    "variant": "fft",
+    "fft_backend": "vkfft",
+    "device_index": null,
+    "stimuli": {
+      "arc": "Circular-arc level set rendered as 0.5 * (1 + tanh(phi / w)) with exact analytical gradient.",
+      "s_curve": "Odd cubic inflection curve rendered as 0.5 * (1 + tanh(phi / w)) with exact analytical gradient."
+    },
+    "evaluation_mask_definition": "|phi| <= 6 px and |v| <= 2r in the local tangent-normal coordinates.",
+    "csv_metric_average": "CSV rows average metrics over orientations, sub-pixel phases, and both stimulus classes."
+  },
+  "per_radius": {
+    "5": {
+      "radius": 5,
+      "rows": [
+        {
+          "degree": 1,
+          "curvature_radius": 20,
+          "grad_rmse": 0.07160585254749503,
+          "ang_mae": 1.1381394463029644,
+          "mag_bias": -0.0008345630975974692,
+          "kappa": 1.9499439399175795,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 50,
+          "grad_rmse": 0.07104050909665038,
+          "ang_mae": 1.0459715703845853,
+          "mag_bias": -0.000903503563059957,
+          "kappa": 1.9499439399175795,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 100,
+          "grad_rmse": 0.07098193658510997,
+          "ang_mae": 1.0417408090391997,
+          "mag_bias": -0.0008878321783315433,
+          "kappa": 1.9499439399175795,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 200,
+          "grad_rmse": 0.07096516338636372,
+          "ang_mae": 1.0411721997727947,
+          "mag_bias": -0.0008769053576451803,
+          "kappa": 1.9499439399175795,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 20,
+          "grad_rmse": 0.039102618538543424,
+          "ang_mae": 1.9321627791929106,
+          "mag_bias": 0.003629766924109123,
+          "kappa": 52.92060884905058,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 50,
+          "grad_rmse": 0.03873833511484554,
+          "ang_mae": 1.8043822066628197,
+          "mag_bias": 0.003511444750514296,
+          "kappa": 52.92060884905058,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 100,
+          "grad_rmse": 0.038702106539685074,
+          "ang_mae": 1.7759590565803585,
+          "mag_bias": 0.0035221339938579658,
+          "kappa": 52.92060884905058,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 200,
+          "grad_rmse": 0.03869652178916658,
+          "ang_mae": 1.802418089645688,
+          "mag_bias": 0.0035270466677652856,
+          "kappa": 52.92060884905058,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 20,
+          "grad_rmse": 0.019951828280582014,
+          "ang_mae": 7.128046734024811,
+          "mag_bias": 0.0005240920502885466,
+          "kappa": 4077.062833283977,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 50,
+          "grad_rmse": 0.01971845678049066,
+          "ang_mae": 7.425963663782418,
+          "mag_bias": 0.0004591150557149715,
+          "kappa": 4077.062833283977,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 100,
+          "grad_rmse": 0.019702868655513163,
+          "ang_mae": 7.428617227013023,
+          "mag_bias": 0.0004688301387439609,
+          "kappa": 4077.062833283977,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 200,
+          "grad_rmse": 0.019698449343151608,
+          "ang_mae": 7.443608998938787,
+          "mag_bias": 0.00047219082541925,
+          "kappa": 4077.062833283977,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 20,
+          "grad_rmse": 0.008650521741999482,
+          "ang_mae": 0.6880765039356633,
+          "mag_bias": 9.296012864250449e-06,
+          "kappa": 805848.9473834226,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 50,
+          "grad_rmse": 0.008508355905049975,
+          "ang_mae": 0.653906751890701,
+          "mag_bias": 4.6794634893556105e-06,
+          "kappa": 805848.9473834226,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 100,
+          "grad_rmse": 0.008496824857677495,
+          "ang_mae": 0.6511120670395921,
+          "mag_bias": 1.1534268569103424e-05,
+          "kappa": 805848.9473834226,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 200,
+          "grad_rmse": 0.00849214037857805,
+          "ang_mae": 0.6508363870285111,
+          "mag_bias": 1.1763054341265295e-05,
+          "kappa": 805848.9473834226,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 20,
+          "grad_rmse": 0.0030326471383836638,
+          "ang_mae": 0.4703026053808645,
+          "mag_bias": 2.477830897845754e-06,
+          "kappa": 457874811.1320513,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 50,
+          "grad_rmse": 0.0029403546971835718,
+          "ang_mae": 0.43527412192350035,
+          "mag_bias": -1.6047958977220703e-06,
+          "kappa": 457874811.1320513,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 100,
+          "grad_rmse": 0.0029294225231179674,
+          "ang_mae": 0.4309543242541866,
+          "mag_bias": 1.1788083105243171e-06,
+          "kappa": 457874811.1320513,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 200,
+          "grad_rmse": 0.0029258750803779457,
+          "ang_mae": 0.42977133846410864,
+          "mag_bias": 7.122142879248268e-07,
+          "kappa": 457874811.1320513,
+          "rank_deficient_count": 0
+        }
+      ],
+      "records": [
+        {
+          "degree": 1,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 1,
+            "curvature_radius": 20,
+            "grad_rmse": 0.07160585254749503,
+            "ang_mae": 1.1381394463029644,
+            "mag_bias": -0.0008345630975974692,
+            "kappa": 1.9499439399175795,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.07126423118094473,
+            "ang_mae": 1.0154813506225515,
+            "mag_bias": -0.0008009502479329335
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.07194747391404534,
+            "ang_mae": 1.2607975419833772,
+            "mag_bias": -0.000868175947262005
+          },
+          "kappa_design_matrix": 1.9499439399175795,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 1,
+            "curvature_radius": 50,
+            "grad_rmse": 0.07104050909665038,
+            "ang_mae": 1.0459715703845853,
+            "mag_bias": -0.000903503563059957,
+            "kappa": 1.9499439399175795,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.07110769132223364,
+            "ang_mae": 1.0424386711582752,
+            "mag_bias": -0.0009403639933462523
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.07097332687106711,
+            "ang_mae": 1.0495044696108955,
+            "mag_bias": -0.0008666431327736617
+          },
+          "kappa_design_matrix": 1.9499439399175795,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 1,
+            "curvature_radius": 100,
+            "grad_rmse": 0.07098193658510997,
+            "ang_mae": 1.0417408090391997,
+            "mag_bias": -0.0008878321783315433,
+            "kappa": 1.9499439399175795,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.0710212675261047,
+            "ang_mae": 1.0443307946810032,
+            "mag_bias": -0.0009102638381659223
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.07094260564411523,
+            "ang_mae": 1.0391508233973963,
+            "mag_bias": -0.0008654005184971639
+          },
+          "kappa_design_matrix": 1.9499439399175795,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 1,
+            "curvature_radius": 200,
+            "grad_rmse": 0.07096516338636372,
+            "ang_mae": 1.0411721997727947,
+            "mag_bias": -0.0008769053576451803,
+            "kappa": 1.9499439399175795,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.0709974112814862,
+            "ang_mae": 1.0457003267286997,
+            "mag_bias": -0.0008902974366528307
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.07093291549124124,
+            "ang_mae": 1.03664407281689,
+            "mag_bias": -0.0008635132786375295
+          },
+          "kappa_design_matrix": 1.9499439399175795,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 3,
+            "curvature_radius": 20,
+            "grad_rmse": 0.039102618538543424,
+            "ang_mae": 1.9321627791929106,
+            "mag_bias": 0.003629766924109123,
+            "kappa": 52.92060884905058,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.03880616060390954,
+            "ang_mae": 1.5569338192511286,
+            "mag_bias": 0.003587327862690228
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.039399076473177294,
+            "ang_mae": 2.307391739134693,
+            "mag_bias": 0.003672205985528018
+          },
+          "kappa_design_matrix": 52.92060884905058,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 3,
+            "curvature_radius": 50,
+            "grad_rmse": 0.03873833511484554,
+            "ang_mae": 1.8043822066628197,
+            "mag_bias": 0.003511444750514296,
+            "kappa": 52.92060884905058,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.038769779305983736,
+            "ang_mae": 1.821335246796411,
+            "mag_bias": 0.0034871036086289195
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.03870689092370734,
+            "ang_mae": 1.7874291665292281,
+            "mag_bias": 0.0035357858923996724
+          },
+          "kappa_design_matrix": 52.92060884905058,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 3,
+            "curvature_radius": 100,
+            "grad_rmse": 0.038702106539685074,
+            "ang_mae": 1.7759590565803585,
+            "mag_bias": 0.0035221339938579658,
+            "kappa": 52.92060884905058,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.03871779762834197,
+            "ang_mae": 1.7288563736811444,
+            "mag_bias": 0.0035136931510842545
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.03868641545102818,
+            "ang_mae": 1.8230617394795725,
+            "mag_bias": 0.003530574836631677
+          },
+          "kappa_design_matrix": 52.92060884905058,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 3,
+            "curvature_radius": 200,
+            "grad_rmse": 0.03869652178916658,
+            "ang_mae": 1.802418089645688,
+            "mag_bias": 0.0035270466677652856,
+            "kappa": 52.92060884905058,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.03871224937623607,
+            "ang_mae": 1.7952464959262262,
+            "mag_bias": 0.003523884927615164
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.03868079420209708,
+            "ang_mae": 1.8095896833651492,
+            "mag_bias": 0.003530208407915408
+          },
+          "kappa_design_matrix": 52.92060884905058,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 5,
+            "curvature_radius": 20,
+            "grad_rmse": 0.019951828280582014,
+            "ang_mae": 7.128046734024811,
+            "mag_bias": 0.0005240920502885466,
+            "kappa": 4077.062833283977,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.019743851696130358,
+            "ang_mae": 6.73917440606779,
+            "mag_bias": 0.0004792678893320013
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.02015980486503367,
+            "ang_mae": 7.516919061981832,
+            "mag_bias": 0.000568916211245092
+          },
+          "kappa_design_matrix": 4077.062833283977,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 5,
+            "curvature_radius": 50,
+            "grad_rmse": 0.01971845678049066,
+            "ang_mae": 7.425963663782418,
+            "mag_bias": 0.0004591150557149715,
+            "kappa": 4077.062833283977,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.019732879414275244,
+            "ang_mae": 7.3355406140938015,
+            "mag_bias": 0.0004414189165125478
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.019704034146706084,
+            "ang_mae": 7.516386713471032,
+            "mag_bias": 0.0004768111949173953
+          },
+          "kappa_design_matrix": 4077.062833283977,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 5,
+            "curvature_radius": 100,
+            "grad_rmse": 0.019702868655513163,
+            "ang_mae": 7.428617227013023,
+            "mag_bias": 0.0004688301387439609,
+            "kappa": 4077.062833283977,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.01971447719859388,
+            "ang_mae": 7.37647730392191,
+            "mag_bias": 0.0004624313421312038
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.01969126011243245,
+            "ang_mae": 7.4807571501041314,
+            "mag_bias": 0.000475228935356718
+          },
+          "kappa_design_matrix": 4077.062833283977,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 5,
+            "curvature_radius": 200,
+            "grad_rmse": 0.019698449343151608,
+            "ang_mae": 7.443608998938787,
+            "mag_bias": 0.00047219082541925,
+            "kappa": 4077.062833283977,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.01970854678520319,
+            "ang_mae": 7.434709951072343,
+            "mag_bias": 0.00046913859669193384
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.019688351901100028,
+            "ang_mae": 7.452508046805231,
+            "mag_bias": 0.000475243054146566
+          },
+          "kappa_design_matrix": 4077.062833283977,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 7,
+            "curvature_radius": 20,
+            "grad_rmse": 0.008650521741999482,
+            "ang_mae": 0.6880765039356633,
+            "mag_bias": 9.296012864250449e-06,
+            "kappa": 805848.9473834226,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.008544182129822468,
+            "ang_mae": 0.646922521318409,
+            "mag_bias": 6.563375277848507e-06
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.008756861354176495,
+            "ang_mae": 0.7292304865529178,
+            "mag_bias": 1.2028650450652391e-05
+          },
+          "kappa_design_matrix": 805848.9473834226,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 7,
+            "curvature_radius": 50,
+            "grad_rmse": 0.008508355905049975,
+            "ang_mae": 0.653906751890701,
+            "mag_bias": 4.6794634893556105e-06,
+            "kappa": 805848.9473834226,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.00852147048709925,
+            "ang_mae": 0.6548517684785569,
+            "mag_bias": -2.3702257414991047e-06
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.0084952413230007,
+            "ang_mae": 0.6529617353028453,
+            "mag_bias": 1.1729152720210327e-05
+          },
+          "kappa_design_matrix": 805848.9473834226,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 7,
+            "curvature_radius": 100,
+            "grad_rmse": 0.008496824857677495,
+            "ang_mae": 0.6511120670395921,
+            "mag_bias": 1.1534268569103424e-05,
+            "kappa": 805848.9473834226,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.008505350509069488,
+            "ang_mae": 0.6554920348782551,
+            "mag_bias": 1.142999882626063e-05
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.008488299206285502,
+            "ang_mae": 0.6467320992009291,
+            "mag_bias": 1.1638538311946216e-05
+          },
+          "kappa_design_matrix": 805848.9473834226,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 7,
+            "curvature_radius": 200,
+            "grad_rmse": 0.00849214037857805,
+            "ang_mae": 0.6508363870285111,
+            "mag_bias": 1.1763054341265295e-05,
+            "kappa": 805848.9473834226,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.00849735736075366,
+            "ang_mae": 0.6564655541394148,
+            "mag_bias": 1.1870457082538958e-05
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.008486923396402439,
+            "ang_mae": 0.6452072199176074,
+            "mag_bias": 1.1655651599991633e-05
+          },
+          "kappa_design_matrix": 805848.9473834226,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 9,
+            "curvature_radius": 20,
+            "grad_rmse": 0.0030326471383836638,
+            "ang_mae": 0.4703026053808645,
+            "mag_bias": 2.477830897845754e-06,
+            "kappa": 457874811.1320513,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.003011750414577246,
+            "ang_mae": 0.4591861163147424,
+            "mag_bias": 2.504282248671919e-06
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.003053543862190082,
+            "ang_mae": 0.48141909444698655,
+            "mag_bias": 2.451379547019588e-06
+          },
+          "kappa_design_matrix": 457874811.1320513,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 9,
+            "curvature_radius": 50,
+            "grad_rmse": 0.0029403546971835718,
+            "ang_mae": 0.43527412192350035,
+            "mag_bias": -1.6047958977220703e-06,
+            "kappa": 457874811.1320513,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.0029536167204091005,
+            "ang_mae": 0.43820442964708683,
+            "mag_bias": -3.6086807254857778e-06
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.002927092673958042,
+            "ang_mae": 0.4323438141999138,
+            "mag_bias": 3.9908893004163743e-07
+          },
+          "kappa_design_matrix": 457874811.1320513,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 9,
+            "curvature_radius": 100,
+            "grad_rmse": 0.0029294225231179674,
+            "ang_mae": 0.4309543242541866,
+            "mag_bias": 1.1788083105243171e-06,
+            "kappa": 457874811.1320513,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.0029350716244979183,
+            "ang_mae": 0.4349288384202269,
+            "mag_bias": 1.9930818709277168e-06
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.002923773421738016,
+            "ang_mae": 0.4269798100881463,
+            "mag_bias": 3.645347501209173e-07
+          },
+          "kappa_design_matrix": 457874811.1320513,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 9,
+            "curvature_radius": 200,
+            "grad_rmse": 0.0029258750803779457,
+            "ang_mae": 0.42977133846410864,
+            "mag_bias": 7.122142879248268e-07,
+            "kappa": 457874811.1320513,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.002928580435806625,
+            "ang_mae": 0.434017393911735,
+            "mag_bias": 1.069740730429459e-06
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.0029231697249492666,
+            "ang_mae": 0.42552528301648224,
+            "mag_bias": 3.54687845420195e-07
+          },
+          "kappa_design_matrix": 457874811.1320513,
+          "rank_deficient_count": 0,
+          "support_cardinality": 80
+        }
+      ],
+      "csv_path": "/tmp/edge-detection-filter-critique-sec75deg/papers/journal_paper/figures/data/sec07_degree_sweep_curvature/sec07_degree_sweep_curvature_r5_d1_d9_normalized.csv"
+    },
+    "9": {
+      "radius": 9,
+      "rows": [
+        {
+          "degree": 1,
+          "curvature_radius": 20,
+          "grad_rmse": 0.10115680317175046,
+          "ang_mae": 1.3472407860983218,
+          "mag_bias": -0.012144787197000864,
+          "kappa": 2.000980536412292,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 50,
+          "grad_rmse": 0.09681071824617714,
+          "ang_mae": 0.25672009061994916,
+          "mag_bias": -0.010672185619711528,
+          "kappa": 2.000980536412292,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 100,
+          "grad_rmse": 0.09665855774919822,
+          "ang_mae": 0.17860171153132753,
+          "mag_bias": -0.010629809193014325,
+          "kappa": 2.000980536412292,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 200,
+          "grad_rmse": 0.09660882715951556,
+          "ang_mae": 0.17150922948685346,
+          "mag_bias": -0.010589697700449853,
+          "kappa": 2.000980536412292,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 20,
+          "grad_rmse": 0.07766416019071808,
+          "ang_mae": 1.3464103966217564,
+          "mag_bias": 0.007001607959219651,
+          "kappa": 56.31583710271512,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 50,
+          "grad_rmse": 0.07285744198013787,
+          "ang_mae": 0.5538864840074527,
+          "mag_bias": 0.005872252030019513,
+          "kappa": 56.31583710271512,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 100,
+          "grad_rmse": 0.07271176274508506,
+          "ang_mae": 0.5087938321269085,
+          "mag_bias": 0.005827182561819636,
+          "kappa": 56.31583710271512,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 200,
+          "grad_rmse": 0.07268939823981589,
+          "ang_mae": 0.5052657811481137,
+          "mag_bias": 0.005865045986092153,
+          "kappa": 56.31583710271512,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 20,
+          "grad_rmse": 0.0571677999503109,
+          "ang_mae": 2.4006663318014505,
+          "mag_bias": 0.009755635658452484,
+          "kappa": 4698.555369906764,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 50,
+          "grad_rmse": 0.052698106361471,
+          "ang_mae": 1.7175546279811327,
+          "mag_bias": 0.008669764338458128,
+          "kappa": 4698.555369906764,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 100,
+          "grad_rmse": 0.05257203816595402,
+          "ang_mae": 1.7861946173566627,
+          "mag_bias": 0.00862563224361437,
+          "kappa": 4698.555369906764,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 200,
+          "grad_rmse": 0.05256414576911766,
+          "ang_mae": 1.8058134477673553,
+          "mag_bias": 0.008664314258666928,
+          "kappa": 4698.555369906764,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 20,
+          "grad_rmse": 0.041344162248622675,
+          "ang_mae": 2.6454331383966587,
+          "mag_bias": 0.00944694913221315,
+          "kappa": 782704.5839356713,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 50,
+          "grad_rmse": 0.03734340878245742,
+          "ang_mae": 1.909338665883122,
+          "mag_bias": 0.008084302897888734,
+          "kappa": 782704.5839356713,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 100,
+          "grad_rmse": 0.03723582335276288,
+          "ang_mae": 1.7012376152268176,
+          "mag_bias": 0.00803263417498393,
+          "kappa": 782704.5839356713,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 200,
+          "grad_rmse": 0.037229243925361206,
+          "ang_mae": 1.614807382344374,
+          "mag_bias": 0.008050830496317381,
+          "kappa": 782704.5839356713,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 20,
+          "grad_rmse": 0.028826369258087212,
+          "ang_mae": 5.199928808220605,
+          "mag_bias": 0.005504186046248747,
+          "kappa": 234765381.82436222,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 50,
+          "grad_rmse": 0.025394749152278778,
+          "ang_mae": 4.497255395241662,
+          "mag_bias": 0.004122106376116633,
+          "kappa": 234765381.82436222,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 100,
+          "grad_rmse": 0.02531091273213418,
+          "ang_mae": 3.933950563497704,
+          "mag_bias": 0.004084295956577495,
+          "kappa": 234765381.82436222,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 200,
+          "grad_rmse": 0.025306638114300235,
+          "ang_mae": 3.68589004363236,
+          "mag_bias": 0.004087095677321863,
+          "kappa": 234765381.82436222,
+          "rank_deficient_count": 0
+        }
+      ],
+      "records": [
+        {
+          "degree": 1,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 1,
+            "curvature_radius": 20,
+            "grad_rmse": 0.10115680317175046,
+            "ang_mae": 1.3472407860983218,
+            "mag_bias": -0.012144787197000864,
+            "kappa": 2.000980536412292,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.0968931054840268,
+            "ang_mae": 0.17083413477690168,
+            "mag_bias": -0.010415761418084
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.10542050085947414,
+            "ang_mae": 2.523647437419742,
+            "mag_bias": -0.013873812975917728
+          },
+          "kappa_design_matrix": 2.000980536412292,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 1,
+            "curvature_radius": 50,
+            "grad_rmse": 0.09681071824617714,
+            "ang_mae": 0.25672009061994916,
+            "mag_bias": -0.010672185619711528,
+            "kappa": 2.000980536412292,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.09679131168480076,
+            "ang_mae": 0.17077539218753596,
+            "mag_bias": -0.010702325225706466
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.09683012480755354,
+            "ang_mae": 0.3426647890523623,
+            "mag_bias": -0.01064204601371659
+          },
+          "kappa_design_matrix": 2.000980536412292,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 1,
+            "curvature_radius": 100,
+            "grad_rmse": 0.09665855774919822,
+            "ang_mae": 0.17860171153132753,
+            "mag_bias": -0.010629809193014325,
+            "kappa": 2.000980536412292,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.09678807734596503,
+            "ang_mae": 0.17146094670541037,
+            "mag_bias": -0.010733870821367135
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.09652903815243143,
+            "ang_mae": 0.18574247635724472,
+            "mag_bias": -0.010525747564661517
+          },
+          "kappa_design_matrix": 2.000980536412292,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 1,
+            "curvature_radius": 200,
+            "grad_rmse": 0.09660882715951556,
+            "ang_mae": 0.17150922948685346,
+            "mag_bias": -0.010589697700449853,
+            "kappa": 2.000980536412292,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.09669386634801093,
+            "ang_mae": 0.17147139946510728,
+            "mag_bias": -0.010644573397849915
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.0965237879710202,
+            "ang_mae": 0.17154705950859966,
+            "mag_bias": -0.01053482200304979
+          },
+          "kappa_design_matrix": 2.000980536412292,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 3,
+            "curvature_radius": 20,
+            "grad_rmse": 0.07766416019071808,
+            "ang_mae": 1.3464103966217564,
+            "mag_bias": 0.007001607959219651,
+            "kappa": 56.31583710271512,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.07341389263182384,
+            "ang_mae": 0.5786910315500086,
+            "mag_bias": 0.007483878677563998
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.08191442774961231,
+            "ang_mae": 2.1141297616935044,
+            "mag_bias": 0.006519337240875307
+          },
+          "kappa_design_matrix": 56.31583710271512,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 3,
+            "curvature_radius": 50,
+            "grad_rmse": 0.07285744198013787,
+            "ang_mae": 0.5538864840074527,
+            "mag_bias": 0.005872252030019513,
+            "kappa": 56.31583710271512,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.07280841232306288,
+            "ang_mae": 0.5520613268266241,
+            "mag_bias": 0.005849464908923116
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.07290647163721285,
+            "ang_mae": 0.5557116411882815,
+            "mag_bias": 0.005895039151115908
+          },
+          "kappa_design_matrix": 56.31583710271512,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 3,
+            "curvature_radius": 100,
+            "grad_rmse": 0.07271176274508506,
+            "ang_mae": 0.5087938321269085,
+            "mag_bias": 0.005827182561819636,
+            "kappa": 56.31583710271512,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.07279109722545118,
+            "ang_mae": 0.5046922397207616,
+            "mag_bias": 0.0057408187670231715
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.07263242826471894,
+            "ang_mae": 0.5128954245330555,
+            "mag_bias": 0.0059135463566161
+          },
+          "kappa_design_matrix": 56.31583710271512,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 3,
+            "curvature_radius": 200,
+            "grad_rmse": 0.07268939823981589,
+            "ang_mae": 0.5052657811481137,
+            "mag_bias": 0.005865045986092153,
+            "kappa": 56.31583710271512,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.07275151678776838,
+            "ang_mae": 0.5061559268466318,
+            "mag_bias": 0.005812694839004922
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.0726272796918634,
+            "ang_mae": 0.5043756354495957,
+            "mag_bias": 0.005917397133179383
+          },
+          "kappa_design_matrix": 56.31583710271512,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 5,
+            "curvature_radius": 20,
+            "grad_rmse": 0.0571677999503109,
+            "ang_mae": 2.4006663318014505,
+            "mag_bias": 0.009755635658452484,
+            "kappa": 4698.555369906764,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.053336134921782435,
+            "ang_mae": 1.5283580252610336,
+            "mag_bias": 0.010086851843681606
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.060999464978839374,
+            "ang_mae": 3.2729746383418674,
+            "mag_bias": 0.00942441947322336
+          },
+          "kappa_design_matrix": 4698.555369906764,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 5,
+            "curvature_radius": 50,
+            "grad_rmse": 0.052698106361471,
+            "ang_mae": 1.7175546279811327,
+            "mag_bias": 0.008669764338458128,
+            "kappa": 4698.555369906764,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.05264091323213566,
+            "ang_mae": 1.6491012755996555,
+            "mag_bias": 0.008645157036870516
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.05275529949080634,
+            "ang_mae": 1.7860079803626105,
+            "mag_bias": 0.00869437164004574
+          },
+          "kappa_design_matrix": 4698.555369906764,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 5,
+            "curvature_radius": 100,
+            "grad_rmse": 0.05257203816595402,
+            "ang_mae": 1.7861946173566627,
+            "mag_bias": 0.00862563224361437,
+            "kappa": 4698.555369906764,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.05261385792492753,
+            "ang_mae": 1.7759393074628202,
+            "mag_bias": 0.008541974410099878
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.052530218406980515,
+            "ang_mae": 1.796449927250505,
+            "mag_bias": 0.008709290077128859
+          },
+          "kappa_design_matrix": 4698.555369906764,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 5,
+            "curvature_radius": 200,
+            "grad_rmse": 0.05256414576911766,
+            "ang_mae": 1.8058134477673553,
+            "mag_bias": 0.008664314258666928,
+            "kappa": 4698.555369906764,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.052604472187586314,
+            "ang_mae": 1.821376037323002,
+            "mag_bias": 0.008620067564988027
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.05252381935064901,
+            "ang_mae": 1.790250858211708,
+            "mag_bias": 0.008708560952345826
+          },
+          "kappa_design_matrix": 4698.555369906764,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 7,
+            "curvature_radius": 20,
+            "grad_rmse": 0.041344162248622675,
+            "ang_mae": 2.6454331383966587,
+            "mag_bias": 0.00944694913221315,
+            "kappa": 782704.5839356713,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.03784028204162718,
+            "ang_mae": 1.7167654891428978,
+            "mag_bias": 0.009067316582703757
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.04484804245561818,
+            "ang_mae": 3.5741007876504196,
+            "mag_bias": 0.009826581681722542
+          },
+          "kappa_design_matrix": 782704.5839356713,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 7,
+            "curvature_radius": 50,
+            "grad_rmse": 0.03734340878245742,
+            "ang_mae": 1.909338665883122,
+            "mag_bias": 0.008084302897888734,
+            "kappa": 782704.5839356713,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.037289025890437845,
+            "ang_mae": 2.085493070616119,
+            "mag_bias": 0.008058160929949874
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.03739779167447699,
+            "ang_mae": 1.7331842611501247,
+            "mag_bias": 0.008110444865827593
+          },
+          "kappa_design_matrix": 782704.5839356713,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 7,
+            "curvature_radius": 100,
+            "grad_rmse": 0.03723582335276288,
+            "ang_mae": 1.7012376152268176,
+            "mag_bias": 0.00803263417498393,
+            "kappa": 782704.5839356713,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.0372577823797118,
+            "ang_mae": 1.7812652811615348,
+            "mag_bias": 0.00797551095726352
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.03721386432581397,
+            "ang_mae": 1.6212099492921004,
+            "mag_bias": 0.008089757392704343
+          },
+          "kappa_design_matrix": 782704.5839356713,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 7,
+            "curvature_radius": 200,
+            "grad_rmse": 0.037229243925361206,
+            "ang_mae": 1.614807382344374,
+            "mag_bias": 0.008050830496317381,
+            "kappa": 782704.5839356713,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.03724991225995163,
+            "ang_mae": 1.6477333687422961,
+            "mag_bias": 0.008010189636731075
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.03720857559077077,
+            "ang_mae": 1.581881395946452,
+            "mag_bias": 0.008091471355903691
+          },
+          "kappa_design_matrix": 782704.5839356713,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 9,
+            "curvature_radius": 20,
+            "grad_rmse": 0.028826369258087212,
+            "ang_mae": 5.199928808220605,
+            "mag_bias": 0.005504186046248747,
+            "kappa": 234765381.82436222,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.025702408111318912,
+            "ang_mae": 4.528918664794271,
+            "mag_bias": 0.004712289491025679
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.031950330404855516,
+            "ang_mae": 5.870938951646941,
+            "mag_bias": 0.006296082601471816
+          },
+          "kappa_design_matrix": 234765381.82436222,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 9,
+            "curvature_radius": 50,
+            "grad_rmse": 0.025394749152278778,
+            "ang_mae": 4.497255395241662,
+            "mag_bias": 0.004122106376116633,
+            "kappa": 234765381.82436222,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.02534790902668572,
+            "ang_mae": 4.865366335523164,
+            "mag_bias": 0.004104578404066409
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.025441589277871837,
+            "ang_mae": 4.1291444549601595,
+            "mag_bias": 0.004139634348166858
+          },
+          "kappa_design_matrix": 234765381.82436222,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 9,
+            "curvature_radius": 100,
+            "grad_rmse": 0.02531091273213418,
+            "ang_mae": 3.933950563497704,
+            "mag_bias": 0.004084295956577495,
+            "kappa": 234765381.82436222,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.0253199521881067,
+            "ang_mae": 4.218898987244166,
+            "mag_bias": 0.004046973729509108
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.02530187327616166,
+            "ang_mae": 3.6490021397512415,
+            "mag_bias": 0.004121618183645882
+          },
+          "kappa_design_matrix": 234765381.82436222,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 9,
+            "curvature_radius": 200,
+            "grad_rmse": 0.025306638114300235,
+            "ang_mae": 3.68589004363236,
+            "mag_bias": 0.004087095677321863,
+            "kappa": 234765381.82436222,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.02531585210090433,
+            "ang_mae": 3.860758949742791,
+            "mag_bias": 0.004054819301917811
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.02529742412769613,
+            "ang_mae": 3.5110211375219285,
+            "mag_bias": 0.004119372052725916
+          },
+          "kappa_design_matrix": 234765381.82436222,
+          "rank_deficient_count": 0,
+          "support_cardinality": 252
+        }
+      ],
+      "csv_path": "/tmp/edge-detection-filter-critique-sec75deg/papers/journal_paper/figures/data/sec07_degree_sweep_curvature/sec07_degree_sweep_curvature_r9_d1_d9_normalized.csv"
+    },
+    "15": {
+      "radius": 15,
+      "rows": [
+        {
+          "degree": 1,
+          "curvature_radius": 20,
+          "grad_rmse": 0.13835159678899023,
+          "ang_mae": 2.08357746698111,
+          "mag_bias": -0.04730782297015341,
+          "kappa": 1.9952212000039546,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 50,
+          "grad_rmse": 0.11041631394548988,
+          "ang_mae": 0.5977548159649548,
+          "mag_bias": -0.03233033177681647,
+          "kappa": 1.9952212000039546,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 100,
+          "grad_rmse": 0.10959561736986512,
+          "ang_mae": 0.2979582421617601,
+          "mag_bias": -0.031870188166985676,
+          "kappa": 1.9952212000039546,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 200,
+          "grad_rmse": 0.10953937143296949,
+          "ang_mae": 0.26945586494728985,
+          "mag_bias": -0.03178385675665331,
+          "kappa": 1.9952212000039546,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 20,
+          "grad_rmse": 0.12370303674984605,
+          "ang_mae": 1.376264690189524,
+          "mag_bias": -0.015998359148893967,
+          "kappa": 56.39722904761618,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 50,
+          "grad_rmse": 0.09673318733268649,
+          "ang_mae": 0.24857743133279347,
+          "mag_bias": -0.004357249444439669,
+          "kappa": 56.39722904761618,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 100,
+          "grad_rmse": 0.09592178024024002,
+          "ang_mae": 0.06586310444831678,
+          "mag_bias": -0.004200004176443182,
+          "kappa": 56.39722904761618,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 200,
+          "grad_rmse": 0.09587214649796381,
+          "ang_mae": 0.046081096440855604,
+          "mag_bias": -0.004173540476762309,
+          "kappa": 56.39722904761618,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 20,
+          "grad_rmse": 0.1106500232556942,
+          "ang_mae": 1.254022050035847,
+          "mag_bias": 0.00034189921598579056,
+          "kappa": 4885.421943951452,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 50,
+          "grad_rmse": 0.08319355990689302,
+          "ang_mae": 0.22237418652877614,
+          "mag_bias": 0.007676591177471326,
+          "kappa": 4885.421943951452,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 100,
+          "grad_rmse": 0.08235428640443611,
+          "ang_mae": 0.09755420399647174,
+          "mag_bias": 0.007618795078802306,
+          "kappa": 4885.421943951452,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 200,
+          "grad_rmse": 0.08229648988610103,
+          "ang_mae": 0.09041736245570572,
+          "mag_bias": 0.007598008068259856,
+          "kappa": 4885.421943951452,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 20,
+          "grad_rmse": 0.09769053729157079,
+          "ang_mae": 1.765160481995028,
+          "mag_bias": 0.006219157505967917,
+          "kappa": 865536.1349130324,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 50,
+          "grad_rmse": 0.06921062893188984,
+          "ang_mae": 0.9183085838067281,
+          "mag_bias": 0.009073649381552642,
+          "kappa": 865536.1349130324,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 100,
+          "grad_rmse": 0.0684062923838715,
+          "ang_mae": 0.8643817723156735,
+          "mag_bias": 0.008953079607402258,
+          "kappa": 865536.1349130324,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 200,
+          "grad_rmse": 0.06834883381428176,
+          "ang_mae": 0.8674464205570008,
+          "mag_bias": 0.008909607819670496,
+          "kappa": 865536.1349130324,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 20,
+          "grad_rmse": 0.08601417285689657,
+          "ang_mae": 1.9641374605056994,
+          "mag_bias": 0.01001351899450096,
+          "kappa": 253200461.44704133,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 50,
+          "grad_rmse": 0.05714679270574463,
+          "ang_mae": 1.1031479862499687,
+          "mag_bias": 0.010637874061182724,
+          "kappa": 253200461.44704133,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 100,
+          "grad_rmse": 0.056418754103823576,
+          "ang_mae": 0.9715503880169629,
+          "mag_bias": 0.010571124896446231,
+          "kappa": 253200461.44704133,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 200,
+          "grad_rmse": 0.05636888267393289,
+          "ang_mae": 0.996203124947435,
+          "mag_bias": 0.010547989045917952,
+          "kappa": 253200461.44704133,
+          "rank_deficient_count": 0
+        }
+      ],
+      "records": [
+        {
+          "degree": 1,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 1,
+            "curvature_radius": 20,
+            "grad_rmse": 0.13835159678899023,
+            "ang_mae": 2.08357746698111,
+            "mag_bias": -0.04730782297015341,
+            "kappa": 1.9952212000039546,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.11034645496556153,
+            "ang_mae": 0.20722097651747046,
+            "mag_bias": -0.034127025100875875
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.1663567386124189,
+            "ang_mae": 3.959933957444749,
+            "mag_bias": -0.06048862083943095
+          },
+          "kappa_design_matrix": 1.9952212000039546,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 1,
+            "curvature_radius": 50,
+            "grad_rmse": 0.11041631394548988,
+            "ang_mae": 0.5977548159649548,
+            "mag_bias": -0.03233033177681647,
+            "kappa": 1.9952212000039546,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.10959845646570178,
+            "ang_mae": 0.2619736564149592,
+            "mag_bias": -0.031877240730509314
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.111234171425278,
+            "ang_mae": 0.9335359755149505,
+            "mag_bias": -0.03278342282312363
+          },
+          "kappa_design_matrix": 1.9952212000039546,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 1,
+            "curvature_radius": 100,
+            "grad_rmse": 0.10959561736986512,
+            "ang_mae": 0.2979582421617601,
+            "mag_bias": -0.031870188166985676,
+            "kappa": 1.9952212000039546,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.10958251882728881,
+            "ang_mae": 0.2654120155957885,
+            "mag_bias": -0.03190824885470955
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.10960871591244142,
+            "ang_mae": 0.33050446872773165,
+            "mag_bias": -0.03183212747926179
+          },
+          "kappa_design_matrix": 1.9952212000039546,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 1,
+            "curvature_radius": 200,
+            "grad_rmse": 0.10953937143296949,
+            "ang_mae": 0.26945586494728985,
+            "mag_bias": -0.03178385675665331,
+            "kappa": 1.9952212000039546,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.10960246222829091,
+            "ang_mae": 0.266103582890361,
+            "mag_bias": -0.03181243178492063
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.10947628063764807,
+            "ang_mae": 0.2728081470042188,
+            "mag_bias": -0.03175528172838597
+          },
+          "kappa_design_matrix": 1.9952212000039546,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 3,
+            "curvature_radius": 20,
+            "grad_rmse": 0.12370303674984605,
+            "ang_mae": 1.376264690189524,
+            "mag_bias": -0.015998359148893967,
+            "kappa": 56.39722904761618,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.09616717494670565,
+            "ang_mae": 0.213362574982964,
+            "mag_bias": -0.0049260670219934645
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.15123889855298644,
+            "ang_mae": 2.539166805396084,
+            "mag_bias": -0.027070651275794468
+          },
+          "kappa_design_matrix": 56.39722904761618,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 3,
+            "curvature_radius": 50,
+            "grad_rmse": 0.09673318733268649,
+            "ang_mae": 0.24857743133279347,
+            "mag_bias": -0.004357249444439669,
+            "kappa": 56.39722904761618,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.09593442098701149,
+            "ang_mae": 0.1097285198888156,
+            "mag_bias": -0.004007698761885545
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.09753195367836148,
+            "ang_mae": 0.3874263427767713,
+            "mag_bias": -0.004706800126993794
+          },
+          "kappa_design_matrix": 56.39722904761618,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 3,
+            "curvature_radius": 100,
+            "grad_rmse": 0.09592178024024002,
+            "ang_mae": 0.06586310444831678,
+            "mag_bias": -0.004200004176443182,
+            "kappa": 56.39722904761618,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.09590176894874353,
+            "ang_mae": 0.06719508686439833,
+            "mag_bias": -0.004204183502075174
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.09594179153173653,
+            "ang_mae": 0.06453112203223521,
+            "mag_bias": -0.00419582485081119
+          },
+          "kappa_design_matrix": 56.39722904761618,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 3,
+            "curvature_radius": 200,
+            "grad_rmse": 0.09587214649796381,
+            "ang_mae": 0.046081096440855604,
+            "mag_bias": -0.004173540476762309,
+            "kappa": 56.39722904761618,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.09592648137095745,
+            "ang_mae": 0.04970751091195413,
+            "mag_bias": -0.004200468089128055
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.09581781162497016,
+            "ang_mae": 0.04245468196975708,
+            "mag_bias": -0.0041466128643965604
+          },
+          "kappa_design_matrix": 56.39722904761618,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 5,
+            "curvature_radius": 20,
+            "grad_rmse": 0.1106500232556942,
+            "ang_mae": 1.254022050035847,
+            "mag_bias": 0.00034189921598579056,
+            "kappa": 4885.421943951452,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.08254296939011047,
+            "ang_mae": 0.19102095414553424,
+            "mag_bias": 0.007286429796813902
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.1387570771212779,
+            "ang_mae": 2.3170231459261594,
+            "mag_bias": -0.006602631364842321
+          },
+          "kappa_design_matrix": 4885.421943951452,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 5,
+            "curvature_radius": 50,
+            "grad_rmse": 0.08319355990689302,
+            "ang_mae": 0.22237418652877614,
+            "mag_bias": 0.007676591177471326,
+            "kappa": 4885.421943951452,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.082363110902611,
+            "ang_mae": 0.11277581149557436,
+            "mag_bias": 0.007782029699316008
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.08402400891117504,
+            "ang_mae": 0.33197256156197796,
+            "mag_bias": 0.007571152655626644
+          },
+          "kappa_design_matrix": 4885.421943951452,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 5,
+            "curvature_radius": 100,
+            "grad_rmse": 0.08235428640443611,
+            "ang_mae": 0.09755420399647174,
+            "mag_bias": 0.007618795078802306,
+            "kappa": 4885.421943951452,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.08233486055729265,
+            "ang_mae": 0.09773290112479859,
+            "mag_bias": 0.007626952493542178
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.08237371225157958,
+            "ang_mae": 0.09737550686814489,
+            "mag_bias": 0.007610637664062435
+          },
+          "kappa_design_matrix": 4885.421943951452,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 5,
+            "curvature_radius": 200,
+            "grad_rmse": 0.08229648988610103,
+            "ang_mae": 0.09041736245570572,
+            "mag_bias": 0.007598008068259856,
+            "kappa": 4885.421943951452,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.08233707393769246,
+            "ang_mae": 0.09331153156064984,
+            "mag_bias": 0.0075626287352460065
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.08225590583450959,
+            "ang_mae": 0.08752319335076161,
+            "mag_bias": 0.00763338740127371
+          },
+          "kappa_design_matrix": 4885.421943951452,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 7,
+            "curvature_radius": 20,
+            "grad_rmse": 0.09769053729157079,
+            "ang_mae": 1.765160481995028,
+            "mag_bias": 0.006219157505967917,
+            "kappa": 865536.1349130324,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.06854691199778319,
+            "ang_mae": 0.6449451552531785,
+            "mag_bias": 0.008785551891407086
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.12683416258535843,
+            "ang_mae": 2.885375808736877,
+            "mag_bias": 0.0036527631205287483
+          },
+          "kappa_design_matrix": 865536.1349130324,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 7,
+            "curvature_radius": 50,
+            "grad_rmse": 0.06921062893188984,
+            "ang_mae": 0.9183085838067281,
+            "mag_bias": 0.009073649381552642,
+            "kappa": 865536.1349130324,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.06838818683467164,
+            "ang_mae": 0.7608463748039733,
+            "mag_bias": 0.009035615780704984
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.07003307102910807,
+            "ang_mae": 1.0757707928094828,
+            "mag_bias": 0.009111682982400301
+          },
+          "kappa_design_matrix": 865536.1349130324,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 7,
+            "curvature_radius": 100,
+            "grad_rmse": 0.0684062923838715,
+            "ang_mae": 0.8643817723156735,
+            "mag_bias": 0.008953079607402258,
+            "kappa": 865536.1349130324,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.06838566265318939,
+            "ang_mae": 0.8461885447579951,
+            "mag_bias": 0.008965283706069799
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.06842692211455363,
+            "ang_mae": 0.8825749998733519,
+            "mag_bias": 0.008940875508734712
+          },
+          "kappa_design_matrix": 865536.1349130324,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 7,
+            "curvature_radius": 200,
+            "grad_rmse": 0.06834883381428176,
+            "ang_mae": 0.8674464205570008,
+            "mag_bias": 0.008909607819670496,
+            "kappa": 865536.1349130324,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.0683737674487926,
+            "ang_mae": 0.8622432703481444,
+            "mag_bias": 0.008866150433377908
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.06832390017977093,
+            "ang_mae": 0.8726495707658574,
+            "mag_bias": 0.008953065205963086
+          },
+          "kappa_design_matrix": 865536.1349130324,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 9,
+            "curvature_radius": 20,
+            "grad_rmse": 0.08601417285689657,
+            "ang_mae": 1.9641374605056994,
+            "mag_bias": 0.01001351899450096,
+            "kappa": 253200461.44704133,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.05651629036954028,
+            "ang_mae": 1.0201590599640282,
+            "mag_bias": 0.010419182010943565
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.11551205534425285,
+            "ang_mae": 2.9081158610473707,
+            "mag_bias": 0.009607855978058352
+          },
+          "kappa_design_matrix": 253200461.44704133,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 9,
+            "curvature_radius": 50,
+            "grad_rmse": 0.05714679270574463,
+            "ang_mae": 1.1031479862499687,
+            "mag_bias": 0.010637874061182724,
+            "kappa": 253200461.44704133,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.056395629432574895,
+            "ang_mae": 0.9936522289512367,
+            "mag_bias": 0.010638169894282104
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.05789795597891439,
+            "ang_mae": 1.2126437435487005,
+            "mag_bias": 0.010637578228083342
+          },
+          "kappa_design_matrix": 253200461.44704133,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 9,
+            "curvature_radius": 100,
+            "grad_rmse": 0.056418754103823576,
+            "ang_mae": 0.9715503880169629,
+            "mag_bias": 0.010571124896446231,
+            "kappa": 253200461.44704133,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.056396569764777235,
+            "ang_mae": 0.9413419646767777,
+            "mag_bias": 0.010575545145975874
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.05644093844286993,
+            "ang_mae": 1.0017588113571483,
+            "mag_bias": 0.01056670464691659
+          },
+          "kappa_design_matrix": 253200461.44704133,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 9,
+            "curvature_radius": 200,
+            "grad_rmse": 0.05636888267393289,
+            "ang_mae": 0.996203124947435,
+            "mag_bias": 0.010547989045917952,
+            "kappa": 253200461.44704133,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.056381412070497815,
+            "ang_mae": 0.9617826479677992,
+            "mag_bias": 0.010501705165522263
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.056356353277367974,
+            "ang_mae": 1.030623601927071,
+            "mag_bias": 0.01059427292631364
+          },
+          "kappa_design_matrix": 253200461.44704133,
+          "rank_deficient_count": 0,
+          "support_cardinality": 708
+        }
+      ],
+      "csv_path": "/tmp/edge-detection-filter-critique-sec75deg/papers/journal_paper/figures/data/sec07_degree_sweep_curvature/sec07_degree_sweep_curvature_r15_d1_d9_normalized.csv"
+    },
+    "25": {
+      "radius": 25,
+      "rows": [
+        {
+          "degree": 1,
+          "curvature_radius": 20,
+          "grad_rmse": 0.25455541880027766,
+          "ang_mae": 2.4147641416140555,
+          "mag_bias": -0.11513487303689066,
+          "kappa": 2.0006533812653884,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 50,
+          "grad_rmse": 0.12696110435237007,
+          "ang_mae": 1.05034057854755,
+          "mag_bias": -0.05675008201471046,
+          "kappa": 2.0006533812653884,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 100,
+          "grad_rmse": 0.11871373415864254,
+          "ang_mae": 0.38437373653997137,
+          "mag_bias": -0.050733349758359955,
+          "kappa": 2.0006533812653884,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 200,
+          "grad_rmse": 0.1183212630399692,
+          "ang_mae": 0.16470086920627072,
+          "mag_bias": -0.050460682121908546,
+          "kappa": 2.0006533812653884,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 20,
+          "grad_rmse": 0.24297725435761375,
+          "ang_mae": 1.268874958821137,
+          "mag_bias": -0.08945781631060092,
+          "kappa": 56.38103302257015,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 50,
+          "grad_rmse": 0.1162328213898322,
+          "ang_mae": 0.5631821196805805,
+          "mag_bias": -0.033167955614459545,
+          "kappa": 56.38103302257015,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 100,
+          "grad_rmse": 0.10858992998671986,
+          "ang_mae": 0.13149776219090006,
+          "mag_bias": -0.02773016368699225,
+          "kappa": 56.38103302257015,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 200,
+          "grad_rmse": 0.10822764072917758,
+          "ang_mae": 0.06843531170312898,
+          "mag_bias": -0.027536335705601662,
+          "kappa": 56.38103302257015,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 20,
+          "grad_rmse": 0.23397351876454073,
+          "ang_mae": 0.9938862046012054,
+          "mag_bias": -0.06934664652874581,
+          "kappa": 4852.546236554276,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 50,
+          "grad_rmse": 0.10807103441601466,
+          "ang_mae": 0.4963839446190932,
+          "mag_bias": -0.015057068448555292,
+          "kappa": 4852.546236554276,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 100,
+          "grad_rmse": 0.10086767000202823,
+          "ang_mae": 0.13178585249647443,
+          "mag_bias": -0.010329151263631377,
+          "kappa": 4852.546236554276,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 200,
+          "grad_rmse": 0.10050727111771193,
+          "ang_mae": 0.09846243388038291,
+          "mag_bias": -0.010195411382314442,
+          "kappa": 4852.546236554276,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 20,
+          "grad_rmse": 0.2256686532502872,
+          "ang_mae": 0.911972513526933,
+          "mag_bias": -0.05359113501020081,
+          "kappa": 867160.7740354043,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 50,
+          "grad_rmse": 0.10047985970488033,
+          "ang_mae": 0.4913699408298425,
+          "mag_bias": -0.0022866326174250783,
+          "kappa": 867160.7740354043,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 100,
+          "grad_rmse": 0.0934766780520579,
+          "ang_mae": 0.16420010410530406,
+          "mag_bias": 0.001485703009737263,
+          "kappa": 867160.7740354043,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 200,
+          "grad_rmse": 0.0931044047162925,
+          "ang_mae": 0.14197906204477573,
+          "mag_bias": 0.0015516997418889204,
+          "kappa": 867160.7740354043,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 20,
+          "grad_rmse": 0.2174076417464442,
+          "ang_mae": 0.8978447803538006,
+          "mag_bias": -0.04197618611803665,
+          "kappa": 261095941.35855827,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 50,
+          "grad_rmse": 0.09249839936523324,
+          "ang_mae": 0.5096527958514165,
+          "mag_bias": 0.005405746889916445,
+          "kappa": 261095941.35855827,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 100,
+          "grad_rmse": 0.08548717999302172,
+          "ang_mae": 0.21972474142496748,
+          "mag_bias": 0.008049942867597923,
+          "kappa": 261095941.35855827,
+          "rank_deficient_count": 0
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 200,
+          "grad_rmse": 0.08509964412976166,
+          "ang_mae": 0.20832570157737174,
+          "mag_bias": 0.008045868011193455,
+          "kappa": 261095941.35855827,
+          "rank_deficient_count": 0
+        }
+      ],
+      "records": [
+        {
+          "degree": 1,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 1,
+            "curvature_radius": 20,
+            "grad_rmse": 0.25455541880027766,
+            "ang_mae": 2.4147641416140555,
+            "mag_bias": -0.11513487303689066,
+            "kappa": 2.0006533812653884,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.12017105285641407,
+            "ang_mae": 0.12213832485760623,
+            "mag_bias": -0.054678196169913984
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.3889397847441412,
+            "ang_mae": 4.707389958370505,
+            "mag_bias": -0.1755915499038673
+          },
+          "kappa_design_matrix": 2.0006533812653884,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 1,
+            "curvature_radius": 50,
+            "grad_rmse": 0.12696110435237007,
+            "ang_mae": 1.05034057854755,
+            "mag_bias": -0.05675008201471046,
+            "kappa": 2.0006533812653884,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.12257807254827273,
+            "ang_mae": 0.09408958263695981,
+            "mag_bias": -0.05544534400370495
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.1313441361564674,
+            "ang_mae": 2.0065915744581395,
+            "mag_bias": -0.058054820025715985
+          },
+          "kappa_design_matrix": 2.0006533812653884,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 1,
+            "curvature_radius": 100,
+            "grad_rmse": 0.11871373415864254,
+            "ang_mae": 0.38437373653997137,
+            "mag_bias": -0.050733349758359955,
+            "kappa": 2.0006533812653884,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.11831856821588646,
+            "ang_mae": 0.12968571945069218,
+            "mag_bias": -0.05053121899004586
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.11910890010139857,
+            "ang_mae": 0.6390617536292506,
+            "mag_bias": -0.05093548052667405
+          },
+          "kappa_design_matrix": 2.0006533812653884,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 1,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 1,
+            "curvature_radius": 200,
+            "grad_rmse": 0.1183212630399692,
+            "ang_mae": 0.16470086920627072,
+            "mag_bias": -0.050460682121908546,
+            "kappa": 2.0006533812653884,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.11831327242333899,
+            "ang_mae": 0.13888442631425468,
+            "mag_bias": -0.05046826302024286
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.11832925365659944,
+            "ang_mae": 0.19051731209828682,
+            "mag_bias": -0.05045310122357423
+          },
+          "kappa_design_matrix": 2.0006533812653884,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 3,
+            "curvature_radius": 20,
+            "grad_rmse": 0.24297725435761375,
+            "ang_mae": 1.268874958821137,
+            "mag_bias": -0.08945781631060092,
+            "kappa": 56.38103302257015,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.10870862680294592,
+            "ang_mae": 0.14087151105503065,
+            "mag_bias": -0.028903527404135425
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.37724588191228153,
+            "ang_mae": 2.396878406587243,
+            "mag_bias": -0.15001210521706643
+          },
+          "kappa_design_matrix": 56.38103302257015,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 3,
+            "curvature_radius": 50,
+            "grad_rmse": 0.1162328213898322,
+            "ang_mae": 0.5631821196805805,
+            "mag_bias": -0.033167955614459545,
+            "kappa": 56.38103302257015,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.11169595041662511,
+            "ang_mae": 0.07856762107520517,
+            "mag_bias": -0.031936795121736444
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.12076969236303928,
+            "ang_mae": 1.047796618285956,
+            "mag_bias": -0.034399116107182645
+          },
+          "kappa_design_matrix": 56.38103302257015,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 3,
+            "curvature_radius": 100,
+            "grad_rmse": 0.10858992998671986,
+            "ang_mae": 0.13149776219090006,
+            "mag_bias": -0.02773016368699225,
+            "kappa": 56.38103302257015,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.10819737885307029,
+            "ang_mae": 0.07103279615185959,
+            "mag_bias": -0.027514627009856282
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.10898248112036943,
+            "ang_mae": 0.19196272822994054,
+            "mag_bias": -0.027945700364128214
+          },
+          "kappa_design_matrix": 56.38103302257015,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 3,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 3,
+            "curvature_radius": 200,
+            "grad_rmse": 0.10822764072917758,
+            "ang_mae": 0.06843531170312898,
+            "mag_bias": -0.027536335705601662,
+            "kappa": 56.38103302257015,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.10821520698558634,
+            "ang_mae": 0.06560089706911232,
+            "mag_bias": -0.027533505298658625
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.1082400744727688,
+            "ang_mae": 0.07126972633714564,
+            "mag_bias": -0.0275391661125447
+          },
+          "kappa_design_matrix": 56.38103302257015,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 5,
+            "curvature_radius": 20,
+            "grad_rmse": 0.23397351876454073,
+            "ang_mae": 0.9938862046012054,
+            "mag_bias": -0.06934664652874581,
+            "kappa": 4852.546236554276,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.10080545107218307,
+            "ang_mae": 0.11914471086539481,
+            "mag_bias": -0.011080535779577193
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.36714158645689837,
+            "ang_mae": 1.8686276983370158,
+            "mag_bias": -0.1276127572779144
+          },
+          "kappa_design_matrix": 4852.546236554276,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 5,
+            "curvature_radius": 50,
+            "grad_rmse": 0.10807103441601466,
+            "ang_mae": 0.4963839446190932,
+            "mag_bias": -0.015057068448555292,
+            "kappa": 4852.546236554276,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.10336634971589655,
+            "ang_mae": 0.09527661476387238,
+            "mag_bias": -0.0141926189221688
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.11277571911613278,
+            "ang_mae": 0.8974912744743142,
+            "mag_bias": -0.01592151797494178
+          },
+          "kappa_design_matrix": 4852.546236554276,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 5,
+            "curvature_radius": 100,
+            "grad_rmse": 0.10086767000202823,
+            "ang_mae": 0.13178585249647443,
+            "mag_bias": -0.010329151263631377,
+            "kappa": 4852.546236554276,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.10048329413653094,
+            "ang_mae": 0.10471330649527318,
+            "mag_bias": -0.010146932110415617
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.10125204586752551,
+            "ang_mae": 0.15885839849767563,
+            "mag_bias": -0.010511370416847134
+          },
+          "kappa_design_matrix": 4852.546236554276,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 5,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 5,
+            "curvature_radius": 200,
+            "grad_rmse": 0.10050727111771193,
+            "ang_mae": 0.09846243388038291,
+            "mag_bias": -0.010195411382314442,
+            "kappa": 4852.546236554276,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.10049384539403554,
+            "ang_mae": 0.09898201992014782,
+            "mag_bias": -0.010191915002015266
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.10052069684138837,
+            "ang_mae": 0.09794284784061799,
+            "mag_bias": -0.010198907762613616
+          },
+          "kappa_design_matrix": 4852.546236554276,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 7,
+            "curvature_radius": 20,
+            "grad_rmse": 0.2256686532502872,
+            "ang_mae": 0.911972513526933,
+            "mag_bias": -0.05359113501020081,
+            "kappa": 867160.7740354043,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.09335559172325436,
+            "ang_mae": 0.10221289082683052,
+            "mag_bias": 0.0010129245779942446
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.35798171477732016,
+            "ang_mae": 1.7217321362270352,
+            "mag_bias": -0.10819519459839586
+          },
+          "kappa_design_matrix": 867160.7740354043,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 7,
+            "curvature_radius": 50,
+            "grad_rmse": 0.10047985970488033,
+            "ang_mae": 0.4913699408298425,
+            "mag_bias": -0.0022866326174250783,
+            "kappa": 867160.7740354043,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.09549018816283189,
+            "ang_mae": 0.12737526125540977,
+            "mag_bias": -0.0019818229623671827
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.10546953124692876,
+            "ang_mae": 0.8553646204042752,
+            "mag_bias": -0.002591442272482974
+          },
+          "kappa_design_matrix": 867160.7740354043,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 7,
+            "curvature_radius": 100,
+            "grad_rmse": 0.0934766780520579,
+            "ang_mae": 0.16420010410530406,
+            "mag_bias": 0.001485703009737263,
+            "kappa": 867160.7740354043,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.09308857906413144,
+            "ang_mae": 0.14653915079792007,
+            "mag_bias": 0.0016107921879133132
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.09386477703998433,
+            "ang_mae": 0.181861057412688,
+            "mag_bias": 0.0013606138315612124
+          },
+          "kappa_design_matrix": 867160.7740354043,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 7,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 7,
+            "curvature_radius": 200,
+            "grad_rmse": 0.0931044047162925,
+            "ang_mae": 0.14197906204477573,
+            "mag_bias": 0.0015516997418889204,
+            "kappa": 867160.7740354043,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.09308925331425845,
+            "ang_mae": 0.1428353324428852,
+            "mag_bias": 0.0015526907116920332
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.09311955611832654,
+            "ang_mae": 0.14112279164666627,
+            "mag_bias": 0.0015507087720858076
+          },
+          "kappa_design_matrix": 867160.7740354043,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 20,
+          "combined_metrics": {
+            "degree": 9,
+            "curvature_radius": 20,
+            "grad_rmse": 0.2174076417464442,
+            "ang_mae": 0.8978447803538006,
+            "mag_bias": -0.04197618611803665,
+            "kappa": 261095941.35855827,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.08533256813112516,
+            "ang_mae": 0.12363306778520143,
+            "mag_bias": 0.007727240924450645
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.3494827153617632,
+            "ang_mae": 1.6720564929223993,
+            "mag_bias": -0.09167961316052395
+          },
+          "kappa_design_matrix": 261095941.35855827,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 50,
+          "combined_metrics": {
+            "degree": 9,
+            "curvature_radius": 50,
+            "grad_rmse": 0.09249839936523324,
+            "ang_mae": 0.5096527958514165,
+            "mag_bias": 0.005405746889916445,
+            "kappa": 261095941.35855827,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.08715075973679139,
+            "ang_mae": 0.17942178894898278,
+            "mag_bias": 0.00504323435957031
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.09784603899367508,
+            "ang_mae": 0.8398838027538503,
+            "mag_bias": 0.005768259420262578
+          },
+          "kappa_design_matrix": 261095941.35855827,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 100,
+          "combined_metrics": {
+            "degree": 9,
+            "curvature_radius": 100,
+            "grad_rmse": 0.08548717999302172,
+            "ang_mae": 0.21972474142496748,
+            "mag_bias": 0.008049942867597923,
+            "kappa": 261095941.35855827,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.0850884010679404,
+            "ang_mae": 0.2064909024076262,
+            "mag_bias": 0.008106773190721828
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.08588595891810302,
+            "ang_mae": 0.23295858044230874,
+            "mag_bias": 0.007993112544474018
+          },
+          "kappa_design_matrix": 261095941.35855827,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        },
+        {
+          "degree": 9,
+          "curvature_radius": 200,
+          "combined_metrics": {
+            "degree": 9,
+            "curvature_radius": 200,
+            "grad_rmse": 0.08509964412976166,
+            "ang_mae": 0.20832570157737174,
+            "mag_bias": 0.008045868011193455,
+            "kappa": 261095941.35855827,
+            "rank_deficient_count": 0
+          },
+          "arc_metrics": {
+            "grad_rmse": 0.08508209381201767,
+            "ang_mae": 0.20947222987754893,
+            "mag_bias": 0.0080428284151809
+          },
+          "s_curve_metrics": {
+            "grad_rmse": 0.08511719444750566,
+            "ang_mae": 0.2071791732771945,
+            "mag_bias": 0.00804890760720601
+          },
+          "kappa_design_matrix": 261095941.35855827,
+          "rank_deficient_count": 0,
+          "support_cardinality": 1960
+        }
+      ],
+      "csv_path": "/tmp/edge-detection-filter-critique-sec75deg/papers/journal_paper/figures/data/sec07_degree_sweep_curvature/sec07_degree_sweep_curvature_r25_d1_d9_normalized.csv"
+    }
+  },
+  "arc_grad_rmse_plot": [
+    {
+      "radius": 5,
+      "label": "r = 5",
+      "points": [
+        {
+          "degree": 1,
+          "grad_rmse": 0.07109765032769233
+        },
+        {
+          "degree": 3,
+          "grad_rmse": 0.03875149672861783
+        },
+        {
+          "degree": 5,
+          "grad_rmse": 0.01972493877355067
+        },
+        {
+          "degree": 7,
+          "grad_rmse": 0.008517090121686216
+        },
+        {
+          "degree": 9,
+          "grad_rmse": 0.0029572547988227223
+        }
+      ]
+    },
+    {
+      "radius": 9,
+      "label": "r = 9",
+      "points": [
+        {
+          "degree": 1,
+          "grad_rmse": 0.09679159021570088
+        },
+        {
+          "degree": 3,
+          "grad_rmse": 0.07294122974202658
+        },
+        {
+          "degree": 5,
+          "grad_rmse": 0.05279884456660799
+        },
+        {
+          "degree": 7,
+          "grad_rmse": 0.037409250642932115
+        },
+        {
+          "degree": 9,
+          "grad_rmse": 0.025421530356753916
+        }
+      ]
+    },
+    {
+      "radius": 15,
+      "label": "r = 15",
+      "points": [
+        {
+          "degree": 1,
+          "grad_rmse": 0.10978247312171076
+        },
+        {
+          "degree": 3,
+          "grad_rmse": 0.09598246156335453
+        },
+        {
+          "degree": 5,
+          "grad_rmse": 0.08239450369692665
+        },
+        {
+          "degree": 7,
+          "grad_rmse": 0.0684236322336092
+        },
+        {
+          "degree": 9,
+          "grad_rmse": 0.05642247540934756
+        }
+      ]
+    },
+    {
+      "radius": 25,
+      "label": "r = 25",
+      "points": [
+        {
+          "degree": 1,
+          "grad_rmse": 0.11984524151097806
+        },
+        {
+          "degree": 3,
+          "grad_rmse": 0.10920429076455691
+        },
+        {
+          "degree": 5,
+          "grad_rmse": 0.10128723507966153
+        },
+        {
+          "degree": 7,
+          "grad_rmse": 0.09375590306611903
+        },
+        {
+          "degree": 9,
+          "grad_rmse": 0.08566345568696865
+        }
+      ]
+    }
+  ]
+}
