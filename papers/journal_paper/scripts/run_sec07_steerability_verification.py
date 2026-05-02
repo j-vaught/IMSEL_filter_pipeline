@@ -25,6 +25,7 @@ from wvf.radius import build_wvf_radius_kernels
 
 ANGLES_DEG = tuple(range(0, 180, 5))
 EPS64 = float(np.finfo(np.float64).eps)
+PASS_MULTIPLIER = 100.0
 DEFAULT_CONFIGS = (
     (5, 3, True),
     (15, 5, True),
@@ -48,6 +49,30 @@ class SteerabilityConfig:
     def label(self) -> str:
         mode = "normalize_coords=True" if self.normalize_coords else "normalize_coords=False"
         return f"(r={self.radius}, d={self.degree}, {mode})"
+
+    @property
+    def csv_path(self) -> Path:
+        return (
+            ROOT
+            / "papers"
+            / "journal_paper"
+            / "figures"
+            / "data"
+            / "sec07_steerability"
+            / f"sec07_steerability_{self.slug}.csv"
+        )
+
+    @property
+    def json_path(self) -> Path:
+        return (
+            ROOT
+            / "papers"
+            / "journal_paper"
+            / "figures"
+            / "data"
+            / "sec07_steerability"
+            / f"sec07_steerability_{self.slug}.json"
+        )
 
 
 def _direct_rotated_weights(
@@ -104,46 +129,54 @@ def _write_json(json_path: Path, payload: dict[str, object]) -> None:
         handle.write("\n")
 
 
-def run_config(config: SteerabilityConfig, output_dir: Path) -> tuple[Path, Path, int, int]:
-    kernels = build_wvf_radius_kernels(
-        radius=config.radius,
-        order=config.degree,
-        normalize_coords=config.normalize_coords,
-    )
-    weights_x = np.asarray(kernels.weights_x, dtype=np.float64)
-    weights_y = np.asarray(kernels.weights_y, dtype=np.float64)
-    offsets_xy = np.asarray(kernels.offsets_xy, dtype=np.float64)
+def _threshold_for(kernel_max: float) -> float:
+    return PASS_MULTIPLIER * EPS64 * float(kernel_max)
 
-    records: list[dict[str, float]] = []
+
+def _read_csv_records(csv_path: Path) -> list[dict[str, float]]:
+    with csv_path.open("r", newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        records: list[dict[str, float]] = []
+        for row in reader:
+            records.append(
+                {
+                    "theta_deg": float(row["theta_deg"]),
+                    "residual": float(row["residual"]),
+                    "kernel_max": float(row["kernel_max"]),
+                }
+            )
+    return records
+
+
+def _annotate_records(records: list[dict[str, float]]) -> tuple[list[dict[str, float]], int, int]:
+    annotated: list[dict[str, float]] = []
     pass_count = 0
-    total_count = len(ANGLES_DEG)
-
-    for theta_deg in ANGLES_DEG:
-        theta_rad = math.radians(float(theta_deg))
-        synth = weights_x * math.cos(theta_rad) + weights_y * math.sin(theta_rad)
-        direct = _direct_rotated_weights(
-            offsets_xy,
-            config.radius,
-            config.degree,
-            float(theta_deg),
-            config.normalize_coords,
-        )
-        residual = float(np.max(np.abs(synth - direct)))
-        kernel_max = float(np.max(np.abs(synth)))
-        threshold = 10.0 * EPS64 * kernel_max
-        passed = residual < threshold
+    total_count = len(records)
+    for row in records:
+        threshold = _threshold_for(float(row["kernel_max"]))
+        passed = float(row["residual"]) < threshold
         if passed:
             pass_count += 1
-        records.append(
+        annotated.append(
             {
-                "theta_deg": float(theta_deg),
-                "residual": residual,
-                "kernel_max": kernel_max,
+                "theta_deg": float(row["theta_deg"]),
+                "residual": float(row["residual"]),
+                "kernel_max": float(row["kernel_max"]),
                 "threshold": threshold,
                 "passed": 1.0 if passed else 0.0,
             }
         )
 
+    return annotated, pass_count, total_count
+
+
+def _finalize_records(
+    config: SteerabilityConfig,
+    csv_path: Path,
+    json_path: Path,
+    raw_records: list[dict[str, float]],
+) -> tuple[Path, Path, int, int]:
+    records, pass_count, total_count = _annotate_records(raw_records)
     plot_floor, log10_min, log10_max, y_ticks = _plot_range(
         [float(record["residual"]) for record in records]
     )
@@ -152,10 +185,6 @@ def run_config(config: SteerabilityConfig, output_dir: Path) -> tuple[Path, Path
         record["plot_residual"] = plot_value
         record["log10_plot_residual"] = float(math.log10(plot_value))
 
-    csv_path = output_dir / f"sec07_steerability_{config.slug}.csv"
-    json_path = output_dir / f"sec07_steerability_{config.slug}.json"
-
-    _write_csv(csv_path, records)
     _write_json(
         json_path,
         {
@@ -164,6 +193,7 @@ def run_config(config: SteerabilityConfig, output_dir: Path) -> tuple[Path, Path
             "normalize_coords": config.normalize_coords,
             "pass_count": pass_count,
             "total_count": total_count,
+            "pass_multiplier": PASS_MULTIPLIER,
             "plot": {
                 "x_ticks": [0, 25, 50, 75, 100, 125, 150, 175],
                 "y_ticks": [
@@ -184,6 +214,55 @@ def run_config(config: SteerabilityConfig, output_dir: Path) -> tuple[Path, Path
 
     print(f"{config.label}: {pass_count}/{total_count} passed")
     return csv_path, json_path, pass_count, total_count
+
+
+def run_config(config: SteerabilityConfig, output_dir: Path) -> tuple[Path, Path, int, int]:
+    kernels = build_wvf_radius_kernels(
+        radius=config.radius,
+        order=config.degree,
+        normalize_coords=config.normalize_coords,
+    )
+    weights_x = np.asarray(kernels.weights_x, dtype=np.float64)
+    weights_y = np.asarray(kernels.weights_y, dtype=np.float64)
+    offsets_xy = np.asarray(kernels.offsets_xy, dtype=np.float64)
+
+    raw_records: list[dict[str, float]] = []
+
+    for theta_deg in ANGLES_DEG:
+        theta_rad = math.radians(float(theta_deg))
+        synth = weights_x * math.cos(theta_rad) + weights_y * math.sin(theta_rad)
+        direct = _direct_rotated_weights(
+            offsets_xy,
+            config.radius,
+            config.degree,
+            float(theta_deg),
+            config.normalize_coords,
+        )
+        residual = float(np.max(np.abs(synth - direct)))
+        kernel_max = float(np.max(np.abs(synth)))
+        raw_records.append(
+            {
+                "theta_deg": float(theta_deg),
+                "residual": residual,
+                "kernel_max": kernel_max,
+            }
+        )
+
+    csv_path = output_dir / f"sec07_steerability_{config.slug}.csv"
+    json_path = output_dir / f"sec07_steerability_{config.slug}.json"
+
+    _write_csv(csv_path, raw_records)
+    return _finalize_records(config, csv_path, json_path, raw_records)
+
+
+def refresh_config_from_csv(
+    config: SteerabilityConfig,
+    output_dir: Path,
+) -> tuple[Path, Path, int, int]:
+    csv_path = output_dir / f"sec07_steerability_{config.slug}.csv"
+    json_path = output_dir / f"sec07_steerability_{config.slug}.json"
+    raw_records = _read_csv_records(csv_path)
+    return _finalize_records(config, csv_path, json_path, raw_records)
 
 
 def compile_plots(figures_dir: Path, configs: tuple[SteerabilityConfig, ...]) -> list[Path]:
@@ -220,6 +299,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Compile the checked-in Typst/CeTZ plot wrappers to PDF after data generation.",
     )
+    parser.add_argument(
+        "--refresh-from-csv",
+        action="store_true",
+        help="Recompute pass/fail summaries and plot JSON from existing CSVs without rerunning the kernel sweep.",
+    )
     return parser.parse_args()
 
 
@@ -234,7 +318,13 @@ def main() -> int:
     failures = 0
 
     for config in configs:
-        csv_path, json_path, pass_count, total_count = run_config(config, output_dir)
+        if args.refresh_from_csv:
+            csv_path, json_path, pass_count, total_count = refresh_config_from_csv(
+                config,
+                output_dir,
+            )
+        else:
+            csv_path, json_path, pass_count, total_count = run_config(config, output_dir)
         csv_paths.append(csv_path)
         json_paths.append(json_path)
         if pass_count != total_count:

@@ -13,6 +13,7 @@
   let normalized = data.at("normalize_coords")
   let pass-count = data.at("pass_count")
   let total-count = data.at("total_count")
+  let pass-multiplier = data.at("pass_multiplier")
   let plot = data.at("plot")
   let records = data.at("records")
 
@@ -112,7 +113,7 @@
     )
     content(
       (ox + pw - 1.35, oy + ph - 0.67),
-      text(fill: black70, size: 7.5pt)[criterion uses $10 epsilon_(64)$],
+      text(fill: black70, size: 7.5pt)[criterion uses $#pass-multiplier epsilon_(64)$],
     )
   })
 }
