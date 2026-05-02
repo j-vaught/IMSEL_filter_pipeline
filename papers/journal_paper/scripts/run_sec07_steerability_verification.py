@@ -20,12 +20,13 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from core.taylor import build_taylor_matrix, compute_pseudoinverse, rotate_coordinates
-from wvf.radius import build_wvf_radius_kernels
+from wvf.radius import build_wvf_radius_kernels, disk_offsets
 
 
 ANGLES_DEG = tuple(range(0, 180, 5))
 EPS64 = float(np.finfo(np.float64).eps)
 PASS_MULTIPLIER = 100.0
+ABSOLUTE_THRESHOLD_FLOOR = 1.0e-12
 DEFAULT_CONFIGS = (
     (5, 3, True),
     (15, 5, True),
@@ -130,7 +131,24 @@ def _write_json(json_path: Path, payload: dict[str, object]) -> None:
 
 
 def _threshold_for(kernel_max: float) -> float:
-    return PASS_MULTIPLIER * EPS64 * float(kernel_max)
+    return max(ABSOLUTE_THRESHOLD_FLOOR, PASS_MULTIPLIER * EPS64 * float(kernel_max))
+
+
+def _design_matrix_summary(config: SteerabilityConfig) -> tuple[tuple[int, int], float]:
+    offsets_xy = disk_offsets(config.radius, include_center=False)
+    design = build_taylor_matrix(
+        offsets_xy,
+        order=config.degree,
+        normalize_radius=float(config.radius) if config.normalize_coords else None,
+    )
+    singular_values = np.linalg.svd(design, compute_uv=False, full_matrices=False)
+    sigma_max = float(singular_values[0])
+    sigma_min = float(singular_values[-1])
+    if sigma_min <= 0.0:
+        cond_number = float("inf")
+    else:
+        cond_number = sigma_max / sigma_min
+    return (int(design.shape[0]), int(design.shape[1])), cond_number
 
 
 def _read_csv_records(csv_path: Path) -> list[dict[str, float]]:
@@ -177,6 +195,7 @@ def _finalize_records(
     raw_records: list[dict[str, float]],
 ) -> tuple[Path, Path, int, int]:
     records, pass_count, total_count = _annotate_records(raw_records)
+    design_shape, design_cond = _design_matrix_summary(config)
     plot_floor, log10_min, log10_max, y_ticks = _plot_range(
         [float(record["residual"]) for record in records]
     )
@@ -194,6 +213,9 @@ def _finalize_records(
             "pass_count": pass_count,
             "total_count": total_count,
             "pass_multiplier": PASS_MULTIPLIER,
+            "absolute_threshold_floor": ABSOLUTE_THRESHOLD_FLOOR,
+            "design_matrix_shape": [design_shape[0], design_shape[1]],
+            "design_condition_number": design_cond,
             "plot": {
                 "x_ticks": [0, 25, 50, 75, 100, 125, 150, 175],
                 "y_ticks": [
