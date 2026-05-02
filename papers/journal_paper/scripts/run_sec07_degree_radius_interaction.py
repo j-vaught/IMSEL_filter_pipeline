@@ -366,7 +366,7 @@ def _evaluate_cell(
             f"method={result['application_method']}"
         )
     return {
-        **info,
+        **{key: value for key, value in info.items() if key not in {"kernel_x", "kernel_y"}},
         "application_method": str(result["application_method"]),
         "application_error": result["application_error"],
         "step_grad_rmse": _mean_metric(result["step_metrics"], "grad_rmse"),
