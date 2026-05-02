@@ -24,7 +24,7 @@ if str(SRC) not in sys.path:
 
 from core.taylor import build_taylor_matrix, default_pinv_rcond
 from wvf.radius import build_wvf_radius_kernels, disk_offsets
-from wvf_metal import gradients
+from wvf_metal.metal import fft_gradients_with_kernel
 
 RADII = (5, 9, 15, 25, 50)
 CURVATURE_RADII = (20, 50, 100, 200)
@@ -269,12 +269,25 @@ def _mean_metric(rows: list[dict[str, float]], key: str) -> float:
 
 
 def _apply_native(image: np.ndarray, radius: int, degree: int, fft_backend: str, device_index: int | None) -> tuple[np.ndarray, np.ndarray]:
-    return gradients(
+    raise RuntimeError(
+        "degree-driven native FFT application is disabled for this harness; "
+        "use fft_gradients_with_kernel(...) so the precomputed paper kernel is reused"
+    )
+
+
+def _apply_native_with_kernel(
+    image: np.ndarray,
+    radius: int,
+    kernel_x: np.ndarray,
+    kernel_y: np.ndarray,
+    fft_backend: str,
+    device_index: int | None,
+) -> tuple[np.ndarray, np.ndarray]:
+    return fft_gradients_with_kernel(
         image,
         radius=int(radius),
-        degree=int(degree),
-        normalize_coords=bool(NORMALIZE_COORDS),
-        variant=VARIANT,
+        kernel_x=kernel_x,
+        kernel_y=kernel_y,
         fft_backend=fft_backend,
         device_index=device_index,
     )
@@ -308,7 +321,6 @@ def _tile_cases(cases: list[StimulusCase]) -> tuple[np.ndarray, list[tuple[slice
 def _apply_cases_batched(
     cases: list[StimulusCase],
     radius: int,
-    degree: int,
     fft_backend: str,
     device_index: int | None,
     kernel_x: np.ndarray,
@@ -318,7 +330,14 @@ def _apply_cases_batched(
 ) -> list[tuple[np.ndarray, np.ndarray]]:
     canvas, placements = _tile_cases(cases)
     try:
-        gx_canvas, gy_canvas = _apply_native(canvas, int(radius), int(degree), fft_backend, device_index)
+        gx_canvas, gy_canvas = _apply_native_with_kernel(
+            canvas,
+            int(radius),
+            kernel_x,
+            kernel_y,
+            fft_backend,
+            device_index,
+        )
     except Exception as exc:
         if not use_scipy_fallback:
             raise
@@ -376,7 +395,6 @@ def _evaluate_radius(
         outputs = _apply_cases_batched(
             batch,
             radius=int(radius),
-            degree=int(degree),
             fft_backend=fft_backend,
             device_index=device_index,
             kernel_x=kernel_x,
@@ -418,7 +436,6 @@ def _evaluate_radius(
             outputs = _apply_cases_batched(
                 batch,
                 radius=int(radius),
-                degree=int(degree),
                 fft_backend=fft_backend,
                 device_index=device_index,
                 kernel_x=kernel_x,

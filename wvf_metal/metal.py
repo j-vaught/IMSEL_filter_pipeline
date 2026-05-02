@@ -360,6 +360,22 @@ def _load_library() -> ctypes.CDLL:
     lib.wvf_metal_gradients.argtypes = gradient_args
     lib.wvf_metal_gradients.restype = ctypes.c_int
 
+    gradient_with_kernel_args = [
+        ctypes.POINTER(ctypes.c_float),
+        ctypes.c_uint,
+        ctypes.c_uint,
+        ctypes.c_uint,
+        ctypes.POINTER(ctypes.c_float),
+        ctypes.POINTER(ctypes.c_float),
+        ctypes.c_uint,
+        ctypes.POINTER(ctypes.c_float),
+        ctypes.POINTER(ctypes.c_float),
+        ctypes.POINTER(ctypes.c_char),
+        ctypes.c_size_t,
+    ]
+    lib.wvf_metal_fft_gradients_with_kernel.argtypes = gradient_with_kernel_args
+    lib.wvf_metal_fft_gradients_with_kernel.restype = ctypes.c_int
+
     magnitude_angle_args = gradient_args[:9] + [
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_float),
@@ -540,6 +556,46 @@ def _run_native_gradients(
                     _checked_uint(degree, "degree"),
                     _checked_normalize_coords(normalize_coords),
                     ctypes.c_uint(_variant_id(variant)),
+                    gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                    gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                    error_buffer,
+                    ctypes.c_size_t(len(error_buffer)),
+                )
+    _raise_if_failed(status, error_buffer)
+    return gx.reshape(img.shape), gy.reshape(img.shape)
+
+
+def _run_native_fft_gradients_with_kernel(
+    img: np.ndarray,
+    radius: int,
+    kernel_x: np.ndarray,
+    kernel_y: np.ndarray,
+    fft_backend: str | None,
+    device_index: int | None,
+) -> tuple[np.ndarray, np.ndarray]:
+    gx = np.empty(img.size, dtype=np.float32)
+    gy = np.empty(img.size, dtype=np.float32)
+    error_buffer = ctypes.create_string_buffer(4096)
+    h, w = img.shape
+    kernel_width = int(kernel_x.shape[0])
+
+    with _temporary_env_var("WVF_METAL_FFT_BACKEND", fft_backend):
+        with _temporary_env_var(
+            "WVF_GPU_DEVICE_INDEX",
+            None if device_index is None else str(device_index),
+        ):
+            with _temporary_env_var(
+                "WVF_METAL_DEVICE_INDEX",
+                None if device_index is None else str(device_index),
+            ):
+                status = _load_library().wvf_metal_fft_gradients_with_kernel(
+                    img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                    _checked_uint(w, "image width"),
+                    _checked_uint(h, "image height"),
+                    _checked_uint(radius, "radius"),
+                    kernel_x.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                    kernel_y.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+                    _checked_uint(kernel_width, "kernel width"),
                     gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
                     gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
                     error_buffer,
@@ -818,6 +874,46 @@ def wvf_gradients_metal(
         variant=variant,
         fft_backend=chosen_fft_backend,
         device_index=checked_device_index,
+    )
+
+
+def fft_gradients_with_kernel(
+    image: np.ndarray,
+    *,
+    radius: int,
+    kernel_x: np.ndarray,
+    kernel_y: np.ndarray,
+    fft_backend: str | None = "auto",
+    device_index: int | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    img = _as_float_image(image)
+    kernel_x32 = np.ascontiguousarray(kernel_x, dtype=np.float32)
+    kernel_y32 = np.ascontiguousarray(kernel_y, dtype=np.float32)
+    if kernel_x32.ndim != 2 or kernel_y32.ndim != 2:
+        raise ValueError("kernel_x and kernel_y must be 2D arrays")
+    if kernel_x32.shape != kernel_y32.shape:
+        raise ValueError("kernel_x and kernel_y must have the same shape")
+    if kernel_x32.shape[0] != kernel_x32.shape[1]:
+        raise ValueError("kernel_x and kernel_y must be square")
+    if kernel_x32.shape[0] % 2 != 1:
+        raise ValueError("kernel_x and kernel_y must have odd width")
+    checked_radius = int(radius)
+    expected_width = 2 * checked_radius + 1
+    if kernel_x32.shape != (expected_width, expected_width):
+        raise ValueError(
+            f"kernel_x and kernel_y must have shape {(expected_width, expected_width)} for radius={checked_radius}"
+        )
+    if platform.system() not in {"Darwin", "Linux"}:
+        raise MetalBackendError(
+            "wvf_metal requires macOS or Linux for the native extension."
+        )
+    return _run_native_fft_gradients_with_kernel(
+        img,
+        radius=checked_radius,
+        kernel_x=kernel_x32,
+        kernel_y=kernel_y32,
+        fft_backend=_normalize_fft_backend(fft_backend),
+        device_index=_checked_device_index(device_index),
     )
 
 

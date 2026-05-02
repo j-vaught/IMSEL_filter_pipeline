@@ -128,6 +128,32 @@ pub(crate) unsafe fn run_fft_gradients_cpu(
     Ok(())
 }
 
+pub(crate) unsafe fn run_fft_gradients_with_kernel_cpu(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    kernel_x: *const c_float,
+    kernel_y: *const c_float,
+    kernel_width: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+) -> Result<(), String> {
+    crate::check_ptr(kernel_x, "kernel_x")?;
+    crate::check_ptr(kernel_y, "kernel_y")?;
+    let dense_len =
+        crate::checked_len(kernel_width as usize, kernel_width as usize, "dense kernel")?;
+    let kernels = DenseConvolutionKernels {
+        kernel_width,
+        kernel_x: std::slice::from_raw_parts(kernel_x, dense_len).to_vec(),
+        kernel_y: std::slice::from_raw_parts(kernel_y, dense_len).to_vec(),
+    };
+    with_cpu_backend(|backend| {
+        backend.run_gradients(image, width, height, radius, &kernels, out_x, out_y)
+    })??;
+    Ok(())
+}
+
 pub(crate) unsafe fn run_fft_magnitude_cpu(
     image: *const c_float,
     width: c_uint,

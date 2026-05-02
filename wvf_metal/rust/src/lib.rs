@@ -937,6 +937,45 @@ unsafe fn validate_generated(
     Ok(())
 }
 
+unsafe fn validate_supplied_dense_gradients(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    kernel_x: *const c_float,
+    kernel_y: *const c_float,
+    kernel_width: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+) -> Result<(), String> {
+    check_ptr(image, "image")?;
+    check_ptr(kernel_x, "kernel_x")?;
+    check_ptr(kernel_y, "kernel_y")?;
+    check_mut_ptr(out_x, "out_x")?;
+    check_mut_ptr(out_y, "out_y")?;
+    if width == 0 || height == 0 {
+        return Err("image dimensions must be positive".to_string());
+    }
+    if radius == 0 {
+        return Err("radius must be positive".to_string());
+    }
+    if kernel_width == 0 || kernel_width % 2 == 0 {
+        return Err("kernel_width must be a positive odd integer".to_string());
+    }
+    let expected_kernel_width = radius
+        .checked_mul(2)
+        .and_then(|value| value.checked_add(1))
+        .ok_or_else(|| "radius is too large".to_string())?;
+    if kernel_width != expected_kernel_width {
+        return Err(format!(
+            "kernel_width must equal 2 * radius + 1, got kernel_width={kernel_width} for radius={radius}"
+        ));
+    }
+    checked_image_pixels(width, height)?;
+    checked_len(kernel_width as usize, kernel_width as usize, "dense kernel")?;
+    Ok(())
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn wvf_metal_gradients(
     image: *const c_float,
@@ -985,6 +1024,78 @@ pub unsafe extern "C" fn wvf_metal_gradients(
             #[cfg(not(target_os = "macos"))]
             {
                 Err("direct, antipodal, and split variants require macOS Metal".to_string())
+            }
+        }
+    });
+    match result {
+        Ok(()) => 0,
+        Err(message) => {
+            write_error(error_out, error_len, &message);
+            1
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wvf_metal_fft_gradients_with_kernel(
+    image: *const c_float,
+    width: c_uint,
+    height: c_uint,
+    radius: c_uint,
+    kernel_x: *const c_float,
+    kernel_y: *const c_float,
+    kernel_width: c_uint,
+    out_x: *mut c_float,
+    out_y: *mut c_float,
+    error_out: *mut c_char,
+    error_len: usize,
+) -> c_int {
+    let result = validate_supplied_dense_gradients(
+        image,
+        width,
+        height,
+        radius,
+        kernel_x,
+        kernel_y,
+        kernel_width,
+        out_x,
+        out_y,
+    )
+    .and_then(|()| {
+        if should_use_cpu_fft_backend()? {
+            fft_backend::run_fft_gradients_with_kernel_cpu(
+                image,
+                width,
+                height,
+                radius,
+                kernel_x,
+                kernel_y,
+                kernel_width,
+                out_x,
+                out_y,
+            )
+        } else {
+            #[cfg(wvf_has_vkfft)]
+            {
+                let mut error = vec![0 as c_char; 4096];
+                let status = wvf_vkfft_gradients(
+                    image,
+                    width,
+                    height,
+                    radius,
+                    kernel_x,
+                    kernel_y,
+                    kernel_width,
+                    out_x,
+                    out_y,
+                    error.as_mut_ptr(),
+                    error.len(),
+                );
+                vkfft_status_to_result(status, &error)
+            }
+            #[cfg(not(wvf_has_vkfft))]
+            {
+                Err("VkFFT GPU backend is not available in this build".to_string())
             }
         }
     });
