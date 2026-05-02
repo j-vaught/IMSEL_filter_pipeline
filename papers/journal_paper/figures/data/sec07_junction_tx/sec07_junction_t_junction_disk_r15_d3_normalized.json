@@ -1,0 +1,212 @@
+{
+  "shape": "disk",
+  "shape_label": "Disk",
+  "degree": 3,
+  "normalize_coords": true,
+  "support_key": "r",
+  "support_value": 15.0,
+  "support_cardinality": 708,
+  "kappa_design_matrix": 56.39722904761618,
+  "design_matrix_shape": [
+    708,
+    10
+  ],
+  "junction_type": "t_junction",
+  "junction_label": "T-junction",
+  "junction_center_anisotropy_ratio": 1.0252603181193871,
+  "theta_max_deg": 180.0,
+  "theta_min_deg": 40.0,
+  "branch_isotropy_ratio_mean": null,
+  "branch_isotropy_reported": false,
+  "branch_sample_distances_px": [],
+  "render_config": {
+    "contrast": 1.0,
+    "edge_width_px": 1.5,
+    "image_size": 1024,
+    "phase_count": 4,
+    "phase_step_px": 0.25,
+    "angle_step_deg": 10.0
+  },
+  "curve": [
+    {
+      "theta_deg": 0.0,
+      "junction_magnitude": 0.07846246464963402,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 10.0,
+      "junction_magnitude": 0.07822185040888754,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 20.0,
+      "junction_magnitude": 0.07767617034620179,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 30.0,
+      "junction_magnitude": 0.07694721097261811,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 40.0,
+      "junction_magnitude": 0.07652930993521337,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 50.0,
+      "junction_magnitude": 0.0765373767121068,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 60.0,
+      "junction_magnitude": 0.0769580735279731,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 70.0,
+      "junction_magnitude": 0.07765858385038192,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 80.0,
+      "junction_magnitude": 0.07820065704591338,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 90.0,
+      "junction_magnitude": 0.07846246464963397,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 100.0,
+      "junction_magnitude": 0.07822185040888759,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 110.0,
+      "junction_magnitude": 0.07767617034620178,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 120.0,
+      "junction_magnitude": 0.07694721097261811,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 130.0,
+      "junction_magnitude": 0.0765293099352134,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 140.0,
+      "junction_magnitude": 0.07653737671210681,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 150.0,
+      "junction_magnitude": 0.07695807352797315,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 160.0,
+      "junction_magnitude": 0.07765858385038196,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 170.0,
+      "junction_magnitude": 0.07820065704591347,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 180.0,
+      "junction_magnitude": 0.07846246464963404,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 190.0,
+      "junction_magnitude": 0.07822185040888764,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 200.0,
+      "junction_magnitude": 0.0776761703462018,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 210.0,
+      "junction_magnitude": 0.07694721097261814,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 220.0,
+      "junction_magnitude": 0.07652930993521342,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 230.0,
+      "junction_magnitude": 0.07653737671210684,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 240.0,
+      "junction_magnitude": 0.07695807352797317,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 250.0,
+      "junction_magnitude": 0.07765858385038198,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 260.0,
+      "junction_magnitude": 0.07820065704591346,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 270.0,
+      "junction_magnitude": 0.07846246464963404,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 280.0,
+      "junction_magnitude": 0.07822185040888757,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 290.0,
+      "junction_magnitude": 0.07767617034620183,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 300.0,
+      "junction_magnitude": 0.07694721097261817,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 310.0,
+      "junction_magnitude": 0.07652930993521345,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 320.0,
+      "junction_magnitude": 0.07653737671210685,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 330.0,
+      "junction_magnitude": 0.07695807352797318,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 340.0,
+      "junction_magnitude": 0.077658583850382,
+      "branch_isotropy_ratio": null
+    },
+    {
+      "theta_deg": 350.0,
+      "junction_magnitude": 0.07820065704591345,
+      "branch_isotropy_ratio": null
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "title": "Section 7.3 junction summary",
+  "subtitle": "Matched bounding rule, $d = 3$, normalize_coords = True",
+  "junction_order": [
+    "l_corner",
+    "t_junction",
+    "x_junction"
+  ],
+  "shape_order": [
+    "disk",
+    "square"
+  ],
+  "shapes": {
+    "disk": {
+      "label": "Disk"
+    },
+    "square": {
+      "label": "Square"
+    }
+  },
+  "excluded_junctions": {
+    "y_junction": "Excluded due to lattice incompatibility for 120 degree branch spacing.",
+    "star4": "Excluded due to alignment-with-lattice artifacts for the square support."
+  },
+  "junctions": {
+    "l_corner": {
+      "label": "L-corner",
+      "shapes": {
+        "disk": {
+          "junction_center_anisotropy_ratio": 1.0246332601692019,
+          "branch_isotropy_ratio_mean": 1.0019582167896193
+        },
+        "square": {
+          "junction_center_anisotropy_ratio": 1.2827527257883982,
+          "branch_isotropy_ratio_mean": 1.0198355626599838
+        }
+      }
+    },
+    "t_junction": {
+      "label": "T-junction",
+      "report_branch_isotropy": false,
+      "branch_angles_deg_local": [
+        90.0,
+        180.0,
+        270.0
+      ],
+      "shapes": {
+        "disk": {
+          "junction_center_anisotropy_ratio": 1.0252603181193871,
+          "branch_isotropy_ratio_mean": null
+        },
+        "square": {
+          "junction_center_anisotropy_ratio": 1.2838515545741975,
+          "branch_isotropy_ratio_mean": null
+        }
+      }
+    },
+    "x_junction": {
+      "label": "X-junction",
+      "report_branch_isotropy": true,
+      "branch_angles_deg_local": [
+        0.0,
+        90.0,
+        180.0,
+        270.0
+      ],
+      "shapes": {
+        "disk": {
+          "junction_center_anisotropy_ratio": 1.025329093425676,
+          "branch_isotropy_ratio_mean": 1.0006976230423237
+        },
+        "square": {
+          "junction_center_anisotropy_ratio": 1.2840190320594966,
+          "branch_isotropy_ratio_mean": 1.0286261086166004
+        }
+      }
+    }
+  }
+}
