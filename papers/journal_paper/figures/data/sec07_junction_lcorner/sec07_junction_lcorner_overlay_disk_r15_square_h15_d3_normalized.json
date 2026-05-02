@@ -1,0 +1,384 @@
+{
+  "title": "Section 7.3 L-corner junction first pass",
+  "subtitle": "Disk vs square, matched bounding rule, $d = 3$, normalize_coords = True",
+  "shape_order": [
+    "disk",
+    "square"
+  ],
+  "shapes": {
+    "disk": {
+      "label": "Disk",
+      "junction_center_anisotropy_ratio": 1.0246332601692019,
+      "branch_isotropy_ratio_mean": 1.0019582167896193,
+      "curve": [
+        {
+          "theta_deg": 0.0,
+          "junction_magnitude": 0.07023489759904512,
+          "branch_isotropy_ratio": 1.0000000000000004
+        },
+        {
+          "theta_deg": 10.0,
+          "junction_magnitude": 0.0700161542083951,
+          "branch_isotropy_ratio": 1.0019613625987869
+        },
+        {
+          "theta_deg": 20.0,
+          "junction_magnitude": 0.06952770799342915,
+          "branch_isotropy_ratio": 1.003033795694412
+        },
+        {
+          "theta_deg": 30.0,
+          "junction_magnitude": 0.06891097029764015,
+          "branch_isotropy_ratio": 1.0026526792079071
+        },
+        {
+          "theta_deg": 40.0,
+          "junction_magnitude": 0.06854637686409573,
+          "branch_isotropy_ratio": 1.001164138052181
+        },
+        {
+          "theta_deg": 50.0,
+          "junction_magnitude": 0.06854637686409573,
+          "branch_isotropy_ratio": 1.001164138052181
+        },
+        {
+          "theta_deg": 60.0,
+          "junction_magnitude": 0.06891097029764016,
+          "branch_isotropy_ratio": 1.0026526792079071
+        },
+        {
+          "theta_deg": 70.0,
+          "junction_magnitude": 0.0695277079934292,
+          "branch_isotropy_ratio": 1.0030337956944124
+        },
+        {
+          "theta_deg": 80.0,
+          "junction_magnitude": 0.07001615420839512,
+          "branch_isotropy_ratio": 1.0019613625987869
+        },
+        {
+          "theta_deg": 90.0,
+          "junction_magnitude": 0.07023489759904514,
+          "branch_isotropy_ratio": 1.0000000000000002
+        },
+        {
+          "theta_deg": 100.0,
+          "junction_magnitude": 0.07001615420839502,
+          "branch_isotropy_ratio": 1.0019613625987862
+        },
+        {
+          "theta_deg": 110.0,
+          "junction_magnitude": 0.06952770799342918,
+          "branch_isotropy_ratio": 1.0030337956944122
+        },
+        {
+          "theta_deg": 120.0,
+          "junction_magnitude": 0.06891097029764019,
+          "branch_isotropy_ratio": 1.0026526792079067
+        },
+        {
+          "theta_deg": 130.0,
+          "junction_magnitude": 0.06854637686409576,
+          "branch_isotropy_ratio": 1.001164138052181
+        },
+        {
+          "theta_deg": 140.0,
+          "junction_magnitude": 0.06854637686409576,
+          "branch_isotropy_ratio": 1.0011641380521805
+        },
+        {
+          "theta_deg": 150.0,
+          "junction_magnitude": 0.06891097029764019,
+          "branch_isotropy_ratio": 1.0026526792079065
+        },
+        {
+          "theta_deg": 160.0,
+          "junction_magnitude": 0.0695277079934292,
+          "branch_isotropy_ratio": 1.0030337956944118
+        },
+        {
+          "theta_deg": 170.0,
+          "junction_magnitude": 0.07001615420839502,
+          "branch_isotropy_ratio": 1.0019613625987858
+        },
+        {
+          "theta_deg": 180.0,
+          "junction_magnitude": 0.07023489759904511,
+          "branch_isotropy_ratio": 1.0000000000000002
+        },
+        {
+          "theta_deg": 190.0,
+          "junction_magnitude": 0.07001615420839499,
+          "branch_isotropy_ratio": 1.0019613625987869
+        },
+        {
+          "theta_deg": 200.0,
+          "junction_magnitude": 0.06952770799342914,
+          "branch_isotropy_ratio": 1.0030337956944124
+        },
+        {
+          "theta_deg": 210.0,
+          "junction_magnitude": 0.06891097029764014,
+          "branch_isotropy_ratio": 1.0026526792079071
+        },
+        {
+          "theta_deg": 220.0,
+          "junction_magnitude": 0.0685463768640957,
+          "branch_isotropy_ratio": 1.001164138052181
+        },
+        {
+          "theta_deg": 230.0,
+          "junction_magnitude": 0.0685463768640957,
+          "branch_isotropy_ratio": 1.001164138052181
+        },
+        {
+          "theta_deg": 240.0,
+          "junction_magnitude": 0.06891097029764014,
+          "branch_isotropy_ratio": 1.0026526792079071
+        },
+        {
+          "theta_deg": 250.0,
+          "junction_magnitude": 0.06952770799342914,
+          "branch_isotropy_ratio": 1.0030337956944124
+        },
+        {
+          "theta_deg": 260.0,
+          "junction_magnitude": 0.07001615420839497,
+          "branch_isotropy_ratio": 1.0019613625987869
+        },
+        {
+          "theta_deg": 270.0,
+          "junction_magnitude": 0.07023489759904507,
+          "branch_isotropy_ratio": 1.0000000000000007
+        },
+        {
+          "theta_deg": 280.0,
+          "junction_magnitude": 0.07001615420839506,
+          "branch_isotropy_ratio": 1.0019613625987862
+        },
+        {
+          "theta_deg": 290.0,
+          "junction_magnitude": 0.06952770799342912,
+          "branch_isotropy_ratio": 1.003033795694412
+        },
+        {
+          "theta_deg": 300.0,
+          "junction_magnitude": 0.06891097029764014,
+          "branch_isotropy_ratio": 1.0026526792079067
+        },
+        {
+          "theta_deg": 310.0,
+          "junction_magnitude": 0.06854637686409572,
+          "branch_isotropy_ratio": 1.0011641380521805
+        },
+        {
+          "theta_deg": 320.0,
+          "junction_magnitude": 0.06854637686409573,
+          "branch_isotropy_ratio": 1.0011641380521812
+        },
+        {
+          "theta_deg": 330.0,
+          "junction_magnitude": 0.06891097029764016,
+          "branch_isotropy_ratio": 1.0026526792079073
+        },
+        {
+          "theta_deg": 340.0,
+          "junction_magnitude": 0.0695277079934292,
+          "branch_isotropy_ratio": 1.003033795694412
+        },
+        {
+          "theta_deg": 350.0,
+          "junction_magnitude": 0.07001615420839512,
+          "branch_isotropy_ratio": 1.0019613625987867
+        }
+      ]
+    },
+    "square": {
+      "label": "Square",
+      "junction_center_anisotropy_ratio": 1.2827527257883982,
+      "branch_isotropy_ratio_mean": 1.0198355626599838,
+      "curve": [
+        {
+          "theta_deg": 0.0,
+          "junction_magnitude": 0.06262406201324176,
+          "branch_isotropy_ratio": 1.0
+        },
+        {
+          "theta_deg": 10.0,
+          "junction_magnitude": 0.06143437172712887,
+          "branch_isotropy_ratio": 1.0027054387148473
+        },
+        {
+          "theta_deg": 20.0,
+          "junction_magnitude": 0.058030615958349165,
+          "branch_isotropy_ratio": 1.0130705751835154
+        },
+        {
+          "theta_deg": 30.0,
+          "junction_magnitude": 0.05312345445829289,
+          "branch_isotropy_ratio": 1.0396585202500452
+        },
+        {
+          "theta_deg": 40.0,
+          "junction_magnitude": 0.04882005764185937,
+          "branch_isotropy_ratio": 1.0338254978215202
+        },
+        {
+          "theta_deg": 50.0,
+          "junction_magnitude": 0.04882005764185938,
+          "branch_isotropy_ratio": 1.0338254978215202
+        },
+        {
+          "theta_deg": 60.0,
+          "junction_magnitude": 0.05312345445829289,
+          "branch_isotropy_ratio": 1.039658520250045
+        },
+        {
+          "theta_deg": 70.0,
+          "junction_magnitude": 0.05803061595834917,
+          "branch_isotropy_ratio": 1.0130705751835154
+        },
+        {
+          "theta_deg": 80.0,
+          "junction_magnitude": 0.06143437172712887,
+          "branch_isotropy_ratio": 1.0027054387148469
+        },
+        {
+          "theta_deg": 90.0,
+          "junction_magnitude": 0.0626240620132418,
+          "branch_isotropy_ratio": 1.0000000000000004
+        },
+        {
+          "theta_deg": 100.0,
+          "junction_magnitude": 0.061434371727128824,
+          "branch_isotropy_ratio": 1.0027054387148469
+        },
+        {
+          "theta_deg": 110.0,
+          "junction_magnitude": 0.058030615958349165,
+          "branch_isotropy_ratio": 1.0130705751835158
+        },
+        {
+          "theta_deg": 120.0,
+          "junction_magnitude": 0.053123454458292876,
+          "branch_isotropy_ratio": 1.0396585202500452
+        },
+        {
+          "theta_deg": 130.0,
+          "junction_magnitude": 0.04882005764185936,
+          "branch_isotropy_ratio": 1.0338254978215202
+        },
+        {
+          "theta_deg": 140.0,
+          "junction_magnitude": 0.04882005764185936,
+          "branch_isotropy_ratio": 1.0338254978215204
+        },
+        {
+          "theta_deg": 150.0,
+          "junction_magnitude": 0.05312345445829288,
+          "branch_isotropy_ratio": 1.0396585202500455
+        },
+        {
+          "theta_deg": 160.0,
+          "junction_magnitude": 0.058030615958349165,
+          "branch_isotropy_ratio": 1.0130705751835163
+        },
+        {
+          "theta_deg": 170.0,
+          "junction_magnitude": 0.061434371727128824,
+          "branch_isotropy_ratio": 1.002705438714847
+        },
+        {
+          "theta_deg": 180.0,
+          "junction_magnitude": 0.06262406201324178,
+          "branch_isotropy_ratio": 1.0000000000000004
+        },
+        {
+          "theta_deg": 190.0,
+          "junction_magnitude": 0.061434371727128824,
+          "branch_isotropy_ratio": 1.0027054387148464
+        },
+        {
+          "theta_deg": 200.0,
+          "junction_magnitude": 0.05803061595834919,
+          "branch_isotropy_ratio": 1.0130705751835154
+        },
+        {
+          "theta_deg": 210.0,
+          "junction_magnitude": 0.053123454458292904,
+          "branch_isotropy_ratio": 1.0396585202500452
+        },
+        {
+          "theta_deg": 220.0,
+          "junction_magnitude": 0.048820057641859385,
+          "branch_isotropy_ratio": 1.0338254978215204
+        },
+        {
+          "theta_deg": 230.0,
+          "junction_magnitude": 0.04882005764185938,
+          "branch_isotropy_ratio": 1.0338254978215198
+        },
+        {
+          "theta_deg": 240.0,
+          "junction_magnitude": 0.053123454458292876,
+          "branch_isotropy_ratio": 1.0396585202500448
+        },
+        {
+          "theta_deg": 250.0,
+          "junction_magnitude": 0.058030615958349165,
+          "branch_isotropy_ratio": 1.013070575183515
+        },
+        {
+          "theta_deg": 260.0,
+          "junction_magnitude": 0.0614343717271288,
+          "branch_isotropy_ratio": 1.002705438714846
+        },
+        {
+          "theta_deg": 270.0,
+          "junction_magnitude": 0.06262406201324175,
+          "branch_isotropy_ratio": 1.0000000000000004
+        },
+        {
+          "theta_deg": 280.0,
+          "junction_magnitude": 0.061434371727128866,
+          "branch_isotropy_ratio": 1.0027054387148477
+        },
+        {
+          "theta_deg": 290.0,
+          "junction_magnitude": 0.058030615958349144,
+          "branch_isotropy_ratio": 1.013070575183516
+        },
+        {
+          "theta_deg": 300.0,
+          "junction_magnitude": 0.053123454458292856,
+          "branch_isotropy_ratio": 1.0396585202500455
+        },
+        {
+          "theta_deg": 310.0,
+          "junction_magnitude": 0.04882005764185935,
+          "branch_isotropy_ratio": 1.0338254978215204
+        },
+        {
+          "theta_deg": 320.0,
+          "junction_magnitude": 0.04882005764185935,
+          "branch_isotropy_ratio": 1.0338254978215207
+        },
+        {
+          "theta_deg": 330.0,
+          "junction_magnitude": 0.05312345445829285,
+          "branch_isotropy_ratio": 1.0396585202500455
+        },
+        {
+          "theta_deg": 340.0,
+          "junction_magnitude": 0.058030615958349165,
+          "branch_isotropy_ratio": 1.0130705751835156
+        },
+        {
+          "theta_deg": 350.0,
+          "junction_magnitude": 0.061434371727128866,
+          "branch_isotropy_ratio": 1.0027054387148475
+        }
+      ]
+    }
+  }
+}
