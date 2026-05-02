@@ -464,7 +464,18 @@ def run_experiment(
 
     for radius in radii:
         degree, support_cardinality, coefficient_count = _d_max_for_radius(int(radius))
+        print(
+            f"r={int(radius)} start dmax={int(degree)} support={int(support_cardinality)} coeffs={int(coefficient_count)} "
+            f"fft_backend={str(fft_backend)} batch_cases={int(batch_cases)}"
+        )
+        print(f"r={int(radius)} phase=kernel_diagnostics status=begin")
         kernel_info = _kernel_diagnostics(int(radius), int(degree))
+        print(
+            f"r={int(radius)} phase=kernel_diagnostics status={str(kernel_info.get('status'))} "
+            f"kappa={kernel_info.get('kappa_design_matrix')} sigma_min={kernel_info.get('sigma_min')} "
+            f"rank_deficient_count={kernel_info.get('rank_deficient_count')}"
+        )
+        print(f"r={int(radius)} phase=evaluate status=begin")
         eval_info = _evaluate_radius(
             radius=int(radius),
             degree=int(degree),
@@ -474,6 +485,7 @@ def run_experiment(
             use_scipy_fallback=bool(use_scipy_fallback),
             batch_cases=int(batch_cases),
         )
+        print(f"r={int(radius)} phase=evaluate status=end method={str(eval_info['application_method'])}")
 
         step_rmse = None
         arc_rmse = None
