@@ -1,0 +1,1057 @@
+{
+  "title": "Section 8.1 baseline infrastructure and validation tuning",
+  "subtitle": "Validation-tuned head-to-head method roster under AWGN 10 dB on smoothed step edges",
+  "config": {
+    "contrast": 1.0,
+    "edge_width_px": 1.5,
+    "validation_snr_db": 10.0,
+    "orientation_step_deg": 0.5,
+    "phase_count": 4,
+    "phase_step_px": 0.25,
+    "patch_half_size": 192,
+    "fft_backend": "vkfft",
+    "noise_seed": 8101
+  },
+  "constraints": {
+    "localization_rms": 0.5,
+    "mag_bias_abs": 0.05,
+    "white_noise_gain": 0.001
+  },
+  "method_order": [
+    "roberts",
+    "prewitt",
+    "sobel",
+    "scharr",
+    "dog",
+    "farid_simoncelli",
+    "square_sg",
+    "wvf"
+  ],
+  "method_roster": [
+    {
+      "method": "roberts",
+      "label": "Roberts",
+      "config": {
+        "window": "2x2-embedded"
+      },
+      "metrics": {
+        "grad_rmse": 0.331854610088252,
+        "magnitude_bias": 0.20904854383643262,
+        "mag_bias_abs": 0.20904854383643262,
+        "localization_rms": 8.523991201941941,
+        "fwhm": 1.3684789838074023,
+        "peak_amplitude": 0.3816382216904693,
+        "white_noise_gain": 0.5
+      }
+    },
+    {
+      "method": "prewitt",
+      "label": "Prewitt",
+      "config": {
+        "window": "3x3"
+      },
+      "metrics": {
+        "grad_rmse": 0.18344193537565975,
+        "magnitude_bias": 0.11183821857649896,
+        "mag_bias_abs": 0.11183821857649896,
+        "localization_rms": 3.4319517087633873,
+        "fwhm": 2.4925933835294813,
+        "peak_amplitude": 0.3587107196701385,
+        "white_noise_gain": 0.16666666666666669
+      }
+    },
+    {
+      "method": "sobel",
+      "label": "Sobel",
+      "config": {
+        "window": "3x3"
+      },
+      "metrics": {
+        "grad_rmse": 0.19434337886747,
+        "magnitude_bias": 0.12052221244444547,
+        "mag_bias_abs": 0.12052221244444547,
+        "localization_rms": 3.314160376202406,
+        "fwhm": 2.3621662290397127,
+        "peak_amplitude": 0.3710680928626786,
+        "white_noise_gain": 0.1875
+      }
+    },
+    {
+      "method": "scharr",
+      "label": "Scharr",
+      "config": {
+        "window": "3x3"
+      },
+      "metrics": {
+        "grad_rmse": 0.21526048890398874,
+        "magnitude_bias": 0.13698594036965855,
+        "mag_bias_abs": 0.13698594036965855,
+        "localization_rms": 3.7564251263732986,
+        "fwhm": 2.19547786089272,
+        "peak_amplitude": 0.38743059248750833,
+        "white_noise_gain": 0.23046875
+      }
+    },
+    {
+      "method": "dog",
+      "label": "DoG",
+      "config": {
+        "sigma": 3.0
+      },
+      "metrics": {
+        "grad_rmse": 0.08327403068305955,
+        "magnitude_bias": -0.005303097216667476,
+        "mag_bias_abs": 0.005303097216667476,
+        "localization_rms": 0.24898928168329462,
+        "fwhm": 7.7681105646978645,
+        "peak_amplitude": 0.1217572842876482,
+        "white_noise_gain": 0.0004912189073129315
+      }
+    },
+    {
+      "method": "farid_simoncelli",
+      "label": "Farid-Simoncelli",
+      "config": {
+        "window": "7tap"
+      },
+      "metrics": {
+        "grad_rmse": 0.08144924552076128,
+        "magnitude_bias": 0.033458015864052205,
+        "mag_bias_abs": 0.033458015864052205,
+        "localization_rms": 0.6379305765921052,
+        "fwhm": 3.923830228110853,
+        "peak_amplitude": 0.2535451272685161,
+        "white_noise_gain": 0.02779841825599506
+      }
+    },
+    {
+      "method": "square_sg",
+      "label": "Square SG",
+      "config": {
+        "N": 11,
+        "d": 1,
+        "normalize_coords": true
+      },
+      "metrics": {
+        "grad_rmse": 0.08351049484298972,
+        "magnitude_bias": -0.0020282325598548717,
+        "mag_bias_abs": 0.0020282325598548717,
+        "localization_rms": 0.4856042283335543,
+        "fwhm": 7.860606837859141,
+        "peak_amplitude": 0.12641797019747858,
+        "white_noise_gain": 0.0008264462809917355
+      }
+    },
+    {
+      "method": "wvf",
+      "label": "WVF",
+      "config": {
+        "r": 50,
+        "d": 11,
+        "normalize_coords": true
+      },
+      "metrics": {
+        "grad_rmse": 0.10216984579231145,
+        "magnitude_bias": -0.01262267686801093,
+        "mag_bias_abs": 0.01262267686801093,
+        "localization_rms": 0.42992529491902104,
+        "fwhm": 14.677529133187843,
+        "peak_amplitude": 0.08076417580120065,
+        "white_noise_gain": 8.998553150423674e-05
+      }
+    }
+  ],
+  "fixed_methods": {
+    "roberts": {
+      "method": "roberts",
+      "label": "Roberts",
+      "config": {
+        "window": "2x2-embedded"
+      },
+      "support_half_extent": 1,
+      "white_noise_gain": 0.5,
+      "support_cardinality": null,
+      "kappa_design_matrix": null,
+      "metrics": {
+        "grad_rmse": 0.331854610088252,
+        "magnitude_bias": 0.20904854383643262,
+        "mag_bias_abs": 0.20904854383643262,
+        "localization_rms": 8.523991201941941,
+        "fwhm": 1.3684789838074023,
+        "peak_amplitude": 0.3816382216904693,
+        "white_noise_gain": 0.5
+      }
+    },
+    "prewitt": {
+      "method": "prewitt",
+      "label": "Prewitt",
+      "config": {
+        "window": "3x3"
+      },
+      "support_half_extent": 1,
+      "white_noise_gain": 0.16666666666666669,
+      "support_cardinality": null,
+      "kappa_design_matrix": null,
+      "metrics": {
+        "grad_rmse": 0.18344193537565975,
+        "magnitude_bias": 0.11183821857649896,
+        "mag_bias_abs": 0.11183821857649896,
+        "localization_rms": 3.4319517087633873,
+        "fwhm": 2.4925933835294813,
+        "peak_amplitude": 0.3587107196701385,
+        "white_noise_gain": 0.16666666666666669
+      }
+    },
+    "sobel": {
+      "method": "sobel",
+      "label": "Sobel",
+      "config": {
+        "window": "3x3"
+      },
+      "support_half_extent": 1,
+      "white_noise_gain": 0.1875,
+      "support_cardinality": null,
+      "kappa_design_matrix": null,
+      "metrics": {
+        "grad_rmse": 0.19434337886747,
+        "magnitude_bias": 0.12052221244444547,
+        "mag_bias_abs": 0.12052221244444547,
+        "localization_rms": 3.314160376202406,
+        "fwhm": 2.3621662290397127,
+        "peak_amplitude": 0.3710680928626786,
+        "white_noise_gain": 0.1875
+      }
+    },
+    "scharr": {
+      "method": "scharr",
+      "label": "Scharr",
+      "config": {
+        "window": "3x3"
+      },
+      "support_half_extent": 1,
+      "white_noise_gain": 0.23046875,
+      "support_cardinality": null,
+      "kappa_design_matrix": null,
+      "metrics": {
+        "grad_rmse": 0.21526048890398874,
+        "magnitude_bias": 0.13698594036965855,
+        "mag_bias_abs": 0.13698594036965855,
+        "localization_rms": 3.7564251263732986,
+        "fwhm": 2.19547786089272,
+        "peak_amplitude": 0.38743059248750833,
+        "white_noise_gain": 0.23046875
+      }
+    },
+    "farid_simoncelli": {
+      "method": "farid_simoncelli",
+      "label": "Farid-Simoncelli",
+      "config": {
+        "window": "7tap"
+      },
+      "support_half_extent": 3,
+      "white_noise_gain": 0.02779841825599506,
+      "support_cardinality": null,
+      "kappa_design_matrix": null,
+      "metrics": {
+        "grad_rmse": 0.08144924552076128,
+        "magnitude_bias": 0.033458015864052205,
+        "mag_bias_abs": 0.033458015864052205,
+        "localization_rms": 0.6379305765921052,
+        "fwhm": 3.923830228110853,
+        "peak_amplitude": 0.2535451272685161,
+        "white_noise_gain": 0.02779841825599506
+      }
+    }
+  },
+  "tuning_results": {
+    "dog": {
+      "candidates": [
+        {
+          "method": "dog",
+          "label": "DoG",
+          "config": {
+            "sigma": 0.5
+          },
+          "support_half_extent": 2,
+          "white_noise_gain": 0.24624497275005577,
+          "support_cardinality": null,
+          "kappa_design_matrix": null,
+          "metrics": {
+            "grad_rmse": 0.2233024689244219,
+            "magnitude_bias": 0.1370804546462023,
+            "mag_bias_abs": 0.1370804546462023,
+            "localization_rms": 4.429882502826386,
+            "fwhm": 1.9991466144989065,
+            "peak_amplitude": 0.36618843909146104,
+            "white_noise_gain": 0.24624497275005577
+          }
+        },
+        {
+          "method": "dog",
+          "label": "DoG",
+          "config": {
+            "sigma": 0.75
+          },
+          "support_half_extent": 3,
+          "white_noise_gain": 0.1167897931818702,
+          "support_cardinality": null,
+          "kappa_design_matrix": null,
+          "metrics": {
+            "grad_rmse": 0.15418969284396866,
+            "magnitude_bias": 0.08883512044395026,
+            "mag_bias_abs": 0.08883512044395026,
+            "localization_rms": 2.2242650307524423,
+            "fwhm": 2.8049795992045636,
+            "peak_amplitude": 0.3306340266552767,
+            "white_noise_gain": 0.1167897931818702
+          }
+        },
+        {
+          "method": "dog",
+          "label": "DoG",
+          "config": {
+            "sigma": 1.0
+          },
+          "support_half_extent": 4,
+          "white_noise_gain": 0.03971571317214924,
+          "support_cardinality": null,
+          "kappa_design_matrix": null,
+          "metrics": {
+            "grad_rmse": 0.0939555857168207,
+            "magnitude_bias": 0.04297677778742274,
+            "mag_bias_abs": 0.04297677778742274,
+            "localization_rms": 0.7349639210545391,
+            "fwhm": 3.6915241206734257,
+            "peak_amplitude": 0.26872207654579483,
+            "white_noise_gain": 0.03971571317214924
+          }
+        },
+        {
+          "method": "dog",
+          "label": "DoG",
+          "config": {
+            "sigma": 1.5
+          },
+          "support_half_extent": 6,
+          "white_noise_gain": 0.007859503119384784,
+          "support_cardinality": null,
+          "kappa_design_matrix": null,
+          "metrics": {
+            "grad_rmse": 0.06240373314037314,
+            "magnitude_bias": 0.011600122665639962,
+            "mag_bias_abs": 0.011600122665639962,
+            "localization_rms": 0.4155291580942495,
+            "fwhm": 4.7284239972038815,
+            "peak_amplitude": 0.2053530638645399,
+            "white_noise_gain": 0.007859503119384784
+          }
+        },
+        {
+          "method": "dog",
+          "label": "DoG",
+          "config": {
+            "sigma": 2.0
+          },
+          "support_half_extent": 8,
+          "white_noise_gain": 0.002486795891345583,
+          "support_cardinality": null,
+          "kappa_design_matrix": null,
+          "metrics": {
+            "grad_rmse": 0.06682391116188431,
+            "magnitude_bias": 0.002256496021470121,
+            "mag_bias_abs": 0.002256496021470121,
+            "localization_rms": 0.31867332138639787,
+            "fwhm": 5.678646481301051,
+            "peak_amplitude": 0.16803328419273944,
+            "white_noise_gain": 0.002486795891345583
+          }
+        },
+        {
+          "method": "dog",
+          "label": "DoG",
+          "config": {
+            "sigma": 3.0
+          },
+          "support_half_extent": 12,
+          "white_noise_gain": 0.0004912189073129315,
+          "support_cardinality": null,
+          "kappa_design_matrix": null,
+          "metrics": {
+            "grad_rmse": 0.08327403068305955,
+            "magnitude_bias": -0.005303097216667476,
+            "mag_bias_abs": 0.005303097216667476,
+            "localization_rms": 0.24898928168329462,
+            "fwhm": 7.7681105646978645,
+            "peak_amplitude": 0.1217572842876482,
+            "white_noise_gain": 0.0004912189073129315
+          }
+        },
+        {
+          "method": "dog",
+          "label": "DoG",
+          "config": {
+            "sigma": 4.0
+          },
+          "support_half_extent": 16,
+          "white_noise_gain": 0.0001554247225487726,
+          "support_cardinality": null,
+          "kappa_design_matrix": null,
+          "metrics": {
+            "grad_rmse": 0.0941191863913037,
+            "magnitude_bias": -0.01281711798191306,
+            "mag_bias_abs": 0.01281711798191306,
+            "localization_rms": 0.2234163560964506,
+            "fwhm": 9.968935644561443,
+            "peak_amplitude": 0.09457681271716309,
+            "white_noise_gain": 0.0001554247225487726
+          }
+        },
+        {
+          "method": "dog",
+          "label": "DoG",
+          "config": {
+            "sigma": 6.0
+          },
+          "support_half_extent": 24,
+          "white_noise_gain": 3.0701177002745085e-05,
+          "support_cardinality": null,
+          "kappa_design_matrix": null,
+          "metrics": {
+            "grad_rmse": 0.105607047782812,
+            "magnitude_bias": -0.02739759364208667,
+            "mag_bias_abs": 0.02739759364208667,
+            "localization_rms": 0.2027267912158812,
+            "fwhm": 14.520021320919872,
+            "peak_amplitude": 0.0648220069287506,
+            "white_noise_gain": 3.0701177002745085e-05
+          }
+        }
+      ],
+      "selection_mode": "constrained_rmse",
+      "relax_factor": 1.0,
+      "constraints_used": {
+        "localization_rms": 0.5,
+        "mag_bias_abs": 0.05,
+        "white_noise_gain": 0.001
+      },
+      "chosen": {
+        "method": "dog",
+        "label": "DoG",
+        "config": {
+          "sigma": 3.0
+        },
+        "support_half_extent": 12,
+        "white_noise_gain": 0.0004912189073129315,
+        "support_cardinality": null,
+        "kappa_design_matrix": null,
+        "metrics": {
+          "grad_rmse": 0.08327403068305955,
+          "magnitude_bias": -0.005303097216667476,
+          "mag_bias_abs": 0.005303097216667476,
+          "localization_rms": 0.24898928168329462,
+          "fwhm": 7.7681105646978645,
+          "peak_amplitude": 0.1217572842876482,
+          "white_noise_gain": 0.0004912189073129315
+        }
+      },
+      "feasible_count": 3
+    },
+    "square_sg": {
+      "candidates": [
+        {
+          "method": "square_sg",
+          "label": "Square SG",
+          "config": {
+            "N": 3,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "support_half_extent": 1,
+          "white_noise_gain": 0.16666666666666677,
+          "support_cardinality": 8,
+          "kappa_design_matrix": 1.1547005383792517,
+          "metrics": {
+            "grad_rmse": 0.1834419353762331,
+            "magnitude_bias": 0.11183821857716991,
+            "mag_bias_abs": 0.11183821857716991,
+            "localization_rms": 3.4319517087745983,
+            "fwhm": 2.4925933837900107,
+            "peak_amplitude": 0.3587107196529645,
+            "white_noise_gain": 0.16666666666666677
+          }
+        },
+        {
+          "method": "square_sg",
+          "label": "Square SG",
+          "config": {
+            "N": 5,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "support_half_extent": 2,
+          "white_noise_gain": 0.020000000000000004,
+          "support_cardinality": 24,
+          "kappa_design_matrix": 1.3856406460551016,
+          "metrics": {
+            "grad_rmse": 0.07425147103240634,
+            "magnitude_bias": 0.026203270546402264,
+            "mag_bias_abs": 0.026203270546402264,
+            "localization_rms": 0.5615681033791218,
+            "fwhm": 4.188424441707082,
+            "peak_amplitude": 0.238375506814227,
+            "white_noise_gain": 0.020000000000000004
+          }
+        },
+        {
+          "method": "square_sg",
+          "label": "Square SG",
+          "config": {
+            "N": 5,
+            "d": 3,
+            "normalize_coords": true
+          },
+          "support_half_extent": 2,
+          "white_noise_gain": 0.2091269841269845,
+          "support_cardinality": 24,
+          "kappa_design_matrix": 29.894081970453684,
+          "metrics": {
+            "grad_rmse": 0.20502150824117282,
+            "magnitude_bias": 0.13066895300362777,
+            "mag_bias_abs": 0.13066895300362777,
+            "localization_rms": 3.7401449347237965,
+            "fwhm": 2.343114339866475,
+            "peak_amplitude": 0.3871371128146294,
+            "white_noise_gain": 0.2091269841269845
+          }
+        },
+        {
+          "method": "square_sg",
+          "label": "Square SG",
+          "config": {
+            "N": 7,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "support_half_extent": 3,
+          "white_noise_gain": 0.005102040816326528,
+          "support_cardinality": 48,
+          "kappa_design_matrix": 1.4846149779161801,
+          "metrics": {
+            "grad_rmse": 0.06603341982735152,
+            "magnitude_bias": 0.007714459036527077,
+            "mag_bias_abs": 0.007714459036527077,
+            "localization_rms": 0.493646327188905,
+            "fwhm": 5.318231590321407,
+            "peak_amplitude": 0.1849370074167236,
+            "white_noise_gain": 0.005102040816326528
+          }
+        },
+        {
+          "method": "square_sg",
+          "label": "Square SG",
+          "config": {
+            "N": 7,
+            "d": 3,
+            "normalize_coords": true
+          },
+          "support_half_extent": 3,
+          "white_noise_gain": 0.04431216931216916,
+          "support_cardinality": 48,
+          "kappa_design_matrix": 30.61601665482388,
+          "metrics": {
+            "grad_rmse": 0.09792394585560245,
+            "magnitude_bias": 0.05006706215269049,
+            "mag_bias_abs": 0.05006706215269049,
+            "localization_rms": 0.7396509810278785,
+            "fwhm": 3.680174136174682,
+            "peak_amplitude": 0.28737780938323365,
+            "white_noise_gain": 0.04431216931216916
+          }
+        },
+        {
+          "method": "square_sg",
+          "label": "Square SG",
+          "config": {
+            "N": 7,
+            "d": 5,
+            "normalize_coords": true
+          },
+          "support_half_extent": 3,
+          "white_noise_gain": 0.2255836139169478,
+          "support_cardinality": 48,
+          "kappa_design_matrix": 3078.288223396546,
+          "metrics": {
+            "grad_rmse": 0.21287818922183593,
+            "magnitude_bias": 0.13724110597066794,
+            "mag_bias_abs": 0.13724110597066794,
+            "localization_rms": 3.927127438612365,
+            "fwhm": 2.3072348460343055,
+            "peak_amplitude": 0.3956017583337392,
+            "white_noise_gain": 0.2255836139169478
+          }
+        },
+        {
+          "method": "square_sg",
+          "label": "Square SG",
+          "config": {
+            "N": 9,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "support_half_extent": 4,
+          "white_noise_gain": 0.0018518518518518524,
+          "support_cardinality": 80,
+          "kappa_design_matrix": 1.539600717839002,
+          "metrics": {
+            "grad_rmse": 0.07460023838745997,
+            "magnitude_bias": 0.0013479179395074232,
+            "mag_bias_abs": 0.0013479179395074232,
+            "localization_rms": 0.4947643522036981,
+            "fwhm": 6.5646777079986025,
+            "peak_amplitude": 0.15049346792717344,
+            "white_noise_gain": 0.0018518518518518524
+          }
+        },
+        {
+          "method": "square_sg",
+          "label": "Square SG",
+          "config": {
+            "N": 9,
+            "d": 3,
+            "normalize_coords": true
+          },
+          "support_half_extent": 4,
+          "white_noise_gain": 0.01510920492401972,
+          "support_cardinality": 80,
+          "kappa_design_matrix": 31.92213311624316,
+          "metrics": {
+            "grad_rmse": 0.06887466966341058,
+            "magnitude_bias": 0.025685046711573307,
+            "mag_bias_abs": 0.025685046711573307,
+            "localization_rms": 0.543566876966049,
+            "fwhm": 4.49215795350232,
+            "peak_amplitude": 0.23723863590307062,
+            "white_noise_gain": 0.01510920492401972
+          }
+        },
+        {
+          "method": "square_sg",
+          "label": "Square SG",
+          "config": {
+            "N": 9,
+            "d": 5,
+            "normalize_coords": true
+          },
+          "support_half_extent": 4,
+          "white_noise_gain": 0.06570969185447391,
+          "support_cardinality": 80,
+          "kappa_design_matrix": 2662.781281684878,
+          "metrics": {
+            "grad_rmse": 0.11687057188967201,
+            "magnitude_bias": 0.06489608059437826,
+            "mag_bias_abs": 0.06489608059437826,
+            "localization_rms": 1.3438929289636503,
+            "fwhm": 3.4090421246418727,
+            "peak_amplitude": 0.3104505209529305,
+            "white_noise_gain": 0.06570969185447391
+          }
+        },
+        {
+          "method": "square_sg",
+          "label": "Square SG",
+          "config": {
+            "N": 11,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "support_half_extent": 5,
+          "white_noise_gain": 0.0008264462809917355,
+          "support_cardinality": 120,
+          "kappa_design_matrix": 1.5745916432444336,
+          "metrics": {
+            "grad_rmse": 0.08351049484298972,
+            "magnitude_bias": -0.0020282325598548717,
+            "mag_bias_abs": 0.0020282325598548717,
+            "localization_rms": 0.4856042283335543,
+            "fwhm": 7.860606837859141,
+            "peak_amplitude": 0.12641797019747858,
+            "white_noise_gain": 0.0008264462809917355
+          }
+        },
+        {
+          "method": "square_sg",
+          "label": "Square SG",
+          "config": {
+            "N": 11,
+            "d": 3,
+            "normalize_coords": true
+          },
+          "support_half_extent": 5,
+          "white_noise_gain": 0.006548586094040645,
+          "support_cardinality": 120,
+          "kappa_design_matrix": 33.04136560432757,
+          "metrics": {
+            "grad_rmse": 0.06512223874859634,
+            "magnitude_bias": 0.015639778059505477,
+            "mag_bias_abs": 0.015639778059505477,
+            "localization_rms": 0.5271499432798612,
+            "fwhm": 5.308335779048647,
+            "peak_amplitude": 0.20275396712506655,
+            "white_noise_gain": 0.006548586094040645
+          }
+        },
+        {
+          "method": "square_sg",
+          "label": "Square SG",
+          "config": {
+            "N": 11,
+            "d": 5,
+            "normalize_coords": true
+          },
+          "support_half_extent": 5,
+          "white_noise_gain": 0.02691132078661206,
+          "support_cardinality": 120,
+          "kappa_design_matrix": 2588.5707298440934,
+          "metrics": {
+            "grad_rmse": 0.08084251812441322,
+            "magnitude_bias": 0.03810207385633804,
+            "mag_bias_abs": 0.03810207385633804,
+            "localization_rms": 0.7313442468562225,
+            "fwhm": 4.072544784302123,
+            "peak_amplitude": 0.2651596914946419,
+            "white_noise_gain": 0.02691132078661206
+          }
+        },
+        {
+          "method": "square_sg",
+          "label": "Square SG",
+          "config": {
+            "N": 13,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "support_half_extent": 6,
+          "white_noise_gain": 0.0004226542688081145,
+          "support_cardinality": 168,
+          "kappa_design_matrix": 1.5988161300635781,
+          "metrics": {
+            "grad_rmse": 0.09051698881272974,
+            "magnitude_bias": -0.005534162549416751,
+            "mag_bias_abs": 0.005534162549416751,
+            "localization_rms": 0.5343400437353755,
+            "fwhm": 9.200692459488982,
+            "peak_amplitude": 0.10859271479194757,
+            "white_noise_gain": 0.0004226542688081145
+          }
+        },
+        {
+          "method": "square_sg",
+          "label": "Square SG",
+          "config": {
+            "N": 13,
+            "d": 3,
+            "normalize_coords": true
+          },
+          "support_half_extent": 6,
+          "white_noise_gain": 0.0032953157953157968,
+          "support_cardinality": 168,
+          "kappa_design_matrix": 33.94597994722438,
+          "metrics": {
+            "grad_rmse": 0.0694763863794669,
+            "magnitude_bias": 0.010719457524061367,
+            "mag_bias_abs": 0.010719457524061367,
+            "localization_rms": 0.5000493209376023,
+            "fwhm": 6.166345292949452,
+            "peak_amplitude": 0.17705988441255838,
+            "white_noise_gain": 0.0032953157953157968
+          }
+        },
+        {
+          "method": "square_sg",
+          "label": "Square SG",
+          "config": {
+            "N": 13,
+            "d": 5,
+            "normalize_coords": true
+          },
+          "support_half_extent": 6,
+          "white_noise_gain": 0.013166912615698929,
+          "support_cardinality": 168,
+          "kappa_design_matrix": 2590.8051970838724,
+          "metrics": {
+            "grad_rmse": 0.06791448898180412,
+            "magnitude_bias": 0.02557189220476532,
+            "mag_bias_abs": 0.02557189220476532,
+            "localization_rms": 0.5520630793571357,
+            "fwhm": 4.6911413256355,
+            "peak_amplitude": 0.2330915579270975,
+            "white_noise_gain": 0.013166912615698929
+          }
+        },
+        {
+          "method": "square_sg",
+          "label": "Square SG",
+          "config": {
+            "N": 15,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "support_half_extent": 7,
+          "white_noise_gain": 0.00023809523809523793,
+          "support_cardinality": 224,
+          "kappa_design_matrix": 1.616580753730952,
+          "metrics": {
+            "grad_rmse": 0.09573131217060243,
+            "magnitude_bias": -0.009747188284373024,
+            "mag_bias_abs": 0.009747188284373024,
+            "localization_rms": 0.5608373566052002,
+            "fwhm": 10.55122156159952,
+            "peak_amplitude": 0.09497347484341352,
+            "white_noise_gain": 0.00023809523809523793
+          }
+        },
+        {
+          "method": "square_sg",
+          "label": "Square SG",
+          "config": {
+            "N": 15,
+            "d": 3,
+            "normalize_coords": true
+          },
+          "support_half_extent": 7,
+          "white_noise_gain": 0.0018380524099478324,
+          "support_cardinality": 224,
+          "kappa_design_matrix": 34.6780740371472,
+          "metrics": {
+            "grad_rmse": 0.0755646551750837,
+            "magnitude_bias": 0.008071808697918221,
+            "mag_bias_abs": 0.008071808697918221,
+            "localization_rms": 0.5196751105524859,
+            "fwhm": 7.030851127500332,
+            "peak_amplitude": 0.15672736709992813,
+            "white_noise_gain": 0.0018380524099478324
+          }
+        },
+        {
+          "method": "square_sg",
+          "label": "Square SG",
+          "config": {
+            "N": 15,
+            "d": 5,
+            "normalize_coords": true
+          },
+          "support_half_extent": 7,
+          "white_noise_gain": 0.007225705451475202,
+          "support_cardinality": 224,
+          "kappa_design_matrix": 2615.710093903985,
+          "metrics": {
+            "grad_rmse": 0.06563354120143569,
+            "magnitude_bias": 0.018716920041611892,
+            "mag_bias_abs": 0.018716920041611892,
+            "localization_rms": 0.5241591076862167,
+            "fwhm": 5.313424288061492,
+            "peak_amplitude": 0.2084115858318462,
+            "white_noise_gain": 0.007225705451475202
+          }
+        }
+      ],
+      "selection_mode": "constrained_rmse",
+      "relax_factor": 1.0,
+      "constraints_used": {
+        "localization_rms": 0.5,
+        "mag_bias_abs": 0.05,
+        "white_noise_gain": 0.001
+      },
+      "chosen": {
+        "method": "square_sg",
+        "label": "Square SG",
+        "config": {
+          "N": 11,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_half_extent": 5,
+        "white_noise_gain": 0.0008264462809917355,
+        "support_cardinality": 120,
+        "kappa_design_matrix": 1.5745916432444336,
+        "metrics": {
+          "grad_rmse": 0.08351049484298972,
+          "magnitude_bias": -0.0020282325598548717,
+          "mag_bias_abs": 0.0020282325598548717,
+          "localization_rms": 0.4856042283335543,
+          "fwhm": 7.860606837859141,
+          "peak_amplitude": 0.12641797019747858,
+          "white_noise_gain": 0.0008264462809917355
+        }
+      },
+      "feasible_count": 1
+    },
+    "wvf": {
+      "candidates": [
+        {
+          "method": "wvf",
+          "label": "WVF",
+          "config": {
+            "r": 3,
+            "d": 5,
+            "normalize_coords": true
+          },
+          "support_half_extent": 3,
+          "white_noise_gain": 0.6104984126984088,
+          "support_cardinality": 28,
+          "kappa_design_matrix": null,
+          "metrics": {
+            "grad_rmse": 0.3496216225784572,
+            "magnitude_bias": 0.24831058466713998,
+            "mag_bias_abs": 0.24831058466713998,
+            "localization_rms": 6.120850048626531,
+            "fwhm": 1.5540372256758164,
+            "peak_amplitude": 0.520948974416899,
+            "white_noise_gain": 0.6104984126984088
+          }
+        },
+        {
+          "method": "wvf",
+          "label": "WVF",
+          "config": {
+            "r": 5,
+            "d": 9,
+            "normalize_coords": true
+          },
+          "support_half_extent": 5,
+          "white_noise_gain": 0.6165697650287708,
+          "support_cardinality": 80,
+          "kappa_design_matrix": null,
+          "metrics": {
+            "grad_rmse": 0.35142181921922305,
+            "magnitude_bias": 0.24990982499156458,
+            "mag_bias_abs": 0.24990982499156458,
+            "localization_rms": 6.2759020044237515,
+            "fwhm": 1.5549190275236024,
+            "peak_amplitude": 0.5287632906936623,
+            "white_noise_gain": 0.6165697650287708
+          }
+        },
+        {
+          "method": "wvf",
+          "label": "WVF",
+          "config": {
+            "r": 9,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "support_half_extent": 9,
+          "white_noise_gain": 0.08868650620066386,
+          "support_cardinality": 252,
+          "kappa_design_matrix": null,
+          "metrics": {
+            "grad_rmse": 0.13429697831103174,
+            "magnitude_bias": 0.07862864569533985,
+            "mag_bias_abs": 0.07862864569533985,
+            "localization_rms": 1.897724143285258,
+            "fwhm": 3.198874008630259,
+            "peak_amplitude": 0.3294206387486134,
+            "white_noise_gain": 0.08868650620066386
+          }
+        },
+        {
+          "method": "wvf",
+          "label": "WVF",
+          "config": {
+            "r": 15,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "support_half_extent": 15,
+          "white_noise_gain": 0.010987598156692223,
+          "support_cardinality": 708,
+          "kappa_design_matrix": null,
+          "metrics": {
+            "grad_rmse": 0.06593893065757275,
+            "magnitude_bias": 0.025570252686072978,
+            "mag_bias_abs": 0.025570252686072978,
+            "localization_rms": 0.4595268103834726,
+            "fwhm": 4.820067265419081,
+            "peak_amplitude": 0.2294653026330342,
+            "white_noise_gain": 0.010987598156692223
+          }
+        },
+        {
+          "method": "wvf",
+          "label": "WVF",
+          "config": {
+            "r": 25,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "support_half_extent": 25,
+          "white_noise_gain": 0.0014297399791228117,
+          "support_cardinality": 1960,
+          "kappa_design_matrix": null,
+          "metrics": {
+            "grad_rmse": 0.07841727373442434,
+            "magnitude_bias": 0.011528989565261242,
+            "mag_bias_abs": 0.011528989565261242,
+            "localization_rms": 0.3941948724784078,
+            "fwhm": 7.517804935105591,
+            "peak_amplitude": 0.1533853382939966,
+            "white_noise_gain": 0.0014297399791228117
+          }
+        },
+        {
+          "method": "wvf",
+          "label": "WVF",
+          "config": {
+            "r": 50,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "support_half_extent": 50,
+          "white_noise_gain": 8.998553150423674e-05,
+          "support_cardinality": 7844,
+          "kappa_design_matrix": null,
+          "metrics": {
+            "grad_rmse": 0.10216984579231145,
+            "magnitude_bias": -0.01262267686801093,
+            "mag_bias_abs": 0.01262267686801093,
+            "localization_rms": 0.42992529491902104,
+            "fwhm": 14.677529133187843,
+            "peak_amplitude": 0.08076417580120065,
+            "white_noise_gain": 8.998553150423674e-05
+          }
+        }
+      ],
+      "selection_mode": "constrained_rmse",
+      "relax_factor": 1.0,
+      "constraints_used": {
+        "localization_rms": 0.5,
+        "mag_bias_abs": 0.05,
+        "white_noise_gain": 0.001
+      },
+      "chosen": {
+        "method": "wvf",
+        "label": "WVF",
+        "config": {
+          "r": 50,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_half_extent": 50,
+        "white_noise_gain": 8.998553150423674e-05,
+        "support_cardinality": 7844,
+        "kappa_design_matrix": null,
+        "metrics": {
+          "grad_rmse": 0.10216984579231145,
+          "magnitude_bias": -0.01262267686801093,
+          "mag_bias_abs": 0.01262267686801093,
+          "localization_rms": 0.42992529491902104,
+          "fwhm": 14.677529133187843,
+          "peak_amplitude": 0.08076417580120065,
+          "white_noise_gain": 8.998553150423674e-05
+        }
+      },
+      "feasible_count": 1
+    }
+  },
+  "skipped_methods": []
+}
