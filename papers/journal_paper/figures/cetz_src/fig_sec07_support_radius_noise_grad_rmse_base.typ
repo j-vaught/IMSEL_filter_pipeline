@@ -44,8 +44,9 @@
       if y > y-max { y-max = y }
     }
   }
-  let y0 = y-min - 0.08 * (y-max - y-min)
-  let y1 = y-max + 0.10 * (y-max - y-min)
+  let y-span = if y-max > y-min { y-max - y-min } else { 1.0 }
+  let y0 = y-min - 0.08 * y-span
+  let y1 = y-max + 0.10 * y-span
 
   cetz.canvas({
     import cetz.draw: *

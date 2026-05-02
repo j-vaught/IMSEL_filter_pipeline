@@ -46,10 +46,12 @@
     }
   }
 
-  let x0 = x-min - 0.06 * (x-max - x-min)
-  let x1 = x-max + 0.08 * (x-max - x-min)
-  let y0 = y-min - 0.08 * (y-max - y-min)
-  let y1 = y-max + 0.10 * (y-max - y-min)
+  let x-span = if x-max > x-min { x-max - x-min } else { 1.0 }
+  let y-span = if y-max > y-min { y-max - y-min } else { 1.0 }
+  let x0 = x-min - 0.06 * x-span
+  let x1 = x-max + 0.08 * x-span
+  let y0 = y-min - 0.08 * y-span
+  let y1 = y-max + 0.10 * y-span
 
   cetz.canvas({
     import cetz.draw: *
