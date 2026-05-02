@@ -1,0 +1,1844 @@
+{
+  "shape": "disk",
+  "shape_label": "Disk",
+  "degree": 3,
+  "normalize_coords": true,
+  "match_mode": "support-cardinality",
+  "matching_metric": "support_cardinality",
+  "matching_target_value": 708.0,
+  "support_key": "r",
+  "support_value": 15.0,
+  "support_cardinality": 708,
+  "white_noise_gain": 0.00022458866818021153,
+  "effective_second_moment": 90.48158794354491,
+  "symmetry_order": 999,
+  "anisotropy_ratio": 1.039128150052949,
+  "theta_max_deg": 135.0,
+  "theta_min_deg": 29.5,
+  "kappa_design_matrix": 56.39722904761618,
+  "design_matrix_shape": [
+    708,
+    10
+  ],
+  "matching_error_abs": 0.0,
+  "matching_error_rel": 0.0,
+  "calibration_curve": [
+    {
+      "support_value": 15.0,
+      "support_cardinality": 708.0,
+      "white_noise_gain": 0.00022458866818021153,
+      "effective_second_moment": 90.48158794354491,
+      "kappa_design_matrix": 56.39722904761618
+    }
+  ],
+  "render_config": {
+    "contrast": 1.0,
+    "edge_width_px": 1.5,
+    "image_size": 1024,
+    "phase_count": 4,
+    "phase_step_px": 0.25,
+    "angle_step_deg": 0.5
+  },
+  "curve": [
+    {
+      "theta_deg": 0.0,
+      "response_magnitude": 0.09934382036272194,
+      "response_magnitude_std": 0.0001738248256526565
+    },
+    {
+      "theta_deg": 0.5,
+      "response_magnitude": 0.09951658112914523,
+      "response_magnitude_std": 4.067525431332673e-10
+    },
+    {
+      "theta_deg": 1.0,
+      "response_magnitude": 0.09951417158812188,
+      "response_magnitude_std": 9.547750337873884e-07
+    },
+    {
+      "theta_deg": 1.5,
+      "response_magnitude": 0.09950797967869185,
+      "response_magnitude_std": 4.942482608076516e-07
+    },
+    {
+      "theta_deg": 2.0,
+      "response_magnitude": 0.09950193870722158,
+      "response_magnitude_std": 3.1343787624211294e-06
+    },
+    {
+      "theta_deg": 2.5,
+      "response_magnitude": 0.09949531774285233,
+      "response_magnitude_std": 5.023181424386627e-06
+    },
+    {
+      "theta_deg": 3.0,
+      "response_magnitude": 0.09948852416091335,
+      "response_magnitude_std": 5.918753321022594e-06
+    },
+    {
+      "theta_deg": 3.5,
+      "response_magnitude": 0.09948076796473003,
+      "response_magnitude_std": 1.1365233751302364e-05
+    },
+    {
+      "theta_deg": 4.0,
+      "response_magnitude": 0.09946739903150534,
+      "response_magnitude_std": 1.1707436619033746e-05
+    },
+    {
+      "theta_deg": 4.5,
+      "response_magnitude": 0.09945557337976765,
+      "response_magnitude_std": 1.4817145287580185e-05
+    },
+    {
+      "theta_deg": 5.0,
+      "response_magnitude": 0.09944705169223587,
+      "response_magnitude_std": 1.668131262421473e-05
+    },
+    {
+      "theta_deg": 5.5,
+      "response_magnitude": 0.09944371191332876,
+      "response_magnitude_std": 1.761436604827417e-05
+    },
+    {
+      "theta_deg": 6.0,
+      "response_magnitude": 0.09943726795937231,
+      "response_magnitude_std": 1.5477496806410675e-05
+    },
+    {
+      "theta_deg": 6.5,
+      "response_magnitude": 0.09943217857878546,
+      "response_magnitude_std": 1.3684712417114362e-05
+    },
+    {
+      "theta_deg": 7.0,
+      "response_magnitude": 0.09941952086832903,
+      "response_magnitude_std": 1.1985417398229954e-05
+    },
+    {
+      "theta_deg": 7.5,
+      "response_magnitude": 0.09940660424891054,
+      "response_magnitude_std": 1.6134407859230647e-05
+    },
+    {
+      "theta_deg": 8.0,
+      "response_magnitude": 0.09939172101012404,
+      "response_magnitude_std": 2.001028996365408e-05
+    },
+    {
+      "theta_deg": 8.5,
+      "response_magnitude": 0.09937721206709978,
+      "response_magnitude_std": 2.505758161045377e-05
+    },
+    {
+      "theta_deg": 9.0,
+      "response_magnitude": 0.0993679728902165,
+      "response_magnitude_std": 2.5072748368376068e-05
+    },
+    {
+      "theta_deg": 9.5,
+      "response_magnitude": 0.09935833913683442,
+      "response_magnitude_std": 2.5489057589568215e-05
+    },
+    {
+      "theta_deg": 10.0,
+      "response_magnitude": 0.09935272491010935,
+      "response_magnitude_std": 1.8977806994569074e-05
+    },
+    {
+      "theta_deg": 10.5,
+      "response_magnitude": 0.09934386733575798,
+      "response_magnitude_std": 1.4833559924453559e-05
+    },
+    {
+      "theta_deg": 11.0,
+      "response_magnitude": 0.09933342071735334,
+      "response_magnitude_std": 1.1789571795778466e-05
+    },
+    {
+      "theta_deg": 11.5,
+      "response_magnitude": 0.09932934290068689,
+      "response_magnitude_std": 1.776464409073504e-05
+    },
+    {
+      "theta_deg": 12.0,
+      "response_magnitude": 0.09931215886897998,
+      "response_magnitude_std": 2.922623466200331e-05
+    },
+    {
+      "theta_deg": 12.5,
+      "response_magnitude": 0.09927474165512981,
+      "response_magnitude_std": 3.9301264382074286e-05
+    },
+    {
+      "theta_deg": 13.0,
+      "response_magnitude": 0.09928131459813663,
+      "response_magnitude_std": 3.102118526857514e-05
+    },
+    {
+      "theta_deg": 13.5,
+      "response_magnitude": 0.09927174191134956,
+      "response_magnitude_std": 9.578700364938096e-06
+    },
+    {
+      "theta_deg": 14.0,
+      "response_magnitude": 0.0992677718109768,
+      "response_magnitude_std": 2.940024766695911e-05
+    },
+    {
+      "theta_deg": 14.5,
+      "response_magnitude": 0.09923843604533854,
+      "response_magnitude_std": 3.4012756064270163e-05
+    },
+    {
+      "theta_deg": 15.0,
+      "response_magnitude": 0.09923596025397077,
+      "response_magnitude_std": 1.43325015358632e-05
+    },
+    {
+      "theta_deg": 15.5,
+      "response_magnitude": 0.09921300990138224,
+      "response_magnitude_std": 3.344940541865733e-05
+    },
+    {
+      "theta_deg": 16.0,
+      "response_magnitude": 0.09920361924579657,
+      "response_magnitude_std": 2.474901794989008e-05
+    },
+    {
+      "theta_deg": 16.5,
+      "response_magnitude": 0.09917837671482072,
+      "response_magnitude_std": 3.443895661301649e-05
+    },
+    {
+      "theta_deg": 17.0,
+      "response_magnitude": 0.09918098732482095,
+      "response_magnitude_std": 1.855310600569514e-05
+    },
+    {
+      "theta_deg": 17.5,
+      "response_magnitude": 0.099154674909667,
+      "response_magnitude_std": 3.8160073468775775e-05
+    },
+    {
+      "theta_deg": 18.0,
+      "response_magnitude": 0.09914477682863376,
+      "response_magnitude_std": 4.543327779458964e-05
+    },
+    {
+      "theta_deg": 18.5,
+      "response_magnitude": 0.09913394553597202,
+      "response_magnitude_std": 2.3178814209477445e-05
+    },
+    {
+      "theta_deg": 19.0,
+      "response_magnitude": 0.09911239043008867,
+      "response_magnitude_std": 3.715936631643023e-05
+    },
+    {
+      "theta_deg": 19.5,
+      "response_magnitude": 0.09908334957289014,
+      "response_magnitude_std": 5.180215760257501e-05
+    },
+    {
+      "theta_deg": 20.0,
+      "response_magnitude": 0.09907356719932778,
+      "response_magnitude_std": 4.275410556942941e-05
+    },
+    {
+      "theta_deg": 20.5,
+      "response_magnitude": 0.09905825596653758,
+      "response_magnitude_std": 4.1753834283993504e-05
+    },
+    {
+      "theta_deg": 21.0,
+      "response_magnitude": 0.0990399578391157,
+      "response_magnitude_std": 4.66074660950754e-05
+    },
+    {
+      "theta_deg": 21.5,
+      "response_magnitude": 0.09903143702919959,
+      "response_magnitude_std": 4.537587485403356e-05
+    },
+    {
+      "theta_deg": 22.0,
+      "response_magnitude": 0.09902427381060361,
+      "response_magnitude_std": 3.7991628387790434e-05
+    },
+    {
+      "theta_deg": 22.5,
+      "response_magnitude": 0.0990235029774409,
+      "response_magnitude_std": 2.8213398466251073e-05
+    },
+    {
+      "theta_deg": 23.0,
+      "response_magnitude": 0.09899804845593375,
+      "response_magnitude_std": 4.148397672225756e-05
+    },
+    {
+      "theta_deg": 23.5,
+      "response_magnitude": 0.09897869731457531,
+      "response_magnitude_std": 4.61278375300046e-05
+    },
+    {
+      "theta_deg": 24.0,
+      "response_magnitude": 0.09896652066621037,
+      "response_magnitude_std": 4.7202871434089385e-05
+    },
+    {
+      "theta_deg": 24.5,
+      "response_magnitude": 0.09896791131881769,
+      "response_magnitude_std": 3.209304190432299e-05
+    },
+    {
+      "theta_deg": 25.0,
+      "response_magnitude": 0.09895371027680516,
+      "response_magnitude_std": 3.5409008341224276e-05
+    },
+    {
+      "theta_deg": 25.5,
+      "response_magnitude": 0.09894009289773024,
+      "response_magnitude_std": 4.718916329988696e-05
+    },
+    {
+      "theta_deg": 26.0,
+      "response_magnitude": 0.09895234906548078,
+      "response_magnitude_std": 4.0952186798958e-05
+    },
+    {
+      "theta_deg": 26.5,
+      "response_magnitude": 0.09893297410211568,
+      "response_magnitude_std": 3.707004637533008e-05
+    },
+    {
+      "theta_deg": 27.0,
+      "response_magnitude": 0.09893486215764963,
+      "response_magnitude_std": 4.890882106815368e-05
+    },
+    {
+      "theta_deg": 27.5,
+      "response_magnitude": 0.09892355835382872,
+      "response_magnitude_std": 4.1639553343102274e-05
+    },
+    {
+      "theta_deg": 28.0,
+      "response_magnitude": 0.0989306102492749,
+      "response_magnitude_std": 3.870422192703164e-05
+    },
+    {
+      "theta_deg": 28.5,
+      "response_magnitude": 0.09891856278354091,
+      "response_magnitude_std": 4.4374068781508245e-05
+    },
+    {
+      "theta_deg": 29.0,
+      "response_magnitude": 0.09891549233656773,
+      "response_magnitude_std": 4.875898511897399e-05
+    },
+    {
+      "theta_deg": 29.5,
+      "response_magnitude": 0.09890093862726346,
+      "response_magnitude_std": 6.25834398128842e-05
+    },
+    {
+      "theta_deg": 30.0,
+      "response_magnitude": 0.09893386120674204,
+      "response_magnitude_std": 4.84310454964261e-05
+    },
+    {
+      "theta_deg": 30.5,
+      "response_magnitude": 0.09892454557754307,
+      "response_magnitude_std": 7.649319330683358e-05
+    },
+    {
+      "theta_deg": 31.0,
+      "response_magnitude": 0.09893595167298262,
+      "response_magnitude_std": 7.122982454274515e-05
+    },
+    {
+      "theta_deg": 31.5,
+      "response_magnitude": 0.09894065601685274,
+      "response_magnitude_std": 7.74534046950894e-05
+    },
+    {
+      "theta_deg": 32.0,
+      "response_magnitude": 0.09895322891751238,
+      "response_magnitude_std": 7.708837368251893e-05
+    },
+    {
+      "theta_deg": 32.5,
+      "response_magnitude": 0.09896360274446137,
+      "response_magnitude_std": 6.294680762939175e-05
+    },
+    {
+      "theta_deg": 33.0,
+      "response_magnitude": 0.0989474496786977,
+      "response_magnitude_std": 8.168877581415781e-05
+    },
+    {
+      "theta_deg": 33.5,
+      "response_magnitude": 0.09898011046249473,
+      "response_magnitude_std": 6.610194275629905e-05
+    },
+    {
+      "theta_deg": 34.0,
+      "response_magnitude": 0.09900955612933487,
+      "response_magnitude_std": 9.265669730800805e-05
+    },
+    {
+      "theta_deg": 34.5,
+      "response_magnitude": 0.09898518876591866,
+      "response_magnitude_std": 0.00010361270895410988
+    },
+    {
+      "theta_deg": 35.0,
+      "response_magnitude": 0.0990621563627258,
+      "response_magnitude_std": 7.781300778354088e-05
+    },
+    {
+      "theta_deg": 35.5,
+      "response_magnitude": 0.0990527125382935,
+      "response_magnitude_std": 7.602484174922328e-05
+    },
+    {
+      "theta_deg": 36.0,
+      "response_magnitude": 0.09909450719655186,
+      "response_magnitude_std": 5.961778534049185e-05
+    },
+    {
+      "theta_deg": 36.5,
+      "response_magnitude": 0.09914011759909096,
+      "response_magnitude_std": 8.30748737393004e-05
+    },
+    {
+      "theta_deg": 37.0,
+      "response_magnitude": 0.09916997858980502,
+      "response_magnitude_std": 8.44012696708419e-05
+    },
+    {
+      "theta_deg": 37.5,
+      "response_magnitude": 0.0991937381867142,
+      "response_magnitude_std": 9.624490912360723e-05
+    },
+    {
+      "theta_deg": 38.0,
+      "response_magnitude": 0.09923422368736119,
+      "response_magnitude_std": 8.86482029451766e-05
+    },
+    {
+      "theta_deg": 38.5,
+      "response_magnitude": 0.0992815617443243,
+      "response_magnitude_std": 6.982379539745157e-05
+    },
+    {
+      "theta_deg": 39.0,
+      "response_magnitude": 0.0993011647836084,
+      "response_magnitude_std": 6.124269676757161e-05
+    },
+    {
+      "theta_deg": 39.5,
+      "response_magnitude": 0.09931860960058686,
+      "response_magnitude_std": 7.336318616849575e-05
+    },
+    {
+      "theta_deg": 40.0,
+      "response_magnitude": 0.09940437845400404,
+      "response_magnitude_std": 6.839349865188684e-05
+    },
+    {
+      "theta_deg": 40.5,
+      "response_magnitude": 0.09940660319636142,
+      "response_magnitude_std": 7.199498002925382e-05
+    },
+    {
+      "theta_deg": 41.0,
+      "response_magnitude": 0.09947792735103993,
+      "response_magnitude_std": 5.913018151463751e-05
+    },
+    {
+      "theta_deg": 41.5,
+      "response_magnitude": 0.09954752854287788,
+      "response_magnitude_std": 6.552704119231927e-05
+    },
+    {
+      "theta_deg": 42.0,
+      "response_magnitude": 0.09960137010763691,
+      "response_magnitude_std": 6.160019027838515e-05
+    },
+    {
+      "theta_deg": 42.5,
+      "response_magnitude": 0.09965766238623386,
+      "response_magnitude_std": 5.714550685402555e-05
+    },
+    {
+      "theta_deg": 43.0,
+      "response_magnitude": 0.09969816796056846,
+      "response_magnitude_std": 7.874507965356482e-05
+    },
+    {
+      "theta_deg": 43.5,
+      "response_magnitude": 0.09971634555941886,
+      "response_magnitude_std": 8.056096500346479e-05
+    },
+    {
+      "theta_deg": 44.0,
+      "response_magnitude": 0.09982224364775061,
+      "response_magnitude_std": 7.513622569870602e-05
+    },
+    {
+      "theta_deg": 44.5,
+      "response_magnitude": 0.09984999693422954,
+      "response_magnitude_std": 7.065305739310064e-05
+    },
+    {
+      "theta_deg": 45.0,
+      "response_magnitude": 0.10073854011204833,
+      "response_magnitude_std": 0.00044869533052164395
+    },
+    {
+      "theta_deg": 45.5,
+      "response_magnitude": 0.09984999693422955,
+      "response_magnitude_std": 7.065305739309561e-05
+    },
+    {
+      "theta_deg": 46.0,
+      "response_magnitude": 0.09982224364775065,
+      "response_magnitude_std": 7.513622569869754e-05
+    },
+    {
+      "theta_deg": 46.5,
+      "response_magnitude": 0.0997163455594189,
+      "response_magnitude_std": 8.056096500347344e-05
+    },
+    {
+      "theta_deg": 47.0,
+      "response_magnitude": 0.09969816796056848,
+      "response_magnitude_std": 7.874507965355282e-05
+    },
+    {
+      "theta_deg": 47.5,
+      "response_magnitude": 0.09965766238623389,
+      "response_magnitude_std": 5.7145506854018035e-05
+    },
+    {
+      "theta_deg": 48.0,
+      "response_magnitude": 0.09960137010763695,
+      "response_magnitude_std": 6.160019027839e-05
+    },
+    {
+      "theta_deg": 48.5,
+      "response_magnitude": 0.09954752854287792,
+      "response_magnitude_std": 6.552704119235664e-05
+    },
+    {
+      "theta_deg": 49.0,
+      "response_magnitude": 0.09947792735103997,
+      "response_magnitude_std": 5.913018151463272e-05
+    },
+    {
+      "theta_deg": 49.5,
+      "response_magnitude": 0.09940660319636144,
+      "response_magnitude_std": 7.199498002927024e-05
+    },
+    {
+      "theta_deg": 50.0,
+      "response_magnitude": 0.09940437845400409,
+      "response_magnitude_std": 6.839349865191501e-05
+    },
+    {
+      "theta_deg": 50.5,
+      "response_magnitude": 0.09931860960058689,
+      "response_magnitude_std": 7.336318616848817e-05
+    },
+    {
+      "theta_deg": 51.0,
+      "response_magnitude": 0.09930116478360843,
+      "response_magnitude_std": 6.124269676755902e-05
+    },
+    {
+      "theta_deg": 51.5,
+      "response_magnitude": 0.0992815617443243,
+      "response_magnitude_std": 6.982379539745412e-05
+    },
+    {
+      "theta_deg": 52.0,
+      "response_magnitude": 0.09923422368736119,
+      "response_magnitude_std": 8.86482029451986e-05
+    },
+    {
+      "theta_deg": 52.5,
+      "response_magnitude": 0.09919373818671423,
+      "response_magnitude_std": 9.624490912361189e-05
+    },
+    {
+      "theta_deg": 53.0,
+      "response_magnitude": 0.09916997858980506,
+      "response_magnitude_std": 8.440126967082252e-05
+    },
+    {
+      "theta_deg": 53.5,
+      "response_magnitude": 0.09914011759909097,
+      "response_magnitude_std": 8.307487373932663e-05
+    },
+    {
+      "theta_deg": 54.0,
+      "response_magnitude": 0.09909450719655191,
+      "response_magnitude_std": 5.961778534050328e-05
+    },
+    {
+      "theta_deg": 54.5,
+      "response_magnitude": 0.09905271253829352,
+      "response_magnitude_std": 7.602484174921698e-05
+    },
+    {
+      "theta_deg": 55.0,
+      "response_magnitude": 0.09906215636272583,
+      "response_magnitude_std": 7.781300778355282e-05
+    },
+    {
+      "theta_deg": 55.5,
+      "response_magnitude": 0.0989851887659187,
+      "response_magnitude_std": 0.00010361270895411607
+    },
+    {
+      "theta_deg": 56.0,
+      "response_magnitude": 0.0990095561293349,
+      "response_magnitude_std": 9.26566973079718e-05
+    },
+    {
+      "theta_deg": 56.5,
+      "response_magnitude": 0.09898011046249475,
+      "response_magnitude_std": 6.6101942756296e-05
+    },
+    {
+      "theta_deg": 57.0,
+      "response_magnitude": 0.09894744967869773,
+      "response_magnitude_std": 8.168877581416235e-05
+    },
+    {
+      "theta_deg": 57.5,
+      "response_magnitude": 0.09896360274446139,
+      "response_magnitude_std": 6.29468076293906e-05
+    },
+    {
+      "theta_deg": 58.0,
+      "response_magnitude": 0.09895322891751243,
+      "response_magnitude_std": 7.708837368250924e-05
+    },
+    {
+      "theta_deg": 58.5,
+      "response_magnitude": 0.09894065601685278,
+      "response_magnitude_std": 7.745340469508631e-05
+    },
+    {
+      "theta_deg": 59.0,
+      "response_magnitude": 0.09893595167298266,
+      "response_magnitude_std": 7.122982454274654e-05
+    },
+    {
+      "theta_deg": 59.5,
+      "response_magnitude": 0.09892454557754313,
+      "response_magnitude_std": 7.649319330683167e-05
+    },
+    {
+      "theta_deg": 60.0,
+      "response_magnitude": 0.09893386120674208,
+      "response_magnitude_std": 4.843104549639353e-05
+    },
+    {
+      "theta_deg": 60.5,
+      "response_magnitude": 0.0989009386272635,
+      "response_magnitude_std": 6.258343981288587e-05
+    },
+    {
+      "theta_deg": 61.0,
+      "response_magnitude": 0.09891549233656778,
+      "response_magnitude_std": 4.875898511897108e-05
+    },
+    {
+      "theta_deg": 61.5,
+      "response_magnitude": 0.09891856278354096,
+      "response_magnitude_std": 4.4374068781518396e-05
+    },
+    {
+      "theta_deg": 62.0,
+      "response_magnitude": 0.09893061024927494,
+      "response_magnitude_std": 3.870422192702115e-05
+    },
+    {
+      "theta_deg": 62.5,
+      "response_magnitude": 0.0989235583538288,
+      "response_magnitude_std": 4.1639553343091134e-05
+    },
+    {
+      "theta_deg": 63.0,
+      "response_magnitude": 0.0989348621576497,
+      "response_magnitude_std": 4.890882106814505e-05
+    },
+    {
+      "theta_deg": 63.5,
+      "response_magnitude": 0.09893297410211575,
+      "response_magnitude_std": 3.707004637533349e-05
+    },
+    {
+      "theta_deg": 64.0,
+      "response_magnitude": 0.09895234906548085,
+      "response_magnitude_std": 4.0952186798963935e-05
+    },
+    {
+      "theta_deg": 64.5,
+      "response_magnitude": 0.09894009289773026,
+      "response_magnitude_std": 4.718916329992228e-05
+    },
+    {
+      "theta_deg": 65.0,
+      "response_magnitude": 0.09895371027680522,
+      "response_magnitude_std": 3.54090083412128e-05
+    },
+    {
+      "theta_deg": 65.5,
+      "response_magnitude": 0.09896791131881776,
+      "response_magnitude_std": 3.2093041904314856e-05
+    },
+    {
+      "theta_deg": 66.0,
+      "response_magnitude": 0.09896652066621042,
+      "response_magnitude_std": 4.720287143408386e-05
+    },
+    {
+      "theta_deg": 66.5,
+      "response_magnitude": 0.09897869731457536,
+      "response_magnitude_std": 4.612783753002975e-05
+    },
+    {
+      "theta_deg": 67.0,
+      "response_magnitude": 0.0989980484559338,
+      "response_magnitude_std": 4.148397672227647e-05
+    },
+    {
+      "theta_deg": 67.5,
+      "response_magnitude": 0.09902350297744096,
+      "response_magnitude_std": 2.8213398466254637e-05
+    },
+    {
+      "theta_deg": 68.0,
+      "response_magnitude": 0.09902427381060365,
+      "response_magnitude_std": 3.79916283878065e-05
+    },
+    {
+      "theta_deg": 68.5,
+      "response_magnitude": 0.09903143702919964,
+      "response_magnitude_std": 4.537587485403716e-05
+    },
+    {
+      "theta_deg": 69.0,
+      "response_magnitude": 0.09903995783911575,
+      "response_magnitude_std": 4.660746609508421e-05
+    },
+    {
+      "theta_deg": 69.5,
+      "response_magnitude": 0.09905825596653764,
+      "response_magnitude_std": 4.175383428400315e-05
+    },
+    {
+      "theta_deg": 70.0,
+      "response_magnitude": 0.0990735671993278,
+      "response_magnitude_std": 4.2754105569450606e-05
+    },
+    {
+      "theta_deg": 70.5,
+      "response_magnitude": 0.09908334957289021,
+      "response_magnitude_std": 5.1802157602590466e-05
+    },
+    {
+      "theta_deg": 71.0,
+      "response_magnitude": 0.09911239043008871,
+      "response_magnitude_std": 3.715936631641082e-05
+    },
+    {
+      "theta_deg": 71.5,
+      "response_magnitude": 0.0991339455359721,
+      "response_magnitude_std": 2.317881420946795e-05
+    },
+    {
+      "theta_deg": 72.0,
+      "response_magnitude": 0.0991447768286338,
+      "response_magnitude_std": 4.543327779459098e-05
+    },
+    {
+      "theta_deg": 72.5,
+      "response_magnitude": 0.09915467490966708,
+      "response_magnitude_std": 3.816007346877974e-05
+    },
+    {
+      "theta_deg": 73.0,
+      "response_magnitude": 0.099180987324821,
+      "response_magnitude_std": 1.8553106005697676e-05
+    },
+    {
+      "theta_deg": 73.5,
+      "response_magnitude": 0.09917837671482076,
+      "response_magnitude_std": 3.443895661301594e-05
+    },
+    {
+      "theta_deg": 74.0,
+      "response_magnitude": 0.0992036192457966,
+      "response_magnitude_std": 2.4749017949886392e-05
+    },
+    {
+      "theta_deg": 74.5,
+      "response_magnitude": 0.09921300990138229,
+      "response_magnitude_std": 3.344940541865183e-05
+    },
+    {
+      "theta_deg": 75.0,
+      "response_magnitude": 0.09923596025397083,
+      "response_magnitude_std": 1.43325015358632e-05
+    },
+    {
+      "theta_deg": 75.5,
+      "response_magnitude": 0.09923843604533861,
+      "response_magnitude_std": 3.401275606427095e-05
+    },
+    {
+      "theta_deg": 76.0,
+      "response_magnitude": 0.09926777181097686,
+      "response_magnitude_std": 2.9400247666967047e-05
+    },
+    {
+      "theta_deg": 76.5,
+      "response_magnitude": 0.0992717419113496,
+      "response_magnitude_std": 9.578700364953461e-06
+    },
+    {
+      "theta_deg": 77.0,
+      "response_magnitude": 0.09928131459813669,
+      "response_magnitude_std": 3.1021185268584125e-05
+    },
+    {
+      "theta_deg": 77.5,
+      "response_magnitude": 0.09927474165512987,
+      "response_magnitude_std": 3.930126438206845e-05
+    },
+    {
+      "theta_deg": 78.0,
+      "response_magnitude": 0.09931215886898001,
+      "response_magnitude_std": 2.9226234662012492e-05
+    },
+    {
+      "theta_deg": 78.5,
+      "response_magnitude": 0.09932934290068693,
+      "response_magnitude_std": 1.776464409073726e-05
+    },
+    {
+      "theta_deg": 79.0,
+      "response_magnitude": 0.09933342071735339,
+      "response_magnitude_std": 1.1789571795786889e-05
+    },
+    {
+      "theta_deg": 79.5,
+      "response_magnitude": 0.099343867335758,
+      "response_magnitude_std": 1.4833559924467967e-05
+    },
+    {
+      "theta_deg": 80.0,
+      "response_magnitude": 0.09935272491010941,
+      "response_magnitude_std": 1.8977806994567922e-05
+    },
+    {
+      "theta_deg": 80.5,
+      "response_magnitude": 0.09935833913683445,
+      "response_magnitude_std": 2.5489057589568618e-05
+    },
+    {
+      "theta_deg": 81.0,
+      "response_magnitude": 0.09936797289021654,
+      "response_magnitude_std": 2.507274836836854e-05
+    },
+    {
+      "theta_deg": 81.5,
+      "response_magnitude": 0.09937721206709982,
+      "response_magnitude_std": 2.5057581610469073e-05
+    },
+    {
+      "theta_deg": 82.0,
+      "response_magnitude": 0.09939172101012408,
+      "response_magnitude_std": 2.0010289963652566e-05
+    },
+    {
+      "theta_deg": 82.5,
+      "response_magnitude": 0.09940660424891061,
+      "response_magnitude_std": 1.6134407859221106e-05
+    },
+    {
+      "theta_deg": 83.0,
+      "response_magnitude": 0.09941952086832909,
+      "response_magnitude_std": 1.1985417398220692e-05
+    },
+    {
+      "theta_deg": 83.5,
+      "response_magnitude": 0.0994321785787855,
+      "response_magnitude_std": 1.3684712417116114e-05
+    },
+    {
+      "theta_deg": 84.0,
+      "response_magnitude": 0.09943726795937238,
+      "response_magnitude_std": 1.547749680640289e-05
+    },
+    {
+      "theta_deg": 84.5,
+      "response_magnitude": 0.09944371191332879,
+      "response_magnitude_std": 1.761436604826572e-05
+    },
+    {
+      "theta_deg": 85.0,
+      "response_magnitude": 0.09944705169223592,
+      "response_magnitude_std": 1.6681312624219824e-05
+    },
+    {
+      "theta_deg": 85.5,
+      "response_magnitude": 0.09945557337976772,
+      "response_magnitude_std": 1.4817145287575687e-05
+    },
+    {
+      "theta_deg": 86.0,
+      "response_magnitude": 0.09946739903150537,
+      "response_magnitude_std": 1.1707436619033874e-05
+    },
+    {
+      "theta_deg": 86.5,
+      "response_magnitude": 0.09948076796473007,
+      "response_magnitude_std": 1.136523375129818e-05
+    },
+    {
+      "theta_deg": 87.0,
+      "response_magnitude": 0.09948852416091339,
+      "response_magnitude_std": 5.918753321004038e-06
+    },
+    {
+      "theta_deg": 87.5,
+      "response_magnitude": 0.09949531774285236,
+      "response_magnitude_std": 5.023181424395184e-06
+    },
+    {
+      "theta_deg": 88.0,
+      "response_magnitude": 0.09950193870722165,
+      "response_magnitude_std": 3.13437876242513e-06
+    },
+    {
+      "theta_deg": 88.5,
+      "response_magnitude": 0.0995079796786919,
+      "response_magnitude_std": 4.942482608216634e-07
+    },
+    {
+      "theta_deg": 89.0,
+      "response_magnitude": 0.0995141715881219,
+      "response_magnitude_std": 9.547750337769839e-07
+    },
+    {
+      "theta_deg": 89.5,
+      "response_magnitude": 0.09951658112914526,
+      "response_magnitude_std": 4.067525368214457e-10
+    },
+    {
+      "theta_deg": 90.0,
+      "response_magnitude": 0.09934382036272202,
+      "response_magnitude_std": 0.0001738248256526438
+    },
+    {
+      "theta_deg": 90.5,
+      "response_magnitude": 0.09951658112914528,
+      "response_magnitude_std": 4.067525451701924e-10
+    },
+    {
+      "theta_deg": 91.0,
+      "response_magnitude": 0.09951417158812191,
+      "response_magnitude_std": 9.547750337804457e-07
+    },
+    {
+      "theta_deg": 91.5,
+      "response_magnitude": 0.09950796919915433,
+      "response_magnitude_std": 4.76237558593257e-07
+    },
+    {
+      "theta_deg": 92.0,
+      "response_magnitude": 0.09950193870722164,
+      "response_magnitude_std": 3.1343787624271408e-06
+    },
+    {
+      "theta_deg": 92.5,
+      "response_magnitude": 0.09949529460338503,
+      "response_magnitude_std": 4.9841009484575425e-06
+    },
+    {
+      "theta_deg": 93.0,
+      "response_magnitude": 0.09948852416091339,
+      "response_magnitude_std": 5.9187533210235945e-06
+    },
+    {
+      "theta_deg": 93.5,
+      "response_magnitude": 0.0994807818296235,
+      "response_magnitude_std": 1.137882776258819e-05
+    },
+    {
+      "theta_deg": 94.0,
+      "response_magnitude": 0.09946765557140007,
+      "response_magnitude_std": 1.1554437647356834e-05
+    },
+    {
+      "theta_deg": 94.5,
+      "response_magnitude": 0.09945549394908462,
+      "response_magnitude_std": 1.4596003466463838e-05
+    },
+    {
+      "theta_deg": 95.0,
+      "response_magnitude": 0.09944717229583334,
+      "response_magnitude_std": 1.6850145652423265e-05
+    },
+    {
+      "theta_deg": 95.5,
+      "response_magnitude": 0.09944371191332879,
+      "response_magnitude_std": 1.761436604827802e-05
+    },
+    {
+      "theta_deg": 96.0,
+      "response_magnitude": 0.09943718639865991,
+      "response_magnitude_std": 1.5427430272586288e-05
+    },
+    {
+      "theta_deg": 96.5,
+      "response_magnitude": 0.0994321785787855,
+      "response_magnitude_std": 1.3684712417106556e-05
+    },
+    {
+      "theta_deg": 97.0,
+      "response_magnitude": 0.09941953889927324,
+      "response_magnitude_std": 1.3368282966611361e-05
+    },
+    {
+      "theta_deg": 97.5,
+      "response_magnitude": 0.09940748632248697,
+      "response_magnitude_std": 1.63242009017283e-05
+    },
+    {
+      "theta_deg": 98.0,
+      "response_magnitude": 0.09939145241506345,
+      "response_magnitude_std": 2.1440234547475126e-05
+    },
+    {
+      "theta_deg": 98.5,
+      "response_magnitude": 0.09937849376040238,
+      "response_magnitude_std": 2.3717750002794336e-05
+    },
+    {
+      "theta_deg": 99.0,
+      "response_magnitude": 0.09936776312697188,
+      "response_magnitude_std": 2.5444727609913474e-05
+    },
+    {
+      "theta_deg": 99.5,
+      "response_magnitude": 0.09936012756859944,
+      "response_magnitude_std": 2.3245444761890754e-05
+    },
+    {
+      "theta_deg": 100.0,
+      "response_magnitude": 0.09935332381895604,
+      "response_magnitude_std": 1.901461886288805e-05
+    },
+    {
+      "theta_deg": 100.5,
+      "response_magnitude": 0.09934628564708926,
+      "response_magnitude_std": 1.4863562331546946e-05
+    },
+    {
+      "theta_deg": 101.0,
+      "response_magnitude": 0.09933522927993002,
+      "response_magnitude_std": 1.3445585772147738e-05
+    },
+    {
+      "theta_deg": 101.5,
+      "response_magnitude": 0.09932934290068693,
+      "response_magnitude_std": 1.7764644090735775e-05
+    },
+    {
+      "theta_deg": 102.0,
+      "response_magnitude": 0.09931204153235505,
+      "response_magnitude_std": 2.910582648973719e-05
+    },
+    {
+      "theta_deg": 102.5,
+      "response_magnitude": 0.09927577887298236,
+      "response_magnitude_std": 3.863090621229633e-05
+    },
+    {
+      "theta_deg": 103.0,
+      "response_magnitude": 0.09928149662179044,
+      "response_magnitude_std": 2.850532241418251e-05
+    },
+    {
+      "theta_deg": 103.5,
+      "response_magnitude": 0.0992731157227216,
+      "response_magnitude_std": 1.4714701540805987e-05
+    },
+    {
+      "theta_deg": 104.0,
+      "response_magnitude": 0.09926777181097686,
+      "response_magnitude_std": 2.9400247666976313e-05
+    },
+    {
+      "theta_deg": 104.5,
+      "response_magnitude": 0.09923545956597371,
+      "response_magnitude_std": 3.229612243582768e-05
+    },
+    {
+      "theta_deg": 105.0,
+      "response_magnitude": 0.09923668413501618,
+      "response_magnitude_std": 1.2422660522515048e-05
+    },
+    {
+      "theta_deg": 105.5,
+      "response_magnitude": 0.09921153308073301,
+      "response_magnitude_std": 3.2501638650949615e-05
+    },
+    {
+      "theta_deg": 106.0,
+      "response_magnitude": 0.09921212994092575,
+      "response_magnitude_std": 1.9933290128549535e-05
+    },
+    {
+      "theta_deg": 106.5,
+      "response_magnitude": 0.09918063269299468,
+      "response_magnitude_std": 3.698954169608277e-05
+    },
+    {
+      "theta_deg": 107.0,
+      "response_magnitude": 0.09918301476699497,
+      "response_magnitude_std": 1.1463559793758838e-05
+    },
+    {
+      "theta_deg": 107.5,
+      "response_magnitude": 0.09915915200775942,
+      "response_magnitude_std": 3.1777813904205315e-05
+    },
+    {
+      "theta_deg": 108.0,
+      "response_magnitude": 0.09914477682863382,
+      "response_magnitude_std": 4.5433277794584824e-05
+    },
+    {
+      "theta_deg": 108.5,
+      "response_magnitude": 0.09914400304265417,
+      "response_magnitude_std": 1.7770059486446054e-05
+    },
+    {
+      "theta_deg": 109.0,
+      "response_magnitude": 0.09911758145449338,
+      "response_magnitude_std": 3.7243988362903994e-05
+    },
+    {
+      "theta_deg": 109.5,
+      "response_magnitude": 0.09909358057245457,
+      "response_magnitude_std": 3.9318515412036535e-05
+    },
+    {
+      "theta_deg": 110.0,
+      "response_magnitude": 0.09907967383888043,
+      "response_magnitude_std": 3.303869949518493e-05
+    },
+    {
+      "theta_deg": 110.5,
+      "response_magnitude": 0.09906413082628332,
+      "response_magnitude_std": 3.314642724773806e-05
+    },
+    {
+      "theta_deg": 111.0,
+      "response_magnitude": 0.09904752997521322,
+      "response_magnitude_std": 3.771917427990985e-05
+    },
+    {
+      "theta_deg": 111.5,
+      "response_magnitude": 0.09904088371557979,
+      "response_magnitude_std": 3.622925080824059e-05
+    },
+    {
+      "theta_deg": 112.0,
+      "response_magnitude": 0.09903409165749227,
+      "response_magnitude_std": 3.933535837561604e-05
+    },
+    {
+      "theta_deg": 112.5,
+      "response_magnitude": 0.09901845828232686,
+      "response_magnitude_std": 2.956422446703052e-05
+    },
+    {
+      "theta_deg": 113.0,
+      "response_magnitude": 0.09899371229471576,
+      "response_magnitude_std": 4.372165200778685e-05
+    },
+    {
+      "theta_deg": 113.5,
+      "response_magnitude": 0.09899016750290712,
+      "response_magnitude_std": 3.1683604711538555e-05
+    },
+    {
+      "theta_deg": 114.0,
+      "response_magnitude": 0.09896800696476606,
+      "response_magnitude_std": 4.723943352564414e-05
+    },
+    {
+      "theta_deg": 114.5,
+      "response_magnitude": 0.0989715064733046,
+      "response_magnitude_std": 4.8267994511519303e-05
+    },
+    {
+      "theta_deg": 115.0,
+      "response_magnitude": 0.09894183104775132,
+      "response_magnitude_std": 4.9337215133296606e-05
+    },
+    {
+      "theta_deg": 115.5,
+      "response_magnitude": 0.09893678508301051,
+      "response_magnitude_std": 4.82506653311527e-05
+    },
+    {
+      "theta_deg": 116.0,
+      "response_magnitude": 0.09894555464780697,
+      "response_magnitude_std": 3.3976128577751034e-05
+    },
+    {
+      "theta_deg": 116.5,
+      "response_magnitude": 0.09893138175375213,
+      "response_magnitude_std": 3.830317848860467e-05
+    },
+    {
+      "theta_deg": 117.0,
+      "response_magnitude": 0.09893594990375737,
+      "response_magnitude_std": 4.040462758471666e-05
+    },
+    {
+      "theta_deg": 117.5,
+      "response_magnitude": 0.09890554464851402,
+      "response_magnitude_std": 5.173313679618939e-05
+    },
+    {
+      "theta_deg": 118.0,
+      "response_magnitude": 0.09890865772705595,
+      "response_magnitude_std": 5.31071829275405e-05
+    },
+    {
+      "theta_deg": 118.5,
+      "response_magnitude": 0.09892448921228618,
+      "response_magnitude_std": 5.384693073853689e-05
+    },
+    {
+      "theta_deg": 119.0,
+      "response_magnitude": 0.09890235493142041,
+      "response_magnitude_std": 5.283168408727266e-05
+    },
+    {
+      "theta_deg": 119.5,
+      "response_magnitude": 0.09890687024696976,
+      "response_magnitude_std": 5.6649299113151246e-05
+    },
+    {
+      "theta_deg": 120.0,
+      "response_magnitude": 0.09891284313728801,
+      "response_magnitude_std": 5.751558553624914e-05
+    },
+    {
+      "theta_deg": 120.5,
+      "response_magnitude": 0.09893815032286489,
+      "response_magnitude_std": 4.859220490171162e-05
+    },
+    {
+      "theta_deg": 121.0,
+      "response_magnitude": 0.09894160281400594,
+      "response_magnitude_std": 6.151352336556472e-05
+    },
+    {
+      "theta_deg": 121.5,
+      "response_magnitude": 0.09894998662191085,
+      "response_magnitude_std": 6.301871429231278e-05
+    },
+    {
+      "theta_deg": 122.0,
+      "response_magnitude": 0.09895783729704558,
+      "response_magnitude_std": 5.827052770386346e-05
+    },
+    {
+      "theta_deg": 122.5,
+      "response_magnitude": 0.09894090680423315,
+      "response_magnitude_std": 6.945735223737845e-05
+    },
+    {
+      "theta_deg": 123.0,
+      "response_magnitude": 0.09894774185235705,
+      "response_magnitude_std": 8.444036235607349e-05
+    },
+    {
+      "theta_deg": 123.5,
+      "response_magnitude": 0.09899190255454399,
+      "response_magnitude_std": 7.837019119183383e-05
+    },
+    {
+      "theta_deg": 124.0,
+      "response_magnitude": 0.09901091214177662,
+      "response_magnitude_std": 8.042599240312122e-05
+    },
+    {
+      "theta_deg": 124.5,
+      "response_magnitude": 0.09899905802927364,
+      "response_magnitude_std": 8.569849315012027e-05
+    },
+    {
+      "theta_deg": 125.0,
+      "response_magnitude": 0.09905362730184016,
+      "response_magnitude_std": 9.225609017721938e-05
+    },
+    {
+      "theta_deg": 125.5,
+      "response_magnitude": 0.0990690080412662,
+      "response_magnitude_std": 6.116026665847089e-05
+    },
+    {
+      "theta_deg": 126.0,
+      "response_magnitude": 0.09907781613295195,
+      "response_magnitude_std": 7.742738898789848e-05
+    },
+    {
+      "theta_deg": 126.5,
+      "response_magnitude": 0.09913239870675347,
+      "response_magnitude_std": 9.305233577640863e-05
+    },
+    {
+      "theta_deg": 127.0,
+      "response_magnitude": 0.09917701599827339,
+      "response_magnitude_std": 7.141072689852036e-05
+    },
+    {
+      "theta_deg": 127.5,
+      "response_magnitude": 0.09920278323784054,
+      "response_magnitude_std": 8.386811448619746e-05
+    },
+    {
+      "theta_deg": 128.0,
+      "response_magnitude": 0.09924273557337354,
+      "response_magnitude_std": 7.41988043280453e-05
+    },
+    {
+      "theta_deg": 128.5,
+      "response_magnitude": 0.0992762008045719,
+      "response_magnitude_std": 7.951100961667755e-05
+    },
+    {
+      "theta_deg": 129.0,
+      "response_magnitude": 0.09929833075609759,
+      "response_magnitude_std": 5.452344444025675e-05
+    },
+    {
+      "theta_deg": 129.5,
+      "response_magnitude": 0.09932696553830156,
+      "response_magnitude_std": 6.265156640114741e-05
+    },
+    {
+      "theta_deg": 130.0,
+      "response_magnitude": 0.09940163153740779,
+      "response_magnitude_std": 7.330699942286277e-05
+    },
+    {
+      "theta_deg": 130.5,
+      "response_magnitude": 0.09941088802211365,
+      "response_magnitude_std": 6.649868620349423e-05
+    },
+    {
+      "theta_deg": 131.0,
+      "response_magnitude": 0.09947762897748033,
+      "response_magnitude_std": 5.7374051875336895e-05
+    },
+    {
+      "theta_deg": 131.5,
+      "response_magnitude": 0.09954768779492455,
+      "response_magnitude_std": 6.523756121034985e-05
+    },
+    {
+      "theta_deg": 132.0,
+      "response_magnitude": 0.09960050224507366,
+      "response_magnitude_std": 6.322782393586834e-05
+    },
+    {
+      "theta_deg": 132.5,
+      "response_magnitude": 0.09965706897513449,
+      "response_magnitude_std": 5.8326963030917236e-05
+    },
+    {
+      "theta_deg": 133.0,
+      "response_magnitude": 0.09970086880470735,
+      "response_magnitude_std": 7.752460102300896e-05
+    },
+    {
+      "theta_deg": 133.5,
+      "response_magnitude": 0.09972239723127692,
+      "response_magnitude_std": 7.259011068931441e-05
+    },
+    {
+      "theta_deg": 134.0,
+      "response_magnitude": 0.09981949967105336,
+      "response_magnitude_std": 7.487679099121261e-05
+    },
+    {
+      "theta_deg": 134.5,
+      "response_magnitude": 0.09985449802264772,
+      "response_magnitude_std": 6.32315671993988e-05
+    },
+    {
+      "theta_deg": 135.0,
+      "response_magnitude": 0.10277074939424853,
+      "response_magnitude_std": 0.0001043098031496011
+    },
+    {
+      "theta_deg": 135.5,
+      "response_magnitude": 0.09984999693422955,
+      "response_magnitude_std": 7.0653057393128e-05
+    },
+    {
+      "theta_deg": 136.0,
+      "response_magnitude": 0.09982224364775062,
+      "response_magnitude_std": 7.51362256987443e-05
+    },
+    {
+      "theta_deg": 136.5,
+      "response_magnitude": 0.09971634555941891,
+      "response_magnitude_std": 8.056096500347909e-05
+    },
+    {
+      "theta_deg": 137.0,
+      "response_magnitude": 0.0996981679605685,
+      "response_magnitude_std": 7.874507965356844e-05
+    },
+    {
+      "theta_deg": 137.5,
+      "response_magnitude": 0.09965766238623391,
+      "response_magnitude_std": 5.714550685401671e-05
+    },
+    {
+      "theta_deg": 138.0,
+      "response_magnitude": 0.09960137010763702,
+      "response_magnitude_std": 6.16001902783538e-05
+    },
+    {
+      "theta_deg": 138.5,
+      "response_magnitude": 0.09954752854287792,
+      "response_magnitude_std": 6.552704119231235e-05
+    },
+    {
+      "theta_deg": 139.0,
+      "response_magnitude": 0.09947792735104,
+      "response_magnitude_std": 5.9130181514628094e-05
+    },
+    {
+      "theta_deg": 139.5,
+      "response_magnitude": 0.09940660319636149,
+      "response_magnitude_std": 7.199498002922078e-05
+    },
+    {
+      "theta_deg": 140.0,
+      "response_magnitude": 0.09940437845400409,
+      "response_magnitude_std": 6.839349865192938e-05
+    },
+    {
+      "theta_deg": 140.5,
+      "response_magnitude": 0.0993186096005869,
+      "response_magnitude_std": 7.336318616855001e-05
+    },
+    {
+      "theta_deg": 141.0,
+      "response_magnitude": 0.09930116478360845,
+      "response_magnitude_std": 6.124269676758229e-05
+    },
+    {
+      "theta_deg": 141.5,
+      "response_magnitude": 0.09928156174432434,
+      "response_magnitude_std": 6.982379539746572e-05
+    },
+    {
+      "theta_deg": 142.0,
+      "response_magnitude": 0.09923422368736126,
+      "response_magnitude_std": 8.864820294515457e-05
+    },
+    {
+      "theta_deg": 142.5,
+      "response_magnitude": 0.09919373818671427,
+      "response_magnitude_std": 9.624490912362407e-05
+    },
+    {
+      "theta_deg": 143.0,
+      "response_magnitude": 0.09916997858980504,
+      "response_magnitude_std": 8.440126967088478e-05
+    },
+    {
+      "theta_deg": 143.5,
+      "response_magnitude": 0.09914011759909103,
+      "response_magnitude_std": 8.307487373931293e-05
+    },
+    {
+      "theta_deg": 144.0,
+      "response_magnitude": 0.0990945071965519,
+      "response_magnitude_std": 5.961778534049655e-05
+    },
+    {
+      "theta_deg": 144.5,
+      "response_magnitude": 0.09905271253829358,
+      "response_magnitude_std": 7.602484174917973e-05
+    },
+    {
+      "theta_deg": 145.0,
+      "response_magnitude": 0.09906215636272588,
+      "response_magnitude_std": 7.781300778352766e-05
+    },
+    {
+      "theta_deg": 145.5,
+      "response_magnitude": 0.09898518876591872,
+      "response_magnitude_std": 0.00010361270895411652
+    },
+    {
+      "theta_deg": 146.0,
+      "response_magnitude": 0.09900955612933493,
+      "response_magnitude_std": 9.26566973080048e-05
+    },
+    {
+      "theta_deg": 146.5,
+      "response_magnitude": 0.0989801104624948,
+      "response_magnitude_std": 6.610194275630699e-05
+    },
+    {
+      "theta_deg": 147.0,
+      "response_magnitude": 0.09894744967869772,
+      "response_magnitude_std": 8.168877581418844e-05
+    },
+    {
+      "theta_deg": 147.5,
+      "response_magnitude": 0.09896360274446143,
+      "response_magnitude_std": 6.294680762938076e-05
+    },
+    {
+      "theta_deg": 148.0,
+      "response_magnitude": 0.09895322891751246,
+      "response_magnitude_std": 7.708837368250983e-05
+    },
+    {
+      "theta_deg": 148.5,
+      "response_magnitude": 0.09894065601685281,
+      "response_magnitude_std": 7.745340469508054e-05
+    },
+    {
+      "theta_deg": 149.0,
+      "response_magnitude": 0.09893595167298266,
+      "response_magnitude_std": 7.122982454277017e-05
+    },
+    {
+      "theta_deg": 149.5,
+      "response_magnitude": 0.09892454557754314,
+      "response_magnitude_std": 7.649319330684105e-05
+    },
+    {
+      "theta_deg": 150.0,
+      "response_magnitude": 0.0989338612067421,
+      "response_magnitude_std": 4.843104549642504e-05
+    },
+    {
+      "theta_deg": 150.5,
+      "response_magnitude": 0.09890093862726353,
+      "response_magnitude_std": 6.25834398128775e-05
+    },
+    {
+      "theta_deg": 151.0,
+      "response_magnitude": 0.0989154923365678,
+      "response_magnitude_std": 4.8758985118985155e-05
+    },
+    {
+      "theta_deg": 151.5,
+      "response_magnitude": 0.09891856278354101,
+      "response_magnitude_std": 4.437406878147498e-05
+    },
+    {
+      "theta_deg": 152.0,
+      "response_magnitude": 0.09893061024927496,
+      "response_magnitude_std": 3.870422192704533e-05
+    },
+    {
+      "theta_deg": 152.5,
+      "response_magnitude": 0.0989235583538288,
+      "response_magnitude_std": 4.163955334309813e-05
+    },
+    {
+      "theta_deg": 153.0,
+      "response_magnitude": 0.0989348621576497,
+      "response_magnitude_std": 4.890882106814095e-05
+    },
+    {
+      "theta_deg": 153.5,
+      "response_magnitude": 0.09893297410211578,
+      "response_magnitude_std": 3.707004637530572e-05
+    },
+    {
+      "theta_deg": 154.0,
+      "response_magnitude": 0.09895234906548085,
+      "response_magnitude_std": 4.0952186798947353e-05
+    },
+    {
+      "theta_deg": 154.5,
+      "response_magnitude": 0.0989400928977303,
+      "response_magnitude_std": 4.718916329987612e-05
+    },
+    {
+      "theta_deg": 155.0,
+      "response_magnitude": 0.09895371027680523,
+      "response_magnitude_std": 3.5409008341225686e-05
+    },
+    {
+      "theta_deg": 155.5,
+      "response_magnitude": 0.09896791131881776,
+      "response_magnitude_std": 3.2093041904305756e-05
+    },
+    {
+      "theta_deg": 156.0,
+      "response_magnitude": 0.09896652066621042,
+      "response_magnitude_std": 4.720287143409529e-05
+    },
+    {
+      "theta_deg": 156.5,
+      "response_magnitude": 0.09897869731457537,
+      "response_magnitude_std": 4.6127837530000045e-05
+    },
+    {
+      "theta_deg": 157.0,
+      "response_magnitude": 0.09899804845593381,
+      "response_magnitude_std": 4.148397672226336e-05
+    },
+    {
+      "theta_deg": 157.5,
+      "response_magnitude": 0.09902350297744097,
+      "response_magnitude_std": 2.8213398466256073e-05
+    },
+    {
+      "theta_deg": 158.0,
+      "response_magnitude": 0.09902427381060365,
+      "response_magnitude_std": 3.7991628387809854e-05
+    },
+    {
+      "theta_deg": 158.5,
+      "response_magnitude": 0.09903143702919961,
+      "response_magnitude_std": 4.537587485404533e-05
+    },
+    {
+      "theta_deg": 159.0,
+      "response_magnitude": 0.09903995783911576,
+      "response_magnitude_std": 4.6607466095062e-05
+    },
+    {
+      "theta_deg": 159.5,
+      "response_magnitude": 0.09905825596653765,
+      "response_magnitude_std": 4.175383428400261e-05
+    },
+    {
+      "theta_deg": 160.0,
+      "response_magnitude": 0.09907356719932782,
+      "response_magnitude_std": 4.275410556945033e-05
+    },
+    {
+      "theta_deg": 160.5,
+      "response_magnitude": 0.09908334957289022,
+      "response_magnitude_std": 5.180215760258497e-05
+    },
+    {
+      "theta_deg": 161.0,
+      "response_magnitude": 0.09911239043008871,
+      "response_magnitude_std": 3.7159366316441164e-05
+    },
+    {
+      "theta_deg": 161.5,
+      "response_magnitude": 0.0991339455359721,
+      "response_magnitude_std": 2.3178814209472387e-05
+    },
+    {
+      "theta_deg": 162.0,
+      "response_magnitude": 0.0991447768286338,
+      "response_magnitude_std": 4.543327779457932e-05
+    },
+    {
+      "theta_deg": 162.5,
+      "response_magnitude": 0.09915467490966708,
+      "response_magnitude_std": 3.8160073468803314e-05
+    },
+    {
+      "theta_deg": 163.0,
+      "response_magnitude": 0.09918098732482102,
+      "response_magnitude_std": 1.855310600568504e-05
+    },
+    {
+      "theta_deg": 163.5,
+      "response_magnitude": 0.09917837671482077,
+      "response_magnitude_std": 3.443895661300269e-05
+    },
+    {
+      "theta_deg": 164.0,
+      "response_magnitude": 0.09920361924579661,
+      "response_magnitude_std": 2.4749017949869696e-05
+    },
+    {
+      "theta_deg": 164.5,
+      "response_magnitude": 0.09921300990138229,
+      "response_magnitude_std": 3.344940541865262e-05
+    },
+    {
+      "theta_deg": 165.0,
+      "response_magnitude": 0.09923596025397086,
+      "response_magnitude_std": 1.4332501535898404e-05
+    },
+    {
+      "theta_deg": 165.5,
+      "response_magnitude": 0.09923843604533858,
+      "response_magnitude_std": 3.401275606426859e-05
+    },
+    {
+      "theta_deg": 166.0,
+      "response_magnitude": 0.09926777181097686,
+      "response_magnitude_std": 2.940024766695778e-05
+    },
+    {
+      "theta_deg": 166.5,
+      "response_magnitude": 0.0992717419113496,
+      "response_magnitude_std": 9.578700364952487e-06
+    },
+    {
+      "theta_deg": 167.0,
+      "response_magnitude": 0.09928131459813669,
+      "response_magnitude_std": 3.102118526857911e-05
+    },
+    {
+      "theta_deg": 167.5,
+      "response_magnitude": 0.09927474165512988,
+      "response_magnitude_std": 3.9301264382048984e-05
+    },
+    {
+      "theta_deg": 168.0,
+      "response_magnitude": 0.09931215886898004,
+      "response_magnitude_std": 2.9226234662000356e-05
+    },
+    {
+      "theta_deg": 168.5,
+      "response_magnitude": 0.09932934290068693,
+      "response_magnitude_std": 1.7764644090745113e-05
+    },
+    {
+      "theta_deg": 169.0,
+      "response_magnitude": 0.09933342071735339,
+      "response_magnitude_std": 1.1789571795785264e-05
+    },
+    {
+      "theta_deg": 169.5,
+      "response_magnitude": 0.09934386733575801,
+      "response_magnitude_std": 1.4833559924446457e-05
+    },
+    {
+      "theta_deg": 170.0,
+      "response_magnitude": 0.0993527249101094,
+      "response_magnitude_std": 1.897780699457321e-05
+    },
+    {
+      "theta_deg": 170.5,
+      "response_magnitude": 0.09935833913683446,
+      "response_magnitude_std": 2.548905758956354e-05
+    },
+    {
+      "theta_deg": 171.0,
+      "response_magnitude": 0.09936797289021651,
+      "response_magnitude_std": 2.5072748368358467e-05
+    },
+    {
+      "theta_deg": 171.5,
+      "response_magnitude": 0.09937721206709983,
+      "response_magnitude_std": 2.505758161042792e-05
+    },
+    {
+      "theta_deg": 172.0,
+      "response_magnitude": 0.09939172101012406,
+      "response_magnitude_std": 2.0010289963669788e-05
+    },
+    {
+      "theta_deg": 172.5,
+      "response_magnitude": 0.09940660424891058,
+      "response_magnitude_std": 1.613440785923543e-05
+    },
+    {
+      "theta_deg": 173.0,
+      "response_magnitude": 0.09941952086832907,
+      "response_magnitude_std": 1.1985417398237296e-05
+    },
+    {
+      "theta_deg": 173.5,
+      "response_magnitude": 0.0994321785787855,
+      "response_magnitude_std": 1.3684712417105907e-05
+    },
+    {
+      "theta_deg": 174.0,
+      "response_magnitude": 0.09943726795937234,
+      "response_magnitude_std": 1.547749680639125e-05
+    },
+    {
+      "theta_deg": 174.5,
+      "response_magnitude": 0.09944371191332879,
+      "response_magnitude_std": 1.761436604826027e-05
+    },
+    {
+      "theta_deg": 175.0,
+      "response_magnitude": 0.09944705169223592,
+      "response_magnitude_std": 1.6681312624219706e-05
+    },
+    {
+      "theta_deg": 175.5,
+      "response_magnitude": 0.09945557337976771,
+      "response_magnitude_std": 1.481714528757147e-05
+    },
+    {
+      "theta_deg": 176.0,
+      "response_magnitude": 0.0994673990315054,
+      "response_magnitude_std": 1.1707436619014711e-05
+    },
+    {
+      "theta_deg": 176.5,
+      "response_magnitude": 0.09948076796473007,
+      "response_magnitude_std": 1.136523375129296e-05
+    },
+    {
+      "theta_deg": 177.0,
+      "response_magnitude": 0.0994885241609134,
+      "response_magnitude_std": 5.918753321021662e-06
+    },
+    {
+      "theta_deg": 177.5,
+      "response_magnitude": 0.09949531774285233,
+      "response_magnitude_std": 5.023181424405518e-06
+    },
+    {
+      "theta_deg": 178.0,
+      "response_magnitude": 0.09950193870722163,
+      "response_magnitude_std": 3.1343787624251346e-06
+    },
+    {
+      "theta_deg": 178.5,
+      "response_magnitude": 0.0995079796786919,
+      "response_magnitude_std": 4.942482608196701e-07
+    },
+    {
+      "theta_deg": 179.0,
+      "response_magnitude": 0.09951417158812191,
+      "response_magnitude_std": 9.547750337839247e-07
+    },
+    {
+      "theta_deg": 179.5,
+      "response_magnitude": 0.09951658112914526,
+      "response_magnitude_std": 4.067525389588939e-10
+    }
+  ]
+}

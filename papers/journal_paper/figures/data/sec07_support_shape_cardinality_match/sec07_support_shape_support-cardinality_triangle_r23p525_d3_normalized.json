@@ -1,0 +1,3104 @@
+{
+  "shape": "triangle",
+  "shape_label": "Triangle",
+  "degree": 3,
+  "normalize_coords": true,
+  "match_mode": "support-cardinality",
+  "matching_metric": "support_cardinality",
+  "matching_target_value": 708.0,
+  "support_key": "r",
+  "support_value": 23.525,
+  "support_cardinality": 708,
+  "white_noise_gain": 9.90589584875085e-05,
+  "effective_second_moment": 165.93628329582268,
+  "symmetry_order": 3,
+  "anisotropy_ratio": 1.0902375944715519,
+  "theta_max_deg": 45.0,
+  "theta_min_deg": 0.0,
+  "kappa_design_matrix": 135.64643157371358,
+  "design_matrix_shape": [
+    708,
+    10
+  ],
+  "matching_error_abs": 0.0,
+  "matching_error_rel": 0.0,
+  "calibration_curve": [
+    {
+      "support_value": 21.0,
+      "support_cardinality": 573.0,
+      "white_noise_gain": 0.00015053364735973993,
+      "effective_second_moment": 134.13752683708995,
+      "kappa_design_matrix": 128.22791699734108
+    },
+    {
+      "support_value": 21.025,
+      "support_cardinality": 573.0,
+      "white_noise_gain": 0.00015053364735974077,
+      "effective_second_moment": 134.13752683709004,
+      "kappa_design_matrix": 128.67743018361787
+    },
+    {
+      "support_value": 21.05,
+      "support_cardinality": 573.0,
+      "white_noise_gain": 0.00015053364735974025,
+      "effective_second_moment": 134.1375268370898,
+      "kappa_design_matrix": 129.12801068090323
+    },
+    {
+      "support_value": 21.075,
+      "support_cardinality": 575.0,
+      "white_noise_gain": 0.00015002560019690273,
+      "effective_second_moment": 134.67762408774965,
+      "kappa_design_matrix": 129.53081559686635
+    },
+    {
+      "support_value": 21.1,
+      "support_cardinality": 575.0,
+      "white_noise_gain": 0.00015002560019690308,
+      "effective_second_moment": 134.67762408774965,
+      "kappa_design_matrix": 129.98347669682056
+    },
+    {
+      "support_value": 21.125,
+      "support_cardinality": 577.0,
+      "white_noise_gain": 0.0001500109915369333,
+      "effective_second_moment": 134.75976573613195,
+      "kappa_design_matrix": 129.68883530002745
+    },
+    {
+      "support_value": 21.15,
+      "support_cardinality": 577.0,
+      "white_noise_gain": 0.00015001099153693343,
+      "effective_second_moment": 134.75976573613198,
+      "kappa_design_matrix": 130.1411496343149
+    },
+    {
+      "support_value": 21.175,
+      "support_cardinality": 577.0,
+      "white_noise_gain": 0.00015001099153693384,
+      "effective_second_moment": 134.75976573613198,
+      "kappa_design_matrix": 130.59453180081763
+    },
+    {
+      "support_value": 21.2,
+      "support_cardinality": 581.0,
+      "white_noise_gain": 0.00013943258745252596,
+      "effective_second_moment": 143.34406283050646,
+      "kappa_design_matrix": 131.4470027183392
+    },
+    {
+      "support_value": 21.225,
+      "support_cardinality": 581.0,
+      "white_noise_gain": 0.00013943258745252588,
+      "effective_second_moment": 143.34406283050657,
+      "kappa_design_matrix": 131.90379154689276
+    },
+    {
+      "support_value": 21.25,
+      "support_cardinality": 583.0,
+      "white_noise_gain": 0.00013939910416755534,
+      "effective_second_moment": 143.63677464734423,
+      "kappa_design_matrix": 132.5838644385686
+    },
+    {
+      "support_value": 21.275,
+      "support_cardinality": 583.0,
+      "white_noise_gain": 0.00013939910416755594,
+      "effective_second_moment": 143.6367746473443,
+      "kappa_design_matrix": 133.04354556274666
+    },
+    {
+      "support_value": 21.3,
+      "support_cardinality": 583.0,
+      "white_noise_gain": 0.00013939910416755665,
+      "effective_second_moment": 143.63677464734465,
+      "kappa_design_matrix": 133.50430552959295
+    },
+    {
+      "support_value": 21.325,
+      "support_cardinality": 585.0,
+      "white_noise_gain": 0.0001390031974291713,
+      "effective_second_moment": 144.0680010761477,
+      "kappa_design_matrix": 133.67054189017287
+    },
+    {
+      "support_value": 21.35,
+      "support_cardinality": 585.0,
+      "white_noise_gain": 0.00013900319742917203,
+      "effective_second_moment": 144.06800107614794,
+      "kappa_design_matrix": 134.13256371562824
+    },
+    {
+      "support_value": 21.375,
+      "support_cardinality": 585.0,
+      "white_noise_gain": 0.00013900319742917193,
+      "effective_second_moment": 144.06800107614808,
+      "kappa_design_matrix": 134.59566617056288
+    },
+    {
+      "support_value": 21.4,
+      "support_cardinality": 587.0,
+      "white_noise_gain": 0.0001389961664630342,
+      "effective_second_moment": 144.0038705407254,
+      "kappa_design_matrix": 134.52228308317942
+    },
+    {
+      "support_value": 21.425,
+      "support_cardinality": 587.0,
+      "white_noise_gain": 0.00013899616646303347,
+      "effective_second_moment": 144.00387054072522,
+      "kappa_design_matrix": 134.9857821660523
+    },
+    {
+      "support_value": 21.45,
+      "support_cardinality": 589.0,
+      "white_noise_gain": 0.00013599397063477904,
+      "effective_second_moment": 143.4868699884591,
+      "kappa_design_matrix": 135.63696843805806
+    },
+    {
+      "support_value": 21.475,
+      "support_cardinality": 591.0,
+      "white_noise_gain": 0.00013581321535338149,
+      "effective_second_moment": 143.52426251518162,
+      "kappa_design_matrix": 135.0547204993117
+    },
+    {
+      "support_value": 21.5,
+      "support_cardinality": 591.0,
+      "white_noise_gain": 0.00013581321535338048,
+      "effective_second_moment": 143.52426251518114,
+      "kappa_design_matrix": 135.51815557891646
+    },
+    {
+      "support_value": 21.525,
+      "support_cardinality": 593.0,
+      "white_noise_gain": 0.0001355621098444206,
+      "effective_second_moment": 144.17626432846038,
+      "kappa_design_matrix": 136.20413816564943
+    },
+    {
+      "support_value": 21.55,
+      "support_cardinality": 593.0,
+      "white_noise_gain": 0.0001355621098444207,
+      "effective_second_moment": 144.17626432846035,
+      "kappa_design_matrix": 136.670496473401
+    },
+    {
+      "support_value": 21.575,
+      "support_cardinality": 593.0,
+      "white_noise_gain": 0.00013556210984442014,
+      "effective_second_moment": 144.17626432846023,
+      "kappa_design_matrix": 137.1379352937446
+    },
+    {
+      "support_value": 21.6,
+      "support_cardinality": 595.0,
+      "white_noise_gain": 0.0001353475058910579,
+      "effective_second_moment": 144.4918743327884,
+      "kappa_design_matrix": 137.04889086409258
+    },
+    {
+      "support_value": 21.625,
+      "support_cardinality": 595.0,
+      "white_noise_gain": 0.00013534750589105774,
+      "effective_second_moment": 144.49187433278837,
+      "kappa_design_matrix": 137.51671138235895
+    },
+    {
+      "support_value": 21.65,
+      "support_cardinality": 595.0,
+      "white_noise_gain": 0.00013534750589105807,
+      "effective_second_moment": 144.49187433278834,
+      "kappa_design_matrix": 137.98561215155843
+    },
+    {
+      "support_value": 21.675,
+      "support_cardinality": 597.0,
+      "white_noise_gain": 0.0001352668239512257,
+      "effective_second_moment": 144.3079823779247,
+      "kappa_design_matrix": 138.31754773874871
+    },
+    {
+      "support_value": 21.7,
+      "support_cardinality": 597.0,
+      "white_noise_gain": 0.00013526682395122495,
+      "effective_second_moment": 144.30798237792456,
+      "kappa_design_matrix": 138.78819244198283
+    },
+    {
+      "support_value": 21.725,
+      "support_cardinality": 599.0,
+      "white_noise_gain": 0.00013461913296188726,
+      "effective_second_moment": 143.21367017170803,
+      "kappa_design_matrix": 139.41631885844131
+    },
+    {
+      "support_value": 21.75,
+      "support_cardinality": 601.0,
+      "white_noise_gain": 0.00013453711068775158,
+      "effective_second_moment": 143.28744034602764,
+      "kappa_design_matrix": 135.48200759215794
+    },
+    {
+      "support_value": 21.775,
+      "support_cardinality": 601.0,
+      "white_noise_gain": 0.00013453711068775218,
+      "effective_second_moment": 143.28744034602772,
+      "kappa_design_matrix": 135.94066109538292
+    },
+    {
+      "support_value": 21.8,
+      "support_cardinality": 603.0,
+      "white_noise_gain": 0.00013415498051648055,
+      "effective_second_moment": 143.88440426539572,
+      "kappa_design_matrix": 136.51015121028496
+    },
+    {
+      "support_value": 21.825,
+      "support_cardinality": 603.0,
+      "white_noise_gain": 0.00013415498051648028,
+      "effective_second_moment": 143.88440426539572,
+      "kappa_design_matrix": 136.9713388021072
+    },
+    {
+      "support_value": 21.85,
+      "support_cardinality": 603.0,
+      "white_noise_gain": 0.00013415498051648085,
+      "effective_second_moment": 143.88440426539574,
+      "kappa_design_matrix": 137.43358094149528
+    },
+    {
+      "support_value": 21.875,
+      "support_cardinality": 605.0,
+      "white_noise_gain": 0.0001340952249603666,
+      "effective_second_moment": 144.06084350651344,
+      "kappa_design_matrix": 137.16649698011724
+    },
+    {
+      "support_value": 21.9,
+      "support_cardinality": 605.0,
+      "white_noise_gain": 0.00013409522496036802,
+      "effective_second_moment": 144.0608435065139,
+      "kappa_design_matrix": 137.6284998411681
+    },
+    {
+      "support_value": 21.925,
+      "support_cardinality": 605.0,
+      "white_noise_gain": 0.00013409522496036813,
+      "effective_second_moment": 144.06084350651375,
+      "kappa_design_matrix": 138.09155560947136
+    },
+    {
+      "support_value": 21.95,
+      "support_cardinality": 607.0,
+      "white_noise_gain": 0.00013390656135343389,
+      "effective_second_moment": 143.8891070304725,
+      "kappa_design_matrix": 138.7475524621963
+    },
+    {
+      "support_value": 21.975,
+      "support_cardinality": 607.0,
+      "white_noise_gain": 0.00013390656135343275,
+      "effective_second_moment": 143.88910703047213,
+      "kappa_design_matrix": 139.21335973504674
+    },
+    {
+      "support_value": 22.0,
+      "support_cardinality": 649.0,
+      "white_noise_gain": 0.0001106983081554681,
+      "effective_second_moment": 161.30621829555787,
+      "kappa_design_matrix": 122.98001060089594
+    },
+    {
+      "support_value": 22.025,
+      "support_cardinality": 649.0,
+      "white_noise_gain": 0.00011069830815546816,
+      "effective_second_moment": 161.3062182955577,
+      "kappa_design_matrix": 123.3917461624687
+    },
+    {
+      "support_value": 22.05,
+      "support_cardinality": 649.0,
+      "white_noise_gain": 0.000110698308155468,
+      "effective_second_moment": 161.30621829555773,
+      "kappa_design_matrix": 123.80441587231373
+    },
+    {
+      "support_value": 22.075,
+      "support_cardinality": 651.0,
+      "white_noise_gain": 0.00011031725541562606,
+      "effective_second_moment": 161.8556315413617,
+      "kappa_design_matrix": 124.04242714518938
+    },
+    {
+      "support_value": 22.1,
+      "support_cardinality": 651.0,
+      "white_noise_gain": 0.00011031725541562688,
+      "effective_second_moment": 161.85563154136216,
+      "kappa_design_matrix": 124.45650207843863
+    },
+    {
+      "support_value": 22.125,
+      "support_cardinality": 653.0,
+      "white_noise_gain": 0.00011030425362812537,
+      "effective_second_moment": 161.96516520420607,
+      "kappa_design_matrix": 124.27304988868434
+    },
+    {
+      "support_value": 22.15,
+      "support_cardinality": 653.0,
+      "white_noise_gain": 0.00011030425362812606,
+      "effective_second_moment": 161.96516520420644,
+      "kappa_design_matrix": 124.68710778462427
+    },
+    {
+      "support_value": 22.175,
+      "support_cardinality": 653.0,
+      "white_noise_gain": 0.00011030425362812557,
+      "effective_second_moment": 161.96516520420602,
+      "kappa_design_matrix": 125.10209995950102
+    },
+    {
+      "support_value": 22.2,
+      "support_cardinality": 657.0,
+      "white_noise_gain": 0.00010789955352857964,
+      "effective_second_moment": 161.4088913853578,
+      "kappa_design_matrix": 125.73697248400805
+    },
+    {
+      "support_value": 22.225,
+      "support_cardinality": 657.0,
+      "white_noise_gain": 0.00010789955352857994,
+      "effective_second_moment": 161.408891385358,
+      "kappa_design_matrix": 126.15446032865846
+    },
+    {
+      "support_value": 22.25,
+      "support_cardinality": 659.0,
+      "white_noise_gain": 0.00010773829659734075,
+      "effective_second_moment": 162.1103526294859,
+      "kappa_design_matrix": 126.7645291206759
+    },
+    {
+      "support_value": 22.275,
+      "support_cardinality": 659.0,
+      "white_noise_gain": 0.00010773829659734067,
+      "effective_second_moment": 162.11035262948582,
+      "kappa_design_matrix": 127.18453200236866
+    },
+    {
+      "support_value": 22.3,
+      "support_cardinality": 659.0,
+      "white_noise_gain": 0.0001077382965973405,
+      "effective_second_moment": 162.1103526294859,
+      "kappa_design_matrix": 127.605477240082
+    },
+    {
+      "support_value": 22.325,
+      "support_cardinality": 661.0,
+      "white_noise_gain": 0.00010747246368386897,
+      "effective_second_moment": 162.53329778128887,
+      "kappa_design_matrix": 127.6442453909589
+    },
+    {
+      "support_value": 22.35,
+      "support_cardinality": 661.0,
+      "white_noise_gain": 0.00010747246368386872,
+      "effective_second_moment": 162.53329778128872,
+      "kappa_design_matrix": 128.06593577297198
+    },
+    {
+      "support_value": 22.375,
+      "support_cardinality": 661.0,
+      "white_noise_gain": 0.00010747246368386908,
+      "effective_second_moment": 162.5332977812891,
+      "kappa_design_matrix": 128.48856920654492
+    },
+    {
+      "support_value": 22.4,
+      "support_cardinality": 663.0,
+      "white_noise_gain": 0.00010746778383953853,
+      "effective_second_moment": 162.46935459848444,
+      "kappa_design_matrix": 128.55230696888088
+    },
+    {
+      "support_value": 22.425,
+      "support_cardinality": 663.0,
+      "white_noise_gain": 0.00010746778383953909,
+      "effective_second_moment": 162.4693545984847,
+      "kappa_design_matrix": 128.97572069890285
+    },
+    {
+      "support_value": 22.45,
+      "support_cardinality": 665.0,
+      "white_noise_gain": 0.00010691486617121867,
+      "effective_second_moment": 161.24442489417564,
+      "kappa_design_matrix": 129.53647361423867
+    },
+    {
+      "support_value": 22.475,
+      "support_cardinality": 667.0,
+      "white_noise_gain": 0.00010681266988574702,
+      "effective_second_moment": 161.2537667835977,
+      "kappa_design_matrix": 128.84806363613208
+    },
+    {
+      "support_value": 22.5,
+      "support_cardinality": 667.0,
+      "white_noise_gain": 0.00010681266988574737,
+      "effective_second_moment": 161.2537667835981,
+      "kappa_design_matrix": 129.27077475801727
+    },
+    {
+      "support_value": 22.525,
+      "support_cardinality": 669.0,
+      "white_noise_gain": 0.00010652236105445343,
+      "effective_second_moment": 161.9693625791926,
+      "kappa_design_matrix": 129.82967278194818
+    },
+    {
+      "support_value": 22.55,
+      "support_cardinality": 669.0,
+      "white_noise_gain": 0.00010652236105445368,
+      "effective_second_moment": 161.96936257919262,
+      "kappa_design_matrix": 130.25474733347068
+    },
+    {
+      "support_value": 22.575,
+      "support_cardinality": 669.0,
+      "white_noise_gain": 0.00010652236105445297,
+      "effective_second_moment": 161.9693625791924,
+      "kappa_design_matrix": 130.68076390666658
+    },
+    {
+      "support_value": 22.6,
+      "support_cardinality": 671.0,
+      "white_noise_gain": 0.00010639205023141571,
+      "effective_second_moment": 162.27263231609274,
+      "kappa_design_matrix": 130.5411095538317
+    },
+    {
+      "support_value": 22.625,
+      "support_cardinality": 671.0,
+      "white_noise_gain": 0.00010639205023141525,
+      "effective_second_moment": 162.27263231609257,
+      "kappa_design_matrix": 130.96727878281564
+    },
+    {
+      "support_value": 22.65,
+      "support_cardinality": 671.0,
+      "white_noise_gain": 0.0001063920502314151,
+      "effective_second_moment": 162.27263231609246,
+      "kappa_design_matrix": 131.39438941466835
+    },
+    {
+      "support_value": 22.675,
+      "support_cardinality": 673.0,
+      "white_noise_gain": 0.00010634075824642275,
+      "effective_second_moment": 162.0954802278155,
+      "kappa_design_matrix": 131.79896223261153
+    },
+    {
+      "support_value": 22.7,
+      "support_cardinality": 673.0,
+      "white_noise_gain": 0.00010634075824642218,
+      "effective_second_moment": 162.09548022781524,
+      "kappa_design_matrix": 132.22792703971234
+    },
+    {
+      "support_value": 22.725,
+      "support_cardinality": 675.0,
+      "white_noise_gain": 0.00010629272556799302,
+      "effective_second_moment": 161.66286734306468,
+      "kappa_design_matrix": 132.81360301356645
+    },
+    {
+      "support_value": 22.75,
+      "support_cardinality": 677.0,
+      "white_noise_gain": 0.00010624707457847107,
+      "effective_second_moment": 161.71065835081134,
+      "kappa_design_matrix": 129.26671619256263
+    },
+    {
+      "support_value": 22.775,
+      "support_cardinality": 677.0,
+      "white_noise_gain": 0.00010624707457847186,
+      "effective_second_moment": 161.71065835081177,
+      "kappa_design_matrix": 129.68540583140543
+    },
+    {
+      "support_value": 22.8,
+      "support_cardinality": 679.0,
+      "white_noise_gain": 0.00010593316942174993,
+      "effective_second_moment": 162.27260996678035,
+      "kappa_design_matrix": 130.08680478928827
+    },
+    {
+      "support_value": 22.825,
+      "support_cardinality": 679.0,
+      "white_noise_gain": 0.00010593316942174804,
+      "effective_second_moment": 162.2726099667795,
+      "kappa_design_matrix": 130.5073543516571
+    },
+    {
+      "support_value": 22.85,
+      "support_cardinality": 679.0,
+      "white_noise_gain": 0.00010593316942174825,
+      "effective_second_moment": 162.27260996677956,
+      "kappa_design_matrix": 130.92882423280142
+    },
+    {
+      "support_value": 22.875,
+      "support_cardinality": 681.0,
+      "white_noise_gain": 0.00010590113488071225,
+      "effective_second_moment": 162.43348587755355,
+      "kappa_design_matrix": 130.7076930595756
+    },
+    {
+      "support_value": 22.9,
+      "support_cardinality": 681.0,
+      "white_noise_gain": 0.00010590113488071219,
+      "effective_second_moment": 162.43348587755355,
+      "kappa_design_matrix": 131.1290324376975
+    },
+    {
+      "support_value": 22.925,
+      "support_cardinality": 683.0,
+      "white_noise_gain": 0.00010179764667968555,
+      "effective_second_moment": 165.69877683963168,
+      "kappa_design_matrix": 131.73851543384868
+    },
+    {
+      "support_value": 22.95,
+      "support_cardinality": 685.0,
+      "white_noise_gain": 0.00010169631427602358,
+      "effective_second_moment": 165.5313501929327,
+      "kappa_design_matrix": 132.35108066894378
+    },
+    {
+      "support_value": 22.975,
+      "support_cardinality": 685.0,
+      "white_noise_gain": 0.00010169631427602344,
+      "effective_second_moment": 165.53135019293273,
+      "kappa_design_matrix": 132.7763638016451
+    },
+    {
+      "support_value": 23.0,
+      "support_cardinality": 688.0,
+      "white_noise_gain": 0.00010166058798354363,
+      "effective_second_moment": 165.90205235010777,
+      "kappa_design_matrix": 128.97562976032606
+    },
+    {
+      "support_value": 23.025,
+      "support_cardinality": 688.0,
+      "white_noise_gain": 0.00010166058798354326,
+      "effective_second_moment": 165.90205235010728,
+      "kappa_design_matrix": 129.38853607926418
+    },
+    {
+      "support_value": 23.05,
+      "support_cardinality": 688.0,
+      "white_noise_gain": 0.00010166058798354317,
+      "effective_second_moment": 165.90205235010734,
+      "kappa_design_matrix": 129.80233767781345
+    },
+    {
+      "support_value": 23.075,
+      "support_cardinality": 690.0,
+      "white_noise_gain": 0.00010139934804435577,
+      "effective_second_moment": 166.35079220832915,
+      "kappa_design_matrix": 129.98824490732906
+    },
+    {
+      "support_value": 23.1,
+      "support_cardinality": 690.0,
+      "white_noise_gain": 0.00010139934804435531,
+      "effective_second_moment": 166.35079220832878,
+      "kappa_design_matrix": 130.40321287234508
+    },
+    {
+      "support_value": 23.125,
+      "support_cardinality": 692.0,
+      "white_noise_gain": 0.00010139928668071168,
+      "effective_second_moment": 166.35824689416808,
+      "kappa_design_matrix": 130.26500567109366
+    },
+    {
+      "support_value": 23.15,
+      "support_cardinality": 692.0,
+      "white_noise_gain": 0.00010139928668071211,
+      "effective_second_moment": 166.3582468941684,
+      "kappa_design_matrix": 130.68008142756932
+    },
+    {
+      "support_value": 23.175,
+      "support_cardinality": 692.0,
+      "white_noise_gain": 0.00010139928668071191,
+      "effective_second_moment": 166.35824689416827,
+      "kappa_design_matrix": 131.09605246468075
+    },
+    {
+      "support_value": 23.2,
+      "support_cardinality": 696.0,
+      "white_noise_gain": 0.00010001152390060037,
+      "effective_second_moment": 165.3402384408959,
+      "kappa_design_matrix": 131.6732198311315
+    },
+    {
+      "support_value": 23.225,
+      "support_cardinality": 696.0,
+      "white_noise_gain": 0.00010001152390059982,
+      "effective_second_moment": 165.34023844089563,
+      "kappa_design_matrix": 132.09137552207105
+    },
+    {
+      "support_value": 23.25,
+      "support_cardinality": 698.0,
+      "white_noise_gain": 9.984992204779545e-05,
+      "effective_second_moment": 165.98168724964722,
+      "kappa_design_matrix": 132.68758230716236
+    },
+    {
+      "support_value": 23.275,
+      "support_cardinality": 698.0,
+      "white_noise_gain": 9.984992204779601e-05,
+      "effective_second_moment": 165.98168724964742,
+      "kappa_design_matrix": 133.1081131887438
+    },
+    {
+      "support_value": 23.3,
+      "support_cardinality": 698.0,
+      "white_noise_gain": 9.984992204779594e-05,
+      "effective_second_moment": 165.9816872496472,
+      "kappa_design_matrix": 133.5295462180009
+    },
+    {
+      "support_value": 23.325,
+      "support_cardinality": 700.0,
+      "white_noise_gain": 9.969137664318672e-05,
+      "effective_second_moment": 166.3160046804927,
+      "kappa_design_matrix": 133.52641080251695
+    },
+    {
+      "support_value": 23.35,
+      "support_cardinality": 700.0,
+      "white_noise_gain": 9.969137664318735e-05,
+      "effective_second_moment": 166.31600468049308,
+      "kappa_design_matrix": 133.94840866909047
+    },
+    {
+      "support_value": 23.375,
+      "support_cardinality": 700.0,
+      "white_noise_gain": 9.969137664318675e-05,
+      "effective_second_moment": 166.31600468049277,
+      "kappa_design_matrix": 134.37130900527418
+    },
+    {
+      "support_value": 23.4,
+      "support_cardinality": 702.0,
+      "white_noise_gain": 9.966700544671966e-05,
+      "effective_second_moment": 166.18008990001087,
+      "kappa_design_matrix": 134.49569178043853
+    },
+    {
+      "support_value": 23.425,
+      "support_cardinality": 702.0,
+      "white_noise_gain": 9.966700544671917e-05,
+      "effective_second_moment": 166.1800899000106,
+      "kappa_design_matrix": 134.91951218578714
+    },
+    {
+      "support_value": 23.45,
+      "support_cardinality": 704.0,
+      "white_noise_gain": 9.940719474185614e-05,
+      "effective_second_moment": 165.2719474723494,
+      "kappa_design_matrix": 135.480592532331
+    },
+    {
+      "support_value": 23.475,
+      "support_cardinality": 706.0,
+      "white_noise_gain": 9.929438133533206e-05,
+      "effective_second_moment": 165.3479451820467,
+      "kappa_design_matrix": 134.70266998273854
+    },
+    {
+      "support_value": 23.5,
+      "support_cardinality": 706.0,
+      "white_noise_gain": 9.929438133533164e-05,
+      "effective_second_moment": 165.3479451820465,
+      "kappa_design_matrix": 135.12551859515665
+    },
+    {
+      "support_value": 23.525,
+      "support_cardinality": 708.0,
+      "white_noise_gain": 9.90589584875085e-05,
+      "effective_second_moment": 165.93628329582268,
+      "kappa_design_matrix": 135.64643157371358
+    },
+    {
+      "support_value": 23.55,
+      "support_cardinality": 708.0,
+      "white_noise_gain": 9.905895848750855e-05,
+      "effective_second_moment": 165.93628329582268,
+      "kappa_design_matrix": 136.07142910444577
+    },
+    {
+      "support_value": 23.575,
+      "support_cardinality": 708.0,
+      "white_noise_gain": 9.905895848750856e-05,
+      "effective_second_moment": 165.93628329582268,
+      "kappa_design_matrix": 136.4973276384606
+    },
+    {
+      "support_value": 23.6,
+      "support_cardinality": 710.0,
+      "white_noise_gain": 9.899865630180806e-05,
+      "effective_second_moment": 166.1515688448965,
+      "kappa_design_matrix": 136.3424580613505
+    },
+    {
+      "support_value": 23.625,
+      "support_cardinality": 710.0,
+      "white_noise_gain": 9.899865630180834e-05,
+      "effective_second_moment": 166.15156884489647,
+      "kappa_design_matrix": 136.76843685514228
+    },
+    {
+      "support_value": 23.65,
+      "support_cardinality": 712.0,
+      "white_noise_gain": 9.326112503369863e-05,
+      "effective_second_moment": 175.24337311299874,
+      "kappa_design_matrix": 137.39508943957625
+    },
+    {
+      "support_value": 23.675,
+      "support_cardinality": 714.0,
+      "white_noise_gain": 9.319799048340457e-05,
+      "effective_second_moment": 175.0433179245246,
+      "kappa_design_matrix": 137.8460692775217
+    },
+    {
+      "support_value": 23.7,
+      "support_cardinality": 714.0,
+      "white_noise_gain": 9.319799048340476e-05,
+      "effective_second_moment": 175.04331792452476,
+      "kappa_design_matrix": 138.27543510060008
+    },
+    {
+      "support_value": 23.725,
+      "support_cardinality": 716.0,
+      "white_noise_gain": 9.319787229512212e-05,
+      "effective_second_moment": 175.01942915583047,
+      "kappa_design_matrix": 138.87287901078238
+    },
+    {
+      "support_value": 23.75,
+      "support_cardinality": 718.0,
+      "white_noise_gain": 9.31592222122887e-05,
+      "effective_second_moment": 175.07544038831452,
+      "kappa_design_matrix": 135.25689019987013
+    },
+    {
+      "support_value": 23.775,
+      "support_cardinality": 718.0,
+      "white_noise_gain": 9.315922221228848e-05,
+      "effective_second_moment": 175.07544038831432,
+      "kappa_design_matrix": 135.6762508759097
+    },
+    {
+      "support_value": 23.8,
+      "support_cardinality": 720.0,
+      "white_noise_gain": 9.292383125465684e-05,
+      "effective_second_moment": 175.57171683644987,
+      "kappa_design_matrix": 136.02556950239713
+    },
+    {
+      "support_value": 23.825,
+      "support_cardinality": 720.0,
+      "white_noise_gain": 9.29238312546565e-05,
+      "effective_second_moment": 175.57171683644964,
+      "kappa_design_matrix": 136.44654373158778
+    },
+    {
+      "support_value": 23.85,
+      "support_cardinality": 720.0,
+      "white_noise_gain": 9.292383125465652e-05,
+      "effective_second_moment": 175.5717168364498,
+      "kappa_design_matrix": 136.86839976430852
+    },
+    {
+      "support_value": 23.875,
+      "support_cardinality": 722.0,
+      "white_noise_gain": 9.291451496909715e-05,
+      "effective_second_moment": 175.6696762212007,
+      "kappa_design_matrix": 136.66589239258255
+    },
+    {
+      "support_value": 23.9,
+      "support_cardinality": 722.0,
+      "white_noise_gain": 9.291451496909695e-05,
+      "effective_second_moment": 175.66967622120066,
+      "kappa_design_matrix": 137.08765965976698
+    },
+    {
+      "support_value": 23.925,
+      "support_cardinality": 724.0,
+      "white_noise_gain": 9.097133093992276e-05,
+      "effective_second_moment": 175.66065491255097,
+      "kappa_design_matrix": 137.6684437436137
+    },
+    {
+      "support_value": 23.95,
+      "support_cardinality": 726.0,
+      "white_noise_gain": 9.086089785998675e-05,
+      "effective_second_moment": 175.51129448954163,
+      "kappa_design_matrix": 138.28928536248569
+    },
+    {
+      "support_value": 23.975,
+      "support_cardinality": 726.0,
+      "white_noise_gain": 9.086089785998672e-05,
+      "effective_second_moment": 175.5112944895417,
+      "kappa_design_matrix": 138.7147568357797
+    },
+    {
+      "support_value": 24.0,
+      "support_cardinality": 770.0,
+      "white_noise_gain": 8.05729360710498e-05,
+      "effective_second_moment": 185.42721355068923,
+      "kappa_design_matrix": 123.93300242254188
+    },
+    {
+      "support_value": 24.025,
+      "support_cardinality": 770.0,
+      "white_noise_gain": 8.057293607105011e-05,
+      "effective_second_moment": 185.42721355068952,
+      "kappa_design_matrix": 124.31343843714552
+    },
+    {
+      "support_value": 24.05,
+      "support_cardinality": 770.0,
+      "white_noise_gain": 8.057293607105015e-05,
+      "effective_second_moment": 185.4272135506895,
+      "kappa_design_matrix": 124.69466568893512
+    },
+    {
+      "support_value": 24.075,
+      "support_cardinality": 772.0,
+      "white_noise_gain": 8.039072022966071e-05,
+      "effective_second_moment": 185.86002492431166,
+      "kappa_design_matrix": 124.77494112287275
+    },
+    {
+      "support_value": 24.1,
+      "support_cardinality": 772.0,
+      "white_noise_gain": 8.039072022966026e-05,
+      "effective_second_moment": 185.86002492431138,
+      "kappa_design_matrix": 125.15693415328059
+    },
+    {
+      "support_value": 24.125,
+      "support_cardinality": 774.0,
+      "white_noise_gain": 8.039071980501183e-05,
+      "effective_second_moment": 185.860777502141,
+      "kappa_design_matrix": 125.12092194988206
+    },
+    {
+      "support_value": 24.15,
+      "support_cardinality": 774.0,
+      "white_noise_gain": 8.039071980501146e-05,
+      "effective_second_moment": 185.86077750214076,
+      "kappa_design_matrix": 125.50329170757672
+    },
+    {
+      "support_value": 24.175,
+      "support_cardinality": 774.0,
+      "white_noise_gain": 8.039071980501145e-05,
+      "effective_second_moment": 185.8607775021408,
+      "kappa_design_matrix": 125.88645273040223
+    },
+    {
+      "support_value": 24.2,
+      "support_cardinality": 778.0,
+      "white_noise_gain": 8.007916937876667e-05,
+      "effective_second_moment": 184.75766190012945,
+      "kappa_design_matrix": 126.31992979352802
+    },
+    {
+      "support_value": 24.225,
+      "support_cardinality": 778.0,
+      "white_noise_gain": 8.007916937876621e-05,
+      "effective_second_moment": 184.75766190012905,
+      "kappa_design_matrix": 126.70470396590247
+    },
+    {
+      "support_value": 24.25,
+      "support_cardinality": 780.0,
+      "white_noise_gain": 7.98974327578825e-05,
+      "effective_second_moment": 185.45217761631318,
+      "kappa_design_matrix": 127.19674268941202
+    },
+    {
+      "support_value": 24.275,
+      "support_cardinality": 780.0,
+      "white_noise_gain": 7.989743275788268e-05,
+      "effective_second_moment": 185.45217761631332,
+      "kappa_design_matrix": 127.583466785275
+    },
+    {
+      "support_value": 24.3,
+      "support_cardinality": 780.0,
+      "white_noise_gain": 7.989743275788246e-05,
+      "effective_second_moment": 185.45217761631292,
+      "kappa_design_matrix": 127.97098698070754
+    },
+    {
+      "support_value": 24.325,
+      "support_cardinality": 782.0,
+      "white_noise_gain": 7.979610310966853e-05,
+      "effective_second_moment": 185.7737514733038,
+      "kappa_design_matrix": 127.91046965796171
+    },
+    {
+      "support_value": 24.35,
+      "support_cardinality": 782.0,
+      "white_noise_gain": 7.979610310966795e-05,
+      "effective_second_moment": 185.77375147330338,
+      "kappa_design_matrix": 128.2983219383541
+    },
+    {
+      "support_value": 24.375,
+      "support_cardinality": 784.0,
+      "white_noise_gain": 7.559460534156192e-05,
+      "effective_second_moment": 194.88642846004618,
+      "kappa_design_matrix": 128.86153890878822
+    },
+    {
+      "support_value": 24.4,
+      "support_cardinality": 786.0,
+      "white_noise_gain": 7.558439123337655e-05,
+      "effective_second_moment": 194.76569641102384,
+      "kappa_design_matrix": 129.07269481642766
+    },
+    {
+      "support_value": 24.425,
+      "support_cardinality": 786.0,
+      "white_noise_gain": 7.558439123337659e-05,
+      "effective_second_moment": 194.76569641102387,
+      "kappa_design_matrix": 129.46293643927106
+    },
+    {
+      "support_value": 24.45,
+      "support_cardinality": 788.0,
+      "white_noise_gain": 7.55820287055944e-05,
+      "effective_second_moment": 194.63248942974946,
+      "kappa_design_matrix": 129.99487216768264
+    },
+    {
+      "support_value": 24.475,
+      "support_cardinality": 790.0,
+      "white_noise_gain": 7.552862074935505e-05,
+      "effective_second_moment": 194.638630263369,
+      "kappa_design_matrix": 129.16359416161146
+    },
+    {
+      "support_value": 24.5,
+      "support_cardinality": 790.0,
+      "white_noise_gain": 7.552862074935494e-05,
+      "effective_second_moment": 194.63863026336912,
+      "kappa_design_matrix": 129.5526799288649
+    },
+    {
+      "support_value": 24.525,
+      "support_cardinality": 792.0,
+      "white_noise_gain": 7.532185904351664e-05,
+      "effective_second_moment": 195.2512855750527,
+      "kappa_design_matrix": 129.93975378939274
+    },
+    {
+      "support_value": 24.55,
+      "support_cardinality": 792.0,
+      "white_noise_gain": 7.532185904351653e-05,
+      "effective_second_moment": 195.25128557505275,
+      "kappa_design_matrix": 130.3304797888905
+    },
+    {
+      "support_value": 24.575,
+      "support_cardinality": 792.0,
+      "white_noise_gain": 7.532185904351645e-05,
+      "effective_second_moment": 195.2512855750526,
+      "kappa_design_matrix": 130.72200106014088
+    },
+    {
+      "support_value": 24.6,
+      "support_cardinality": 794.0,
+      "white_noise_gain": 7.528146029349238e-05,
+      "effective_second_moment": 195.4869579807272,
+      "kappa_design_matrix": 130.57642423667767
+    },
+    {
+      "support_value": 24.625,
+      "support_cardinality": 794.0,
+      "white_noise_gain": 7.52814602934926e-05,
+      "effective_second_moment": 195.48695798072737,
+      "kappa_design_matrix": 130.96800844073175
+    },
+    {
+      "support_value": 24.65,
+      "support_cardinality": 796.0,
+      "white_noise_gain": 7.377255851647124e-05,
+      "effective_second_moment": 195.5686757327153,
+      "kappa_design_matrix": 131.50506352802714
+    },
+    {
+      "support_value": 24.675,
+      "support_cardinality": 798.0,
+      "white_noise_gain": 7.373390247449876e-05,
+      "effective_second_moment": 195.38105904664116,
+      "kappa_design_matrix": 131.9744046003265
+    },
+    {
+      "support_value": 24.7,
+      "support_cardinality": 798.0,
+      "white_noise_gain": 7.373390247449874e-05,
+      "effective_second_moment": 195.38105904664124,
+      "kappa_design_matrix": 132.36903768700734
+    },
+    {
+      "support_value": 24.725,
+      "support_cardinality": 800.0,
+      "white_noise_gain": 7.369380636891576e-05,
+      "effective_second_moment": 195.879068375481,
+      "kappa_design_matrix": 132.92992642608593
+    },
+    {
+      "support_value": 24.75,
+      "support_cardinality": 802.0,
+      "white_noise_gain": 7.367196646478736e-05,
+      "effective_second_moment": 195.91697851107423,
+      "kappa_design_matrix": 129.65182583095185
+    },
+    {
+      "support_value": 24.775,
+      "support_cardinality": 802.0,
+      "white_noise_gain": 7.3671966464787e-05,
+      "effective_second_moment": 195.91697851107403,
+      "kappa_design_matrix": 130.03782998797544
+    },
+    {
+      "support_value": 24.8,
+      "support_cardinality": 804.0,
+      "white_noise_gain": 7.349446752455764e-05,
+      "effective_second_moment": 196.4011332230384,
+      "kappa_design_matrix": 130.2590435889356
+    },
+    {
+      "support_value": 24.825,
+      "support_cardinality": 804.0,
+      "white_noise_gain": 7.349446752455738e-05,
+      "effective_second_moment": 196.40113322303839,
+      "kappa_design_matrix": 130.64619156126247
+    },
+    {
+      "support_value": 24.85,
+      "support_cardinality": 804.0,
+      "white_noise_gain": 7.349446752455717e-05,
+      "effective_second_moment": 196.4011332230381,
+      "kappa_design_matrix": 131.03411849389082
+    },
+    {
+      "support_value": 24.875,
+      "support_cardinality": 806.0,
+      "white_noise_gain": 7.348934111390848e-05,
+      "effective_second_moment": 196.4899740767841,
+      "kappa_design_matrix": 130.90595574755795
+    },
+    {
+      "support_value": 24.9,
+      "support_cardinality": 806.0,
+      "white_noise_gain": 7.348934111390832e-05,
+      "effective_second_moment": 196.48997407678394,
+      "kappa_design_matrix": 131.29397998392605
+    },
+    {
+      "support_value": 24.925,
+      "support_cardinality": 808.0,
+      "white_noise_gain": 7.303481363071782e-05,
+      "effective_second_moment": 195.2441955504878,
+      "kappa_design_matrix": 131.79662293211462
+    },
+    {
+      "support_value": 24.95,
+      "support_cardinality": 810.0,
+      "white_noise_gain": 7.29659519446414e-05,
+      "effective_second_moment": 195.09661949549184,
+      "kappa_design_matrix": 132.34868172523258
+    },
+    {
+      "support_value": 24.975,
+      "support_cardinality": 810.0,
+      "white_noise_gain": 7.296595194464094e-05,
+      "effective_second_moment": 195.09661949549164,
+      "kappa_design_matrix": 132.7398147243868
+    },
+    {
+      "support_value": 25.0,
+      "support_cardinality": 813.0,
+      "white_noise_gain": 7.285253315596426e-05,
+      "effective_second_moment": 195.77112036210573,
+      "kappa_design_matrix": 129.48129302853192
+    },
+    {
+      "support_value": 25.025,
+      "support_cardinality": 813.0,
+      "white_noise_gain": 7.285253315596435e-05,
+      "effective_second_moment": 195.77112036210596,
+      "kappa_design_matrix": 129.8627246650332
+    },
+    {
+      "support_value": 25.05,
+      "support_cardinality": 813.0,
+      "white_noise_gain": 7.285253315596449e-05,
+      "effective_second_moment": 195.77112036210596,
+      "kappa_design_matrix": 130.24491725922383
+    },
+    {
+      "support_value": 25.075,
+      "support_cardinality": 815.0,
+      "white_noise_gain": 7.273473229903802e-05,
+      "effective_second_moment": 196.1391639790041,
+      "kappa_design_matrix": 130.28989000079673
+    },
+    {
+      "support_value": 25.1,
+      "support_cardinality": 815.0,
+      "white_noise_gain": 7.273473229903799e-05,
+      "effective_second_moment": 196.13916397900414,
+      "kappa_design_matrix": 130.6726996628292
+    },
+    {
+      "support_value": 25.125,
+      "support_cardinality": 817.0,
+      "white_noise_gain": 7.273160910974769e-05,
+      "effective_second_moment": 196.07172262254244,
+      "kappa_design_matrix": 130.67929278142202
+    },
+    {
+      "support_value": 25.15,
+      "support_cardinality": 817.0,
+      "white_noise_gain": 7.27316091097478e-05,
+      "effective_second_moment": 196.07172262254235,
+      "kappa_design_matrix": 131.06257457781288
+    },
+    {
+      "support_value": 25.175,
+      "support_cardinality": 817.0,
+      "white_noise_gain": 7.273160910974819e-05,
+      "effective_second_moment": 196.0717226225426,
+      "kappa_design_matrix": 131.44661733529128
+    },
+    {
+      "support_value": 25.2,
+      "support_cardinality": 821.0,
+      "white_noise_gain": 7.257231262577144e-05,
+      "effective_second_moment": 195.338754663549,
+      "kappa_design_matrix": 131.84343445170092
+    },
+    {
+      "support_value": 25.225,
+      "support_cardinality": 821.0,
+      "white_noise_gain": 7.25723126257717e-05,
+      "effective_second_moment": 195.3387546635492,
+      "kappa_design_matrix": 132.22890774522165
+    },
+    {
+      "support_value": 25.25,
+      "support_cardinality": 823.0,
+      "white_noise_gain": 7.241876789645851e-05,
+      "effective_second_moment": 195.9445884337424,
+      "kappa_design_matrix": 132.69064823840222
+    },
+    {
+      "support_value": 25.275,
+      "support_cardinality": 823.0,
+      "white_noise_gain": 7.241876789645858e-05,
+      "effective_second_moment": 195.94458843374252,
+      "kappa_design_matrix": 133.07790881313485
+    },
+    {
+      "support_value": 25.3,
+      "support_cardinality": 823.0,
+      "white_noise_gain": 7.241876789645845e-05,
+      "effective_second_moment": 195.9445884337424,
+      "kappa_design_matrix": 133.46593439247425
+    },
+    {
+      "support_value": 25.325,
+      "support_cardinality": 825.0,
+      "white_noise_gain": 7.236271356649454e-05,
+      "effective_second_moment": 196.2054197261697,
+      "kappa_design_matrix": 133.38543473317213
+    },
+    {
+      "support_value": 25.35,
+      "support_cardinality": 825.0,
+      "white_noise_gain": 7.23627135664945e-05,
+      "effective_second_moment": 196.2054197261695,
+      "kappa_design_matrix": 133.7737052272846
+    },
+    {
+      "support_value": 25.375,
+      "support_cardinality": 827.0,
+      "white_noise_gain": 6.988395087480394e-05,
+      "effective_second_moment": 200.09064138448826,
+      "kappa_design_matrix": 134.32183570583845
+    },
+    {
+      "support_value": 25.4,
+      "support_cardinality": 829.0,
+      "white_noise_gain": 6.986012787608441e-05,
+      "effective_second_moment": 199.92132371087985,
+      "kappa_design_matrix": 134.57884518928523
+    },
+    {
+      "support_value": 25.425,
+      "support_cardinality": 829.0,
+      "white_noise_gain": 6.986012787608433e-05,
+      "effective_second_moment": 199.92132371087988,
+      "kappa_design_matrix": 134.9695078161993
+    },
+    {
+      "support_value": 25.45,
+      "support_cardinality": 831.0,
+      "white_noise_gain": 6.985870552316769e-05,
+      "effective_second_moment": 200.02203776946556,
+      "kappa_design_matrix": 135.51017816964583
+    },
+    {
+      "support_value": 25.475,
+      "support_cardinality": 833.0,
+      "white_noise_gain": 6.980189923370572e-05,
+      "effective_second_moment": 200.08246427681527,
+      "kappa_design_matrix": 134.6049212704352
+    },
+    {
+      "support_value": 25.5,
+      "support_cardinality": 833.0,
+      "white_noise_gain": 6.980189923370581e-05,
+      "effective_second_moment": 200.0824642768155,
+      "kappa_design_matrix": 134.99427725769345
+    }
+  ],
+  "render_config": {
+    "contrast": 1.0,
+    "edge_width_px": 1.5,
+    "image_size": 1024,
+    "phase_count": 4,
+    "phase_step_px": 0.25,
+    "angle_step_deg": 0.5
+  },
+  "curve": [
+    {
+      "theta_deg": 0.0,
+      "response_magnitude": 0.07722251227092232,
+      "response_magnitude_std": 6.499955992722265e-05
+    },
+    {
+      "theta_deg": 0.5,
+      "response_magnitude": 0.0772928889898627,
+      "response_magnitude_std": 2.155687995832599e-08
+    },
+    {
+      "theta_deg": 1.0,
+      "response_magnitude": 0.07730920809524197,
+      "response_magnitude_std": 6.462999448637248e-08
+    },
+    {
+      "theta_deg": 1.5,
+      "response_magnitude": 0.07733650346282153,
+      "response_magnitude_std": 8.573915798390602e-08
+    },
+    {
+      "theta_deg": 2.0,
+      "response_magnitude": 0.07737472530511952,
+      "response_magnitude_std": 7.695826138603492e-08
+    },
+    {
+      "theta_deg": 2.5,
+      "response_magnitude": 0.0774235618663199,
+      "response_magnitude_std": 8.951643463151275e-08
+    },
+    {
+      "theta_deg": 3.0,
+      "response_magnitude": 0.07748257890569066,
+      "response_magnitude_std": 3.0746957688596135e-07
+    },
+    {
+      "theta_deg": 3.5,
+      "response_magnitude": 0.0775506375450068,
+      "response_magnitude_std": 6.087588480718921e-07
+    },
+    {
+      "theta_deg": 4.0,
+      "response_magnitude": 0.07762649925656546,
+      "response_magnitude_std": 8.620644912937907e-07
+    },
+    {
+      "theta_deg": 4.5,
+      "response_magnitude": 0.07770911437879896,
+      "response_magnitude_std": 1.3400960533447395e-06
+    },
+    {
+      "theta_deg": 5.0,
+      "response_magnitude": 0.07779757782094036,
+      "response_magnitude_std": 2.6852389974839582e-06
+    },
+    {
+      "theta_deg": 5.5,
+      "response_magnitude": 0.07788994035634406,
+      "response_magnitude_std": 3.2373445639947795e-06
+    },
+    {
+      "theta_deg": 6.0,
+      "response_magnitude": 0.07798496693712435,
+      "response_magnitude_std": 2.005908014452303e-06
+    },
+    {
+      "theta_deg": 6.5,
+      "response_magnitude": 0.07808377900402669,
+      "response_magnitude_std": 1.5430453593034733e-06
+    },
+    {
+      "theta_deg": 7.0,
+      "response_magnitude": 0.0781835703317415,
+      "response_magnitude_std": 1.5422382646133784e-06
+    },
+    {
+      "theta_deg": 7.5,
+      "response_magnitude": 0.07828593381215652,
+      "response_magnitude_std": 2.0819193082761515e-06
+    },
+    {
+      "theta_deg": 8.0,
+      "response_magnitude": 0.07838877733524084,
+      "response_magnitude_std": 1.563320765424533e-06
+    },
+    {
+      "theta_deg": 8.5,
+      "response_magnitude": 0.07849180974784883,
+      "response_magnitude_std": 2.010670717898467e-06
+    },
+    {
+      "theta_deg": 9.0,
+      "response_magnitude": 0.07859506979554887,
+      "response_magnitude_std": 1.8269160502849392e-06
+    },
+    {
+      "theta_deg": 9.5,
+      "response_magnitude": 0.07869805378871035,
+      "response_magnitude_std": 1.5932042443003848e-06
+    },
+    {
+      "theta_deg": 10.0,
+      "response_magnitude": 0.07880063044571636,
+      "response_magnitude_std": 1.171577784792514e-06
+    },
+    {
+      "theta_deg": 10.5,
+      "response_magnitude": 0.07890277203146245,
+      "response_magnitude_std": 1.6994763903244576e-06
+    },
+    {
+      "theta_deg": 11.0,
+      "response_magnitude": 0.07900335136871228,
+      "response_magnitude_std": 1.0393022020328118e-06
+    },
+    {
+      "theta_deg": 11.5,
+      "response_magnitude": 0.07910232820087484,
+      "response_magnitude_std": 2.9730973575846935e-07
+    },
+    {
+      "theta_deg": 12.0,
+      "response_magnitude": 0.07920057425152588,
+      "response_magnitude_std": 4.198274511768177e-10
+    },
+    {
+      "theta_deg": 12.5,
+      "response_magnitude": 0.07929866813363085,
+      "response_magnitude_std": 1.9722936058603023e-06
+    },
+    {
+      "theta_deg": 13.0,
+      "response_magnitude": 0.07939288609393577,
+      "response_magnitude_std": 2.030452846377987e-11
+    },
+    {
+      "theta_deg": 13.5,
+      "response_magnitude": 0.0794880862825556,
+      "response_magnitude_std": 2.696158431123665e-06
+    },
+    {
+      "theta_deg": 14.0,
+      "response_magnitude": 0.07957848344412308,
+      "response_magnitude_std": 1.9377919004647196e-07
+    },
+    {
+      "theta_deg": 14.5,
+      "response_magnitude": 0.07967212704999707,
+      "response_magnitude_std": 3.541386613157404e-06
+    },
+    {
+      "theta_deg": 15.0,
+      "response_magnitude": 0.07975941590739519,
+      "response_magnitude_std": 4.508754193379948e-06
+    },
+    {
+      "theta_deg": 15.5,
+      "response_magnitude": 0.07984571625031234,
+      "response_magnitude_std": 3.8487481380744474e-06
+    },
+    {
+      "theta_deg": 16.0,
+      "response_magnitude": 0.07993047361427029,
+      "response_magnitude_std": 4.345695759153983e-06
+    },
+    {
+      "theta_deg": 16.5,
+      "response_magnitude": 0.08001427423008613,
+      "response_magnitude_std": 4.781253071918528e-06
+    },
+    {
+      "theta_deg": 17.0,
+      "response_magnitude": 0.08009836446056456,
+      "response_magnitude_std": 6.8039620438166576e-06
+    },
+    {
+      "theta_deg": 17.5,
+      "response_magnitude": 0.08017810222751864,
+      "response_magnitude_std": 1.0584427453009243e-05
+    },
+    {
+      "theta_deg": 18.0,
+      "response_magnitude": 0.08025153587509942,
+      "response_magnitude_std": 4.681198928095377e-06
+    },
+    {
+      "theta_deg": 18.5,
+      "response_magnitude": 0.08033170847546728,
+      "response_magnitude_std": 1.3770999246599665e-05
+    },
+    {
+      "theta_deg": 19.0,
+      "response_magnitude": 0.08040465322890641,
+      "response_magnitude_std": 9.643483841126451e-06
+    },
+    {
+      "theta_deg": 19.5,
+      "response_magnitude": 0.08047752597653163,
+      "response_magnitude_std": 1.3990851156868833e-05
+    },
+    {
+      "theta_deg": 20.0,
+      "response_magnitude": 0.08054529368721611,
+      "response_magnitude_std": 1.820577020432881e-05
+    },
+    {
+      "theta_deg": 20.5,
+      "response_magnitude": 0.08061256165212416,
+      "response_magnitude_std": 1.9498565195898705e-05
+    },
+    {
+      "theta_deg": 21.0,
+      "response_magnitude": 0.08067998327321708,
+      "response_magnitude_std": 1.87700310465351e-05
+    },
+    {
+      "theta_deg": 21.5,
+      "response_magnitude": 0.0807460275692861,
+      "response_magnitude_std": 1.927503114232894e-05
+    },
+    {
+      "theta_deg": 22.0,
+      "response_magnitude": 0.08080829702932447,
+      "response_magnitude_std": 1.8330866873873695e-05
+    },
+    {
+      "theta_deg": 22.5,
+      "response_magnitude": 0.08086814349356232,
+      "response_magnitude_std": 1.8449056043978e-05
+    },
+    {
+      "theta_deg": 23.0,
+      "response_magnitude": 0.08092206291838036,
+      "response_magnitude_std": 1.889031686586862e-05
+    },
+    {
+      "theta_deg": 23.5,
+      "response_magnitude": 0.08098190940318566,
+      "response_magnitude_std": 1.4766498275531157e-05
+    },
+    {
+      "theta_deg": 24.0,
+      "response_magnitude": 0.0810385238835945,
+      "response_magnitude_std": 1.9174750969137867e-05
+    },
+    {
+      "theta_deg": 24.5,
+      "response_magnitude": 0.08108064759683525,
+      "response_magnitude_std": 1.686197413445342e-05
+    },
+    {
+      "theta_deg": 25.0,
+      "response_magnitude": 0.08111890204286575,
+      "response_magnitude_std": 2.3531909442860296e-05
+    },
+    {
+      "theta_deg": 25.5,
+      "response_magnitude": 0.08117407161685863,
+      "response_magnitude_std": 2.238803668932766e-05
+    },
+    {
+      "theta_deg": 26.0,
+      "response_magnitude": 0.08119786272737323,
+      "response_magnitude_std": 2.627332614832603e-05
+    },
+    {
+      "theta_deg": 26.5,
+      "response_magnitude": 0.08124202787417703,
+      "response_magnitude_std": 2.058650018579424e-05
+    },
+    {
+      "theta_deg": 27.0,
+      "response_magnitude": 0.08127133376141277,
+      "response_magnitude_std": 2.514198154995907e-05
+    },
+    {
+      "theta_deg": 27.5,
+      "response_magnitude": 0.08131270448183818,
+      "response_magnitude_std": 1.894461098646298e-05
+    },
+    {
+      "theta_deg": 28.0,
+      "response_magnitude": 0.08133875666494916,
+      "response_magnitude_std": 1.8041753151021877e-05
+    },
+    {
+      "theta_deg": 28.5,
+      "response_magnitude": 0.08136541227170395,
+      "response_magnitude_std": 1.4618338594294144e-05
+    },
+    {
+      "theta_deg": 29.0,
+      "response_magnitude": 0.08138738454300827,
+      "response_magnitude_std": 1.383662119432921e-05
+    },
+    {
+      "theta_deg": 29.5,
+      "response_magnitude": 0.08141066486349244,
+      "response_magnitude_std": 1.4504538512543467e-05
+    },
+    {
+      "theta_deg": 30.0,
+      "response_magnitude": 0.08144612811031787,
+      "response_magnitude_std": 2.697921546980444e-05
+    },
+    {
+      "theta_deg": 30.5,
+      "response_magnitude": 0.08154309471348276,
+      "response_magnitude_std": 1.7953703671082228e-06
+    },
+    {
+      "theta_deg": 31.0,
+      "response_magnitude": 0.0816257506259401,
+      "response_magnitude_std": 2.382758778951457e-05
+    },
+    {
+      "theta_deg": 31.5,
+      "response_magnitude": 0.0817211183516786,
+      "response_magnitude_std": 3.53600498316685e-05
+    },
+    {
+      "theta_deg": 32.0,
+      "response_magnitude": 0.08181378172276293,
+      "response_magnitude_std": 5.34275003295108e-05
+    },
+    {
+      "theta_deg": 32.5,
+      "response_magnitude": 0.0819098325318193,
+      "response_magnitude_std": 6.710659384241798e-05
+    },
+    {
+      "theta_deg": 33.0,
+      "response_magnitude": 0.08200715356223508,
+      "response_magnitude_std": 4.3688033869988234e-05
+    },
+    {
+      "theta_deg": 33.5,
+      "response_magnitude": 0.08207638142710887,
+      "response_magnitude_std": 7.935145968864406e-05
+    },
+    {
+      "theta_deg": 34.0,
+      "response_magnitude": 0.08220651373614606,
+      "response_magnitude_std": 6.758923282899216e-05
+    },
+    {
+      "theta_deg": 34.5,
+      "response_magnitude": 0.082292247482817,
+      "response_magnitude_std": 4.419639534747713e-05
+    },
+    {
+      "theta_deg": 35.0,
+      "response_magnitude": 0.08238347057656277,
+      "response_magnitude_std": 7.197984413470503e-05
+    },
+    {
+      "theta_deg": 35.5,
+      "response_magnitude": 0.08245655440199519,
+      "response_magnitude_std": 6.019392074530403e-05
+    },
+    {
+      "theta_deg": 36.0,
+      "response_magnitude": 0.0825692733937909,
+      "response_magnitude_std": 5.66681609961042e-05
+    },
+    {
+      "theta_deg": 36.5,
+      "response_magnitude": 0.08264890943194797,
+      "response_magnitude_std": 4.6818238819742436e-05
+    },
+    {
+      "theta_deg": 37.0,
+      "response_magnitude": 0.08273697163523626,
+      "response_magnitude_std": 2.7329636046193164e-05
+    },
+    {
+      "theta_deg": 37.5,
+      "response_magnitude": 0.08283107601908395,
+      "response_magnitude_std": 1.1944953772522132e-05
+    },
+    {
+      "theta_deg": 38.0,
+      "response_magnitude": 0.08292314798631889,
+      "response_magnitude_std": 2.73215960923227e-05
+    },
+    {
+      "theta_deg": 38.5,
+      "response_magnitude": 0.08302377631630192,
+      "response_magnitude_std": 4.632682384297026e-05
+    },
+    {
+      "theta_deg": 39.0,
+      "response_magnitude": 0.0831118612671784,
+      "response_magnitude_std": 6.231287114297134e-05
+    },
+    {
+      "theta_deg": 39.5,
+      "response_magnitude": 0.08317361392853591,
+      "response_magnitude_std": 8.702486524822504e-05
+    },
+    {
+      "theta_deg": 40.0,
+      "response_magnitude": 0.08333474276955805,
+      "response_magnitude_std": 5.477504564100843e-05
+    },
+    {
+      "theta_deg": 40.5,
+      "response_magnitude": 0.08337540298788972,
+      "response_magnitude_std": 8.856997275712379e-05
+    },
+    {
+      "theta_deg": 41.0,
+      "response_magnitude": 0.08352318770289852,
+      "response_magnitude_std": 7.105753716983594e-05
+    },
+    {
+      "theta_deg": 41.5,
+      "response_magnitude": 0.08362156831377007,
+      "response_magnitude_std": 6.602269688128027e-05
+    },
+    {
+      "theta_deg": 42.0,
+      "response_magnitude": 0.08370538263721627,
+      "response_magnitude_std": 6.082828627939972e-05
+    },
+    {
+      "theta_deg": 42.5,
+      "response_magnitude": 0.08379370241822934,
+      "response_magnitude_std": 6.48604416806856e-05
+    },
+    {
+      "theta_deg": 43.0,
+      "response_magnitude": 0.08389553643172135,
+      "response_magnitude_std": 5.413806796355478e-05
+    },
+    {
+      "theta_deg": 43.5,
+      "response_magnitude": 0.08396131061772402,
+      "response_magnitude_std": 6.91212174268137e-05
+    },
+    {
+      "theta_deg": 44.0,
+      "response_magnitude": 0.08402777374809255,
+      "response_magnitude_std": 5.030409289317768e-05
+    },
+    {
+      "theta_deg": 44.5,
+      "response_magnitude": 0.08411528444812806,
+      "response_magnitude_std": 7.797720001747562e-05
+    },
+    {
+      "theta_deg": 45.0,
+      "response_magnitude": 0.08419088601730025,
+      "response_magnitude_std": 6.413549085067259e-05
+    },
+    {
+      "theta_deg": 45.5,
+      "response_magnitude": 0.08251403789568773,
+      "response_magnitude_std": 2.7217508587413897e-05
+    },
+    {
+      "theta_deg": 46.0,
+      "response_magnitude": 0.0823258878821865,
+      "response_magnitude_std": 4.900475578335704e-05
+    },
+    {
+      "theta_deg": 46.5,
+      "response_magnitude": 0.08210600141904183,
+      "response_magnitude_std": 5.477484999753466e-05
+    },
+    {
+      "theta_deg": 47.0,
+      "response_magnitude": 0.08194288608130497,
+      "response_magnitude_std": 2.74091001558968e-05
+    },
+    {
+      "theta_deg": 47.5,
+      "response_magnitude": 0.08175334661945967,
+      "response_magnitude_std": 3.829370423086086e-05
+    },
+    {
+      "theta_deg": 48.0,
+      "response_magnitude": 0.08156486851994252,
+      "response_magnitude_std": 2.6994869551477358e-05
+    },
+    {
+      "theta_deg": 48.5,
+      "response_magnitude": 0.08135205953615254,
+      "response_magnitude_std": 5.442603249350558e-05
+    },
+    {
+      "theta_deg": 49.0,
+      "response_magnitude": 0.08119847375427938,
+      "response_magnitude_std": 4.2079472089493164e-05
+    },
+    {
+      "theta_deg": 49.5,
+      "response_magnitude": 0.08102548788129596,
+      "response_magnitude_std": 3.203715182522e-05
+    },
+    {
+      "theta_deg": 50.0,
+      "response_magnitude": 0.080852127344793,
+      "response_magnitude_std": 3.787644889504354e-05
+    },
+    {
+      "theta_deg": 50.5,
+      "response_magnitude": 0.08066852626799063,
+      "response_magnitude_std": 4.496202595912359e-05
+    },
+    {
+      "theta_deg": 51.0,
+      "response_magnitude": 0.08053356855838108,
+      "response_magnitude_std": 3.2749869776034346e-05
+    },
+    {
+      "theta_deg": 51.5,
+      "response_magnitude": 0.08038488009591852,
+      "response_magnitude_std": 3.727237651516231e-05
+    },
+    {
+      "theta_deg": 52.0,
+      "response_magnitude": 0.08024261124299395,
+      "response_magnitude_std": 3.411860287358371e-05
+    },
+    {
+      "theta_deg": 52.5,
+      "response_magnitude": 0.08010032396667396,
+      "response_magnitude_std": 4.369840151592828e-05
+    },
+    {
+      "theta_deg": 53.0,
+      "response_magnitude": 0.0799681666817494,
+      "response_magnitude_std": 3.05816260854132e-05
+    },
+    {
+      "theta_deg": 53.5,
+      "response_magnitude": 0.07983134588838443,
+      "response_magnitude_std": 4.4793164928226346e-05
+    },
+    {
+      "theta_deg": 54.0,
+      "response_magnitude": 0.0797445546737556,
+      "response_magnitude_std": 2.5172078946074364e-05
+    },
+    {
+      "theta_deg": 54.5,
+      "response_magnitude": 0.07963350206036263,
+      "response_magnitude_std": 2.7236265801801682e-05
+    },
+    {
+      "theta_deg": 55.0,
+      "response_magnitude": 0.07954673478501227,
+      "response_magnitude_std": 1.6398483913069976e-05
+    },
+    {
+      "theta_deg": 55.5,
+      "response_magnitude": 0.07946833717978868,
+      "response_magnitude_std": 2.8063420850211927e-05
+    },
+    {
+      "theta_deg": 56.0,
+      "response_magnitude": 0.07939518677847612,
+      "response_magnitude_std": 1.7229021410885167e-05
+    },
+    {
+      "theta_deg": 56.5,
+      "response_magnitude": 0.07931607908685737,
+      "response_magnitude_std": 3.106913939254783e-05
+    },
+    {
+      "theta_deg": 57.0,
+      "response_magnitude": 0.07927622130477661,
+      "response_magnitude_std": 2.8362176372800622e-05
+    },
+    {
+      "theta_deg": 57.5,
+      "response_magnitude": 0.07922511748293963,
+      "response_magnitude_std": 3.434519152462222e-05
+    },
+    {
+      "theta_deg": 58.0,
+      "response_magnitude": 0.07919343823493413,
+      "response_magnitude_std": 1.5813505424954465e-05
+    },
+    {
+      "theta_deg": 58.5,
+      "response_magnitude": 0.07916038239495951,
+      "response_magnitude_std": 1.1940088508446553e-05
+    },
+    {
+      "theta_deg": 59.0,
+      "response_magnitude": 0.07913759147843241,
+      "response_magnitude_std": 8.000482169950256e-06
+    },
+    {
+      "theta_deg": 59.5,
+      "response_magnitude": 0.07911827001100802,
+      "response_magnitude_std": 9.891991909065842e-06
+    },
+    {
+      "theta_deg": 60.0,
+      "response_magnitude": 0.0790947558239227,
+      "response_magnitude_std": 2.217303911973535e-05
+    },
+    {
+      "theta_deg": 60.5,
+      "response_magnitude": 0.07909424407508546,
+      "response_magnitude_std": 2.6499264276106395e-05
+    },
+    {
+      "theta_deg": 61.0,
+      "response_magnitude": 0.0790863317832384,
+      "response_magnitude_std": 2.5490242626702812e-05
+    },
+    {
+      "theta_deg": 61.5,
+      "response_magnitude": 0.07908792256205278,
+      "response_magnitude_std": 2.276947135973999e-05
+    },
+    {
+      "theta_deg": 62.0,
+      "response_magnitude": 0.07910068081032265,
+      "response_magnitude_std": 1.8059845692842603e-05
+    },
+    {
+      "theta_deg": 62.5,
+      "response_magnitude": 0.07910359999497099,
+      "response_magnitude_std": 1.789604778944605e-05
+    },
+    {
+      "theta_deg": 63.0,
+      "response_magnitude": 0.07912347869439122,
+      "response_magnitude_std": 4.553272874017066e-06
+    },
+    {
+      "theta_deg": 63.5,
+      "response_magnitude": 0.07913455110536853,
+      "response_magnitude_std": 2.2112584440704607e-05
+    },
+    {
+      "theta_deg": 64.0,
+      "response_magnitude": 0.07914901183957454,
+      "response_magnitude_std": 2.9879523333182592e-05
+    },
+    {
+      "theta_deg": 64.5,
+      "response_magnitude": 0.07917911396782563,
+      "response_magnitude_std": 2.5766109539923055e-05
+    },
+    {
+      "theta_deg": 65.0,
+      "response_magnitude": 0.07919221574951554,
+      "response_magnitude_std": 3.218700099913905e-05
+    },
+    {
+      "theta_deg": 65.5,
+      "response_magnitude": 0.07922435507377532,
+      "response_magnitude_std": 2.76602181160503e-05
+    },
+    {
+      "theta_deg": 66.0,
+      "response_magnitude": 0.07925819541644724,
+      "response_magnitude_std": 3.180377981727505e-05
+    },
+    {
+      "theta_deg": 66.5,
+      "response_magnitude": 0.07928284347327998,
+      "response_magnitude_std": 3.09129439887261e-05
+    },
+    {
+      "theta_deg": 67.0,
+      "response_magnitude": 0.07932003064705459,
+      "response_magnitude_std": 2.0318444975517036e-05
+    },
+    {
+      "theta_deg": 67.5,
+      "response_magnitude": 0.07934089918084157,
+      "response_magnitude_std": 3.370899563360976e-05
+    },
+    {
+      "theta_deg": 68.0,
+      "response_magnitude": 0.07938035396649223,
+      "response_magnitude_std": 2.784290333376073e-05
+    },
+    {
+      "theta_deg": 68.5,
+      "response_magnitude": 0.07941048009780236,
+      "response_magnitude_std": 3.192198364276314e-05
+    },
+    {
+      "theta_deg": 69.0,
+      "response_magnitude": 0.07944040987153227,
+      "response_magnitude_std": 3.929256953235556e-05
+    },
+    {
+      "theta_deg": 69.5,
+      "response_magnitude": 0.0794787952260022,
+      "response_magnitude_std": 3.559943419500225e-05
+    },
+    {
+      "theta_deg": 70.0,
+      "response_magnitude": 0.0795149343824617,
+      "response_magnitude_std": 3.226760709842178e-05
+    },
+    {
+      "theta_deg": 70.5,
+      "response_magnitude": 0.07954468509828166,
+      "response_magnitude_std": 3.825833612004259e-05
+    },
+    {
+      "theta_deg": 71.0,
+      "response_magnitude": 0.07958679546789561,
+      "response_magnitude_std": 2.9181887467946767e-05
+    },
+    {
+      "theta_deg": 71.5,
+      "response_magnitude": 0.07962292761120071,
+      "response_magnitude_std": 3.6680844334537326e-05
+    },
+    {
+      "theta_deg": 72.0,
+      "response_magnitude": 0.07965720113212468,
+      "response_magnitude_std": 3.172680590393905e-05
+    },
+    {
+      "theta_deg": 72.5,
+      "response_magnitude": 0.0796919739667036,
+      "response_magnitude_std": 3.779584960359034e-05
+    },
+    {
+      "theta_deg": 73.0,
+      "response_magnitude": 0.07971423969191305,
+      "response_magnitude_std": 4.826376810067405e-05
+    },
+    {
+      "theta_deg": 73.5,
+      "response_magnitude": 0.07974798392374206,
+      "response_magnitude_std": 4.9595202494408355e-05
+    },
+    {
+      "theta_deg": 74.0,
+      "response_magnitude": 0.07978419224570668,
+      "response_magnitude_std": 5.0092243704257005e-05
+    },
+    {
+      "theta_deg": 74.5,
+      "response_magnitude": 0.07981575407797535,
+      "response_magnitude_std": 4.3959711386652e-05
+    },
+    {
+      "theta_deg": 75.0,
+      "response_magnitude": 0.07984468540147749,
+      "response_magnitude_std": 3.840309796156929e-05
+    },
+    {
+      "theta_deg": 75.5,
+      "response_magnitude": 0.0798746294145985,
+      "response_magnitude_std": 3.852705217245846e-05
+    },
+    {
+      "theta_deg": 76.0,
+      "response_magnitude": 0.07989294878051015,
+      "response_magnitude_std": 5.395353769580372e-05
+    },
+    {
+      "theta_deg": 76.5,
+      "response_magnitude": 0.07992269508765215,
+      "response_magnitude_std": 3.985886036091928e-05
+    },
+    {
+      "theta_deg": 77.0,
+      "response_magnitude": 0.07993926336393217,
+      "response_magnitude_std": 5.968826467183709e-05
+    },
+    {
+      "theta_deg": 77.5,
+      "response_magnitude": 0.07996831504587111,
+      "response_magnitude_std": 4.350113063307291e-05
+    },
+    {
+      "theta_deg": 78.0,
+      "response_magnitude": 0.07998368672681183,
+      "response_magnitude_std": 4.734434596286162e-05
+    },
+    {
+      "theta_deg": 78.5,
+      "response_magnitude": 0.07999683661844376,
+      "response_magnitude_std": 6.349100283471465e-05
+    },
+    {
+      "theta_deg": 79.0,
+      "response_magnitude": 0.0800134377037644,
+      "response_magnitude_std": 5.4308056610692434e-05
+    },
+    {
+      "theta_deg": 79.5,
+      "response_magnitude": 0.08003389154534957,
+      "response_magnitude_std": 4.5568815788432224e-05
+    },
+    {
+      "theta_deg": 80.0,
+      "response_magnitude": 0.08004125289926776,
+      "response_magnitude_std": 4.611828986079943e-05
+    },
+    {
+      "theta_deg": 80.5,
+      "response_magnitude": 0.08005137596781428,
+      "response_magnitude_std": 4.7936922605147556e-05
+    },
+    {
+      "theta_deg": 81.0,
+      "response_magnitude": 0.08005308953771437,
+      "response_magnitude_std": 5.2167108661535536e-05
+    },
+    {
+      "theta_deg": 81.5,
+      "response_magnitude": 0.08005674987287928,
+      "response_magnitude_std": 5.222044808625038e-05
+    },
+    {
+      "theta_deg": 82.0,
+      "response_magnitude": 0.08005379047562887,
+      "response_magnitude_std": 5.364985741875275e-05
+    },
+    {
+      "theta_deg": 82.5,
+      "response_magnitude": 0.0800516152406643,
+      "response_magnitude_std": 5.4493201153532424e-05
+    },
+    {
+      "theta_deg": 83.0,
+      "response_magnitude": 0.08004057110801811,
+      "response_magnitude_std": 6.336978343767279e-05
+    },
+    {
+      "theta_deg": 83.5,
+      "response_magnitude": 0.0800251583137197,
+      "response_magnitude_std": 7.723236928275999e-05
+    },
+    {
+      "theta_deg": 84.0,
+      "response_magnitude": 0.0800161120636149,
+      "response_magnitude_std": 6.866456727741884e-05
+    },
+    {
+      "theta_deg": 84.5,
+      "response_magnitude": 0.08000449348887828,
+      "response_magnitude_std": 5.8404531005991373e-05
+    },
+    {
+      "theta_deg": 85.0,
+      "response_magnitude": 0.07998243443612203,
+      "response_magnitude_std": 6.229935937036609e-05
+    },
+    {
+      "theta_deg": 85.5,
+      "response_magnitude": 0.07994789492130025,
+      "response_magnitude_std": 8.302984774730676e-05
+    },
+    {
+      "theta_deg": 86.0,
+      "response_magnitude": 0.07992847469592705,
+      "response_magnitude_std": 6.75453405159948e-05
+    },
+    {
+      "theta_deg": 86.5,
+      "response_magnitude": 0.07989853000108452,
+      "response_magnitude_std": 6.165970638966551e-05
+    },
+    {
+      "theta_deg": 87.0,
+      "response_magnitude": 0.07985199465831203,
+      "response_magnitude_std": 8.260309378999807e-05
+    },
+    {
+      "theta_deg": 87.5,
+      "response_magnitude": 0.07981570044375208,
+      "response_magnitude_std": 7.086639980871765e-05
+    },
+    {
+      "theta_deg": 88.0,
+      "response_magnitude": 0.0797719725092286,
+      "response_magnitude_std": 6.348138018522458e-05
+    },
+    {
+      "theta_deg": 88.5,
+      "response_magnitude": 0.07971398272412587,
+      "response_magnitude_std": 7.731837266855428e-05
+    },
+    {
+      "theta_deg": 89.0,
+      "response_magnitude": 0.07966693220259695,
+      "response_magnitude_std": 5.6331931862672184e-05
+    },
+    {
+      "theta_deg": 89.5,
+      "response_magnitude": 0.07962671957070004,
+      "response_magnitude_std": 2.9697203677517313e-05
+    },
+    {
+      "theta_deg": 90.0,
+      "response_magnitude": 0.07950634685456012,
+      "response_magnitude_std": 9.16560867472936e-05
+    },
+    {
+      "theta_deg": 90.5,
+      "response_magnitude": 0.07962671957070006,
+      "response_magnitude_std": 2.96972036775051e-05
+    },
+    {
+      "theta_deg": 91.0,
+      "response_magnitude": 0.07966693220259695,
+      "response_magnitude_std": 5.633193186265899e-05
+    },
+    {
+      "theta_deg": 91.5,
+      "response_magnitude": 0.07971398272412587,
+      "response_magnitude_std": 7.731837266856413e-05
+    },
+    {
+      "theta_deg": 92.0,
+      "response_magnitude": 0.0797719725092286,
+      "response_magnitude_std": 6.348138018521804e-05
+    },
+    {
+      "theta_deg": 92.5,
+      "response_magnitude": 0.07981570044375207,
+      "response_magnitude_std": 7.086639980873738e-05
+    },
+    {
+      "theta_deg": 93.0,
+      "response_magnitude": 0.07985199465831203,
+      "response_magnitude_std": 8.260309378997508e-05
+    },
+    {
+      "theta_deg": 93.5,
+      "response_magnitude": 0.07989853000108453,
+      "response_magnitude_std": 6.165970638965578e-05
+    },
+    {
+      "theta_deg": 94.0,
+      "response_magnitude": 0.07992847469592707,
+      "response_magnitude_std": 6.754534051597514e-05
+    },
+    {
+      "theta_deg": 94.5,
+      "response_magnitude": 0.07994789492130026,
+      "response_magnitude_std": 8.302984774727725e-05
+    },
+    {
+      "theta_deg": 95.0,
+      "response_magnitude": 0.07998243443612202,
+      "response_magnitude_std": 6.229935937038772e-05
+    },
+    {
+      "theta_deg": 95.5,
+      "response_magnitude": 0.08000449348887828,
+      "response_magnitude_std": 5.840453100598778e-05
+    },
+    {
+      "theta_deg": 96.0,
+      "response_magnitude": 0.0800161120636149,
+      "response_magnitude_std": 6.866456727739915e-05
+    },
+    {
+      "theta_deg": 96.5,
+      "response_magnitude": 0.08002515831371972,
+      "response_magnitude_std": 7.723236928273396e-05
+    },
+    {
+      "theta_deg": 97.0,
+      "response_magnitude": 0.08004057110801814,
+      "response_magnitude_std": 6.33697834376559e-05
+    },
+    {
+      "theta_deg": 97.5,
+      "response_magnitude": 0.0800516152406643,
+      "response_magnitude_std": 5.44932011535298e-05
+    },
+    {
+      "theta_deg": 98.0,
+      "response_magnitude": 0.08005379047562887,
+      "response_magnitude_std": 5.3649857418747467e-05
+    },
+    {
+      "theta_deg": 98.5,
+      "response_magnitude": 0.08005674987287927,
+      "response_magnitude_std": 5.222044808625888e-05
+    },
+    {
+      "theta_deg": 99.0,
+      "response_magnitude": 0.08005308953771435,
+      "response_magnitude_std": 5.216710866153752e-05
+    },
+    {
+      "theta_deg": 99.5,
+      "response_magnitude": 0.08005137596781428,
+      "response_magnitude_std": 4.793692260514121e-05
+    },
+    {
+      "theta_deg": 100.0,
+      "response_magnitude": 0.08004125289926778,
+      "response_magnitude_std": 4.611828986079255e-05
+    },
+    {
+      "theta_deg": 100.5,
+      "response_magnitude": 0.08003389154534955,
+      "response_magnitude_std": 4.556881578843984e-05
+    },
+    {
+      "theta_deg": 101.0,
+      "response_magnitude": 0.0800134377037644,
+      "response_magnitude_std": 5.430805661068939e-05
+    },
+    {
+      "theta_deg": 101.5,
+      "response_magnitude": 0.07999683661844378,
+      "response_magnitude_std": 6.349100283469753e-05
+    },
+    {
+      "theta_deg": 102.0,
+      "response_magnitude": 0.07998368672681183,
+      "response_magnitude_std": 4.734434596286849e-05
+    },
+    {
+      "theta_deg": 102.5,
+      "response_magnitude": 0.0799683150458711,
+      "response_magnitude_std": 4.350113063306936e-05
+    },
+    {
+      "theta_deg": 103.0,
+      "response_magnitude": 0.07993926336393217,
+      "response_magnitude_std": 5.968826467181954e-05
+    },
+    {
+      "theta_deg": 103.5,
+      "response_magnitude": 0.07992269508765218,
+      "response_magnitude_std": 3.985886036093596e-05
+    },
+    {
+      "theta_deg": 104.0,
+      "response_magnitude": 0.07989294878051015,
+      "response_magnitude_std": 5.395353769579907e-05
+    },
+    {
+      "theta_deg": 104.5,
+      "response_magnitude": 0.0798746294145985,
+      "response_magnitude_std": 3.852705217245976e-05
+    },
+    {
+      "theta_deg": 105.0,
+      "response_magnitude": 0.07984468540147749,
+      "response_magnitude_std": 3.840309796156324e-05
+    },
+    {
+      "theta_deg": 105.5,
+      "response_magnitude": 0.07981575407797535,
+      "response_magnitude_std": 4.3959711386655845e-05
+    },
+    {
+      "theta_deg": 106.0,
+      "response_magnitude": 0.07978419224570668,
+      "response_magnitude_std": 5.009224370427006e-05
+    },
+    {
+      "theta_deg": 106.5,
+      "response_magnitude": 0.07974798392374204,
+      "response_magnitude_std": 4.9595202494425425e-05
+    },
+    {
+      "theta_deg": 107.0,
+      "response_magnitude": 0.07971423969191306,
+      "response_magnitude_std": 4.8263768100654995e-05
+    },
+    {
+      "theta_deg": 107.5,
+      "response_magnitude": 0.0796919739667036,
+      "response_magnitude_std": 3.779584960359325e-05
+    },
+    {
+      "theta_deg": 108.0,
+      "response_magnitude": 0.07965720113212471,
+      "response_magnitude_std": 3.172680590393445e-05
+    },
+    {
+      "theta_deg": 108.5,
+      "response_magnitude": 0.0796229276112007,
+      "response_magnitude_std": 3.6680844334546955e-05
+    },
+    {
+      "theta_deg": 109.0,
+      "response_magnitude": 0.07958679546789561,
+      "response_magnitude_std": 2.9181887467940418e-05
+    },
+    {
+      "theta_deg": 109.5,
+      "response_magnitude": 0.07954468509828164,
+      "response_magnitude_std": 3.8258336120049605e-05
+    },
+    {
+      "theta_deg": 110.0,
+      "response_magnitude": 0.07951493438246171,
+      "response_magnitude_std": 3.226760709841624e-05
+    },
+    {
+      "theta_deg": 110.5,
+      "response_magnitude": 0.0794787952260022,
+      "response_magnitude_std": 3.559943419501672e-05
+    },
+    {
+      "theta_deg": 111.0,
+      "response_magnitude": 0.07944040987153227,
+      "response_magnitude_std": 3.929256953236387e-05
+    },
+    {
+      "theta_deg": 111.5,
+      "response_magnitude": 0.07941048009780233,
+      "response_magnitude_std": 3.192198364276862e-05
+    },
+    {
+      "theta_deg": 112.0,
+      "response_magnitude": 0.07938035396649223,
+      "response_magnitude_std": 2.7842903333764946e-05
+    },
+    {
+      "theta_deg": 112.5,
+      "response_magnitude": 0.07934089918084157,
+      "response_magnitude_std": 3.370899563362029e-05
+    },
+    {
+      "theta_deg": 113.0,
+      "response_magnitude": 0.07932003064705456,
+      "response_magnitude_std": 2.0318444975523748e-05
+    },
+    {
+      "theta_deg": 113.5,
+      "response_magnitude": 0.07928284347327996,
+      "response_magnitude_std": 3.0912943988745345e-05
+    },
+    {
+      "theta_deg": 114.0,
+      "response_magnitude": 0.07925819541644724,
+      "response_magnitude_std": 3.180377981727077e-05
+    },
+    {
+      "theta_deg": 114.5,
+      "response_magnitude": 0.07922435507377532,
+      "response_magnitude_std": 2.7660218116046044e-05
+    },
+    {
+      "theta_deg": 115.0,
+      "response_magnitude": 0.07919221574951556,
+      "response_magnitude_std": 3.218700099913655e-05
+    },
+    {
+      "theta_deg": 115.5,
+      "response_magnitude": 0.07917911396782562,
+      "response_magnitude_std": 2.576610953989706e-05
+    },
+    {
+      "theta_deg": 116.0,
+      "response_magnitude": 0.07914901183957451,
+      "response_magnitude_std": 2.9879523333177205e-05
+    },
+    {
+      "theta_deg": 116.5,
+      "response_magnitude": 0.07913455110536852,
+      "response_magnitude_std": 2.2112584440716757e-05
+    },
+    {
+      "theta_deg": 117.0,
+      "response_magnitude": 0.07912347869439122,
+      "response_magnitude_std": 4.553272874005592e-06
+    },
+    {
+      "theta_deg": 117.5,
+      "response_magnitude": 0.07910359999497096,
+      "response_magnitude_std": 1.7896047789436307e-05
+    },
+    {
+      "theta_deg": 118.0,
+      "response_magnitude": 0.07910068081032265,
+      "response_magnitude_std": 1.8059845692840776e-05
+    },
+    {
+      "theta_deg": 118.5,
+      "response_magnitude": 0.07908792256205277,
+      "response_magnitude_std": 2.276947135974412e-05
+    },
+    {
+      "theta_deg": 119.0,
+      "response_magnitude": 0.0790863317832384,
+      "response_magnitude_std": 2.5490242626698953e-05
+    },
+    {
+      "theta_deg": 119.5,
+      "response_magnitude": 0.07909424407508545,
+      "response_magnitude_std": 2.649926427610837e-05
+    },
+    {
+      "theta_deg": 120.0,
+      "response_magnitude": 0.07909475582392266,
+      "response_magnitude_std": 2.217303911974608e-05
+    },
+    {
+      "theta_deg": 120.5,
+      "response_magnitude": 0.079118270011008,
+      "response_magnitude_std": 9.891991909091743e-06
+    },
+    {
+      "theta_deg": 121.0,
+      "response_magnitude": 0.07913759147843244,
+      "response_magnitude_std": 8.000482169938817e-06
+    },
+    {
+      "theta_deg": 121.5,
+      "response_magnitude": 0.07916038239495948,
+      "response_magnitude_std": 1.194008850843202e-05
+    },
+    {
+      "theta_deg": 122.0,
+      "response_magnitude": 0.07919343823493413,
+      "response_magnitude_std": 1.5813505424941838e-05
+    },
+    {
+      "theta_deg": 122.5,
+      "response_magnitude": 0.07922511748293959,
+      "response_magnitude_std": 3.4345191524629215e-05
+    },
+    {
+      "theta_deg": 123.0,
+      "response_magnitude": 0.07927622130477657,
+      "response_magnitude_std": 2.8362176372807947e-05
+    },
+    {
+      "theta_deg": 123.5,
+      "response_magnitude": 0.07931607908685735,
+      "response_magnitude_std": 3.106913939253364e-05
+    },
+    {
+      "theta_deg": 124.0,
+      "response_magnitude": 0.0793951867784761,
+      "response_magnitude_std": 1.7229021410892357e-05
+    },
+    {
+      "theta_deg": 124.5,
+      "response_magnitude": 0.07946833717978864,
+      "response_magnitude_std": 2.80634208501861e-05
+    },
+    {
+      "theta_deg": 125.0,
+      "response_magnitude": 0.07954673478501223,
+      "response_magnitude_std": 1.6398483913064467e-05
+    },
+    {
+      "theta_deg": 125.5,
+      "response_magnitude": 0.0796335020603626,
+      "response_magnitude_std": 2.7236265801797068e-05
+    },
+    {
+      "theta_deg": 126.0,
+      "response_magnitude": 0.07974455467375555,
+      "response_magnitude_std": 2.5172078946074943e-05
+    },
+    {
+      "theta_deg": 126.5,
+      "response_magnitude": 0.07983134588838443,
+      "response_magnitude_std": 4.479316492820361e-05
+    },
+    {
+      "theta_deg": 127.0,
+      "response_magnitude": 0.07996816668174939,
+      "response_magnitude_std": 3.0581626085404404e-05
+    },
+    {
+      "theta_deg": 127.5,
+      "response_magnitude": 0.08010032396667392,
+      "response_magnitude_std": 4.369840151593996e-05
+    },
+    {
+      "theta_deg": 128.0,
+      "response_magnitude": 0.08024261124299391,
+      "response_magnitude_std": 3.4118602873585236e-05
+    },
+    {
+      "theta_deg": 128.5,
+      "response_magnitude": 0.08038488009591846,
+      "response_magnitude_std": 3.7272376515144046e-05
+    },
+    {
+      "theta_deg": 129.0,
+      "response_magnitude": 0.08053356855838102,
+      "response_magnitude_std": 3.2749869776054126e-05
+    },
+    {
+      "theta_deg": 129.5,
+      "response_magnitude": 0.08066852626799055,
+      "response_magnitude_std": 4.496202595916183e-05
+    },
+    {
+      "theta_deg": 130.0,
+      "response_magnitude": 0.08085212734479297,
+      "response_magnitude_std": 3.7876448895037564e-05
+    },
+    {
+      "theta_deg": 130.5,
+      "response_magnitude": 0.0810254878812959,
+      "response_magnitude_std": 3.203715182525e-05
+    },
+    {
+      "theta_deg": 131.0,
+      "response_magnitude": 0.08119847375427934,
+      "response_magnitude_std": 4.207947208946343e-05
+    },
+    {
+      "theta_deg": 131.5,
+      "response_magnitude": 0.08135205953615249,
+      "response_magnitude_std": 5.442603249351556e-05
+    },
+    {
+      "theta_deg": 132.0,
+      "response_magnitude": 0.08156486851994249,
+      "response_magnitude_std": 2.699486955147806e-05
+    },
+    {
+      "theta_deg": 132.5,
+      "response_magnitude": 0.08175334661945961,
+      "response_magnitude_std": 3.82937042308652e-05
+    },
+    {
+      "theta_deg": 133.0,
+      "response_magnitude": 0.08194288608130491,
+      "response_magnitude_std": 2.7409100155915826e-05
+    },
+    {
+      "theta_deg": 133.5,
+      "response_magnitude": 0.08210600141904177,
+      "response_magnitude_std": 5.477484999753145e-05
+    },
+    {
+      "theta_deg": 134.0,
+      "response_magnitude": 0.08232588788218646,
+      "response_magnitude_std": 4.900475578334281e-05
+    },
+    {
+      "theta_deg": 134.5,
+      "response_magnitude": 0.08251403789568766,
+      "response_magnitude_std": 2.7217508587425528e-05
+    },
+    {
+      "theta_deg": 135.0,
+      "response_magnitude": 0.0841908860173002,
+      "response_magnitude_std": 6.413549085062986e-05
+    },
+    {
+      "theta_deg": 135.5,
+      "response_magnitude": 0.08411528444812792,
+      "response_magnitude_std": 7.79772000175292e-05
+    },
+    {
+      "theta_deg": 136.0,
+      "response_magnitude": 0.08402777374809242,
+      "response_magnitude_std": 5.0304092893185716e-05
+    },
+    {
+      "theta_deg": 136.5,
+      "response_magnitude": 0.08396131061772395,
+      "response_magnitude_std": 6.912121742680909e-05
+    },
+    {
+      "theta_deg": 137.0,
+      "response_magnitude": 0.08389553643172128,
+      "response_magnitude_std": 5.413806796354434e-05
+    },
+    {
+      "theta_deg": 137.5,
+      "response_magnitude": 0.08379370241822925,
+      "response_magnitude_std": 6.486044168070628e-05
+    },
+    {
+      "theta_deg": 138.0,
+      "response_magnitude": 0.08370538263721612,
+      "response_magnitude_std": 6.082828627947597e-05
+    },
+    {
+      "theta_deg": 138.5,
+      "response_magnitude": 0.08362156831376999,
+      "response_magnitude_std": 6.602269688130806e-05
+    },
+    {
+      "theta_deg": 139.0,
+      "response_magnitude": 0.08352318770289842,
+      "response_magnitude_std": 7.10575371698371e-05
+    },
+    {
+      "theta_deg": 139.5,
+      "response_magnitude": 0.08337540298788962,
+      "response_magnitude_std": 8.856997275716057e-05
+    },
+    {
+      "theta_deg": 140.0,
+      "response_magnitude": 0.08333474276955796,
+      "response_magnitude_std": 5.477504564098322e-05
+    },
+    {
+      "theta_deg": 140.5,
+      "response_magnitude": 0.08317361392853583,
+      "response_magnitude_std": 8.702486524823389e-05
+    },
+    {
+      "theta_deg": 141.0,
+      "response_magnitude": 0.08311186126717832,
+      "response_magnitude_std": 6.231287114296822e-05
+    },
+    {
+      "theta_deg": 141.5,
+      "response_magnitude": 0.08302377631630185,
+      "response_magnitude_std": 4.6326823842946746e-05
+    },
+    {
+      "theta_deg": 142.0,
+      "response_magnitude": 0.08292314798631881,
+      "response_magnitude_std": 2.732159609232865e-05
+    },
+    {
+      "theta_deg": 142.5,
+      "response_magnitude": 0.0828310760190839,
+      "response_magnitude_std": 1.194495377254799e-05
+    },
+    {
+      "theta_deg": 143.0,
+      "response_magnitude": 0.08273697163523618,
+      "response_magnitude_std": 2.7329636046171903e-05
+    },
+    {
+      "theta_deg": 143.5,
+      "response_magnitude": 0.08264890943194786,
+      "response_magnitude_std": 4.681823881974007e-05
+    },
+    {
+      "theta_deg": 144.0,
+      "response_magnitude": 0.08256927339379079,
+      "response_magnitude_std": 5.666816099612511e-05
+    },
+    {
+      "theta_deg": 144.5,
+      "response_magnitude": 0.08245655440199508,
+      "response_magnitude_std": 6.019392074535116e-05
+    },
+    {
+      "theta_deg": 145.0,
+      "response_magnitude": 0.08238347057656267,
+      "response_magnitude_std": 7.197984413466627e-05
+    },
+    {
+      "theta_deg": 145.5,
+      "response_magnitude": 0.08229224748281688,
+      "response_magnitude_std": 4.4196395347469865e-05
+    },
+    {
+      "theta_deg": 146.0,
+      "response_magnitude": 0.08220651373614593,
+      "response_magnitude_std": 6.758923282898903e-05
+    },
+    {
+      "theta_deg": 146.5,
+      "response_magnitude": 0.08207638142710881,
+      "response_magnitude_std": 7.935145968859054e-05
+    },
+    {
+      "theta_deg": 147.0,
+      "response_magnitude": 0.08200715356223504,
+      "response_magnitude_std": 4.3688033869966415e-05
+    },
+    {
+      "theta_deg": 147.5,
+      "response_magnitude": 0.08190983253181922,
+      "response_magnitude_std": 6.710659384239005e-05
+    },
+    {
+      "theta_deg": 148.0,
+      "response_magnitude": 0.08181378172276282,
+      "response_magnitude_std": 5.3427500329515295e-05
+    },
+    {
+      "theta_deg": 148.5,
+      "response_magnitude": 0.0817211183516785,
+      "response_magnitude_std": 3.536004983167605e-05
+    },
+    {
+      "theta_deg": 149.0,
+      "response_magnitude": 0.08162575062593999,
+      "response_magnitude_std": 2.3827587789548555e-05
+    },
+    {
+      "theta_deg": 149.5,
+      "response_magnitude": 0.08154309471348264,
+      "response_magnitude_std": 1.7953703671053749e-06
+    },
+    {
+      "theta_deg": 150.0,
+      "response_magnitude": 0.08144612811031776,
+      "response_magnitude_std": 2.6979215469807758e-05
+    },
+    {
+      "theta_deg": 150.5,
+      "response_magnitude": 0.08141066486349233,
+      "response_magnitude_std": 1.4504538512551165e-05
+    },
+    {
+      "theta_deg": 151.0,
+      "response_magnitude": 0.08138738454300817,
+      "response_magnitude_std": 1.3836621194333324e-05
+    },
+    {
+      "theta_deg": 151.5,
+      "response_magnitude": 0.08136541227170385,
+      "response_magnitude_std": 1.4618338594287426e-05
+    },
+    {
+      "theta_deg": 152.0,
+      "response_magnitude": 0.08133875666494904,
+      "response_magnitude_std": 1.8041753151031076e-05
+    },
+    {
+      "theta_deg": 152.5,
+      "response_magnitude": 0.08131270448183811,
+      "response_magnitude_std": 1.8944610986462975e-05
+    },
+    {
+      "theta_deg": 153.0,
+      "response_magnitude": 0.08127133376141266,
+      "response_magnitude_std": 2.5141981549962923e-05
+    },
+    {
+      "theta_deg": 153.5,
+      "response_magnitude": 0.08124202787417696,
+      "response_magnitude_std": 2.0586500185782928e-05
+    },
+    {
+      "theta_deg": 154.0,
+      "response_magnitude": 0.08119786272737314,
+      "response_magnitude_std": 2.6273326148330864e-05
+    },
+    {
+      "theta_deg": 154.5,
+      "response_magnitude": 0.08117407161685854,
+      "response_magnitude_std": 2.2388036689330254e-05
+    },
+    {
+      "theta_deg": 155.0,
+      "response_magnitude": 0.08111890204286563,
+      "response_magnitude_std": 2.3531909442858077e-05
+    },
+    {
+      "theta_deg": 155.5,
+      "response_magnitude": 0.08108064759683513,
+      "response_magnitude_std": 1.686197413444973e-05
+    },
+    {
+      "theta_deg": 156.0,
+      "response_magnitude": 0.08103852388359441,
+      "response_magnitude_std": 1.917475096914361e-05
+    },
+    {
+      "theta_deg": 156.5,
+      "response_magnitude": 0.08098190940318553,
+      "response_magnitude_std": 1.476649827552797e-05
+    },
+    {
+      "theta_deg": 157.0,
+      "response_magnitude": 0.08092206291838025,
+      "response_magnitude_std": 1.8890316865862024e-05
+    },
+    {
+      "theta_deg": 157.5,
+      "response_magnitude": 0.08086814349356221,
+      "response_magnitude_std": 1.8449056043984404e-05
+    },
+    {
+      "theta_deg": 158.0,
+      "response_magnitude": 0.08080829702932436,
+      "response_magnitude_std": 1.833086687387468e-05
+    },
+    {
+      "theta_deg": 158.5,
+      "response_magnitude": 0.08074602756928599,
+      "response_magnitude_std": 1.9275031142335422e-05
+    },
+    {
+      "theta_deg": 159.0,
+      "response_magnitude": 0.08067998327321697,
+      "response_magnitude_std": 1.8770031046540194e-05
+    },
+    {
+      "theta_deg": 159.5,
+      "response_magnitude": 0.08061256165212406,
+      "response_magnitude_std": 1.9498565195906443e-05
+    },
+    {
+      "theta_deg": 160.0,
+      "response_magnitude": 0.08054529368721598,
+      "response_magnitude_std": 1.820577020432881e-05
+    },
+    {
+      "theta_deg": 160.5,
+      "response_magnitude": 0.08047752597653152,
+      "response_magnitude_std": 1.3990851156859556e-05
+    },
+    {
+      "theta_deg": 161.0,
+      "response_magnitude": 0.0804046532289063,
+      "response_magnitude_std": 9.643483841122795e-06
+    },
+    {
+      "theta_deg": 161.5,
+      "response_magnitude": 0.08033170847546714,
+      "response_magnitude_std": 1.3770999246604508e-05
+    },
+    {
+      "theta_deg": 162.0,
+      "response_magnitude": 0.08025153587509931,
+      "response_magnitude_std": 4.6811989280912344e-06
+    },
+    {
+      "theta_deg": 162.5,
+      "response_magnitude": 0.08017810222751853,
+      "response_magnitude_std": 1.0584427453019645e-05
+    },
+    {
+      "theta_deg": 163.0,
+      "response_magnitude": 0.08009836446056445,
+      "response_magnitude_std": 6.8039620438235575e-06
+    },
+    {
+      "theta_deg": 163.5,
+      "response_magnitude": 0.08001427423008599,
+      "response_magnitude_std": 4.781253071919004e-06
+    },
+    {
+      "theta_deg": 164.0,
+      "response_magnitude": 0.07993047361427016,
+      "response_magnitude_std": 4.345695759159106e-06
+    },
+    {
+      "theta_deg": 164.5,
+      "response_magnitude": 0.07984571625031224,
+      "response_magnitude_std": 3.848748138092954e-06
+    },
+    {
+      "theta_deg": 165.0,
+      "response_magnitude": 0.07975941590739509,
+      "response_magnitude_std": 4.508754193384126e-06
+    },
+    {
+      "theta_deg": 165.5,
+      "response_magnitude": 0.07967212704999695,
+      "response_magnitude_std": 3.5413866131520984e-06
+    },
+    {
+      "theta_deg": 166.0,
+      "response_magnitude": 0.07957848344412297,
+      "response_magnitude_std": 1.937791900484765e-07
+    },
+    {
+      "theta_deg": 166.5,
+      "response_magnitude": 0.0794880862825555,
+      "response_magnitude_std": 2.696158431119659e-06
+    },
+    {
+      "theta_deg": 167.0,
+      "response_magnitude": 0.07939288609393566,
+      "response_magnitude_std": 2.0304515815945085e-11
+    },
+    {
+      "theta_deg": 167.5,
+      "response_magnitude": 0.07929866813363073,
+      "response_magnitude_std": 1.9722936058603023e-06
+    },
+    {
+      "theta_deg": 168.0,
+      "response_magnitude": 0.07920057425152578,
+      "response_magnitude_std": 4.1982745307958386e-10
+    },
+    {
+      "theta_deg": 168.5,
+      "response_magnitude": 0.07910232820087473,
+      "response_magnitude_std": 2.973097357524591e-07
+    },
+    {
+      "theta_deg": 169.0,
+      "response_magnitude": 0.07900335136871217,
+      "response_magnitude_std": 1.039302202030555e-06
+    },
+    {
+      "theta_deg": 169.5,
+      "response_magnitude": 0.07890277203146234,
+      "response_magnitude_std": 1.6994763903141538e-06
+    },
+    {
+      "theta_deg": 170.0,
+      "response_magnitude": 0.07880063044571625,
+      "response_magnitude_std": 1.1715777847822468e-06
+    },
+    {
+      "theta_deg": 170.5,
+      "response_magnitude": 0.07869805378871024,
+      "response_magnitude_std": 1.593204244306394e-06
+    },
+    {
+      "theta_deg": 171.0,
+      "response_magnitude": 0.07859506979554877,
+      "response_magnitude_std": 1.8269160502869426e-06
+    },
+    {
+      "theta_deg": 171.5,
+      "response_magnitude": 0.07849180974784872,
+      "response_magnitude_std": 2.010670717906479e-06
+    },
+    {
+      "theta_deg": 172.0,
+      "response_magnitude": 0.07838877733524074,
+      "response_magnitude_std": 1.563320765409896e-06
+    },
+    {
+      "theta_deg": 172.5,
+      "response_magnitude": 0.07828593381215643,
+      "response_magnitude_std": 2.081919308266996e-06
+    },
+    {
+      "theta_deg": 173.0,
+      "response_magnitude": 0.07818357033174142,
+      "response_magnitude_std": 1.5422382646153814e-06
+    },
+    {
+      "theta_deg": 173.5,
+      "response_magnitude": 0.07808377900402658,
+      "response_magnitude_std": 1.5430453593000036e-06
+    },
+    {
+      "theta_deg": 174.0,
+      "response_magnitude": 0.07798496693712427,
+      "response_magnitude_std": 2.0059080144422878e-06
+    },
+    {
+      "theta_deg": 174.5,
+      "response_magnitude": 0.07788994035634397,
+      "response_magnitude_std": 3.2373445640047953e-06
+    },
+    {
+      "theta_deg": 175.0,
+      "response_magnitude": 0.07779757782094027,
+      "response_magnitude_std": 2.6852389974862317e-06
+    },
+    {
+      "theta_deg": 175.5,
+      "response_magnitude": 0.07770911437879889,
+      "response_magnitude_std": 1.340096053341823e-06
+    },
+    {
+      "theta_deg": 176.0,
+      "response_magnitude": 0.0776264992565654,
+      "response_magnitude_std": 8.620644912971507e-07
+    },
+    {
+      "theta_deg": 176.5,
+      "response_magnitude": 0.07755063754500673,
+      "response_magnitude_std": 6.087588480822983e-07
+    },
+    {
+      "theta_deg": 177.0,
+      "response_magnitude": 0.07748257890569059,
+      "response_magnitude_std": 3.07469576895607e-07
+    },
+    {
+      "theta_deg": 177.5,
+      "response_magnitude": 0.07742356186631985,
+      "response_magnitude_std": 8.951643462350439e-08
+    },
+    {
+      "theta_deg": 178.0,
+      "response_magnitude": 0.07737472530511946,
+      "response_magnitude_std": 7.695826137804208e-08
+    },
+    {
+      "theta_deg": 178.5,
+      "response_magnitude": 0.07733650346282149,
+      "response_magnitude_std": 8.573915798590338e-08
+    },
+    {
+      "theta_deg": 179.0,
+      "response_magnitude": 0.07730920809524192,
+      "response_magnitude_std": 6.46299944883745e-08
+    },
+    {
+      "theta_deg": 179.5,
+      "response_magnitude": 0.07729288898986265,
+      "response_magnitude_std": 2.1556879960332488e-08
+    }
+  ]
+}
