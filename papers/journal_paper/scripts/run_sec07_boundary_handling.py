@@ -173,16 +173,8 @@ def _response_mask(xx: np.ndarray, offset_label: str) -> np.ndarray:
     return np.asarray(np.asarray(xx, dtype=np.float64) <= 4.0 * float(RADIUS), dtype=bool)
 
 
-def _border_mask(size: int, width: int) -> np.ndarray:
-    yy, xx = np.meshgrid(np.arange(size), np.arange(size), indexing="ij")
-    return np.asarray(
-        (xx < width) | (xx >= size - width) | (yy < width) | (yy >= size - width),
-        dtype=bool,
-    )
-
-
 def _write_csv(path: Path, rows: list[dict[str, object]]) -> None:
-    fieldnames = ("edge_offset_px", "snr_db", "grad_rmse", "anisotropy_ratio", "fp_rate")
+    fieldnames = ("edge_offset_px", "snr_db", "grad_rmse", "anisotropy_ratio")
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
@@ -233,36 +225,12 @@ def run_experiment(
     rng = np.random.default_rng(20260502)
     orientation_values = _orientation_values(ORIENTATION_STEP_DEG)
     phase_values = _phase_values(PHASE_COUNT, PHASE_STEP_PX)
-    border_mask = _border_mask(PATCH_SIZE, width=pad)
-    white_noise_gain = float(np.sum(np.asarray(kernels.weights_x, dtype=np.float64) ** 2))
 
     cell_records: dict[tuple[str, str, str], dict[str, object]] = {}
-    fp_rates: dict[tuple[str, str], float] = {}
     rows_by_padding: dict[str, list[dict[str, object]]] = {mode: [] for mode in PADDING_MODES}
 
     for snr_db in SNR_DB_VALUES:
         sigma_noise = _signal_noise_sigma(snr_db)
-        fp_draw_count = NOISE_DRAWS if sigma_noise > 0.0 else 1
-        threshold = max(1.0e-12, 5.0 * sigma_noise * math.sqrt(2.0 * white_noise_gain))
-        for mode in PADDING_MODES:
-            fp_values = []
-            for _ in range(fp_draw_count):
-                flat = np.full((PATCH_SIZE, PATCH_SIZE), 0.5 * float(CONTRAST), dtype=np.float64)
-                if sigma_noise > 0.0:
-                    flat = flat + sigma_noise * rng.normal(size=flat.shape)
-                gx, gy = _apply_gradients(
-                    flat,
-                    kernels.kernel_x,
-                    kernels.kernel_y,
-                    pad,
-                    mode,
-                    fft_backend,
-                    device_index,
-                )
-                magnitude = np.sqrt(gx * gx + gy * gy)
-                fp_values.append(float(np.mean(magnitude[border_mask] > threshold)))
-            fp_rates[(mode, _snr_slug(snr_db))] = float(np.mean(np.asarray(fp_values, dtype=np.float64)))
-
         for offset_label, offset_px in OFFSET_SPECS:
             for mode in PADDING_MODES:
                 cell_records[(mode, offset_label, _snr_slug(snr_db))] = {
@@ -327,13 +295,11 @@ def run_experiment(
                 ]
                 grad_rmse = math.sqrt(record["grad_sq_sum"] / max(1, int(record["grad_count"])))
                 anisotropy = float(np.max(orientation_means) / np.min(orientation_means))
-                fp_rate = float(fp_rates[(mode, _snr_slug(snr_db))])
                 row = {
                     "edge_offset_px": offset_label,
                     "snr_db": _snr_label(snr_db),
                     "grad_rmse": f"{grad_rmse:.17e}",
                     "anisotropy_ratio": f"{anisotropy:.17e}",
-                    "fp_rate": f"{fp_rate:.17e}",
                 }
                 csv_rows.append(row)
                 summary_records.append(
@@ -345,7 +311,6 @@ def run_experiment(
                         "snr_db": _snr_label(snr_db),
                         "grad_rmse": grad_rmse,
                         "anisotropy_ratio": anisotropy,
-                        "fp_rate": fp_rate,
                     }
                 )
         rows_by_padding[mode] = csv_rows
