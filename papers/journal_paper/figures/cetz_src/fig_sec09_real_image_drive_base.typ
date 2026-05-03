@@ -26,6 +26,8 @@
   slug
 }
 
+#let radius-label(radius) = str(radius)
+
 #let thumb(path, width: 1.38in) = image("../" + path, width: width)
 
 #let image-grid(data, heading, asset-key, show-input: false) = {
@@ -157,6 +159,75 @@
   table(columns: 1 + order.len(), stroke: 0.35pt + black30, inset: 3pt, align: center, ..cells)
 }
 
+#let wvf-trace-chart(data, metric-key, snr-slug, title, y-label) = {
+  let methods = data.at("methods")
+  let order = data.at("method_order")
+  let points = data.at("wvf_trace").at("points")
+  let values = ()
+  for point in points {
+    values.push(point.at("snr_metrics").at(snr-slug).at(metric-key))
+  }
+  for method in order {
+    if method != "wvf" {
+      values.push(methods.at(method).at("snr_metrics").at(snr-slug).at(metric-key))
+    }
+  }
+  let y-min = calc.min(..values)
+  let y-max = calc.max(..values)
+  let pad = if y-max > y-min { 0.08 * (y-max - y-min) } else { 0.05 }
+  let y0 = y-min - pad
+  let y1 = y-max + pad
+
+  cetz.canvas({
+    import cetz.draw: *
+    let w = 5.0
+    let h = 1.9
+    let ox = 0.82
+    let oy = 0.58
+    let span = if points.len() > 1 { points.len() - 1 } else { 1 }
+    let tx(i) = ox + i / span * w
+    let ty(v) = oy + (v - y0) / (y1 - y0) * h
+
+    rect((ox, oy), (ox + w, oy + h), stroke: 0.45pt + black30)
+    content((ox + w / 2, oy + h + 0.2), text(fill: black90, size: 7.4pt, weight: "bold")[title])
+
+    for idx in range(points.len()) {
+      let x = tx(idx)
+      line((x, oy), (x, oy + h), stroke: 0.18pt + black30)
+      content((x, oy - 0.17), text(fill: black70, size: 5.7pt)[r=#radius-label(points.at(idx).at("radius"))], anchor: "north")
+    }
+    let y-ticks = (y0, y0 + 0.5 * (y1 - y0), y1)
+    for tick in y-ticks {
+      let y = ty(tick)
+      line((ox, y), (ox + w, y), stroke: 0.18pt + black30)
+      content((ox - 0.12, y), text(fill: black70, size: 5.7pt)[#fmt(tick)], anchor: "east")
+    }
+    for method in order {
+      if method != "wvf" {
+        let value = methods.at(method).at("snr_metrics").at(snr-slug).at(metric-key)
+        line((ox, ty(value)), (ox + w, ty(value)), stroke: 0.35pt + method-color(method))
+      }
+    }
+    for idx in range(points.len() - 1) {
+      let a = points.at(idx).at("snr_metrics").at(snr-slug).at(metric-key)
+      let b = points.at(idx + 1).at("snr_metrics").at(snr-slug).at(metric-key)
+      line((tx(idx), ty(a)), (tx(idx + 1), ty(b)), stroke: 1.1pt + garnet)
+    }
+    for idx in range(points.len()) {
+      let point = points.at(idx)
+      let metric = point.at("snr_metrics").at(snr-slug).at(metric-key)
+      let highlight = point.at("snr_metrics").at(snr-slug).at("comparison").at(metric-key).at("overtakes_best_baseline")
+      if highlight {
+        circle((tx(idx), ty(metric)), radius: 0.062, fill: rgb("#FFFFFF"), stroke: 0.5pt + black90)
+      }
+      circle((tx(idx), ty(metric)), radius: 0.038, fill: garnet, stroke: none)
+    }
+
+    content((ox + w / 2, oy - 0.42), text(fill: black90, size: 6.4pt)[WVF radius])
+    content((0.14, oy + h / 2), angle: 90deg, text(fill: black90, size: 6.4pt)[#y-label])
+  })
+}
+
 #let render(data-path) = {
   let data = json(data-path)
   let title = data.at("title")
@@ -215,4 +286,80 @@
     v(10pt)
     legend(data)
   ]
+
+  if "wvf_trace" in data {
+    pagebreak()
+
+    [
+      align(center)[
+        text(fill: black90, size: 11pt, weight: "bold")[title]
+        linebreak()
+        text(fill: black70, size: 8pt)[WVF radius-trace follow-up on the fixed DRIVE image set.]
+        linebreak()
+        text(fill: black70, size: 6.8pt)[Garnet trace points sweep WVF across $(r,d)=(3,5),(5,9),(9,11),(15,11),(25,11),(50,11)$. Thin horizontal lines are the fixed baseline methods. Outlined WVF points beat the best fixed baseline at that metric and SNR.]
+      ]
+      v(8pt)
+      grid(
+        columns: 2,
+        column-gutter: 10pt,
+        row-gutter: 10pt,
+        [
+          wvf-trace-chart(data, "ods_f_score", "inf", [ODS versus WVF radius, clean], [ODS F-score])
+        ],
+        [
+          wvf-trace-chart(data, "gradient_vector_rmse_mean", "inf", [Vector RMSE versus WVF radius, clean], [Vector RMSE])
+        ],
+        [
+          wvf-trace-chart(data, "ods_f_score", "20", [ODS versus WVF radius, 20 dB], [ODS F-score])
+        ],
+        [
+          wvf-trace-chart(data, "gradient_vector_rmse_mean", "20", [Vector RMSE versus WVF radius, 20 dB], [Vector RMSE])
+        ],
+        [
+          wvf-trace-chart(data, "ods_f_score", "10", [ODS versus WVF radius, 10 dB], [ODS F-score])
+        ],
+        [
+          wvf-trace-chart(data, "gradient_vector_rmse_mean", "10", [Vector RMSE versus WVF radius, 10 dB], [Vector RMSE])
+        ],
+        [
+          wvf-trace-chart(data, "ods_f_score", "5", [ODS versus WVF radius, 5 dB], [ODS F-score])
+        ],
+        [
+          wvf-trace-chart(data, "gradient_vector_rmse_mean", "5", [Vector RMSE versus WVF radius, 5 dB], [Vector RMSE])
+        ],
+      )
+      v(8pt)
+      legend(data)
+    ]
+
+    pagebreak()
+
+    [
+      align(center)[
+        text(fill: black90, size: 11pt, weight: "bold")[title]
+        linebreak()
+        text(fill: black70, size: 8pt)[WVF centerline orientation trace on DRIVE.]
+      ]
+      v(8pt)
+      grid(
+        columns: 2,
+        column-gutter: 10pt,
+        row-gutter: 10pt,
+        [
+          wvf-trace-chart(data, "orientation_mae_deg_mean", "inf", [Orientation MAE versus WVF radius, clean], [Angle MAE (deg)])
+        ],
+        [
+          wvf-trace-chart(data, "orientation_mae_deg_mean", "20", [Orientation MAE versus WVF radius, 20 dB], [Angle MAE (deg)])
+        ],
+        [
+          wvf-trace-chart(data, "orientation_mae_deg_mean", "10", [Orientation MAE versus WVF radius, 10 dB], [Angle MAE (deg)])
+        ],
+        [
+          wvf-trace-chart(data, "orientation_mae_deg_mean", "5", [Orientation MAE versus WVF radius, 5 dB], [Angle MAE (deg)])
+        ],
+      )
+      v(8pt)
+      legend(data)
+    ]
+  }
 }

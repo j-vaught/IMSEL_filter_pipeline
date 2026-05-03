@@ -39,6 +39,19 @@ TANGENT_WINDOW_RADIUS = 6
 DISPLAY_PERCENTILE = 99.5
 FOV_THRESHOLD = 5.0 / 255.0
 EPS = 1.0e-12
+WVF_TRACE_SPECS = (
+    {"r": 3, "d": 5, "normalize_coords": True},
+    {"r": 5, "d": 9, "normalize_coords": True},
+    {"r": 9, "d": 11, "normalize_coords": True},
+    {"r": 15, "d": 11, "normalize_coords": True},
+    {"r": 25, "d": 11, "normalize_coords": True},
+    {"r": 50, "d": 11, "normalize_coords": True},
+)
+TRACE_METRICS = (
+    ("ods_f_score", True),
+    ("gradient_vector_rmse_mean", False),
+    ("orientation_mae_deg_mean", False),
+)
 
 
 @dataclass(frozen=True)
@@ -65,6 +78,38 @@ def _build_roster(validation_summary: dict[str, object]) -> list[dict[str, objec
             }
         )
     return roster
+
+
+def _drive_selection_from_summary(summary: dict[str, object], data_root: Path) -> list[DriveSelection] | None:
+    rows = summary.get("images")
+    if not isinstance(rows, list):
+        return None
+    input_dir = data_root / "train" / "input"
+    label_dir = data_root / "train" / "label"
+    selections: list[DriveSelection] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            return None
+        image_id = str(row["image_id"])
+        image_path = input_dir / f"{image_id}.tif"
+        label_path = label_dir / f"{image_id}.png"
+        if not image_path.exists() or not label_path.exists():
+            return None
+        try:
+            selections.append(
+                DriveSelection(
+                    image_key=str(row["image_key"]),
+                    image_id=image_id,
+                    image_path=str(image_path),
+                    label_path=str(label_path),
+                    selection_score=float(row["selection_score"]),
+                    vessel_pixels=int(row["vessel_pixels"]),
+                    orientation_entropy=float(row["orientation_entropy"]),
+                )
+            )
+        except KeyError:
+            return None
+    return selections
 
 
 def _noise_slug(snr_db: float) -> str:
@@ -540,6 +585,116 @@ def _write_json(path: Path, payload: dict[str, object]) -> None:
         handle.write("\n")
 
 
+def _best_baseline_by_metric(
+    methods_payload: dict[str, object],
+    snr_slug: str,
+    metric_key: str,
+    higher_is_better: bool,
+) -> dict[str, object]:
+    best_method = ""
+    best_label = ""
+    best_value: float | None = None
+    for method_key, method_data in methods_payload.items():
+        if str(method_key) == "wvf":
+            continue
+        value = float(method_data["snr_metrics"][snr_slug][metric_key])
+        if best_value is None or (value > best_value if higher_is_better else value < best_value):
+            best_value = value
+            best_method = str(method_key)
+            best_label = str(method_data["label"])
+    if best_value is None:
+        raise RuntimeError(f"no baseline reference found for {metric_key} at SNR {snr_slug}")
+    return {
+        "method": best_method,
+        "label": best_label,
+        "value": float(best_value),
+    }
+
+
+def _evaluate_wvf_trace(
+    green_images: dict[str, np.ndarray],
+    soft_boundary_map: dict[str, np.ndarray],
+    boundary_normals_map: dict[str, np.ndarray],
+    boundary_valid_map: dict[str, np.ndarray],
+    tangent_angle_map: dict[str, np.ndarray],
+    tangent_valid_map: dict[str, np.ndarray],
+    fov_mask_map: dict[str, np.ndarray],
+    methods_payload: dict[str, object],
+    fft_backend: str,
+    device_index: int | None,
+    noise_draws: int,
+) -> dict[str, object]:
+    baseline_best: dict[str, dict[str, object]] = {}
+    for snr_db in SNR_LEVELS:
+        snr_slug = _noise_slug(float(snr_db))
+        baseline_best[snr_slug] = {}
+        for metric_key, higher_is_better in TRACE_METRICS:
+            baseline_best[snr_slug][metric_key] = _best_baseline_by_metric(
+                methods_payload=methods_payload,
+                snr_slug=snr_slug,
+                metric_key=metric_key,
+                higher_is_better=bool(higher_is_better),
+            )
+
+    points = []
+    for spec in WVF_TRACE_SPECS:
+        method_item = {
+            "method": "wvf",
+            "label": "WVF",
+            "config": dict(spec),
+            "kernel": build_method("wvf", **spec),
+        }
+        snr_metrics = {}
+        for snr_db in SNR_LEVELS:
+            snr_slug = _noise_slug(float(snr_db))
+            metrics = _evaluate_snr_bank(
+                method_item=method_item,
+                green_images=green_images,
+                soft_boundary_map=soft_boundary_map,
+                boundary_normals_map=boundary_normals_map,
+                boundary_valid_map=boundary_valid_map,
+                tangent_angle_map=tangent_angle_map,
+                tangent_valid_map=tangent_valid_map,
+                fov_mask_map=fov_mask_map,
+                snr_db=float(snr_db),
+                noise_draws=int(noise_draws),
+                fft_backend=fft_backend,
+                device_index=device_index,
+            )
+            comparisons = {}
+            for metric_key, higher_is_better in TRACE_METRICS:
+                best = baseline_best[snr_slug][metric_key]
+                value = float(metrics[metric_key])
+                overtakes = value > float(best["value"]) if higher_is_better else value < float(best["value"])
+                comparisons[metric_key] = {
+                    "best_baseline_method": str(best["method"]),
+                    "best_baseline_label": str(best["label"]),
+                    "best_baseline_value": float(best["value"]),
+                    "overtakes_best_baseline": bool(spec["r"] < 50 and overtakes),
+                }
+            snr_metrics[snr_slug] = metrics | {"comparison": comparisons}
+            print(
+                f"sec09B-trace r={spec['r']} d={spec['d']} snr={snr_slug} "
+                f"rmse={metrics['gradient_vector_rmse_mean']:.6e} "
+                f"ods={metrics['ods_f_score']:.6f} "
+                f"ang={metrics['orientation_mae_deg_mean']:.4f}"
+            )
+        points.append(
+            {
+                "radius": int(spec["r"]),
+                "degree": int(spec["d"]),
+                "config": dict(spec),
+                "white_noise_gain": float(method_item["kernel"].white_noise_gain),
+                "support_half_extent": int(method_item["kernel"].support_half_extent),
+                "snr_metrics": snr_metrics,
+            }
+        )
+    return {
+        "points": points,
+        "baseline_best": baseline_best,
+    }
+
+
 def run_experiment(
     validation_json: Path,
     dataset_root: Path,
@@ -555,7 +710,9 @@ def run_experiment(
     validation_summary = json.loads(validation_json.read_text())
     roster = _build_roster(validation_summary)
     data_root = _ensure_drive_root(dataset_root, auto_download=bool(auto_download))
-    selections = _select_images(data_root, int(image_count))
+    existing_summary = json.loads(summary_json.read_text()) if summary_json.exists() else None
+    existing_selection = None if existing_summary is None else _drive_selection_from_summary(existing_summary, data_root)
+    selections = existing_selection if existing_selection is not None else _select_images(data_root, int(image_count))
 
     green_images: dict[str, np.ndarray] = {}
     soft_boundary_map: dict[str, np.ndarray] = {}
@@ -600,45 +757,62 @@ def run_experiment(
             }
         )
 
-    methods_payload: dict[str, object] = {}
-    for method_item in roster:
-        clean_assets = _clean_assets_for_method(
-            method_item=method_item,
-            green_images=green_images,
-            assets_dir=assets_dir,
-            fft_backend=fft_backend,
-            device_index=device_index,
-        )
-        snr_metrics = {}
-        for snr_db in SNR_LEVELS:
-            slug = _noise_slug(float(snr_db))
-            metrics = _evaluate_snr_bank(
+    if existing_summary is not None and isinstance(existing_summary.get("methods"), dict):
+        methods_payload = existing_summary["methods"]
+    else:
+        methods_payload = {}
+        for method_item in roster:
+            clean_assets = _clean_assets_for_method(
                 method_item=method_item,
                 green_images=green_images,
-                soft_boundary_map=soft_boundary_map,
-                boundary_normals_map=boundary_normals_map,
-                boundary_valid_map=boundary_valid_map,
-                tangent_angle_map=tangent_angle_map,
-                tangent_valid_map=tangent_valid_map,
-                fov_mask_map=fov_mask_map,
-                snr_db=float(snr_db),
-                noise_draws=int(noise_draws),
+                assets_dir=assets_dir,
                 fft_backend=fft_backend,
                 device_index=device_index,
             )
-            snr_metrics[slug] = metrics
-            print(
-                f"sec09B {method_item['method']} snr={slug} "
-                f"rmse={metrics['gradient_vector_rmse_mean']:.6e} "
-                f"ods={metrics['ods_f_score']:.6f} "
-                f"ang={metrics['orientation_mae_deg_mean']:.4f}"
-            )
-        methods_payload[str(method_item["method"])] = {
-            "label": str(method_item["label"]),
-            "config": dict(method_item["config"]),
-            "clean_assets": clean_assets,
-            "snr_metrics": snr_metrics,
-        }
+            snr_metrics = {}
+            for snr_db in SNR_LEVELS:
+                slug = _noise_slug(float(snr_db))
+                metrics = _evaluate_snr_bank(
+                    method_item=method_item,
+                    green_images=green_images,
+                    soft_boundary_map=soft_boundary_map,
+                    boundary_normals_map=boundary_normals_map,
+                    boundary_valid_map=boundary_valid_map,
+                    tangent_angle_map=tangent_angle_map,
+                    tangent_valid_map=tangent_valid_map,
+                    fov_mask_map=fov_mask_map,
+                    snr_db=float(snr_db),
+                    noise_draws=int(noise_draws),
+                    fft_backend=fft_backend,
+                    device_index=device_index,
+                )
+                snr_metrics[slug] = metrics
+                print(
+                    f"sec09B {method_item['method']} snr={slug} "
+                    f"rmse={metrics['gradient_vector_rmse_mean']:.6e} "
+                    f"ods={metrics['ods_f_score']:.6f} "
+                    f"ang={metrics['orientation_mae_deg_mean']:.4f}"
+                )
+            methods_payload[str(method_item["method"])] = {
+                "label": str(method_item["label"]),
+                "config": dict(method_item["config"]),
+                "clean_assets": clean_assets,
+                "snr_metrics": snr_metrics,
+            }
+
+    wvf_trace = _evaluate_wvf_trace(
+        green_images=green_images,
+        soft_boundary_map=soft_boundary_map,
+        boundary_normals_map=boundary_normals_map,
+        boundary_valid_map=boundary_valid_map,
+        tangent_angle_map=tangent_angle_map,
+        tangent_valid_map=tangent_valid_map,
+        fov_mask_map=fov_mask_map,
+        methods_payload=methods_payload,
+        fft_backend=fft_backend,
+        device_index=device_index,
+        noise_draws=int(noise_draws),
+    )
 
     payload = {
         "title": TITLE,
@@ -663,6 +837,7 @@ def run_experiment(
         "images": image_payload,
         "method_order": [str(method_item["method"]) for method_item in roster],
         "methods": methods_payload,
+        "wvf_trace": wvf_trace,
     }
     _write_json(summary_json, payload)
 
