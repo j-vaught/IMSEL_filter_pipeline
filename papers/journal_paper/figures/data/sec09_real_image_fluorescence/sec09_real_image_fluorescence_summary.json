@@ -4,7 +4,7 @@
   "scenario": "C",
   "dataset": {
     "name": "BBBC039",
-    "data_root": "/home/j-vaught/tmp/edge-detection-filter-critique-sec09c-run/datasets/BBBC039/images",
+    "data_root": "/home/j-vaught/datasets/BBBC039/images",
     "modality": "Hoechst fluorescence microscopy"
   },
   "config": {
@@ -520,6 +520,219 @@
             "background_gradient_mad": 0.0011650969924100912
           }
         }
+      }
+    }
+  },
+  "wvf_trace": {
+    "points": [
+      {
+        "radius": 3,
+        "degree": 5,
+        "config": {
+          "r": 3,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "white_noise_gain": 0.6104984126984088,
+        "background_gradient_median_mean": 0.002165552047582902,
+        "background_gradient_mad_mean": 0.0008447466669283081,
+        "comparison": {
+          "white_noise_gain": {
+            "best_baseline_method": "dog",
+            "best_baseline_label": "DoG",
+            "best_baseline_value": 0.0004912189073129315,
+            "overtakes_best_baseline": false
+          },
+          "background_gradient_mad_mean": {
+            "best_baseline_method": "square_sg",
+            "best_baseline_label": "Square SG",
+            "best_baseline_value": 0.0001537956321298884,
+            "overtakes_best_baseline": false
+          },
+          "background_gradient_median_mean": {
+            "best_baseline_method": "square_sg",
+            "best_baseline_label": "Square SG",
+            "best_baseline_value": 0.0002422765649064179,
+            "overtakes_best_baseline": false
+          }
+        }
+      },
+      {
+        "radius": 5,
+        "degree": 9,
+        "config": {
+          "r": 5,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "white_noise_gain": 0.6165697650287708,
+        "background_gradient_median_mean": 0.0021829288479722096,
+        "background_gradient_mad_mean": 0.0008525286644398604,
+        "comparison": {
+          "white_noise_gain": {
+            "best_baseline_method": "dog",
+            "best_baseline_label": "DoG",
+            "best_baseline_value": 0.0004912189073129315,
+            "overtakes_best_baseline": false
+          },
+          "background_gradient_mad_mean": {
+            "best_baseline_method": "square_sg",
+            "best_baseline_label": "Square SG",
+            "best_baseline_value": 0.0001537956321298884,
+            "overtakes_best_baseline": false
+          },
+          "background_gradient_median_mean": {
+            "best_baseline_method": "square_sg",
+            "best_baseline_label": "Square SG",
+            "best_baseline_value": 0.0002422765649064179,
+            "overtakes_best_baseline": false
+          }
+        }
+      },
+      {
+        "radius": 9,
+        "degree": 11,
+        "config": {
+          "r": 9,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "white_noise_gain": 0.08868650620066386,
+        "background_gradient_median_mean": 0.000931498896098511,
+        "background_gradient_mad_mean": 0.00039078837380283746,
+        "comparison": {
+          "white_noise_gain": {
+            "best_baseline_method": "dog",
+            "best_baseline_label": "DoG",
+            "best_baseline_value": 0.0004912189073129315,
+            "overtakes_best_baseline": false
+          },
+          "background_gradient_mad_mean": {
+            "best_baseline_method": "square_sg",
+            "best_baseline_label": "Square SG",
+            "best_baseline_value": 0.0001537956321298884,
+            "overtakes_best_baseline": false
+          },
+          "background_gradient_median_mean": {
+            "best_baseline_method": "square_sg",
+            "best_baseline_label": "Square SG",
+            "best_baseline_value": 0.0002422765649064179,
+            "overtakes_best_baseline": false
+          }
+        }
+      },
+      {
+        "radius": 15,
+        "degree": 11,
+        "config": {
+          "r": 15,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "white_noise_gain": 0.010987598156692223,
+        "background_gradient_median_mean": 0.0005471403174783452,
+        "background_gradient_mad_mean": 0.0003193553774118744,
+        "comparison": {
+          "white_noise_gain": {
+            "best_baseline_method": "dog",
+            "best_baseline_label": "DoG",
+            "best_baseline_value": 0.0004912189073129315,
+            "overtakes_best_baseline": false
+          },
+          "background_gradient_mad_mean": {
+            "best_baseline_method": "square_sg",
+            "best_baseline_label": "Square SG",
+            "best_baseline_value": 0.0001537956321298884,
+            "overtakes_best_baseline": false
+          },
+          "background_gradient_median_mean": {
+            "best_baseline_method": "square_sg",
+            "best_baseline_label": "Square SG",
+            "best_baseline_value": 0.0002422765649064179,
+            "overtakes_best_baseline": false
+          }
+        }
+      },
+      {
+        "radius": 25,
+        "degree": 11,
+        "config": {
+          "r": 25,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "white_noise_gain": 0.0014297399791228117,
+        "background_gradient_median_mean": 0.001081580689417519,
+        "background_gradient_mad_mean": 0.0007994760649963136,
+        "comparison": {
+          "white_noise_gain": {
+            "best_baseline_method": "dog",
+            "best_baseline_label": "DoG",
+            "best_baseline_value": 0.0004912189073129315,
+            "overtakes_best_baseline": false
+          },
+          "background_gradient_mad_mean": {
+            "best_baseline_method": "square_sg",
+            "best_baseline_label": "Square SG",
+            "best_baseline_value": 0.0001537956321298884,
+            "overtakes_best_baseline": false
+          },
+          "background_gradient_median_mean": {
+            "best_baseline_method": "square_sg",
+            "best_baseline_label": "Square SG",
+            "best_baseline_value": 0.0002422765649064179,
+            "overtakes_best_baseline": false
+          }
+        }
+      },
+      {
+        "radius": 50,
+        "degree": 11,
+        "config": {
+          "r": 50,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "white_noise_gain": 8.998553150423674e-05,
+        "background_gradient_median_mean": 0.002332475726397425,
+        "background_gradient_mad_mean": 0.0013895457544658,
+        "comparison": {
+          "white_noise_gain": {
+            "best_baseline_method": "dog",
+            "best_baseline_label": "DoG",
+            "best_baseline_value": 0.0004912189073129315,
+            "overtakes_best_baseline": false
+          },
+          "background_gradient_mad_mean": {
+            "best_baseline_method": "square_sg",
+            "best_baseline_label": "Square SG",
+            "best_baseline_value": 0.0001537956321298884,
+            "overtakes_best_baseline": false
+          },
+          "background_gradient_median_mean": {
+            "best_baseline_method": "square_sg",
+            "best_baseline_label": "Square SG",
+            "best_baseline_value": 0.0002422765649064179,
+            "overtakes_best_baseline": false
+          }
+        }
+      }
+    ],
+    "baseline_best": {
+      "white_noise_gain": {
+        "method": "dog",
+        "label": "DoG",
+        "value": 0.0004912189073129315
+      },
+      "background_gradient_mad_mean": {
+        "method": "square_sg",
+        "label": "Square SG",
+        "value": 0.0001537956321298884
+      },
+      "background_gradient_median_mean": {
+        "method": "square_sg",
+        "label": "Square SG",
+        "value": 0.0002422765649064179
       }
     }
   }
