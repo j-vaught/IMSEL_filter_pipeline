@@ -23,7 +23,101 @@
     "dog",
     "farid_simoncelli",
     "square_sg",
-    "wvf"
+    "wvf",
+    "square_sg_degmatch_n21_d11",
+    "square_sg_degmatch_n25_d11"
+  ],
+  "reporting_table": [
+    {
+      "method": "roberts",
+      "label": "Roberts",
+      "comparison_status": "validated",
+      "geometric_anisotropy_clean": 1.0995399540599664,
+      "noise_robustness_wng": 0.5,
+      "junction_branch_isotropy_l_corner": 1.1045822537905676,
+      "junction_branch_isotropy_x_junction": 1.108650450758854
+    },
+    {
+      "method": "prewitt",
+      "label": "Prewitt",
+      "comparison_status": "validated",
+      "geometric_anisotropy_clean": 1.066980806754107,
+      "noise_robustness_wng": 0.16666666666666669,
+      "junction_branch_isotropy_l_corner": 1.0052620108086086,
+      "junction_branch_isotropy_x_junction": 1.0073711411035888
+    },
+    {
+      "method": "sobel",
+      "label": "Sobel",
+      "comparison_status": "validated",
+      "geometric_anisotropy_clean": 1.0389262515022075,
+      "noise_robustness_wng": 0.1875,
+      "junction_branch_isotropy_l_corner": 1.0055000983952818,
+      "junction_branch_isotropy_x_junction": 1.0073905222262463
+    },
+    {
+      "method": "scharr",
+      "label": "Scharr",
+      "comparison_status": "validated",
+      "geometric_anisotropy_clean": 1.018831336374922,
+      "noise_robustness_wng": 0.23046875,
+      "junction_branch_isotropy_l_corner": 1.005678124067787,
+      "junction_branch_isotropy_x_junction": 1.0074846052941882
+    },
+    {
+      "method": "dog",
+      "label": "DoG",
+      "comparison_status": "validated",
+      "geometric_anisotropy_clean": 1.0027051397380702,
+      "noise_robustness_wng": 0.0004912189073129315,
+      "junction_branch_isotropy_l_corner": 1.0009650136929364,
+      "junction_branch_isotropy_x_junction": 1.0008861419220063
+    },
+    {
+      "method": "farid_simoncelli",
+      "label": "Farid-Simoncelli",
+      "comparison_status": "validated",
+      "geometric_anisotropy_clean": 1.0074681924835802,
+      "noise_robustness_wng": 0.02779841825599506,
+      "junction_branch_isotropy_l_corner": 1.0036906597602782,
+      "junction_branch_isotropy_x_junction": 1.004646364040369
+    },
+    {
+      "method": "square_sg",
+      "label": "Square SG",
+      "comparison_status": "validated",
+      "geometric_anisotropy_clean": 1.0781058412378854,
+      "noise_robustness_wng": 0.0008264462809917355,
+      "junction_branch_isotropy_l_corner": 1.02151884498278,
+      "junction_branch_isotropy_x_junction": 1.054242473557789
+    },
+    {
+      "method": "wvf",
+      "label": "WVF",
+      "comparison_status": "validated",
+      "geometric_anisotropy_clean": 1.0064002073399139,
+      "noise_robustness_wng": 8.998553150423674e-05,
+      "junction_branch_isotropy_l_corner": 1.0013010003691356,
+      "junction_branch_isotropy_x_junction": 1.0021971222390675
+    },
+    {
+      "method": "square_sg_degmatch_n21_d11",
+      "label": "Square SG N=21 d=11",
+      "comparison_status": "degree_matched_not_constraint_feasible",
+      "geometric_anisotropy_clean": 1.2212923719676754,
+      "noise_robustness_wng": 0.023593792006493135,
+      "junction_branch_isotropy_l_corner": 1.00282929193811,
+      "junction_branch_isotropy_x_junction": 1.0029320117919744
+    },
+    {
+      "method": "square_sg_degmatch_n25_d11",
+      "label": "Square SG N=25 d=11",
+      "comparison_status": "degree_matched_not_constraint_feasible",
+      "geometric_anisotropy_clean": 1.252289254957226,
+      "noise_robustness_wng": 0.01117642328953299,
+      "junction_branch_isotropy_l_corner": 1.0026533892856775,
+      "junction_branch_isotropy_x_junction": 1.0021197860816908
+    }
   ],
   "methods": {
     "roberts": {
@@ -31,6 +125,7 @@
       "config": {
         "window": "2x2-embedded"
       },
+      "comparison_status": "validated",
       "step": {
         "anisotropy_by_snr": {
           "inf": 1.0995399540599664,
@@ -1786,6 +1881,7 @@
       "config": {
         "window": "3x3"
       },
+      "comparison_status": "validated",
       "step": {
         "anisotropy_by_snr": {
           "inf": 1.066980806754107,
@@ -3541,6 +3637,7 @@
       "config": {
         "window": "3x3"
       },
+      "comparison_status": "validated",
       "step": {
         "anisotropy_by_snr": {
           "inf": 1.0389262515022075,
@@ -5296,6 +5393,7 @@
       "config": {
         "window": "3x3"
       },
+      "comparison_status": "validated",
       "step": {
         "anisotropy_by_snr": {
           "inf": 1.018831336374922,
@@ -7051,6 +7149,7 @@
       "config": {
         "sigma": 3.0
       },
+      "comparison_status": "validated",
       "step": {
         "anisotropy_by_snr": {
           "inf": 1.0027051397380702,
@@ -8806,6 +8905,7 @@
       "config": {
         "window": "7tap"
       },
+      "comparison_status": "validated",
       "step": {
         "anisotropy_by_snr": {
           "inf": 1.0074681924835802,
@@ -10563,6 +10663,7 @@
         "d": 1,
         "normalize_coords": true
       },
+      "comparison_status": "validated",
       "step": {
         "anisotropy_by_snr": {
           "inf": 1.0781058412378854,
@@ -12320,6 +12421,7 @@
         "d": 11,
         "normalize_coords": true
       },
+      "comparison_status": "validated",
       "step": {
         "anisotropy_by_snr": {
           "inf": 1.0064002073399139,
@@ -14065,6 +14167,3522 @@
             {
               "theta_deg": 350.0,
               "branch_isotropy_ratio": 1.0003521773455946
+            }
+          ]
+        }
+      }
+    },
+    "square_sg_degmatch_n21_d11": {
+      "label": "Square SG N=21 d=11",
+      "config": {
+        "N": 21,
+        "d": 11,
+        "normalize_coords": true
+      },
+      "comparison_status": "degree_matched_not_constraint_feasible",
+      "step": {
+        "anisotropy_by_snr": {
+          "inf": 1.2212923719676754,
+          "20": 1.4032700534204885,
+          "10": 1.7204172587935622
+        },
+        "clean_curve": [
+          {
+            "theta_deg": 0.0,
+            "response": 0.2777495639759201
+          },
+          {
+            "theta_deg": 0.5,
+            "response": 0.27770521234405293
+          },
+          {
+            "theta_deg": 1.0,
+            "response": 0.2775724252248998
+          },
+          {
+            "theta_deg": 1.5,
+            "response": 0.27735189822722356
+          },
+          {
+            "theta_deg": 2.0,
+            "response": 0.277044793577102
+          },
+          {
+            "theta_deg": 2.5,
+            "response": 0.27665297334508115
+          },
+          {
+            "theta_deg": 3.0,
+            "response": 0.27617874361426414
+          },
+          {
+            "theta_deg": 3.5,
+            "response": 0.2756245827788088
+          },
+          {
+            "theta_deg": 4.0,
+            "response": 0.2749937469897237
+          },
+          {
+            "theta_deg": 4.5,
+            "response": 0.27428995636248105
+          },
+          {
+            "theta_deg": 5.0,
+            "response": 0.27351719833569565
+          },
+          {
+            "theta_deg": 5.5,
+            "response": 0.2726797754383543
+          },
+          {
+            "theta_deg": 6.0,
+            "response": 0.27178245323147326
+          },
+          {
+            "theta_deg": 6.5,
+            "response": 0.27083028274427245
+          },
+          {
+            "theta_deg": 7.0,
+            "response": 0.26982854815144464
+          },
+          {
+            "theta_deg": 7.5,
+            "response": 0.26878275609730423
+          },
+          {
+            "theta_deg": 8.0,
+            "response": 0.2676986547346601
+          },
+          {
+            "theta_deg": 8.5,
+            "response": 0.2665820051372684
+          },
+          {
+            "theta_deg": 9.0,
+            "response": 0.2654386964949934
+          },
+          {
+            "theta_deg": 9.5,
+            "response": 0.26427468906774854
+          },
+          {
+            "theta_deg": 10.0,
+            "response": 0.2630958498646197
+          },
+          {
+            "theta_deg": 10.5,
+            "response": 0.26190802089008314
+          },
+          {
+            "theta_deg": 11.0,
+            "response": 0.26071692309941813
+          },
+          {
+            "theta_deg": 11.5,
+            "response": 0.2595280464233508
+          },
+          {
+            "theta_deg": 12.0,
+            "response": 0.2583466668876173
+          },
+          {
+            "theta_deg": 12.5,
+            "response": 0.2571779326453601
+          },
+          {
+            "theta_deg": 13.0,
+            "response": 0.2560265618677312
+          },
+          {
+            "theta_deg": 13.5,
+            "response": 0.25489687891307833
+          },
+          {
+            "theta_deg": 14.0,
+            "response": 0.25379286100095366
+          },
+          {
+            "theta_deg": 14.5,
+            "response": 0.2527181201061732
+          },
+          {
+            "theta_deg": 15.0,
+            "response": 0.2516756997651194
+          },
+          {
+            "theta_deg": 15.5,
+            "response": 0.2506683183542978
+          },
+          {
+            "theta_deg": 16.0,
+            "response": 0.24969805698035208
+          },
+          {
+            "theta_deg": 16.5,
+            "response": 0.24876645983961237
+          },
+          {
+            "theta_deg": 17.0,
+            "response": 0.24787464585709232
+          },
+          {
+            "theta_deg": 17.5,
+            "response": 0.2470232005081321
+          },
+          {
+            "theta_deg": 18.0,
+            "response": 0.24621218793805208
+          },
+          {
+            "theta_deg": 18.5,
+            "response": 0.24544107928995865
+          },
+          {
+            "theta_deg": 19.0,
+            "response": 0.2447090201994933
+          },
+          {
+            "theta_deg": 19.5,
+            "response": 0.24401456520907633
+          },
+          {
+            "theta_deg": 20.0,
+            "response": 0.243355896128152
+          },
+          {
+            "theta_deg": 20.5,
+            "response": 0.24273086856003503
+          },
+          {
+            "theta_deg": 21.0,
+            "response": 0.24213702606846732
+          },
+          {
+            "theta_deg": 21.5,
+            "response": 0.24157148550109522
+          },
+          {
+            "theta_deg": 22.0,
+            "response": 0.24103129592287642
+          },
+          {
+            "theta_deg": 22.5,
+            "response": 0.24051337905019735
+          },
+          {
+            "theta_deg": 23.0,
+            "response": 0.240014549295563
+          },
+          {
+            "theta_deg": 23.5,
+            "response": 0.23953162045122367
+          },
+          {
+            "theta_deg": 24.0,
+            "response": 0.23906146698784986
+          },
+          {
+            "theta_deg": 24.5,
+            "response": 0.2386012326709605
+          },
+          {
+            "theta_deg": 25.0,
+            "response": 0.23814815373690884
+          },
+          {
+            "theta_deg": 25.5,
+            "response": 0.23769980860831347
+          },
+          {
+            "theta_deg": 26.0,
+            "response": 0.2372541655705119
+          },
+          {
+            "theta_deg": 26.5,
+            "response": 0.23680962509139242
+          },
+          {
+            "theta_deg": 27.0,
+            "response": 0.23636499667943106
+          },
+          {
+            "theta_deg": 27.5,
+            "response": 0.2359195605886023
+          },
+          {
+            "theta_deg": 28.0,
+            "response": 0.23547315198908336
+          },
+          {
+            "theta_deg": 28.5,
+            "response": 0.23502611995533884
+          },
+          {
+            "theta_deg": 29.0,
+            "response": 0.23457934431601143
+          },
+          {
+            "theta_deg": 29.5,
+            "response": 0.2341339645400296
+          },
+          {
+            "theta_deg": 30.0,
+            "response": 0.23369170456067143
+          },
+          {
+            "theta_deg": 30.5,
+            "response": 0.23325811791323534
+          },
+          {
+            "theta_deg": 31.0,
+            "response": 0.2328321414495311
+          },
+          {
+            "theta_deg": 31.5,
+            "response": 0.23241617701824402
+          },
+          {
+            "theta_deg": 32.0,
+            "response": 0.23201266327675107
+          },
+          {
+            "theta_deg": 32.5,
+            "response": 0.23162391800173057
+          },
+          {
+            "theta_deg": 33.0,
+            "response": 0.23125207704198902
+          },
+          {
+            "theta_deg": 33.5,
+            "response": 0.23089901725340847
+          },
+          {
+            "theta_deg": 34.0,
+            "response": 0.23056610946467457
+          },
+          {
+            "theta_deg": 34.5,
+            "response": 0.23025447268301705
+          },
+          {
+            "theta_deg": 35.0,
+            "response": 0.22996458955994858
+          },
+          {
+            "theta_deg": 35.5,
+            "response": 0.22969638711232956
+          },
+          {
+            "theta_deg": 36.0,
+            "response": 0.22944942136131416
+          },
+          {
+            "theta_deg": 36.5,
+            "response": 0.2292227901939684
+          },
+          {
+            "theta_deg": 37.0,
+            "response": 0.22901531646969353
+          },
+          {
+            "theta_deg": 37.5,
+            "response": 0.22882530749096672
+          },
+          {
+            "theta_deg": 38.0,
+            "response": 0.2286511770208996
+          },
+          {
+            "theta_deg": 38.5,
+            "response": 0.22849124591273254
+          },
+          {
+            "theta_deg": 39.0,
+            "response": 0.2283439667100496
+          },
+          {
+            "theta_deg": 39.5,
+            "response": 0.22820810916234333
+          },
+          {
+            "theta_deg": 40.0,
+            "response": 0.2280826442023685
+          },
+          {
+            "theta_deg": 40.5,
+            "response": 0.22796694153608507
+          },
+          {
+            "theta_deg": 41.0,
+            "response": 0.22786079153728045
+          },
+          {
+            "theta_deg": 41.5,
+            "response": 0.22776439477216154
+          },
+          {
+            "theta_deg": 42.0,
+            "response": 0.2276782145841719
+          },
+          {
+            "theta_deg": 42.5,
+            "response": 0.22760305594194902
+          },
+          {
+            "theta_deg": 43.0,
+            "response": 0.22753980813067293
+          },
+          {
+            "theta_deg": 43.5,
+            "response": 0.2274893915719837
+          },
+          {
+            "theta_deg": 44.0,
+            "response": 0.22745263450353492
+          },
+          {
+            "theta_deg": 44.5,
+            "response": 0.22743031553123186
+          },
+          {
+            "theta_deg": 45.0,
+            "response": 0.2274228552840177
+          },
+          {
+            "theta_deg": 45.5,
+            "response": 0.22743036288268673
+          },
+          {
+            "theta_deg": 46.0,
+            "response": 0.22745273309206493
+          },
+          {
+            "theta_deg": 46.5,
+            "response": 0.2274894663933052
+          },
+          {
+            "theta_deg": 47.0,
+            "response": 0.22753988113758122
+          },
+          {
+            "theta_deg": 47.5,
+            "response": 0.22760313517299807
+          },
+          {
+            "theta_deg": 48.0,
+            "response": 0.22767824207147058
+          },
+          {
+            "theta_deg": 48.5,
+            "response": 0.22776437470657446
+          },
+          {
+            "theta_deg": 49.0,
+            "response": 0.2278608001743024
+          },
+          {
+            "theta_deg": 49.5,
+            "response": 0.227966925117868
+          },
+          {
+            "theta_deg": 50.0,
+            "response": 0.22808261293326237
+          },
+          {
+            "theta_deg": 50.5,
+            "response": 0.22820808442227197
+          },
+          {
+            "theta_deg": 51.0,
+            "response": 0.22834400255891654
+          },
+          {
+            "theta_deg": 51.5,
+            "response": 0.2284912310267342
+          },
+          {
+            "theta_deg": 52.0,
+            "response": 0.22865112856104697
+          },
+          {
+            "theta_deg": 52.5,
+            "response": 0.22882522404268701
+          },
+          {
+            "theta_deg": 53.0,
+            "response": 0.229015332866952
+          },
+          {
+            "theta_deg": 53.5,
+            "response": 0.22922287778864964
+          },
+          {
+            "theta_deg": 54.0,
+            "response": 0.22944948346160293
+          },
+          {
+            "theta_deg": 54.5,
+            "response": 0.22969642229562845
+          },
+          {
+            "theta_deg": 55.0,
+            "response": 0.2299646105272261
+          },
+          {
+            "theta_deg": 55.5,
+            "response": 0.23025454296812575
+          },
+          {
+            "theta_deg": 56.0,
+            "response": 0.23056613967831088
+          },
+          {
+            "theta_deg": 56.5,
+            "response": 0.2308989964067873
+          },
+          {
+            "theta_deg": 57.0,
+            "response": 0.23125205136003446
+          },
+          {
+            "theta_deg": 57.5,
+            "response": 0.23162389292016938
+          },
+          {
+            "theta_deg": 58.0,
+            "response": 0.23201261147015007
+          },
+          {
+            "theta_deg": 58.5,
+            "response": 0.23241615606545216
+          },
+          {
+            "theta_deg": 59.0,
+            "response": 0.2328321293339592
+          },
+          {
+            "theta_deg": 59.5,
+            "response": 0.23325811081511108
+          },
+          {
+            "theta_deg": 60.0,
+            "response": 0.23369168376432595
+          },
+          {
+            "theta_deg": 60.5,
+            "response": 0.23413392318045245
+          },
+          {
+            "theta_deg": 61.0,
+            "response": 0.2345793293506091
+          },
+          {
+            "theta_deg": 61.5,
+            "response": 0.23502618533458272
+          },
+          {
+            "theta_deg": 62.0,
+            "response": 0.2354731787093076
+          },
+          {
+            "theta_deg": 62.5,
+            "response": 0.23591958403527752
+          },
+          {
+            "theta_deg": 63.0,
+            "response": 0.23636504971680677
+          },
+          {
+            "theta_deg": 63.5,
+            "response": 0.23680970328543233
+          },
+          {
+            "theta_deg": 64.0,
+            "response": 0.2372541948873222
+          },
+          {
+            "theta_deg": 64.5,
+            "response": 0.237699819512102
+          },
+          {
+            "theta_deg": 65.0,
+            "response": 0.23814815643013748
+          },
+          {
+            "theta_deg": 65.5,
+            "response": 0.23860124037422656
+          },
+          {
+            "theta_deg": 66.0,
+            "response": 0.23906150500174878
+          },
+          {
+            "theta_deg": 66.5,
+            "response": 0.23953162391865546
+          },
+          {
+            "theta_deg": 67.0,
+            "response": 0.24001454191660188
+          },
+          {
+            "theta_deg": 67.5,
+            "response": 0.24051338075551537
+          },
+          {
+            "theta_deg": 68.0,
+            "response": 0.24103128857542114
+          },
+          {
+            "theta_deg": 68.5,
+            "response": 0.24157144820758397
+          },
+          {
+            "theta_deg": 69.0,
+            "response": 0.24213703263788694
+          },
+          {
+            "theta_deg": 69.5,
+            "response": 0.24273092015491793
+          },
+          {
+            "theta_deg": 70.0,
+            "response": 0.24335598705956385
+          },
+          {
+            "theta_deg": 70.5,
+            "response": 0.24401464248527785
+          },
+          {
+            "theta_deg": 71.0,
+            "response": 0.244709059215102
+          },
+          {
+            "theta_deg": 71.5,
+            "response": 0.24544115228255292
+          },
+          {
+            "theta_deg": 72.0,
+            "response": 0.24621214551126722
+          },
+          {
+            "theta_deg": 72.5,
+            "response": 0.24702317497852394
+          },
+          {
+            "theta_deg": 73.0,
+            "response": 0.24787462952739198
+          },
+          {
+            "theta_deg": 73.5,
+            "response": 0.24876640775110398
+          },
+          {
+            "theta_deg": 74.0,
+            "response": 0.24969800266466305
+          },
+          {
+            "theta_deg": 74.5,
+            "response": 0.25066828932527585
+          },
+          {
+            "theta_deg": 75.0,
+            "response": 0.25167573870055143
+          },
+          {
+            "theta_deg": 75.5,
+            "response": 0.25271810881641926
+          },
+          {
+            "theta_deg": 76.0,
+            "response": 0.2537928281720728
+          },
+          {
+            "theta_deg": 76.5,
+            "response": 0.2548968138278768
+          },
+          {
+            "theta_deg": 77.0,
+            "response": 0.25602661280731187
+          },
+          {
+            "theta_deg": 77.5,
+            "response": 0.25717800598536267
+          },
+          {
+            "theta_deg": 78.0,
+            "response": 0.25834673192963936
+          },
+          {
+            "theta_deg": 78.5,
+            "response": 0.2595280766339423
+          },
+          {
+            "theta_deg": 79.0,
+            "response": 0.2607168926428452
+          },
+          {
+            "theta_deg": 79.5,
+            "response": 0.2619080082436732
+          },
+          {
+            "theta_deg": 80.0,
+            "response": 0.2630958441428456
+          },
+          {
+            "theta_deg": 80.5,
+            "response": 0.26427466330931726
+          },
+          {
+            "theta_deg": 81.0,
+            "response": 0.26543866686385886
+          },
+          {
+            "theta_deg": 81.5,
+            "response": 0.2665819746599883
+          },
+          {
+            "theta_deg": 82.0,
+            "response": 0.26769864050296127
+          },
+          {
+            "theta_deg": 82.5,
+            "response": 0.2687827386743472
+          },
+          {
+            "theta_deg": 83.0,
+            "response": 0.2698284768381888
+          },
+          {
+            "theta_deg": 83.5,
+            "response": 0.27083017640858004
+          },
+          {
+            "theta_deg": 84.0,
+            "response": 0.27178238710250624
+          },
+          {
+            "theta_deg": 84.5,
+            "response": 0.27267971150563364
+          },
+          {
+            "theta_deg": 85.0,
+            "response": 0.2735171066555893
+          },
+          {
+            "theta_deg": 85.5,
+            "response": 0.2742899247778769
+          },
+          {
+            "theta_deg": 86.0,
+            "response": 0.27499376411987164
+          },
+          {
+            "theta_deg": 86.5,
+            "response": 0.27562453353303196
+          },
+          {
+            "theta_deg": 87.0,
+            "response": 0.2761786542962078
+          },
+          {
+            "theta_deg": 87.5,
+            "response": 0.27665299633622187
+          },
+          {
+            "theta_deg": 88.0,
+            "response": 0.27704475516552046
+          },
+          {
+            "theta_deg": 88.5,
+            "response": 0.2773518266752702
+          },
+          {
+            "theta_deg": 89.0,
+            "response": 0.277572385478196
+          },
+          {
+            "theta_deg": 89.5,
+            "response": 0.2777052060584149
+          },
+          {
+            "theta_deg": 90.0,
+            "response": 0.277749589595894
+          },
+          {
+            "theta_deg": 90.5,
+            "response": 0.2777052389810584
+          },
+          {
+            "theta_deg": 91.0,
+            "response": 0.27757236170833166
+          },
+          {
+            "theta_deg": 91.5,
+            "response": 0.27735182303640604
+          },
+          {
+            "theta_deg": 92.0,
+            "response": 0.27704471537407477
+          },
+          {
+            "theta_deg": 92.5,
+            "response": 0.27665291623679655
+          },
+          {
+            "theta_deg": 93.0,
+            "response": 0.2761786040325001
+          },
+          {
+            "theta_deg": 93.5,
+            "response": 0.2756244640189913
+          },
+          {
+            "theta_deg": 94.0,
+            "response": 0.27499363363835316
+          },
+          {
+            "theta_deg": 94.5,
+            "response": 0.2742898292326355
+          },
+          {
+            "theta_deg": 95.0,
+            "response": 0.2735170178792132
+          },
+          {
+            "theta_deg": 95.5,
+            "response": 0.2726796231539711
+          },
+          {
+            "theta_deg": 96.0,
+            "response": 0.2717822012569276
+          },
+          {
+            "theta_deg": 96.5,
+            "response": 0.27083001765137876
+          },
+          {
+            "theta_deg": 97.0,
+            "response": 0.2698282967287481
+          },
+          {
+            "theta_deg": 97.5,
+            "response": 0.2687825692709315
+          },
+          {
+            "theta_deg": 98.0,
+            "response": 0.26769844165067136
+          },
+          {
+            "theta_deg": 98.5,
+            "response": 0.26658178948343836
+          },
+          {
+            "theta_deg": 99.0,
+            "response": 0.2654384845930876
+          },
+          {
+            "theta_deg": 99.5,
+            "response": 0.26427447009398436
+          },
+          {
+            "theta_deg": 100.0,
+            "response": 0.26309565100169885
+          },
+          {
+            "theta_deg": 100.5,
+            "response": 0.26190782411183683
+          },
+          {
+            "theta_deg": 101.0,
+            "response": 0.2607167540812895
+          },
+          {
+            "theta_deg": 101.5,
+            "response": 0.25952787802746236
+          },
+          {
+            "theta_deg": 102.0,
+            "response": 0.2583465244943411
+          },
+          {
+            "theta_deg": 102.5,
+            "response": 0.2571777786446191
+          },
+          {
+            "theta_deg": 103.0,
+            "response": 0.25602641669977544
+          },
+          {
+            "theta_deg": 103.5,
+            "response": 0.25489672542086783
+          },
+          {
+            "theta_deg": 104.0,
+            "response": 0.25379263371917266
+          },
+          {
+            "theta_deg": 104.5,
+            "response": 0.25271789984501913
+          },
+          {
+            "theta_deg": 105.0,
+            "response": 0.25167554336465764
+          },
+          {
+            "theta_deg": 105.5,
+            "response": 0.2506681280562586
+          },
+          {
+            "theta_deg": 106.0,
+            "response": 0.249697841198125
+          },
+          {
+            "theta_deg": 106.5,
+            "response": 0.24876627101002946
+          },
+          {
+            "theta_deg": 107.0,
+            "response": 0.24787443585167435
+          },
+          {
+            "theta_deg": 107.5,
+            "response": 0.24702300606772837
+          },
+          {
+            "theta_deg": 108.0,
+            "response": 0.2462119648383052
+          },
+          {
+            "theta_deg": 108.5,
+            "response": 0.24544090850108025
+          },
+          {
+            "theta_deg": 109.0,
+            "response": 0.24470887913338954
+          },
+          {
+            "theta_deg": 109.5,
+            "response": 0.2440144301805331
+          },
+          {
+            "theta_deg": 110.0,
+            "response": 0.24335578258288276
+          },
+          {
+            "theta_deg": 110.5,
+            "response": 0.24273076089114431
+          },
+          {
+            "theta_deg": 111.0,
+            "response": 0.24213687126009314
+          },
+          {
+            "theta_deg": 111.5,
+            "response": 0.2415713360935345
+          },
+          {
+            "theta_deg": 112.0,
+            "response": 0.24103103746181725
+          },
+          {
+            "theta_deg": 112.5,
+            "response": 0.24051312990529458
+          },
+          {
+            "theta_deg": 113.0,
+            "response": 0.24001434349304218
+          },
+          {
+            "theta_deg": 113.5,
+            "response": 0.23953142407072597
+          },
+          {
+            "theta_deg": 114.0,
+            "response": 0.23906128864023418
+          },
+          {
+            "theta_deg": 114.5,
+            "response": 0.23860105923276065
+          },
+          {
+            "theta_deg": 115.0,
+            "response": 0.23814796488418938
+          },
+          {
+            "theta_deg": 115.5,
+            "response": 0.2376996365930304
+          },
+          {
+            "theta_deg": 116.0,
+            "response": 0.2372539923608673
+          },
+          {
+            "theta_deg": 116.5,
+            "response": 0.23680947191750482
+          },
+          {
+            "theta_deg": 117.0,
+            "response": 0.236364798873031
+          },
+          {
+            "theta_deg": 117.5,
+            "response": 0.23591937831967155
+          },
+          {
+            "theta_deg": 118.0,
+            "response": 0.23547302115118324
+          },
+          {
+            "theta_deg": 118.5,
+            "response": 0.23502600738474902
+          },
+          {
+            "theta_deg": 119.0,
+            "response": 0.23457911606235826
+          },
+          {
+            "theta_deg": 119.5,
+            "response": 0.23413374061121808
+          },
+          {
+            "theta_deg": 120.0,
+            "response": 0.23369146473864782
+          },
+          {
+            "theta_deg": 120.5,
+            "response": 0.23325786902162957
+          },
+          {
+            "theta_deg": 121.0,
+            "response": 0.2328319361054209
+          },
+          {
+            "theta_deg": 121.5,
+            "response": 0.23241599346557798
+          },
+          {
+            "theta_deg": 122.0,
+            "response": 0.23201240230272424
+          },
+          {
+            "theta_deg": 122.5,
+            "response": 0.23162369105521047
+          },
+          {
+            "theta_deg": 123.0,
+            "response": 0.23125186213122895
+          },
+          {
+            "theta_deg": 123.5,
+            "response": 0.23089880917861477
+          },
+          {
+            "theta_deg": 124.0,
+            "response": 0.2305659652334607
+          },
+          {
+            "theta_deg": 124.5,
+            "response": 0.23025434751565962
+          },
+          {
+            "theta_deg": 125.0,
+            "response": 0.22996438260835958
+          },
+          {
+            "theta_deg": 125.5,
+            "response": 0.22969619048187967
+          },
+          {
+            "theta_deg": 126.0,
+            "response": 0.22944922676642954
+          },
+          {
+            "theta_deg": 126.5,
+            "response": 0.22922263281941713
+          },
+          {
+            "theta_deg": 127.0,
+            "response": 0.22901510354239463
+          },
+          {
+            "theta_deg": 127.5,
+            "response": 0.22882509328171308
+          },
+          {
+            "theta_deg": 128.0,
+            "response": 0.22865093434284628
+          },
+          {
+            "theta_deg": 128.5,
+            "response": 0.22849099065946363
+          },
+          {
+            "theta_deg": 129.0,
+            "response": 0.22834376898164407
+          },
+          {
+            "theta_deg": 129.5,
+            "response": 0.22820790680065456
+          },
+          {
+            "theta_deg": 130.0,
+            "response": 0.22808244599431832
+          },
+          {
+            "theta_deg": 130.5,
+            "response": 0.22796672357541736
+          },
+          {
+            "theta_deg": 131.0,
+            "response": 0.22786063541593954
+          },
+          {
+            "theta_deg": 131.5,
+            "response": 0.22776422118644302
+          },
+          {
+            "theta_deg": 132.0,
+            "response": 0.22767804362123292
+          },
+          {
+            "theta_deg": 132.5,
+            "response": 0.22760288239215615
+          },
+          {
+            "theta_deg": 133.0,
+            "response": 0.22753968285794512
+          },
+          {
+            "theta_deg": 133.5,
+            "response": 0.22748924302711304
+          },
+          {
+            "theta_deg": 134.0,
+            "response": 0.22745255079190813
+          },
+          {
+            "theta_deg": 134.5,
+            "response": 0.22743019891401073
+          },
+          {
+            "theta_deg": 135.0,
+            "response": 0.22742268433921356
+          },
+          {
+            "theta_deg": 135.5,
+            "response": 0.22743019696117228
+          },
+          {
+            "theta_deg": 136.0,
+            "response": 0.22745247210597236
+          },
+          {
+            "theta_deg": 136.5,
+            "response": 0.22748918183209454
+          },
+          {
+            "theta_deg": 137.0,
+            "response": 0.22753966719264027
+          },
+          {
+            "theta_deg": 137.5,
+            "response": 0.22760291992532142
+          },
+          {
+            "theta_deg": 138.0,
+            "response": 0.22767806174051258
+          },
+          {
+            "theta_deg": 138.5,
+            "response": 0.22776420080766602
+          },
+          {
+            "theta_deg": 139.0,
+            "response": 0.22786062003245294
+          },
+          {
+            "theta_deg": 139.5,
+            "response": 0.22796674848983628
+          },
+          {
+            "theta_deg": 140.0,
+            "response": 0.22808244747521533
+          },
+          {
+            "theta_deg": 140.5,
+            "response": 0.2282079255270566
+          },
+          {
+            "theta_deg": 141.0,
+            "response": 0.22834382366542252
+          },
+          {
+            "theta_deg": 141.5,
+            "response": 0.22849108543432636
+          },
+          {
+            "theta_deg": 142.0,
+            "response": 0.22865101368128926
+          },
+          {
+            "theta_deg": 142.5,
+            "response": 0.2288251345397504
+          },
+          {
+            "theta_deg": 143.0,
+            "response": 0.22901510953119014
+          },
+          {
+            "theta_deg": 143.5,
+            "response": 0.22922264968251932
+          },
+          {
+            "theta_deg": 144.0,
+            "response": 0.2294492657079957
+          },
+          {
+            "theta_deg": 144.5,
+            "response": 0.22969618799182534
+          },
+          {
+            "theta_deg": 145.0,
+            "response": 0.2299644122048915
+          },
+          {
+            "theta_deg": 145.5,
+            "response": 0.23025432634132537
+          },
+          {
+            "theta_deg": 146.0,
+            "response": 0.2305659794918356
+          },
+          {
+            "theta_deg": 146.5,
+            "response": 0.23089883565971717
+          },
+          {
+            "theta_deg": 147.0,
+            "response": 0.23125191996429137
+          },
+          {
+            "theta_deg": 147.5,
+            "response": 0.23162375008594788
+          },
+          {
+            "theta_deg": 148.0,
+            "response": 0.23201251959091534
+          },
+          {
+            "theta_deg": 148.5,
+            "response": 0.23241603462959678
+          },
+          {
+            "theta_deg": 149.0,
+            "response": 0.23283202819358276
+          },
+          {
+            "theta_deg": 149.5,
+            "response": 0.2332579958107312
+          },
+          {
+            "theta_deg": 150.0,
+            "response": 0.2336915856269822
+          },
+          {
+            "theta_deg": 150.5,
+            "response": 0.23413381609936393
+          },
+          {
+            "theta_deg": 151.0,
+            "response": 0.23457919730367244
+          },
+          {
+            "theta_deg": 151.5,
+            "response": 0.23502599934390495
+          },
+          {
+            "theta_deg": 152.0,
+            "response": 0.23547303553651006
+          },
+          {
+            "theta_deg": 152.5,
+            "response": 0.23591942353743356
+          },
+          {
+            "theta_deg": 153.0,
+            "response": 0.236364890426552
+          },
+          {
+            "theta_deg": 153.5,
+            "response": 0.23680953157202136
+          },
+          {
+            "theta_deg": 154.0,
+            "response": 0.23725409399446298
+          },
+          {
+            "theta_deg": 154.5,
+            "response": 0.23769969680777148
+          },
+          {
+            "theta_deg": 155.0,
+            "response": 0.2381480591341714
+          },
+          {
+            "theta_deg": 155.5,
+            "response": 0.23860113829905055
+          },
+          {
+            "theta_deg": 156.0,
+            "response": 0.2390614080335872
+          },
+          {
+            "theta_deg": 156.5,
+            "response": 0.23953150789153532
+          },
+          {
+            "theta_deg": 157.0,
+            "response": 0.24001447880832266
+          },
+          {
+            "theta_deg": 157.5,
+            "response": 0.24051329563633844
+          },
+          {
+            "theta_deg": 158.0,
+            "response": 0.24103120836343803
+          },
+          {
+            "theta_deg": 158.5,
+            "response": 0.24157137132640208
+          },
+          {
+            "theta_deg": 159.0,
+            "response": 0.24213689071505778
+          },
+          {
+            "theta_deg": 159.5,
+            "response": 0.24273077941142765
+          },
+          {
+            "theta_deg": 160.0,
+            "response": 0.24335583064425764
+          },
+          {
+            "theta_deg": 160.5,
+            "response": 0.24401447866377363
+          },
+          {
+            "theta_deg": 161.0,
+            "response": 0.2447089630242002
+          },
+          {
+            "theta_deg": 161.5,
+            "response": 0.245441030076568
+          },
+          {
+            "theta_deg": 162.0,
+            "response": 0.24621210700551824
+          },
+          {
+            "theta_deg": 162.5,
+            "response": 0.2470231160965715
+          },
+          {
+            "theta_deg": 163.0,
+            "response": 0.24787458677191
+          },
+          {
+            "theta_deg": 163.5,
+            "response": 0.24876636534776883
+          },
+          {
+            "theta_deg": 164.0,
+            "response": 0.24969796276919348
+          },
+          {
+            "theta_deg": 164.5,
+            "response": 0.250668248049359
+          },
+          {
+            "theta_deg": 165.0,
+            "response": 0.2516756918594328
+          },
+          {
+            "theta_deg": 165.5,
+            "response": 0.2527180663671916
+          },
+          {
+            "theta_deg": 166.0,
+            "response": 0.25379280048344643
+          },
+          {
+            "theta_deg": 166.5,
+            "response": 0.254896786394441
+          },
+          {
+            "theta_deg": 167.0,
+            "response": 0.25602646410490726
+          },
+          {
+            "theta_deg": 167.5,
+            "response": 0.2571778581120102
+          },
+          {
+            "theta_deg": 168.0,
+            "response": 0.2583466186099017
+          },
+          {
+            "theta_deg": 168.5,
+            "response": 0.2595279676319689
+          },
+          {
+            "theta_deg": 169.0,
+            "response": 0.260716844754485
+          },
+          {
+            "theta_deg": 169.5,
+            "response": 0.26190795962884517
+          },
+          {
+            "theta_deg": 170.0,
+            "response": 0.26309581960962763
+          },
+          {
+            "theta_deg": 170.5,
+            "response": 0.26427465442057796
+          },
+          {
+            "theta_deg": 171.0,
+            "response": 0.26543866784874764
+          },
+          {
+            "theta_deg": 171.5,
+            "response": 0.26658194927121337
+          },
+          {
+            "theta_deg": 172.0,
+            "response": 0.2676985970240956
+          },
+          {
+            "theta_deg": 172.5,
+            "response": 0.26878269488839024
+          },
+          {
+            "theta_deg": 173.0,
+            "response": 0.2698285024782351
+          },
+          {
+            "theta_deg": 173.5,
+            "response": 0.2708301937189936
+          },
+          {
+            "theta_deg": 174.0,
+            "response": 0.27178235118509136
+          },
+          {
+            "theta_deg": 174.5,
+            "response": 0.27267965820296663
+          },
+          {
+            "theta_deg": 175.0,
+            "response": 0.2735170163180096
+          },
+          {
+            "theta_deg": 175.5,
+            "response": 0.2742898289087915
+          },
+          {
+            "theta_deg": 176.0,
+            "response": 0.2749938114481089
+          },
+          {
+            "theta_deg": 176.5,
+            "response": 0.27562458848527815
+          },
+          {
+            "theta_deg": 177.0,
+            "response": 0.27617871625912843
+          },
+          {
+            "theta_deg": 177.5,
+            "response": 0.2766530759239155
+          },
+          {
+            "theta_deg": 178.0,
+            "response": 0.277044827953954
+          },
+          {
+            "theta_deg": 178.5,
+            "response": 0.2773518213312784
+          },
+          {
+            "theta_deg": 179.0,
+            "response": 0.2775724123855973
+          },
+          {
+            "theta_deg": 179.5,
+            "response": 0.2777052010076477
+          }
+        ]
+      },
+      "junctions": {
+        "l_corner": {
+          "branch_isotropy_mean": 1.00282929193811,
+          "series": [
+            {
+              "theta_deg": 0.0,
+              "branch_isotropy_ratio": 1.000000986216921
+            },
+            {
+              "theta_deg": 10.0,
+              "branch_isotropy_ratio": 1.0020219397778882
+            },
+            {
+              "theta_deg": 20.0,
+              "branch_isotropy_ratio": 1.0021604536854465
+            },
+            {
+              "theta_deg": 30.0,
+              "branch_isotropy_ratio": 1.0061983652091524
+            },
+            {
+              "theta_deg": 40.0,
+              "branch_isotropy_ratio": 1.0023502692027486
+            },
+            {
+              "theta_deg": 50.0,
+              "branch_isotropy_ratio": 1.0023502918174612
+            },
+            {
+              "theta_deg": 60.0,
+              "branch_isotropy_ratio": 1.0061983656041995
+            },
+            {
+              "theta_deg": 70.0,
+              "branch_isotropy_ratio": 1.0021603006461768
+            },
+            {
+              "theta_deg": 80.0,
+              "branch_isotropy_ratio": 1.0020216968836422
+            },
+            {
+              "theta_deg": 90.0,
+              "branch_isotropy_ratio": 1.000000245370438
+            },
+            {
+              "theta_deg": 100.0,
+              "branch_isotropy_ratio": 1.0020225641658849
+            },
+            {
+              "theta_deg": 110.0,
+              "branch_isotropy_ratio": 1.0021606093152498
+            },
+            {
+              "theta_deg": 120.0,
+              "branch_isotropy_ratio": 1.0061983281736784
+            },
+            {
+              "theta_deg": 130.0,
+              "branch_isotropy_ratio": 1.0023509318776216
+            },
+            {
+              "theta_deg": 140.0,
+              "branch_isotropy_ratio": 1.002349564557473
+            },
+            {
+              "theta_deg": 150.0,
+              "branch_isotropy_ratio": 1.0061983452634367
+            },
+            {
+              "theta_deg": 160.0,
+              "branch_isotropy_ratio": 1.002160327364419
+            },
+            {
+              "theta_deg": 170.0,
+              "branch_isotropy_ratio": 1.002022262489392
+            },
+            {
+              "theta_deg": 180.0,
+              "branch_isotropy_ratio": 1.0000004043138877
+            },
+            {
+              "theta_deg": 190.0,
+              "branch_isotropy_ratio": 1.0020222799749958
+            },
+            {
+              "theta_deg": 200.0,
+              "branch_isotropy_ratio": 1.0021604511405862
+            },
+            {
+              "theta_deg": 210.0,
+              "branch_isotropy_ratio": 1.0061983335663391
+            },
+            {
+              "theta_deg": 220.0,
+              "branch_isotropy_ratio": 1.002350293716891
+            },
+            {
+              "theta_deg": 230.0,
+              "branch_isotropy_ratio": 1.002350274871966
+            },
+            {
+              "theta_deg": 240.0,
+              "branch_isotropy_ratio": 1.0061983918993538
+            },
+            {
+              "theta_deg": 250.0,
+              "branch_isotropy_ratio": 1.002160405911058
+            },
+            {
+              "theta_deg": 260.0,
+              "branch_isotropy_ratio": 1.0020216115954297
+            },
+            {
+              "theta_deg": 270.0,
+              "branch_isotropy_ratio": 1.0000018890058229
+            },
+            {
+              "theta_deg": 280.0,
+              "branch_isotropy_ratio": 1.0020226274271087
+            },
+            {
+              "theta_deg": 290.0,
+              "branch_isotropy_ratio": 1.0021608374678566
+            },
+            {
+              "theta_deg": 300.0,
+              "branch_isotropy_ratio": 1.006198304914577
+            },
+            {
+              "theta_deg": 310.0,
+              "branch_isotropy_ratio": 1.0023510494223387
+            },
+            {
+              "theta_deg": 320.0,
+              "branch_isotropy_ratio": 1.0023505052546493
+            },
+            {
+              "theta_deg": 330.0,
+              "branch_isotropy_ratio": 1.0061984434879745
+            },
+            {
+              "theta_deg": 340.0,
+              "branch_isotropy_ratio": 1.002160436759889
+            },
+            {
+              "theta_deg": 350.0,
+              "branch_isotropy_ratio": 1.002022121420006
+            }
+          ]
+        },
+        "x_junction": {
+          "branch_isotropy_mean": 1.0029320117919744,
+          "series": [
+            {
+              "theta_deg": 0.0,
+              "branch_isotropy_ratio": 1.0000134847249278
+            },
+            {
+              "theta_deg": 10.0,
+              "branch_isotropy_ratio": 1.003037407870389
+            },
+            {
+              "theta_deg": 20.0,
+              "branch_isotropy_ratio": 1.0025246594113868
+            },
+            {
+              "theta_deg": 30.0,
+              "branch_isotropy_ratio": 1.0054645532352564
+            },
+            {
+              "theta_deg": 40.0,
+              "branch_isotropy_ratio": 1.0021608169793899
+            },
+            {
+              "theta_deg": 50.0,
+              "branch_isotropy_ratio": 1.0021609178710111
+            },
+            {
+              "theta_deg": 60.0,
+              "branch_isotropy_ratio": 1.0054645702182181
+            },
+            {
+              "theta_deg": 70.0,
+              "branch_isotropy_ratio": 1.0025245259659366
+            },
+            {
+              "theta_deg": 80.0,
+              "branch_isotropy_ratio": 1.0030367068158599
+            },
+            {
+              "theta_deg": 90.0,
+              "branch_isotropy_ratio": 1.0000135862736124
+            },
+            {
+              "theta_deg": 100.0,
+              "branch_isotropy_ratio": 1.0030365783604789
+            },
+            {
+              "theta_deg": 110.0,
+              "branch_isotropy_ratio": 1.0025240877315076
+            },
+            {
+              "theta_deg": 120.0,
+              "branch_isotropy_ratio": 1.0054650818646647
+            },
+            {
+              "theta_deg": 130.0,
+              "branch_isotropy_ratio": 1.0021604406316762
+            },
+            {
+              "theta_deg": 140.0,
+              "branch_isotropy_ratio": 1.0021616184319524
+            },
+            {
+              "theta_deg": 150.0,
+              "branch_isotropy_ratio": 1.0054647311341856
+            },
+            {
+              "theta_deg": 160.0,
+              "branch_isotropy_ratio": 1.0025246248641329
+            },
+            {
+              "theta_deg": 170.0,
+              "branch_isotropy_ratio": 1.0030371905599762
+            },
+            {
+              "theta_deg": 180.0,
+              "branch_isotropy_ratio": 1.0000131745723935
+            },
+            {
+              "theta_deg": 190.0,
+              "branch_isotropy_ratio": 1.0030374708806045
+            },
+            {
+              "theta_deg": 200.0,
+              "branch_isotropy_ratio": 1.002524552689049
+            },
+            {
+              "theta_deg": 210.0,
+              "branch_isotropy_ratio": 1.0054646343298206
+            },
+            {
+              "theta_deg": 220.0,
+              "branch_isotropy_ratio": 1.002160887963328
+            },
+            {
+              "theta_deg": 230.0,
+              "branch_isotropy_ratio": 1.002161063613039
+            },
+            {
+              "theta_deg": 240.0,
+              "branch_isotropy_ratio": 1.0054646850952498
+            },
+            {
+              "theta_deg": 250.0,
+              "branch_isotropy_ratio": 1.0025251021931372
+            },
+            {
+              "theta_deg": 260.0,
+              "branch_isotropy_ratio": 1.0030374109532485
+            },
+            {
+              "theta_deg": 270.0,
+              "branch_isotropy_ratio": 1.000013894778679
+            },
+            {
+              "theta_deg": 280.0,
+              "branch_isotropy_ratio": 1.0030366260415948
+            },
+            {
+              "theta_deg": 290.0,
+              "branch_isotropy_ratio": 1.0025247905739798
+            },
+            {
+              "theta_deg": 300.0,
+              "branch_isotropy_ratio": 1.005464408060804
+            },
+            {
+              "theta_deg": 310.0,
+              "branch_isotropy_ratio": 1.0021603731929585
+            },
+            {
+              "theta_deg": 320.0,
+              "branch_isotropy_ratio": 1.0021609293468057
+            },
+            {
+              "theta_deg": 330.0,
+              "branch_isotropy_ratio": 1.0054648526141614
+            },
+            {
+              "theta_deg": 340.0,
+              "branch_isotropy_ratio": 1.0025248916777132
+            },
+            {
+              "theta_deg": 350.0,
+              "branch_isotropy_ratio": 1.0030370929899517
+            }
+          ]
+        }
+      }
+    },
+    "square_sg_degmatch_n25_d11": {
+      "label": "Square SG N=25 d=11",
+      "config": {
+        "N": 25,
+        "d": 11,
+        "normalize_coords": true
+      },
+      "comparison_status": "degree_matched_not_constraint_feasible",
+      "step": {
+        "anisotropy_by_snr": {
+          "inf": 1.252289254957226,
+          "20": 1.3759652412042687,
+          "10": 1.6247413022204147
+        },
+        "clean_curve": [
+          {
+            "theta_deg": 0.0,
+            "response": 0.2524085660794194
+          },
+          {
+            "theta_deg": 0.5,
+            "response": 0.2523633109465433
+          },
+          {
+            "theta_deg": 1.0,
+            "response": 0.25222805907810825
+          },
+          {
+            "theta_deg": 1.5,
+            "response": 0.25200327096278213
+          },
+          {
+            "theta_deg": 2.0,
+            "response": 0.25169042379366335
+          },
+          {
+            "theta_deg": 2.5,
+            "response": 0.25129091990381347
+          },
+          {
+            "theta_deg": 3.0,
+            "response": 0.2508072533113053
+          },
+          {
+            "theta_deg": 3.5,
+            "response": 0.25024174508291613
+          },
+          {
+            "theta_deg": 4.0,
+            "response": 0.24959779337021712
+          },
+          {
+            "theta_deg": 4.5,
+            "response": 0.24887867596219826
+          },
+          {
+            "theta_deg": 5.0,
+            "response": 0.24808863527520275
+          },
+          {
+            "theta_deg": 5.5,
+            "response": 0.24723157429394743
+          },
+          {
+            "theta_deg": 6.0,
+            "response": 0.2463124966886946
+          },
+          {
+            "theta_deg": 6.5,
+            "response": 0.24533603204228682
+          },
+          {
+            "theta_deg": 7.0,
+            "response": 0.24430776826284395
+          },
+          {
+            "theta_deg": 7.5,
+            "response": 0.24323282208307034
+          },
+          {
+            "theta_deg": 8.0,
+            "response": 0.2421171145644261
+          },
+          {
+            "theta_deg": 8.5,
+            "response": 0.24096626596216697
+          },
+          {
+            "theta_deg": 9.0,
+            "response": 0.23978650449173644
+          },
+          {
+            "theta_deg": 9.5,
+            "response": 0.238583417248851
+          },
+          {
+            "theta_deg": 10.0,
+            "response": 0.23736336449388087
+          },
+          {
+            "theta_deg": 10.5,
+            "response": 0.23613202961323607
+          },
+          {
+            "theta_deg": 11.0,
+            "response": 0.23489564109199895
+          },
+          {
+            "theta_deg": 11.5,
+            "response": 0.23365960517849316
+          },
+          {
+            "theta_deg": 12.0,
+            "response": 0.232429838559932
+          },
+          {
+            "theta_deg": 12.5,
+            "response": 0.23121141880516657
+          },
+          {
+            "theta_deg": 13.0,
+            "response": 0.2300097926144055
+          },
+          {
+            "theta_deg": 13.5,
+            "response": 0.2288293904993839
+          },
+          {
+            "theta_deg": 14.0,
+            "response": 0.2276749380697602
+          },
+          {
+            "theta_deg": 14.5,
+            "response": 0.22655024604795437
+          },
+          {
+            "theta_deg": 15.0,
+            "response": 0.2254592113823689
+          },
+          {
+            "theta_deg": 15.5,
+            "response": 0.2244046718755542
+          },
+          {
+            "theta_deg": 16.0,
+            "response": 0.22338962176526278
+          },
+          {
+            "theta_deg": 16.5,
+            "response": 0.22241592299647428
+          },
+          {
+            "theta_deg": 17.0,
+            "response": 0.2214855436205525
+          },
+          {
+            "theta_deg": 17.5,
+            "response": 0.2205992309848659
+          },
+          {
+            "theta_deg": 18.0,
+            "response": 0.21975784795355646
+          },
+          {
+            "theta_deg": 18.5,
+            "response": 0.21896114997384894
+          },
+          {
+            "theta_deg": 19.0,
+            "response": 0.2182089379124896
+          },
+          {
+            "theta_deg": 19.5,
+            "response": 0.2174997987499421
+          },
+          {
+            "theta_deg": 20.0,
+            "response": 0.21683253722676626
+          },
+          {
+            "theta_deg": 20.5,
+            "response": 0.21620490221853267
+          },
+          {
+            "theta_deg": 21.0,
+            "response": 0.21561481929103415
+          },
+          {
+            "theta_deg": 21.5,
+            "response": 0.21505908670570675
+          },
+          {
+            "theta_deg": 22.0,
+            "response": 0.2145348987444079
+          },
+          {
+            "theta_deg": 22.5,
+            "response": 0.2140386855150228
+          },
+          {
+            "theta_deg": 23.0,
+            "response": 0.2135671502982045
+          },
+          {
+            "theta_deg": 23.5,
+            "response": 0.21311624457301445
+          },
+          {
+            "theta_deg": 24.0,
+            "response": 0.2126825436223118
+          },
+          {
+            "theta_deg": 24.5,
+            "response": 0.21226212224027582
+          },
+          {
+            "theta_deg": 25.0,
+            "response": 0.21185171105453857
+          },
+          {
+            "theta_deg": 25.5,
+            "response": 0.21144760430006648
+          },
+          {
+            "theta_deg": 26.0,
+            "response": 0.21104702244340007
+          },
+          {
+            "theta_deg": 26.5,
+            "response": 0.21064706831783125
+          },
+          {
+            "theta_deg": 27.0,
+            "response": 0.2102458093472999
+          },
+          {
+            "theta_deg": 27.5,
+            "response": 0.2098411621249783
+          },
+          {
+            "theta_deg": 28.0,
+            "response": 0.2094322123583642
+          },
+          {
+            "theta_deg": 28.5,
+            "response": 0.2090183297187136
+          },
+          {
+            "theta_deg": 29.0,
+            "response": 0.20859983607485183
+          },
+          {
+            "theta_deg": 29.5,
+            "response": 0.2081770921488616
+          },
+          {
+            "theta_deg": 30.0,
+            "response": 0.2077517499729729
+          },
+          {
+            "theta_deg": 30.5,
+            "response": 0.20732819955827642
+          },
+          {
+            "theta_deg": 31.0,
+            "response": 0.20690664717647014
+          },
+          {
+            "theta_deg": 31.5,
+            "response": 0.20648955084143203
+          },
+          {
+            "theta_deg": 32.0,
+            "response": 0.20608034385773136
+          },
+          {
+            "theta_deg": 32.5,
+            "response": 0.20568209834223788
+          },
+          {
+            "theta_deg": 33.0,
+            "response": 0.20529834045298306
+          },
+          {
+            "theta_deg": 33.5,
+            "response": 0.20493191344162662
+          },
+          {
+            "theta_deg": 34.0,
+            "response": 0.204585922905569
+          },
+          {
+            "theta_deg": 34.5,
+            "response": 0.20426237988521193
+          },
+          {
+            "theta_deg": 35.0,
+            "response": 0.20396332368633777
+          },
+          {
+            "theta_deg": 35.5,
+            "response": 0.20368940739981128
+          },
+          {
+            "theta_deg": 36.0,
+            "response": 0.20344105303397367
+          },
+          {
+            "theta_deg": 36.5,
+            "response": 0.20321761640142139
+          },
+          {
+            "theta_deg": 37.0,
+            "response": 0.20301791237246034
+          },
+          {
+            "theta_deg": 37.5,
+            "response": 0.20283970947850682
+          },
+          {
+            "theta_deg": 38.0,
+            "response": 0.20268085451419948
+          },
+          {
+            "theta_deg": 38.5,
+            "response": 0.20253834267660004
+          },
+          {
+            "theta_deg": 39.0,
+            "response": 0.20240965367483507
+          },
+          {
+            "theta_deg": 39.5,
+            "response": 0.2022919532156157
+          },
+          {
+            "theta_deg": 40.0,
+            "response": 0.20218323773417626
+          },
+          {
+            "theta_deg": 40.5,
+            "response": 0.20208179242993377
+          },
+          {
+            "theta_deg": 41.0,
+            "response": 0.20198696231357882
+          },
+          {
+            "theta_deg": 41.5,
+            "response": 0.20189835069575468
+          },
+          {
+            "theta_deg": 42.0,
+            "response": 0.2018168244905932
+          },
+          {
+            "theta_deg": 42.5,
+            "response": 0.20174341268924748
+          },
+          {
+            "theta_deg": 43.0,
+            "response": 0.2016799885438383
+          },
+          {
+            "theta_deg": 43.5,
+            "response": 0.20162800538095355
+          },
+          {
+            "theta_deg": 44.0,
+            "response": 0.20158951335447964
+          },
+          {
+            "theta_deg": 44.5,
+            "response": 0.20156569946148958
+          },
+          {
+            "theta_deg": 45.0,
+            "response": 0.20155771925715424
+          },
+          {
+            "theta_deg": 45.5,
+            "response": 0.2015656833141507
+          },
+          {
+            "theta_deg": 46.0,
+            "response": 0.20158950217481933
+          },
+          {
+            "theta_deg": 46.5,
+            "response": 0.201627987668465
+          },
+          {
+            "theta_deg": 47.0,
+            "response": 0.20167995526069238
+          },
+          {
+            "theta_deg": 47.5,
+            "response": 0.20174342547035107
+          },
+          {
+            "theta_deg": 48.0,
+            "response": 0.20181682016440877
+          },
+          {
+            "theta_deg": 48.5,
+            "response": 0.20189834596434889
+          },
+          {
+            "theta_deg": 49.0,
+            "response": 0.2019869370308313
+          },
+          {
+            "theta_deg": 49.5,
+            "response": 0.20208181171480666
+          },
+          {
+            "theta_deg": 50.0,
+            "response": 0.2021832267434894
+          },
+          {
+            "theta_deg": 50.5,
+            "response": 0.20229189613294474
+          },
+          {
+            "theta_deg": 51.0,
+            "response": 0.20240961152955655
+          },
+          {
+            "theta_deg": 51.5,
+            "response": 0.20253832491234264
+          },
+          {
+            "theta_deg": 52.0,
+            "response": 0.20268077464486906
+          },
+          {
+            "theta_deg": 52.5,
+            "response": 0.20283966787962904
+          },
+          {
+            "theta_deg": 53.0,
+            "response": 0.20301790967572328
+          },
+          {
+            "theta_deg": 53.5,
+            "response": 0.20321765582883783
+          },
+          {
+            "theta_deg": 54.0,
+            "response": 0.20344102288909724
+          },
+          {
+            "theta_deg": 54.5,
+            "response": 0.20368934187237162
+          },
+          {
+            "theta_deg": 55.0,
+            "response": 0.20396325701053708
+          },
+          {
+            "theta_deg": 55.5,
+            "response": 0.20426237264489022
+          },
+          {
+            "theta_deg": 56.0,
+            "response": 0.20458584228706103
+          },
+          {
+            "theta_deg": 56.5,
+            "response": 0.2049318816579545
+          },
+          {
+            "theta_deg": 57.0,
+            "response": 0.20529828337293818
+          },
+          {
+            "theta_deg": 57.5,
+            "response": 0.2056820618784632
+          },
+          {
+            "theta_deg": 58.0,
+            "response": 0.20608027275014518
+          },
+          {
+            "theta_deg": 58.5,
+            "response": 0.2064894824100566
+          },
+          {
+            "theta_deg": 59.0,
+            "response": 0.2069066078025205
+          },
+          {
+            "theta_deg": 59.5,
+            "response": 0.2073282468511783
+          },
+          {
+            "theta_deg": 60.0,
+            "response": 0.2077516813864567
+          },
+          {
+            "theta_deg": 60.5,
+            "response": 0.20817700221650154
+          },
+          {
+            "theta_deg": 61.0,
+            "response": 0.2085997457326126
+          },
+          {
+            "theta_deg": 61.5,
+            "response": 0.20901831933807424
+          },
+          {
+            "theta_deg": 62.0,
+            "response": 0.2094321697605679
+          },
+          {
+            "theta_deg": 62.5,
+            "response": 0.20984108046131375
+          },
+          {
+            "theta_deg": 63.0,
+            "response": 0.210245727161281
+          },
+          {
+            "theta_deg": 63.5,
+            "response": 0.21064706072351969
+          },
+          {
+            "theta_deg": 64.0,
+            "response": 0.21104697304980888
+          },
+          {
+            "theta_deg": 64.5,
+            "response": 0.21144755893233946
+          },
+          {
+            "theta_deg": 65.0,
+            "response": 0.21185158924006625
+          },
+          {
+            "theta_deg": 65.5,
+            "response": 0.21226210104804208
+          },
+          {
+            "theta_deg": 66.0,
+            "response": 0.21268244788012952
+          },
+          {
+            "theta_deg": 66.5,
+            "response": 0.21311617992975243
+          },
+          {
+            "theta_deg": 67.0,
+            "response": 0.21356705479354085
+          },
+          {
+            "theta_deg": 67.5,
+            "response": 0.21403866875586944
+          },
+          {
+            "theta_deg": 68.0,
+            "response": 0.21453480408953815
+          },
+          {
+            "theta_deg": 68.5,
+            "response": 0.2150589739211219
+          },
+          {
+            "theta_deg": 69.0,
+            "response": 0.2156146958144361
+          },
+          {
+            "theta_deg": 69.5,
+            "response": 0.21620486741715422
+          },
+          {
+            "theta_deg": 70.0,
+            "response": 0.21683241644805212
+          },
+          {
+            "theta_deg": 70.5,
+            "response": 0.21749969904097605
+          },
+          {
+            "theta_deg": 71.0,
+            "response": 0.21820881760460598
+          },
+          {
+            "theta_deg": 71.5,
+            "response": 0.21896110981087039
+          },
+          {
+            "theta_deg": 72.0,
+            "response": 0.21975769905261708
+          },
+          {
+            "theta_deg": 72.5,
+            "response": 0.22059912999559317
+          },
+          {
+            "theta_deg": 73.0,
+            "response": 0.2214853912401109
+          },
+          {
+            "theta_deg": 73.5,
+            "response": 0.22241585873556288
+          },
+          {
+            "theta_deg": 74.0,
+            "response": 0.22338946617880423
+          },
+          {
+            "theta_deg": 74.5,
+            "response": 0.22440456302319728
+          },
+          {
+            "theta_deg": 75.0,
+            "response": 0.2254590710588581
+          },
+          {
+            "theta_deg": 75.5,
+            "response": 0.2265501865610226
+          },
+          {
+            "theta_deg": 76.0,
+            "response": 0.2276747655295849
+          },
+          {
+            "theta_deg": 76.5,
+            "response": 0.22882925529028433
+          },
+          {
+            "theta_deg": 77.0,
+            "response": 0.23000967179526657
+          },
+          {
+            "theta_deg": 77.5,
+            "response": 0.23121141383521335
+          },
+          {
+            "theta_deg": 78.0,
+            "response": 0.23242968321010943
+          },
+          {
+            "theta_deg": 78.5,
+            "response": 0.23365952501899
+          },
+          {
+            "theta_deg": 79.0,
+            "response": 0.2348955391591414
+          },
+          {
+            "theta_deg": 79.5,
+            "response": 0.23613202634033034
+          },
+          {
+            "theta_deg": 80.0,
+            "response": 0.2373632094696717
+          },
+          {
+            "theta_deg": 80.5,
+            "response": 0.23858330877993694
+          },
+          {
+            "theta_deg": 81.0,
+            "response": 0.23978633317840037
+          },
+          {
+            "theta_deg": 81.5,
+            "response": 0.24096622024209619
+          },
+          {
+            "theta_deg": 82.0,
+            "response": 0.24211694677974335
+          },
+          {
+            "theta_deg": 82.5,
+            "response": 0.24323268663502237
+          },
+          {
+            "theta_deg": 83.0,
+            "response": 0.24430764099562055
+          },
+          {
+            "theta_deg": 83.5,
+            "response": 0.24533599085318744
+          },
+          {
+            "theta_deg": 84.0,
+            "response": 0.24631228685027703
+          },
+          {
+            "theta_deg": 84.5,
+            "response": 0.247231446736201
+          },
+          {
+            "theta_deg": 85.0,
+            "response": 0.24808850048577907
+          },
+          {
+            "theta_deg": 85.5,
+            "response": 0.24887868047556833
+          },
+          {
+            "theta_deg": 86.0,
+            "response": 0.24959765739013604
+          },
+          {
+            "theta_deg": 86.5,
+            "response": 0.2502416671606656
+          },
+          {
+            "theta_deg": 87.0,
+            "response": 0.2508071324647462
+          },
+          {
+            "theta_deg": 87.5,
+            "response": 0.2512909164132825
+          },
+          {
+            "theta_deg": 88.0,
+            "response": 0.25169026998802946
+          },
+          {
+            "theta_deg": 88.5,
+            "response": 0.2520032079605676
+          },
+          {
+            "theta_deg": 89.0,
+            "response": 0.25222805204528387
+          },
+          {
+            "theta_deg": 89.5,
+            "response": 0.2523633815053685
+          },
+          {
+            "theta_deg": 90.0,
+            "response": 0.25240855682066965
+          },
+          {
+            "theta_deg": 90.5,
+            "response": 0.252363372883082
+          },
+          {
+            "theta_deg": 91.0,
+            "response": 0.2522280792302537
+          },
+          {
+            "theta_deg": 91.5,
+            "response": 0.2520033556372091
+          },
+          {
+            "theta_deg": 92.0,
+            "response": 0.25169028212075306
+          },
+          {
+            "theta_deg": 92.5,
+            "response": 0.25129082711574235
+          },
+          {
+            "theta_deg": 93.0,
+            "response": 0.25080721128962086
+          },
+          {
+            "theta_deg": 93.5,
+            "response": 0.25024178586228024
+          },
+          {
+            "theta_deg": 94.0,
+            "response": 0.24959763648164165
+          },
+          {
+            "theta_deg": 94.5,
+            "response": 0.24887858014068104
+          },
+          {
+            "theta_deg": 95.0,
+            "response": 0.24808856523944292
+          },
+          {
+            "theta_deg": 95.5,
+            "response": 0.24723156786872927
+          },
+          {
+            "theta_deg": 96.0,
+            "response": 0.24631229149178907
+          },
+          {
+            "theta_deg": 96.5,
+            "response": 0.2453359328903439
+          },
+          {
+            "theta_deg": 97.0,
+            "response": 0.24430771042166263
+          },
+          {
+            "theta_deg": 97.5,
+            "response": 0.24323283699501919
+          },
+          {
+            "theta_deg": 98.0,
+            "response": 0.24211696114960612
+          },
+          {
+            "theta_deg": 98.5,
+            "response": 0.24096617805601317
+          },
+          {
+            "theta_deg": 99.0,
+            "response": 0.2397864122545875
+          },
+          {
+            "theta_deg": 99.5,
+            "response": 0.2385833881750674
+          },
+          {
+            "theta_deg": 100.0,
+            "response": 0.23736319459542754
+          },
+          {
+            "theta_deg": 100.5,
+            "response": 0.2361319487562706
+          },
+          {
+            "theta_deg": 101.0,
+            "response": 0.234895636197339
+          },
+          {
+            "theta_deg": 101.5,
+            "response": 0.2336596507740712
+          },
+          {
+            "theta_deg": 102.0,
+            "response": 0.2324296650041785
+          },
+          {
+            "theta_deg": 102.5,
+            "response": 0.23121131790989144
+          },
+          {
+            "theta_deg": 103.0,
+            "response": 0.2300097213857974
+          },
+          {
+            "theta_deg": 103.5,
+            "response": 0.22882937086236674
+          },
+          {
+            "theta_deg": 104.0,
+            "response": 0.22767480412466992
+          },
+          {
+            "theta_deg": 104.5,
+            "response": 0.22655017946368505
+          },
+          {
+            "theta_deg": 105.0,
+            "response": 0.2254591813938452
+          },
+          {
+            "theta_deg": 105.5,
+            "response": 0.22440472519213764
+          },
+          {
+            "theta_deg": 106.0,
+            "response": 0.22338945677836308
+          },
+          {
+            "theta_deg": 106.5,
+            "response": 0.22241582407534055
+          },
+          {
+            "theta_deg": 107.0,
+            "response": 0.22148553172468283
+          },
+          {
+            "theta_deg": 107.5,
+            "response": 0.2205992782255437
+          },
+          {
+            "theta_deg": 108.0,
+            "response": 0.2197576752275113
+          },
+          {
+            "theta_deg": 108.5,
+            "response": 0.2189610346376043
+          },
+          {
+            "theta_deg": 109.0,
+            "response": 0.2182089180348643
+          },
+          {
+            "theta_deg": 109.5,
+            "response": 0.21749984038170841
+          },
+          {
+            "theta_deg": 110.0,
+            "response": 0.2168324186331013
+          },
+          {
+            "theta_deg": 110.5,
+            "response": 0.21620483902214063
+          },
+          {
+            "theta_deg": 111.0,
+            "response": 0.21561475682063957
+          },
+          {
+            "theta_deg": 111.5,
+            "response": 0.21505908588137113
+          },
+          {
+            "theta_deg": 112.0,
+            "response": 0.21453477870039822
+          },
+          {
+            "theta_deg": 112.5,
+            "response": 0.21403860846831782
+          },
+          {
+            "theta_deg": 113.0,
+            "response": 0.213567096650236
+          },
+          {
+            "theta_deg": 113.5,
+            "response": 0.21311623333360036
+          },
+          {
+            "theta_deg": 114.0,
+            "response": 0.21268239837228672
+          },
+          {
+            "theta_deg": 114.5,
+            "response": 0.2122620475540692
+          },
+          {
+            "theta_deg": 115.0,
+            "response": 0.21185169524803762
+          },
+          {
+            "theta_deg": 115.5,
+            "response": 0.21144763284866597
+          },
+          {
+            "theta_deg": 116.0,
+            "response": 0.21104693171957065
+          },
+          {
+            "theta_deg": 116.5,
+            "response": 0.21064699757316535
+          },
+          {
+            "theta_deg": 117.0,
+            "response": 0.21024585817603222
+          },
+          {
+            "theta_deg": 117.5,
+            "response": 0.2098412620836696
+          },
+          {
+            "theta_deg": 118.0,
+            "response": 0.2094321237954358
+          },
+          {
+            "theta_deg": 118.5,
+            "response": 0.20901826176632196
+          },
+          {
+            "theta_deg": 119.0,
+            "response": 0.20859980175967768
+          },
+          {
+            "theta_deg": 119.5,
+            "response": 0.20817710768372077
+          },
+          {
+            "theta_deg": 120.0,
+            "response": 0.20775167440597975
+          },
+          {
+            "theta_deg": 120.5,
+            "response": 0.20732816061189047
+          },
+          {
+            "theta_deg": 121.0,
+            "response": 0.20690669053046812
+          },
+          {
+            "theta_deg": 121.5,
+            "response": 0.2064896288033815
+          },
+          {
+            "theta_deg": 122.0,
+            "response": 0.20608025836064495
+          },
+          {
+            "theta_deg": 122.5,
+            "response": 0.20568204482960142
+          },
+          {
+            "theta_deg": 123.0,
+            "response": 0.20529837422520464
+          },
+          {
+            "theta_deg": 123.5,
+            "response": 0.20493199853988436
+          },
+          {
+            "theta_deg": 124.0,
+            "response": 0.20458580148279454
+          },
+          {
+            "theta_deg": 124.5,
+            "response": 0.2042623027185553
+          },
+          {
+            "theta_deg": 125.0,
+            "response": 0.20396338696140534
+          },
+          {
+            "theta_deg": 125.5,
+            "response": 0.2036895055885618
+          },
+          {
+            "theta_deg": 126.0,
+            "response": 0.20344100744776655
+          },
+          {
+            "theta_deg": 126.5,
+            "response": 0.20321757668865953
+          },
+          {
+            "theta_deg": 127.0,
+            "response": 0.2030179463267022
+          },
+          {
+            "theta_deg": 127.5,
+            "response": 0.20283974609267483
+          },
+          {
+            "theta_deg": 128.0,
+            "response": 0.20268081413263167
+          },
+          {
+            "theta_deg": 128.5,
+            "response": 0.20253831994641788
+          },
+          {
+            "theta_deg": 129.0,
+            "response": 0.20240973756341382
+          },
+          {
+            "theta_deg": 129.5,
+            "response": 0.20229202911554336
+          },
+          {
+            "theta_deg": 130.0,
+            "response": 0.20218319712669242
+          },
+          {
+            "theta_deg": 130.5,
+            "response": 0.2020817643107689
+          },
+          {
+            "theta_deg": 131.0,
+            "response": 0.20198702186575018
+          },
+          {
+            "theta_deg": 131.5,
+            "response": 0.2018984246412769
+          },
+          {
+            "theta_deg": 132.0,
+            "response": 0.2018168041648803
+          },
+          {
+            "theta_deg": 132.5,
+            "response": 0.20174339952880257
+          },
+          {
+            "theta_deg": 133.0,
+            "response": 0.20168010875531966
+          },
+          {
+            "theta_deg": 133.5,
+            "response": 0.2016281527185307
+          },
+          {
+            "theta_deg": 134.0,
+            "response": 0.2015894949869705
+          },
+          {
+            "theta_deg": 134.5,
+            "response": 0.20156567211221177
+          },
+          {
+            "theta_deg": 135.0,
+            "response": 0.20155783240847702
+          },
+          {
+            "theta_deg": 135.5,
+            "response": 0.20156578898795632
+          },
+          {
+            "theta_deg": 136.0,
+            "response": 0.20158946851110576
+          },
+          {
+            "theta_deg": 136.5,
+            "response": 0.20162797173558222
+          },
+          {
+            "theta_deg": 137.0,
+            "response": 0.20168003758185313
+          },
+          {
+            "theta_deg": 137.5,
+            "response": 0.2017434985034947
+          },
+          {
+            "theta_deg": 138.0,
+            "response": 0.20181679008510142
+          },
+          {
+            "theta_deg": 138.5,
+            "response": 0.20189829626249284
+          },
+          {
+            "theta_deg": 139.0,
+            "response": 0.20198699739695503
+          },
+          {
+            "theta_deg": 139.5,
+            "response": 0.2020818689168492
+          },
+          {
+            "theta_deg": 140.0,
+            "response": 0.20218324380376462
+          },
+          {
+            "theta_deg": 140.5,
+            "response": 0.20229191388619405
+          },
+          {
+            "theta_deg": 141.0,
+            "response": 0.20240976779945077
+          },
+          {
+            "theta_deg": 141.5,
+            "response": 0.20253847517132315
+          },
+          {
+            "theta_deg": 142.0,
+            "response": 0.20268081182666814
+          },
+          {
+            "theta_deg": 142.5,
+            "response": 0.20283968831709095
+          },
+          {
+            "theta_deg": 143.0,
+            "response": 0.20301796236414044
+          },
+          {
+            "theta_deg": 143.5,
+            "response": 0.2032177020978165
+          },
+          {
+            "theta_deg": 144.0,
+            "response": 0.20344108068292313
+          },
+          {
+            "theta_deg": 144.5,
+            "response": 0.20368936425227657
+          },
+          {
+            "theta_deg": 145.0,
+            "response": 0.20396333745163855
+          },
+          {
+            "theta_deg": 145.5,
+            "response": 0.20426242770739694
+          },
+          {
+            "theta_deg": 146.0,
+            "response": 0.2045859146639229
+          },
+          {
+            "theta_deg": 146.5,
+            "response": 0.20493192930285292
+          },
+          {
+            "theta_deg": 147.0,
+            "response": 0.20529841627957746
+          },
+          {
+            "theta_deg": 147.5,
+            "response": 0.2056822010468469
+          },
+          {
+            "theta_deg": 148.0,
+            "response": 0.20608033303860634
+          },
+          {
+            "theta_deg": 148.5,
+            "response": 0.20648951899389664
+          },
+          {
+            "theta_deg": 149.0,
+            "response": 0.2069067333734162
+          },
+          {
+            "theta_deg": 149.5,
+            "response": 0.20732832836222861
+          },
+          {
+            "theta_deg": 150.0,
+            "response": 0.20775175112019756
+          },
+          {
+            "theta_deg": 150.5,
+            "response": 0.20817706531905295
+          },
+          {
+            "theta_deg": 151.0,
+            "response": 0.20859983764365603
+          },
+          {
+            "theta_deg": 151.5,
+            "response": 0.20901838287581864
+          },
+          {
+            "theta_deg": 152.0,
+            "response": 0.20943222861898023
+          },
+          {
+            "theta_deg": 152.5,
+            "response": 0.20984108741107557
+          },
+          {
+            "theta_deg": 153.0,
+            "response": 0.21024583197739438
+          },
+          {
+            "theta_deg": 153.5,
+            "response": 0.2106471279527408
+          },
+          {
+            "theta_deg": 154.0,
+            "response": 0.21104702957587634
+          },
+          {
+            "theta_deg": 154.5,
+            "response": 0.21144757243153886
+          },
+          {
+            "theta_deg": 155.0,
+            "response": 0.2118517614692424
+          },
+          {
+            "theta_deg": 155.5,
+            "response": 0.2122621986845538
+          },
+          {
+            "theta_deg": 156.0,
+            "response": 0.21268253735793813
+          },
+          {
+            "theta_deg": 156.5,
+            "response": 0.21311621189690505
+          },
+          {
+            "theta_deg": 157.0,
+            "response": 0.2135672088397836
+          },
+          {
+            "theta_deg": 157.5,
+            "response": 0.21403877614010175
+          },
+          {
+            "theta_deg": 158.0,
+            "response": 0.21453486374811429
+          },
+          {
+            "theta_deg": 158.5,
+            "response": 0.2150590091229445
+          },
+          {
+            "theta_deg": 159.0,
+            "response": 0.21561476859984446
+          },
+          {
+            "theta_deg": 159.5,
+            "response": 0.21620491128621344
+          },
+          {
+            "theta_deg": 160.0,
+            "response": 0.21683252470019773
+          },
+          {
+            "theta_deg": 160.5,
+            "response": 0.21749974586555695
+          },
+          {
+            "theta_deg": 161.0,
+            "response": 0.21820893664532673
+          },
+          {
+            "theta_deg": 161.5,
+            "response": 0.21896119554230717
+          },
+          {
+            "theta_deg": 162.0,
+            "response": 0.2197578502334358
+          },
+          {
+            "theta_deg": 162.5,
+            "response": 0.2205992056982209
+          },
+          {
+            "theta_deg": 163.0,
+            "response": 0.22148557790582601
+          },
+          {
+            "theta_deg": 163.5,
+            "response": 0.22241597999589807
+          },
+          {
+            "theta_deg": 164.0,
+            "response": 0.22338961568370058
+          },
+          {
+            "theta_deg": 164.5,
+            "response": 0.22440464327169243
+          },
+          {
+            "theta_deg": 165.0,
+            "response": 0.2254592383832557
+          },
+          {
+            "theta_deg": 165.5,
+            "response": 0.22655028095092453
+          },
+          {
+            "theta_deg": 166.0,
+            "response": 0.22767492314783908
+          },
+          {
+            "theta_deg": 166.5,
+            "response": 0.2288293466762533
+          },
+          {
+            "theta_deg": 167.0,
+            "response": 0.2300097732805611
+          },
+          {
+            "theta_deg": 167.5,
+            "response": 0.23121142787862112
+          },
+          {
+            "theta_deg": 168.0,
+            "response": 0.2324298273498659
+          },
+          {
+            "theta_deg": 168.5,
+            "response": 0.23365958713514728
+          },
+          {
+            "theta_deg": 169.0,
+            "response": 0.23489564914625968
+          },
+          {
+            "theta_deg": 169.5,
+            "response": 0.2361320677700895
+          },
+          {
+            "theta_deg": 170.0,
+            "response": 0.23736337889927206
+          },
+          {
+            "theta_deg": 170.5,
+            "response": 0.23858341610396222
+          },
+          {
+            "theta_deg": 171.0,
+            "response": 0.23978651425182101
+          },
+          {
+            "theta_deg": 171.5,
+            "response": 0.2409663127737098
+          },
+          {
+            "theta_deg": 172.0,
+            "response": 0.24211713003732618
+          },
+          {
+            "theta_deg": 172.5,
+            "response": 0.24323279182374044
+          },
+          {
+            "theta_deg": 173.0,
+            "response": 0.24430779387896717
+          },
+          {
+            "theta_deg": 173.5,
+            "response": 0.24533606551215706
+          },
+          {
+            "theta_deg": 174.0,
+            "response": 0.24631245718149358
+          },
+          {
+            "theta_deg": 174.5,
+            "response": 0.2472315323288681
+          },
+          {
+            "theta_deg": 175.0,
+            "response": 0.24808860997273885
+          },
+          {
+            "theta_deg": 175.5,
+            "response": 0.24887868297849292
+          },
+          {
+            "theta_deg": 176.0,
+            "response": 0.24959773195083776
+          },
+          {
+            "theta_deg": 176.5,
+            "response": 0.250241752453626
+          },
+          {
+            "theta_deg": 177.0,
+            "response": 0.2508071884306662
+          },
+          {
+            "theta_deg": 177.5,
+            "response": 0.2512908966361795
+          },
+          {
+            "theta_deg": 178.0,
+            "response": 0.2516903614058745
+          },
+          {
+            "theta_deg": 178.5,
+            "response": 0.2520032998809226
+          },
+          {
+            "theta_deg": 179.0,
+            "response": 0.25222804530585946
+          },
+          {
+            "theta_deg": 179.5,
+            "response": 0.25236337541464465
+          }
+        ]
+      },
+      "junctions": {
+        "l_corner": {
+          "branch_isotropy_mean": 1.0026533892856775,
+          "series": [
+            {
+              "theta_deg": 0.0,
+              "branch_isotropy_ratio": 1.0000010642140489
+            },
+            {
+              "theta_deg": 10.0,
+              "branch_isotropy_ratio": 1.001887743374702
+            },
+            {
+              "theta_deg": 20.0,
+              "branch_isotropy_ratio": 1.0034880452478419
+            },
+            {
+              "theta_deg": 30.0,
+              "branch_isotropy_ratio": 1.0048682029794749
+            },
+            {
+              "theta_deg": 40.0,
+              "branch_isotropy_ratio": 1.001695693754032
+            },
+            {
+              "theta_deg": 50.0,
+              "branch_isotropy_ratio": 1.0016949140269387
+            },
+            {
+              "theta_deg": 60.0,
+              "branch_isotropy_ratio": 1.0048681791908871
+            },
+            {
+              "theta_deg": 70.0,
+              "branch_isotropy_ratio": 1.003488263659027
+            },
+            {
+              "theta_deg": 80.0,
+              "branch_isotropy_ratio": 1.0018880403000447
+            },
+            {
+              "theta_deg": 90.0,
+              "branch_isotropy_ratio": 1.0000010542006181
+            },
+            {
+              "theta_deg": 100.0,
+              "branch_isotropy_ratio": 1.0018877706391582
+            },
+            {
+              "theta_deg": 110.0,
+              "branch_isotropy_ratio": 1.0034879487697648
+            },
+            {
+              "theta_deg": 120.0,
+              "branch_isotropy_ratio": 1.004868300911063
+            },
+            {
+              "theta_deg": 130.0,
+              "branch_isotropy_ratio": 1.0016948958851581
+            },
+            {
+              "theta_deg": 140.0,
+              "branch_isotropy_ratio": 1.001696039621564
+            },
+            {
+              "theta_deg": 150.0,
+              "branch_isotropy_ratio": 1.0048682557250088
+            },
+            {
+              "theta_deg": 160.0,
+              "branch_isotropy_ratio": 1.003488427018696
+            },
+            {
+              "theta_deg": 170.0,
+              "branch_isotropy_ratio": 1.0018880989865329
+            },
+            {
+              "theta_deg": 180.0,
+              "branch_isotropy_ratio": 1.0000007737328034
+            },
+            {
+              "theta_deg": 190.0,
+              "branch_isotropy_ratio": 1.0018882157582343
+            },
+            {
+              "theta_deg": 200.0,
+              "branch_isotropy_ratio": 1.003488142395304
+            },
+            {
+              "theta_deg": 210.0,
+              "branch_isotropy_ratio": 1.004868300509617
+            },
+            {
+              "theta_deg": 220.0,
+              "branch_isotropy_ratio": 1.0016951244972556
+            },
+            {
+              "theta_deg": 230.0,
+              "branch_isotropy_ratio": 1.001695425057847
+            },
+            {
+              "theta_deg": 240.0,
+              "branch_isotropy_ratio": 1.0048682949248342
+            },
+            {
+              "theta_deg": 250.0,
+              "branch_isotropy_ratio": 1.0034882320514655
+            },
+            {
+              "theta_deg": 260.0,
+              "branch_isotropy_ratio": 1.0018873114619606
+            },
+            {
+              "theta_deg": 270.0,
+              "branch_isotropy_ratio": 1.0000009057077417
+            },
+            {
+              "theta_deg": 280.0,
+              "branch_isotropy_ratio": 1.001888066774505
+            },
+            {
+              "theta_deg": 290.0,
+              "branch_isotropy_ratio": 1.0034880736620333
+            },
+            {
+              "theta_deg": 300.0,
+              "branch_isotropy_ratio": 1.0048683193271586
+            },
+            {
+              "theta_deg": 310.0,
+              "branch_isotropy_ratio": 1.001694772848358
+            },
+            {
+              "theta_deg": 320.0,
+              "branch_isotropy_ratio": 1.0016957818519598
+            },
+            {
+              "theta_deg": 330.0,
+              "branch_isotropy_ratio": 1.0048682705983438
+            },
+            {
+              "theta_deg": 340.0,
+              "branch_isotropy_ratio": 1.0034885719068802
+            },
+            {
+              "theta_deg": 350.0,
+              "branch_isotropy_ratio": 1.001888492713531
+            }
+          ]
+        },
+        "x_junction": {
+          "branch_isotropy_mean": 1.0021197860816908,
+          "series": [
+            {
+              "theta_deg": 0.0,
+              "branch_isotropy_ratio": 1.0003840995714912
+            },
+            {
+              "theta_deg": 10.0,
+              "branch_isotropy_ratio": 1.002139790933264
+            },
+            {
+              "theta_deg": 20.0,
+              "branch_isotropy_ratio": 1.0013708673271968
+            },
+            {
+              "theta_deg": 30.0,
+              "branch_isotropy_ratio": 1.0037476157389824
+            },
+            {
+              "theta_deg": 40.0,
+              "branch_isotropy_ratio": 1.0020888317663719
+            },
+            {
+              "theta_deg": 50.0,
+              "branch_isotropy_ratio": 1.002088707599998
+            },
+            {
+              "theta_deg": 60.0,
+              "branch_isotropy_ratio": 1.0037476392534637
+            },
+            {
+              "theta_deg": 70.0,
+              "branch_isotropy_ratio": 1.0013711401647378
+            },
+            {
+              "theta_deg": 80.0,
+              "branch_isotropy_ratio": 1.0021399333879115
+            },
+            {
+              "theta_deg": 90.0,
+              "branch_isotropy_ratio": 1.000383871478034
+            },
+            {
+              "theta_deg": 100.0,
+              "branch_isotropy_ratio": 1.0021396072426438
+            },
+            {
+              "theta_deg": 110.0,
+              "branch_isotropy_ratio": 1.001371011965272
+            },
+            {
+              "theta_deg": 120.0,
+              "branch_isotropy_ratio": 1.0037478961175725
+            },
+            {
+              "theta_deg": 130.0,
+              "branch_isotropy_ratio": 1.0020892501223395
+            },
+            {
+              "theta_deg": 140.0,
+              "branch_isotropy_ratio": 1.0020875570516754
+            },
+            {
+              "theta_deg": 150.0,
+              "branch_isotropy_ratio": 1.003746998321489
+            },
+            {
+              "theta_deg": 160.0,
+              "branch_isotropy_ratio": 1.0013712202605562
+            },
+            {
+              "theta_deg": 170.0,
+              "branch_isotropy_ratio": 1.0021399493085945
+            },
+            {
+              "theta_deg": 180.0,
+              "branch_isotropy_ratio": 1.0003839340753247
+            },
+            {
+              "theta_deg": 190.0,
+              "branch_isotropy_ratio": 1.002139980315539
+            },
+            {
+              "theta_deg": 200.0,
+              "branch_isotropy_ratio": 1.0013713364082701
+            },
+            {
+              "theta_deg": 210.0,
+              "branch_isotropy_ratio": 1.003747192766537
+            },
+            {
+              "theta_deg": 220.0,
+              "branch_isotropy_ratio": 1.0020885069386718
+            },
+            {
+              "theta_deg": 230.0,
+              "branch_isotropy_ratio": 1.0020889295393065
+            },
+            {
+              "theta_deg": 240.0,
+              "branch_isotropy_ratio": 1.0037472417032252
+            },
+            {
+              "theta_deg": 250.0,
+              "branch_isotropy_ratio": 1.0013715332016186
+            },
+            {
+              "theta_deg": 260.0,
+              "branch_isotropy_ratio": 1.0021396358685535
+            },
+            {
+              "theta_deg": 270.0,
+              "branch_isotropy_ratio": 1.0003840725217106
+            },
+            {
+              "theta_deg": 280.0,
+              "branch_isotropy_ratio": 1.002139732068738
+            },
+            {
+              "theta_deg": 290.0,
+              "branch_isotropy_ratio": 1.0013711778895655
+            },
+            {
+              "theta_deg": 300.0,
+              "branch_isotropy_ratio": 1.0037477555234158
+            },
+            {
+              "theta_deg": 310.0,
+              "branch_isotropy_ratio": 1.0020890972569085
+            },
+            {
+              "theta_deg": 320.0,
+              "branch_isotropy_ratio": 1.0020880990315697
+            },
+            {
+              "theta_deg": 330.0,
+              "branch_isotropy_ratio": 1.0037468773930027
+            },
+            {
+              "theta_deg": 340.0,
+              "branch_isotropy_ratio": 1.0013714135061806
+            },
+            {
+              "theta_deg": 350.0,
+              "branch_isotropy_ratio": 1.0021397953211442
             }
           ]
         }
