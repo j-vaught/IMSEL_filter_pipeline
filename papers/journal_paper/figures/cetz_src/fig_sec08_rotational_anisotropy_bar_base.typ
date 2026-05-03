@@ -1,5 +1,5 @@
 #import "@preview/cetz:0.3.4"
-#import "../../colors.typ": garnet, atlantic, congaree, horseshoe, honeycomb, rose, black90, black70, black30
+#import "../../colors.typ": garnet, atlantic, congaree, horseshoe, honeycomb, rose, black90, black70, black50, black30
 
 #set page(width: auto, height: auto, margin: 5pt)
 #set text(font: "New Computer Modern", size: 8.5pt)
