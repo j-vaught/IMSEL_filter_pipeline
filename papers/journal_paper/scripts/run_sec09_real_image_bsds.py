@@ -25,7 +25,8 @@ from section8_common import apply_images_batched, compile_plot
 
 TITLE = "Section 9 Scenario A natural images"
 SUBTITLE = "BSDS500 real-image comparison with validation-tuned classical baselines"
-DATASET_URL = "http://www.eecs.berkeley.edu/Research/Projects/CS/vision/grouping/BSR/BSR_bsds500.tgz"
+DATASET_URL = "https://www2.eecs.berkeley.edu/Research/Projects/CS/vision/grouping/BSR/BSR_bsds500.tgz"
+MIN_ARCHIVE_BYTES = 1_000_000
 SNR_LEVELS = (math.inf, 20.0, 10.0, 5.0)
 NOISE_DRAWS = 10
 NOISE_SEED_BASE = 9100
@@ -114,9 +115,9 @@ def _ensure_bsds_data_root(dataset_root: Path, auto_download: bool) -> Path:
         )
     dataset_root.mkdir(parents=True, exist_ok=True)
     archive_path = dataset_root / "BSR_bsds500.tgz"
-    if not archive_path.exists():
+    if (not archive_path.exists()) or archive_path.stat().st_size < int(MIN_ARCHIVE_BYTES):
         subprocess.run(
-            ["curl", "-L", DATASET_URL, "-o", str(archive_path)],
+            ["curl", "-fL", DATASET_URL, "-o", str(archive_path)],
             check=True,
             cwd=str(dataset_root),
         )
