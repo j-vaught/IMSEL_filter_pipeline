@@ -41,6 +41,18 @@ SELECTION_BINS = 12
 SELECTION_EDGE_MASS_MIN = 80.0
 DISPLAY_PERCENTILE = 99.5
 EPS = 1.0e-12
+WVF_TRACE_SPECS = (
+    {"r": 3, "d": 5, "normalize_coords": True},
+    {"r": 5, "d": 9, "normalize_coords": True},
+    {"r": 9, "d": 11, "normalize_coords": True},
+    {"r": 15, "d": 11, "normalize_coords": True},
+    {"r": 25, "d": 11, "normalize_coords": True},
+    {"r": 50, "d": 11, "normalize_coords": True},
+)
+TRACE_METRICS = (
+    ("ods_f_score", True),
+    ("gradient_vector_rmse_mean", False),
+)
 
 
 @dataclass(frozen=True)
@@ -70,6 +82,34 @@ def _build_roster(validation_summary: dict[str, object]) -> list[dict[str, objec
             }
         )
     return roster
+
+
+def _crop_selection_from_summary(summary: dict[str, object]) -> list[CropSelection] | None:
+    rows = summary.get("crops")
+    if not isinstance(rows, list):
+        return None
+    selections: list[CropSelection] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            return None
+        try:
+            selections.append(
+                CropSelection(
+                    crop_key=str(row["crop_key"]),
+                    label=str(row["label"]),
+                    image_id=str(row["image_id"]),
+                    x0=int(row["x0"]),
+                    y0=int(row["y0"]),
+                    width=int(row["width"]),
+                    height=int(row["height"]),
+                    selection_score=float(row["selection_score"]),
+                    edge_mass=float(row["edge_mass"]),
+                    orientation_entropy=float(row["orientation_entropy"]),
+                )
+            )
+        except KeyError:
+            return None
+    return selections
 
 
 def _noise_slug(snr_db: float) -> str:
@@ -522,6 +562,108 @@ def _write_json(path: Path, payload: dict[str, object]) -> None:
         handle.write("\n")
 
 
+def _best_baseline_by_metric(
+    methods_payload: dict[str, object],
+    snr_slug: str,
+    metric_key: str,
+    higher_is_better: bool,
+) -> dict[str, object]:
+    best_method = ""
+    best_label = ""
+    best_value: float | None = None
+    for method_key, method_data in methods_payload.items():
+        if str(method_key) == "wvf":
+            continue
+        value = float(method_data["snr_metrics"][snr_slug][metric_key])
+        if best_value is None or (value > best_value if higher_is_better else value < best_value):
+            best_value = value
+            best_method = str(method_key)
+            best_label = str(method_data["label"])
+    if best_value is None:
+        raise RuntimeError(f"no baseline reference found for {metric_key} at SNR {snr_slug}")
+    return {
+        "method": best_method,
+        "label": best_label,
+        "value": float(best_value),
+    }
+
+
+def _evaluate_wvf_trace(
+    crop_gray_map: dict[str, np.ndarray],
+    crop_gt_map: dict[str, np.ndarray],
+    crop_normal_map: dict[str, np.ndarray],
+    crop_valid_map: dict[str, np.ndarray],
+    methods_payload: dict[str, object],
+    fft_backend: str,
+    device_index: int | None,
+    noise_draws: int,
+) -> dict[str, object]:
+    baseline_best: dict[str, dict[str, object]] = {}
+    for snr_db in SNR_LEVELS:
+        snr_slug = _noise_slug(float(snr_db))
+        baseline_best[snr_slug] = {}
+        for metric_key, higher_is_better in TRACE_METRICS:
+            baseline_best[snr_slug][metric_key] = _best_baseline_by_metric(
+                methods_payload=methods_payload,
+                snr_slug=snr_slug,
+                metric_key=metric_key,
+                higher_is_better=bool(higher_is_better),
+            )
+
+    points = []
+    for spec in WVF_TRACE_SPECS:
+        method_item = {
+            "method": "wvf",
+            "label": "WVF",
+            "config": dict(spec),
+            "kernel": build_method("wvf", **spec),
+        }
+        snr_metrics = {}
+        for snr_db in SNR_LEVELS:
+            snr_slug = _noise_slug(float(snr_db))
+            metrics = _evaluate_snr_bank(
+                method_item=method_item,
+                crop_gray_map=crop_gray_map,
+                crop_gt_map=crop_gt_map,
+                crop_normal_map=crop_normal_map,
+                crop_valid_map=crop_valid_map,
+                snr_db=float(snr_db),
+                noise_draws=int(noise_draws),
+                fft_backend=fft_backend,
+                device_index=device_index,
+            )
+            comparisons = {}
+            for metric_key, higher_is_better in TRACE_METRICS:
+                best = baseline_best[snr_slug][metric_key]
+                value = float(metrics[metric_key])
+                overtakes = value > float(best["value"]) if higher_is_better else value < float(best["value"])
+                comparisons[metric_key] = {
+                    "best_baseline_method": str(best["method"]),
+                    "best_baseline_label": str(best["label"]),
+                    "best_baseline_value": float(best["value"]),
+                    "overtakes_best_baseline": bool(spec["r"] < 50 and overtakes),
+                }
+            snr_metrics[snr_slug] = metrics | {"comparison": comparisons}
+            print(
+                f"sec09A-trace r={spec['r']} d={spec['d']} snr={snr_slug} "
+                f"rmse={metrics['gradient_vector_rmse_mean']:.6e} ods={metrics['ods_f_score']:.6f}"
+            )
+        points.append(
+            {
+                "radius": int(spec["r"]),
+                "degree": int(spec["d"]),
+                "config": dict(spec),
+                "white_noise_gain": float(method_item["kernel"].white_noise_gain),
+                "support_half_extent": int(method_item["kernel"].support_half_extent),
+                "snr_metrics": snr_metrics,
+            }
+        )
+    return {
+        "points": points,
+        "baseline_best": baseline_best,
+    }
+
+
 def run_experiment(
     validation_json: Path,
     dataset_root: Path,
@@ -539,7 +681,13 @@ def run_experiment(
     validation_summary = json.loads(validation_json.read_text())
     roster = _build_roster(validation_summary)
     data_root = _ensure_bsds_data_root(dataset_root, auto_download=bool(auto_download))
-    selections = _select_crops(data_root, int(crop_size_px), int(crop_count), int(crop_stride_px))
+    existing_summary = json.loads(summary_json.read_text()) if summary_json.exists() else None
+    existing_selection = None if existing_summary is None else _crop_selection_from_summary(existing_summary)
+    selections = (
+        existing_selection
+        if existing_selection is not None
+        else _select_crops(data_root, int(crop_size_px), int(crop_count), int(crop_stride_px))
+    )
 
     image_dir = data_root / "images" / "test"
     gt_dir = data_root / "groundTruth" / "test"
@@ -585,40 +733,54 @@ def run_experiment(
             }
         )
 
-    methods_payload: dict[str, object] = {}
-    for method_item in roster:
-        clean_assets = _clean_assets_for_method(
-            method_item=method_item,
-            crop_gray_map=crop_gray_map,
-            assets_dir=assets_dir,
-            fft_backend=fft_backend,
-            device_index=device_index,
-        )
-        snr_metrics = {}
-        for snr_db in SNR_LEVELS:
-            slug = _noise_slug(float(snr_db))
-            metrics = _evaluate_snr_bank(
+    if existing_summary is not None and isinstance(existing_summary.get("methods"), dict):
+        methods_payload = existing_summary["methods"]
+    else:
+        methods_payload = {}
+        for method_item in roster:
+            clean_assets = _clean_assets_for_method(
                 method_item=method_item,
                 crop_gray_map=crop_gray_map,
-                crop_gt_map=crop_gt_map,
-                crop_normal_map=crop_normal_map,
-                crop_valid_map=crop_valid_map,
-                snr_db=float(snr_db),
-                noise_draws=int(noise_draws),
+                assets_dir=assets_dir,
                 fft_backend=fft_backend,
                 device_index=device_index,
             )
-            snr_metrics[slug] = metrics
-            print(
-                f"sec09A {method_item['method']} snr={slug} "
-                f"rmse={metrics['gradient_vector_rmse_mean']:.6e} ods={metrics['ods_f_score']:.6f}"
-            )
-        methods_payload[str(method_item["method"])] = {
-            "label": str(method_item["label"]),
-            "config": dict(method_item["config"]),
-            "clean_assets": clean_assets,
-            "snr_metrics": snr_metrics,
-        }
+            snr_metrics = {}
+            for snr_db in SNR_LEVELS:
+                slug = _noise_slug(float(snr_db))
+                metrics = _evaluate_snr_bank(
+                    method_item=method_item,
+                    crop_gray_map=crop_gray_map,
+                    crop_gt_map=crop_gt_map,
+                    crop_normal_map=crop_normal_map,
+                    crop_valid_map=crop_valid_map,
+                    snr_db=float(snr_db),
+                    noise_draws=int(noise_draws),
+                    fft_backend=fft_backend,
+                    device_index=device_index,
+                )
+                snr_metrics[slug] = metrics
+                print(
+                    f"sec09A {method_item['method']} snr={slug} "
+                    f"rmse={metrics['gradient_vector_rmse_mean']:.6e} ods={metrics['ods_f_score']:.6f}"
+                )
+            methods_payload[str(method_item["method"])] = {
+                "label": str(method_item["label"]),
+                "config": dict(method_item["config"]),
+                "clean_assets": clean_assets,
+                "snr_metrics": snr_metrics,
+            }
+
+    wvf_trace = _evaluate_wvf_trace(
+        crop_gray_map=crop_gray_map,
+        crop_gt_map=crop_gt_map,
+        crop_normal_map=crop_normal_map,
+        crop_valid_map=crop_valid_map,
+        methods_payload=methods_payload,
+        fft_backend=fft_backend,
+        device_index=device_index,
+        noise_draws=int(noise_draws),
+    )
 
     payload = {
         "title": TITLE,
@@ -645,6 +807,7 @@ def run_experiment(
         "crops": crop_payload,
         "method_order": [str(method_item["method"]) for method_item in roster],
         "methods": methods_payload,
+        "wvf_trace": wvf_trace,
     }
     _write_json(summary_json, payload)
 
