@@ -42,7 +42,7 @@
         align(center)[
           #text(fill: black90, size: 6.5pt, weight: "bold")[#crop.at("label")]
           #if show-input {
-            #thumb(crop.at("input_asset_path"))
+            thumb(crop.at("input_asset_path"))
           }
         ],
       ),
@@ -209,7 +209,7 @@
     #image-grid(data, [Gradient magnitude, clean real images], "magnitude_path", show-input: true)
   ]
 
-  #pagebreak()
+  pagebreak()
 
   [
     #align(center)[
@@ -221,7 +221,7 @@
     #image-grid(data, [Gradient orientation, clean real images], "orientation_path", show-input: false)
   ]
 
-  #pagebreak()
+  pagebreak()
 
   [
     #align(center)[
