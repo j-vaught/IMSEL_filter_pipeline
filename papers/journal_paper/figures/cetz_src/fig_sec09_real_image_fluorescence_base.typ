@@ -18,6 +18,7 @@
 
 #let fmt(v, digits: 4) = str(calc.round(v, digits: digits))
 #let thumb(path, width: 1.38in) = image("../" + path, width: width)
+#let radius-label(radius) = str(radius)
 
 #let image-grid(data, heading, asset-key, show-input: false) = {
   let images = data.at("images")
@@ -137,6 +138,90 @@
   grid(columns: 4, column-gutter: 8pt, row-gutter: 4pt, ..cells)
 }
 
+#let wvf-trace-chart(data, metric-key, title, y-label, log-scale: false) = {
+  let methods = data.at("methods")
+  let order = data.at("method_order")
+  let points = data.at("wvf_trace").at("points")
+  let values = ()
+  for point in points {
+    values.push(point.at(metric-key))
+  }
+  for method in order {
+    if method != "wvf" {
+      values.push(methods.at(method).at(metric-key))
+    }
+  }
+  let mapped = ()
+  for value in values {
+    mapped.push(if log-scale {
+      calc.log(calc.max(value, 1e-12), base: 10)
+    } else {
+      value
+    })
+  }
+  let y-min = calc.min(..mapped)
+  let y-max = calc.max(..mapped)
+  let pad = if y-max > y-min { 0.08 * (y-max - y-min) } else { 0.1 }
+  let y0 = y-min - pad
+  let y1 = y-max + pad
+
+  cetz.canvas({
+    import cetz.draw: *
+    let w = 5.0
+    let h = 2.0
+    let ox = 0.82
+    let oy = 0.58
+    let span = if points.len() > 1 { points.len() - 1 } else { 1 }
+    let tx(i) = ox + i / span * w
+    let ty(v) = oy + (v - y0) / (y1 - y0) * h
+
+    rect((ox, oy), (ox + w, oy + h), stroke: 0.45pt + black30)
+    content((ox + w / 2, oy + h + 0.22), text(fill: black90, size: 7.4pt, weight: "bold")[title])
+
+    for idx in range(points.len()) {
+      let x = tx(idx)
+      line((x, oy), (x, oy + h), stroke: 0.18pt + black30)
+      content((x, oy - 0.17), text(fill: black70, size: 5.7pt)[r=#radius-label(points.at(idx).at("radius"))], anchor: "north")
+    }
+    let y-ticks = (y0, y0 + 0.5 * (y1 - y0), y1)
+    for tick in y-ticks {
+      let y = ty(tick)
+      line((ox, y), (ox + w, y), stroke: 0.18pt + black30)
+      let label = if log-scale {
+        "1e" + fmt(tick, digits: 2)
+      } else { fmt(tick) }
+      content((ox - 0.12, y), text(fill: black70, size: 5.7pt)[label], anchor: "east")
+    }
+    for method in order {
+      if method != "wvf" {
+        let raw = methods.at(method).at(metric-key)
+        let value = if log-scale { calc.log(calc.max(raw, 1e-12), base: 10) } else { raw }
+        line((ox, ty(value)), (ox + w, ty(value)), stroke: 0.35pt + method-color(method))
+      }
+    }
+    for idx in range(points.len() - 1) {
+      let raw-a = points.at(idx).at(metric-key)
+      let raw-b = points.at(idx + 1).at(metric-key)
+      let a = if log-scale { calc.log(calc.max(raw-a, 1e-12), base: 10) } else { raw-a }
+      let b = if log-scale { calc.log(calc.max(raw-b, 1e-12), base: 10) } else { raw-b }
+      line((tx(idx), ty(a)), (tx(idx + 1), ty(b)), stroke: 1.1pt + garnet)
+    }
+    for idx in range(points.len()) {
+      let point = points.at(idx)
+      let raw = point.at(metric-key)
+      let value = if log-scale { calc.log(calc.max(raw, 1e-12), base: 10) } else { raw }
+      let highlight = point.at("comparison").at(metric-key).at("overtakes_best_baseline")
+      if highlight {
+        circle((tx(idx), ty(value)), radius: 0.062, fill: rgb("#FFFFFF"), stroke: 0.5pt + black90)
+      }
+      circle((tx(idx), ty(value)), radius: 0.038, fill: garnet, stroke: none)
+    }
+
+    content((ox + w / 2, oy - 0.42), text(fill: black90, size: 6.4pt)[WVF radius])
+    content((0.14, oy + h / 2), angle: 90deg, text(fill: black90, size: 6.4pt)[y-label])
+  })
+}
+
 #let render(data-path) = {
   let data = json(data-path)
   let title = data.at("title")
@@ -191,4 +276,35 @@
     v(10pt)
     summary-table(data)
   ]
+
+  if "wvf_trace" in data {
+    pagebreak()
+
+    [
+      align(center)[
+        text(fill: black90, size: 11pt, weight: "bold")[title]
+        linebreak()
+        text(fill: black70, size: 8pt)[WVF radius-trace follow-up on the fixed fluorescence image set.]
+        linebreak()
+        text(fill: black70, size: 6.8pt)[Garnet trace points sweep WVF across $(r,d)=(3,5),(5,9),(9,11),(15,11),(25,11),(50,11)$. Thin horizontal lines are the fixed baseline methods. Outlined WVF points beat the best fixed baseline on that metric.]
+      ]
+      v(8pt)
+      grid(
+        columns: 2,
+        column-gutter: 10pt,
+        row-gutter: 10pt,
+        [
+          wvf-trace-chart(data, "white_noise_gain", [Analytical WNG versus WVF radius], [log10 WNG], log-scale: true)
+        ],
+        [
+          wvf-trace-chart(data, "background_gradient_mad_mean", [Background gradient MAD versus WVF radius], [MAD], log-scale: false)
+        ],
+        [
+          wvf-trace-chart(data, "background_gradient_median_mean", [Background gradient median versus WVF radius], [Median], log-scale: false)
+        ],
+      )
+      v(8pt)
+      legend(data)
+    ]
+  }
 }

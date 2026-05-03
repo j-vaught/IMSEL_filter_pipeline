@@ -30,6 +30,19 @@ IMAGE_COUNT = 5
 BACKGROUND_PERCENTILE = 35.0
 DISPLAY_PERCENTILE = 99.5
 EPS = 1.0e-12
+WVF_TRACE_SPECS = (
+    {"r": 3, "d": 5, "normalize_coords": True},
+    {"r": 5, "d": 9, "normalize_coords": True},
+    {"r": 9, "d": 11, "normalize_coords": True},
+    {"r": 15, "d": 11, "normalize_coords": True},
+    {"r": 25, "d": 11, "normalize_coords": True},
+    {"r": 50, "d": 11, "normalize_coords": True},
+)
+TRACE_METRICS = (
+    "white_noise_gain",
+    "background_gradient_mad_mean",
+    "background_gradient_median_mean",
+)
 
 
 @dataclass(frozen=True)
@@ -56,6 +69,36 @@ def _build_roster(validation_summary: dict[str, object]) -> list[dict[str, objec
             }
         )
     return roster
+
+
+def _fluor_selection_from_summary(summary: dict[str, object], data_root: Path) -> list[FluorSelection] | None:
+    rows = summary.get("images")
+    if not isinstance(rows, list):
+        return None
+    path_map = {path.stem: path for path in data_root.glob("*.tif")}
+    selections: list[FluorSelection] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            return None
+        image_name = str(row["image_name"])
+        tif_path = path_map.get(image_name)
+        if tif_path is None:
+            return None
+        try:
+            selections.append(
+                FluorSelection(
+                    image_key=str(row["image_key"]),
+                    image_name=image_name,
+                    tif_path=str(tif_path),
+                    selection_score=float(row["selection_score"]),
+                    intensity_mean=float(row["intensity_mean"]),
+                    intensity_std=float(row["intensity_std"]),
+                    entropy=float(row["entropy"]),
+                )
+            )
+        except KeyError:
+            return None
+    return selections
 
 
 def _resolve_bbbc_root(dataset_root: Path) -> Path | None:
@@ -255,6 +298,84 @@ def _write_json(path: Path, payload: dict[str, object]) -> None:
         handle.write("\n")
 
 
+def _best_baseline_by_metric(methods_payload: dict[str, object], metric_key: str) -> dict[str, object]:
+    best_method = ""
+    best_label = ""
+    best_value: float | None = None
+    for method_key, method_data in methods_payload.items():
+        if str(method_key) == "wvf":
+            continue
+        value = float(method_data[metric_key])
+        if best_value is None or value < best_value:
+            best_value = value
+            best_method = str(method_key)
+            best_label = str(method_data["label"])
+    if best_value is None:
+        raise RuntimeError(f"no baseline reference found for {metric_key}")
+    return {
+        "method": best_method,
+        "label": best_label,
+        "value": float(best_value),
+    }
+
+
+def _evaluate_wvf_trace(
+    images: dict[str, np.ndarray],
+    methods_payload: dict[str, object],
+    fft_backend: str,
+    device_index: int | None,
+) -> dict[str, object]:
+    baseline_best = {metric_key: _best_baseline_by_metric(methods_payload, metric_key) for metric_key in TRACE_METRICS}
+    assets_dir = ROOT / "papers" / "journal_paper" / "figures" / "data" / "sec09_real_image_fluorescence" / "assets"
+    points = []
+    for spec in WVF_TRACE_SPECS:
+        method_item = {
+            "method": "wvf",
+            "label": "WVF",
+            "config": dict(spec),
+            "kernel": build_method("wvf", **spec),
+        }
+        _, clean_stats = _clean_assets_for_method(
+            method_item=method_item,
+            images=images,
+            assets_dir=assets_dir,
+            fft_backend=fft_backend,
+            device_index=device_index,
+        )
+        bg_medians = [float(clean_stats[key]["background_gradient_median"]) for key in clean_stats]
+        bg_mads = [float(clean_stats[key]["background_gradient_mad"]) for key in clean_stats]
+        point = {
+            "radius": int(spec["r"]),
+            "degree": int(spec["d"]),
+            "config": dict(spec),
+            "white_noise_gain": float(method_item["kernel"].white_noise_gain),
+            "background_gradient_median_mean": float(np.mean(np.asarray(bg_medians, dtype=np.float64))),
+            "background_gradient_mad_mean": float(np.mean(np.asarray(bg_mads, dtype=np.float64))),
+        }
+        comparison = {}
+        for metric_key in TRACE_METRICS:
+            best = baseline_best[metric_key]
+            value = float(point[metric_key])
+            comparison[metric_key] = {
+                "best_baseline_method": str(best["method"]),
+                "best_baseline_label": str(best["label"]),
+                "best_baseline_value": float(best["value"]),
+                "overtakes_best_baseline": bool(spec["r"] < 50 and value < float(best["value"])),
+            }
+        point["comparison"] = comparison
+        print(
+            f"sec09C-trace r={spec['r']} d={spec['d']} "
+            f"wng={point['white_noise_gain']:.6e} "
+            f"bgmad={point['background_gradient_mad_mean']:.6e} "
+            f"bgmed={point['background_gradient_median_mean']:.6e}"
+        )
+        points.append(point)
+    return {
+        "points": points,
+        "baseline_best": baseline_best,
+    }
+
+
 def run_experiment(
     validation_json: Path,
     dataset_root: Path,
@@ -269,7 +390,9 @@ def run_experiment(
     validation_summary = json.loads(validation_json.read_text())
     roster = _build_roster(validation_summary)
     data_root = _ensure_bbbc_root(dataset_root, auto_download=bool(auto_download))
-    selections = _select_images(data_root, int(image_count))
+    existing_summary = json.loads(summary_json.read_text()) if summary_json.exists() else None
+    existing_selection = None if existing_summary is None else _fluor_selection_from_summary(existing_summary, data_root)
+    selections = existing_selection if existing_selection is not None else _select_images(data_root, int(image_count))
 
     images: dict[str, np.ndarray] = {}
     assets_dir = output_dir / "assets"
@@ -291,33 +414,43 @@ def run_experiment(
             }
         )
 
-    methods_payload: dict[str, object] = {}
-    for method_item in roster:
-        clean_assets, clean_stats = _clean_assets_for_method(
-            method_item=method_item,
-            images=images,
-            assets_dir=assets_dir,
-            fft_backend=fft_backend,
-            device_index=device_index,
-        )
-        bg_medians = [float(clean_stats[key]["background_gradient_median"]) for key in clean_stats]
-        bg_mads = [float(clean_stats[key]["background_gradient_mad"]) for key in clean_stats]
-        print(
-            f"sec09C {method_item['method']} "
-            f"wng={float(method_item['kernel'].white_noise_gain):.6e} "
-            f"bgmad={float(np.mean(np.asarray(bg_mads, dtype=np.float64))):.6e}"
-        )
-        methods_payload[str(method_item["method"])] = {
-            "label": str(method_item["label"]),
-            "config": dict(method_item["config"]),
-            "white_noise_gain": float(method_item["kernel"].white_noise_gain),
-            "background_gradient_median_mean": float(np.mean(np.asarray(bg_medians, dtype=np.float64))),
-            "background_gradient_mad_mean": float(np.mean(np.asarray(bg_mads, dtype=np.float64))),
-            "clean_assets": clean_assets,
-            "background_stability": {
-                "per_image": clean_stats,
-            },
-        }
+    if existing_summary is not None and isinstance(existing_summary.get("methods"), dict):
+        methods_payload = existing_summary["methods"]
+    else:
+        methods_payload = {}
+        for method_item in roster:
+            clean_assets, clean_stats = _clean_assets_for_method(
+                method_item=method_item,
+                images=images,
+                assets_dir=assets_dir,
+                fft_backend=fft_backend,
+                device_index=device_index,
+            )
+            bg_medians = [float(clean_stats[key]["background_gradient_median"]) for key in clean_stats]
+            bg_mads = [float(clean_stats[key]["background_gradient_mad"]) for key in clean_stats]
+            print(
+                f"sec09C {method_item['method']} "
+                f"wng={float(method_item['kernel'].white_noise_gain):.6e} "
+                f"bgmad={float(np.mean(np.asarray(bg_mads, dtype=np.float64))):.6e}"
+            )
+            methods_payload[str(method_item["method"])] = {
+                "label": str(method_item["label"]),
+                "config": dict(method_item["config"]),
+                "white_noise_gain": float(method_item["kernel"].white_noise_gain),
+                "background_gradient_median_mean": float(np.mean(np.asarray(bg_medians, dtype=np.float64))),
+                "background_gradient_mad_mean": float(np.mean(np.asarray(bg_mads, dtype=np.float64))),
+                "clean_assets": clean_assets,
+                "background_stability": {
+                    "per_image": clean_stats,
+                },
+            }
+
+    wvf_trace = _evaluate_wvf_trace(
+        images=images,
+        methods_payload=methods_payload,
+        fft_backend=fft_backend,
+        device_index=device_index,
+    )
 
     payload = {
         "title": TITLE,
@@ -338,6 +471,7 @@ def run_experiment(
         "images": image_payload,
         "method_order": [str(method_item["method"]) for method_item in roster],
         "methods": methods_payload,
+        "wvf_trace": wvf_trace,
     }
     _write_json(summary_json, payload)
 
