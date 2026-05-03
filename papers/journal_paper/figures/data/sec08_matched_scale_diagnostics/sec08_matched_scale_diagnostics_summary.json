@@ -1,0 +1,679 @@
+{
+  "title": "Section 8.4 matched-scale diagnostics",
+  "subtitle": "WVF versus square SG on smoothed step edges at AWGN 10 dB",
+  "config": {
+    "radius_schedule": [
+      3,
+      5,
+      9,
+      15,
+      25,
+      50
+    ],
+    "phase_count": 4,
+    "phase_step_px": 0.25,
+    "calibration_orientation_step_deg": 5.0,
+    "evaluation_orientation_step_deg": 0.5,
+    "snr_db": 10.0,
+    "fft_backend": "vkfft"
+  },
+  "rule_order": [
+    "bounding_radius",
+    "effective_response_width",
+    "support_cardinality",
+    "white_noise_gain",
+    "effective_second_moment"
+  ],
+  "rules": {
+    "bounding_radius": {
+      "rows": [
+        {
+          "radius": 3,
+          "degree": 5,
+          "wvf": {
+            "anisotropy_ratio": 2.140263680370334,
+            "clean_fwhm": 2.9125122741848517,
+            "support_cardinality": 28,
+            "white_noise_gain": 0.6104984126984088,
+            "effective_second_moment": 1.8026649353080566
+          },
+          "square_sg": {
+            "window_size": 7,
+            "half_side": 3,
+            "degree": 5,
+            "anisotropy_ratio": 2.0551316521931704,
+            "clean_fwhm": 3.164890644092816,
+            "support_cardinality": 48,
+            "white_noise_gain": 0.2255836139169478,
+            "effective_second_moment": 4.620119943479084
+          }
+        },
+        {
+          "radius": 5,
+          "degree": 9,
+          "wvf": {
+            "anisotropy_ratio": 2.0062302340164795,
+            "clean_fwhm": 2.889643036185965,
+            "support_cardinality": 80,
+            "white_noise_gain": 0.6165697650287708,
+            "effective_second_moment": 2.9488911754511924
+          },
+          "square_sg": {
+            "window_size": 11,
+            "half_side": 5,
+            "degree": 9,
+            "anisotropy_ratio": 2.1541631780900206,
+            "clean_fwhm": 3.1425432455948408,
+            "support_cardinality": 120,
+            "white_noise_gain": 0.23835846167250396,
+            "effective_second_moment": 8.104452246965039
+          }
+        },
+        {
+          "radius": 9,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 2.107922206871009,
+            "clean_fwhm": 3.3749746450981766,
+            "support_cardinality": 252,
+            "white_noise_gain": 0.08868650620066386,
+            "effective_second_moment": 11.814312590355133
+          },
+          "square_sg": {
+            "window_size": 19,
+            "half_side": 9,
+            "degree": 11,
+            "anisotropy_ratio": 1.8115614810701368,
+            "clean_fwhm": 3.9665517734537996,
+            "support_cardinality": 360,
+            "white_noise_gain": 0.036660585274004134,
+            "effective_second_moment": 23.610148356517552
+          }
+        },
+        {
+          "radius": 15,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 1.5264561688050307,
+            "clean_fwhm": 4.818103851460932,
+            "support_cardinality": 708,
+            "white_noise_gain": 0.010987598156692223,
+            "effective_second_moment": 34.34850400372263
+          },
+          "square_sg": {
+            "window_size": 31,
+            "half_side": 15,
+            "degree": 11,
+            "anisotropy_ratio": 1.5725570613685085,
+            "clean_fwhm": 5.980067996018125,
+            "support_cardinality": 960,
+            "white_noise_gain": 0.0045472245188573,
+            "effective_second_moment": 66.88228687144715
+          }
+        },
+        {
+          "radius": 25,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 1.234520135211439,
+            "clean_fwhm": 7.54517463547322,
+            "support_cardinality": 1960,
+            "white_noise_gain": 0.0014297399791228117,
+            "effective_second_moment": 96.76368446528615
+          },
+          "square_sg": {
+            "window_size": 51,
+            "half_side": 25,
+            "degree": 11,
+            "anisotropy_ratio": 1.4762100649072423,
+            "clean_fwhm": 9.554193713792625,
+            "support_cardinality": 2600,
+            "white_noise_gain": 0.0005947542730246949,
+            "effective_second_moment": 185.2150011979589
+          }
+        },
+        {
+          "radius": 50,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 1.1214402695455972,
+            "clean_fwhm": 14.673978149659304,
+            "support_cardinality": 7844,
+            "white_noise_gain": 8.998553150423674e-05,
+            "effective_second_moment": 384.5756868324492
+          },
+          "square_sg": {
+            "window_size": 101,
+            "half_side": 50,
+            "degree": 11,
+            "anisotropy_ratio": 1.4198917844071608,
+            "clean_fwhm": 18.687317473072167,
+            "support_cardinality": 10200,
+            "white_noise_gain": 3.7982572062894203e-05,
+            "effective_second_moment": 733.5999079884737
+          }
+        }
+      ]
+    },
+    "effective_response_width": {
+      "rows": [
+        {
+          "radius": 3,
+          "degree": 5,
+          "wvf": {
+            "anisotropy_ratio": 2.140263680370334,
+            "clean_fwhm": 2.9125122741848517,
+            "support_cardinality": 28,
+            "white_noise_gain": 0.6104984126984088,
+            "effective_second_moment": 1.8026649353080566
+          },
+          "square_sg": {
+            "window_size": 5,
+            "half_side": 2,
+            "degree": 5,
+            "anisotropy_ratio": 2.0737806813741937,
+            "clean_fwhm": 2.9638404136869645,
+            "support_cardinality": 24,
+            "white_noise_gain": 0.4892027548202739,
+            "effective_second_moment": 1.774779301300146
+          }
+        },
+        {
+          "radius": 5,
+          "degree": 9,
+          "wvf": {
+            "anisotropy_ratio": 2.0062302340164795,
+            "clean_fwhm": 2.889643036185965,
+            "support_cardinality": 80,
+            "white_noise_gain": 0.6165697650287708,
+            "effective_second_moment": 2.9488911754511924
+          },
+          "square_sg": {
+            "window_size": 7,
+            "half_side": 3,
+            "degree": 9,
+            "anisotropy_ratio": 2.1588248311987375,
+            "clean_fwhm": 2.888178577712816,
+            "support_cardinality": 48,
+            "white_noise_gain": 0.7773409131628247,
+            "effective_second_moment": 1.8193597528838135
+          }
+        },
+        {
+          "radius": 9,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 2.107922206871009,
+            "clean_fwhm": 3.3749746450981766,
+            "support_cardinality": 252,
+            "white_noise_gain": 0.08868650620066386,
+            "effective_second_moment": 11.814312590355133
+          },
+          "square_sg": {
+            "window_size": 15,
+            "half_side": 7,
+            "degree": 11,
+            "anisotropy_ratio": 1.9594949657808407,
+            "clean_fwhm": 3.383135743551937,
+            "support_cardinality": 224,
+            "white_noise_gain": 0.11083372673678721,
+            "effective_second_moment": 13.855377876327484
+          }
+        },
+        {
+          "radius": 15,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 1.5264561688050307,
+            "clean_fwhm": 4.818103851460932,
+            "support_cardinality": 708,
+            "white_noise_gain": 0.010987598156692223,
+            "effective_second_moment": 34.34850400372263
+          },
+          "square_sg": {
+            "window_size": 25,
+            "half_side": 12,
+            "degree": 11,
+            "anisotropy_ratio": 1.7154234509782758,
+            "clean_fwhm": 4.946501089757486,
+            "support_cardinality": 624,
+            "white_noise_gain": 0.01117642328953299,
+            "effective_second_moment": 42.64232314487009
+          }
+        },
+        {
+          "radius": 25,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 1.234520135211439,
+            "clean_fwhm": 7.54517463547322,
+            "support_cardinality": 1960,
+            "white_noise_gain": 0.0014297399791228117,
+            "effective_second_moment": 96.76368446528615
+          },
+          "square_sg": {
+            "window_size": 39,
+            "half_side": 19,
+            "degree": 11,
+            "anisotropy_ratio": 1.574766853647647,
+            "clean_fwhm": 7.395064251436278,
+            "support_cardinality": 1520,
+            "white_noise_gain": 0.0017698736903556081,
+            "effective_second_moment": 107.28757930722712
+          }
+        },
+        {
+          "radius": 50,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 1.1214402695455972,
+            "clean_fwhm": 14.673978149659304,
+            "support_cardinality": 7844,
+            "white_noise_gain": 8.998553150423674e-05,
+            "effective_second_moment": 384.5756868324492
+          },
+          "square_sg": {
+            "window_size": 79,
+            "half_side": 39,
+            "degree": 11,
+            "anisotropy_ratio": 1.478637021931796,
+            "clean_fwhm": 14.65569646142638,
+            "support_cardinality": 6240,
+            "white_noise_gain": 0.00010186541106902181,
+            "effective_second_moment": 447.86223789465595
+          }
+        }
+      ]
+    },
+    "support_cardinality": {
+      "rows": [
+        {
+          "radius": 3,
+          "degree": 5,
+          "wvf": {
+            "anisotropy_ratio": 2.140263680370334,
+            "clean_fwhm": 2.9125122741848517,
+            "support_cardinality": 28,
+            "white_noise_gain": 0.6104984126984088,
+            "effective_second_moment": 1.8026649353080566
+          },
+          "square_sg": {
+            "window_size": 5,
+            "half_side": 2,
+            "degree": 5,
+            "anisotropy_ratio": 2.0737806813741937,
+            "clean_fwhm": 2.9638404136869645,
+            "support_cardinality": 24,
+            "white_noise_gain": 0.4892027548202739,
+            "effective_second_moment": 1.774779301300146
+          }
+        },
+        {
+          "radius": 5,
+          "degree": 9,
+          "wvf": {
+            "anisotropy_ratio": 2.0062302340164795,
+            "clean_fwhm": 2.889643036185965,
+            "support_cardinality": 80,
+            "white_noise_gain": 0.6165697650287708,
+            "effective_second_moment": 2.9488911754511924
+          },
+          "square_sg": {
+            "window_size": 9,
+            "half_side": 4,
+            "degree": 9,
+            "anisotropy_ratio": 2.0254145927863534,
+            "clean_fwhm": 2.9479794430823714,
+            "support_cardinality": 80,
+            "white_noise_gain": 0.4452812534365992,
+            "effective_second_moment": 3.7610481874599233
+          }
+        },
+        {
+          "radius": 9,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 2.107922206871009,
+            "clean_fwhm": 3.3749746450981766,
+            "support_cardinality": 252,
+            "white_noise_gain": 0.08868650620066386,
+            "effective_second_moment": 11.814312590355133
+          },
+          "square_sg": {
+            "window_size": 15,
+            "half_side": 7,
+            "degree": 11,
+            "anisotropy_ratio": 1.9594949657808407,
+            "clean_fwhm": 3.383135743551937,
+            "support_cardinality": 224,
+            "white_noise_gain": 0.11083372673678721,
+            "effective_second_moment": 13.855377876327484
+          }
+        },
+        {
+          "radius": 15,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 1.5264561688050307,
+            "clean_fwhm": 4.818103851460932,
+            "support_cardinality": 708,
+            "white_noise_gain": 0.010987598156692223,
+            "effective_second_moment": 34.34850400372263
+          },
+          "square_sg": {
+            "window_size": 27,
+            "half_side": 13,
+            "degree": 11,
+            "anisotropy_ratio": 1.6796575094215909,
+            "clean_fwhm": 5.286924365477291,
+            "support_cardinality": 728,
+            "white_noise_gain": 0.008083499867856721,
+            "effective_second_moment": 50.14450300685377
+          }
+        },
+        {
+          "radius": 25,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 1.234520135211439,
+            "clean_fwhm": 7.54517463547322,
+            "support_cardinality": 1960,
+            "white_noise_gain": 0.0014297399791228117,
+            "effective_second_moment": 96.76368446528615
+          },
+          "square_sg": {
+            "window_size": 45,
+            "half_side": 22,
+            "degree": 11,
+            "anisotropy_ratio": 1.4761802853774342,
+            "clean_fwhm": 8.470987120639645,
+            "support_cardinality": 2024,
+            "white_noise_gain": 0.0009880565201549666,
+            "effective_second_moment": 143.65352948473085
+          }
+        },
+        {
+          "radius": 50,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 1.1214402695455972,
+            "clean_fwhm": 14.673978149659304,
+            "support_cardinality": 7844,
+            "white_noise_gain": 8.998553150423674e-05,
+            "effective_second_moment": 384.5756868324492
+          },
+          "square_sg": {
+            "window_size": 89,
+            "half_side": 44,
+            "degree": 11,
+            "anisotropy_ratio": 1.4233167889304306,
+            "clean_fwhm": 16.48674734304836,
+            "support_cardinality": 7920,
+            "white_noise_gain": 6.310504686509244e-05,
+            "effective_second_moment": 569.0842590981283
+          }
+        }
+      ]
+    },
+    "white_noise_gain": {
+      "rows": [
+        {
+          "radius": 3,
+          "degree": 5,
+          "wvf": {
+            "anisotropy_ratio": 2.140263680370334,
+            "clean_fwhm": 2.9125122741848517,
+            "support_cardinality": 28,
+            "white_noise_gain": 0.6104984126984088,
+            "effective_second_moment": 1.8026649353080566
+          },
+          "square_sg": {
+            "window_size": 5,
+            "half_side": 2,
+            "degree": 5,
+            "anisotropy_ratio": 2.0737806813741937,
+            "clean_fwhm": 2.9638404136869645,
+            "support_cardinality": 24,
+            "white_noise_gain": 0.4892027548202739,
+            "effective_second_moment": 1.774779301300146
+          }
+        },
+        {
+          "radius": 5,
+          "degree": 9,
+          "wvf": {
+            "anisotropy_ratio": 2.0062302340164795,
+            "clean_fwhm": 2.889643036185965,
+            "support_cardinality": 80,
+            "white_noise_gain": 0.6165697650287708,
+            "effective_second_moment": 2.9488911754511924
+          },
+          "square_sg": {
+            "window_size": 3,
+            "half_side": 1,
+            "degree": 9,
+            "anisotropy_ratio": 2.251183867226847,
+            "clean_fwhm": 3.1213781917502885,
+            "support_cardinality": 8,
+            "white_noise_gain": 0.4732742086674478,
+            "effective_second_moment": 1.0
+          }
+        },
+        {
+          "radius": 9,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 2.107922206871009,
+            "clean_fwhm": 3.3749746450981766,
+            "support_cardinality": 252,
+            "white_noise_gain": 0.08868650620066386,
+            "effective_second_moment": 11.814312590355133
+          },
+          "square_sg": {
+            "window_size": 15,
+            "half_side": 7,
+            "degree": 11,
+            "anisotropy_ratio": 1.9594949657808407,
+            "clean_fwhm": 3.383135743551937,
+            "support_cardinality": 224,
+            "white_noise_gain": 0.11083372673678721,
+            "effective_second_moment": 13.855377876327484
+          }
+        },
+        {
+          "radius": 15,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 1.5264561688050307,
+            "clean_fwhm": 4.818103851460932,
+            "support_cardinality": 708,
+            "white_noise_gain": 0.010987598156692223,
+            "effective_second_moment": 34.34850400372263
+          },
+          "square_sg": {
+            "window_size": 25,
+            "half_side": 12,
+            "degree": 11,
+            "anisotropy_ratio": 1.7154234509782758,
+            "clean_fwhm": 4.946501089757486,
+            "support_cardinality": 624,
+            "white_noise_gain": 0.01117642328953299,
+            "effective_second_moment": 42.64232314487009
+          }
+        },
+        {
+          "radius": 25,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 1.234520135211439,
+            "clean_fwhm": 7.54517463547322,
+            "support_cardinality": 1960,
+            "white_noise_gain": 0.0014297399791228117,
+            "effective_second_moment": 96.76368446528615
+          },
+          "square_sg": {
+            "window_size": 41,
+            "half_side": 20,
+            "degree": 11,
+            "anisotropy_ratio": 1.5476606811267346,
+            "clean_fwhm": 7.752817301387923,
+            "support_cardinality": 1680,
+            "white_noise_gain": 0.001443143235519061,
+            "effective_second_moment": 118.83226751807848
+          }
+        },
+        {
+          "radius": 50,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 1.1214402695455972,
+            "clean_fwhm": 14.673978149659304,
+            "support_cardinality": 7844,
+            "white_noise_gain": 8.998553150423674e-05,
+            "effective_second_moment": 384.5756868324492
+          },
+          "square_sg": {
+            "window_size": 81,
+            "half_side": 40,
+            "degree": 11,
+            "anisotropy_ratio": 1.4577168231641016,
+            "clean_fwhm": 15.021647029012188,
+            "support_cardinality": 6560,
+            "white_noise_gain": 9.212665247664427e-05,
+            "effective_second_moment": 470.9521420129578
+          }
+        }
+      ]
+    },
+    "effective_second_moment": {
+      "rows": [
+        {
+          "radius": 3,
+          "degree": 5,
+          "wvf": {
+            "anisotropy_ratio": 2.140263680370334,
+            "clean_fwhm": 2.9125122741848517,
+            "support_cardinality": 28,
+            "white_noise_gain": 0.6104984126984088,
+            "effective_second_moment": 1.8026649353080566
+          },
+          "square_sg": {
+            "window_size": 5,
+            "half_side": 2,
+            "degree": 5,
+            "anisotropy_ratio": 2.0737806813741937,
+            "clean_fwhm": 2.9638404136869645,
+            "support_cardinality": 24,
+            "white_noise_gain": 0.4892027548202739,
+            "effective_second_moment": 1.774779301300146
+          }
+        },
+        {
+          "radius": 5,
+          "degree": 9,
+          "wvf": {
+            "anisotropy_ratio": 2.0062302340164795,
+            "clean_fwhm": 2.889643036185965,
+            "support_cardinality": 80,
+            "white_noise_gain": 0.6165697650287708,
+            "effective_second_moment": 2.9488911754511924
+          },
+          "square_sg": {
+            "window_size": 9,
+            "half_side": 4,
+            "degree": 9,
+            "anisotropy_ratio": 2.0254145927863534,
+            "clean_fwhm": 2.9479794430823714,
+            "support_cardinality": 80,
+            "white_noise_gain": 0.4452812534365992,
+            "effective_second_moment": 3.7610481874599233
+          }
+        },
+        {
+          "radius": 9,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 2.107922206871009,
+            "clean_fwhm": 3.3749746450981766,
+            "support_cardinality": 252,
+            "white_noise_gain": 0.08868650620066386,
+            "effective_second_moment": 11.814312590355133
+          },
+          "square_sg": {
+            "window_size": 13,
+            "half_side": 6,
+            "degree": 11,
+            "anisotropy_ratio": 2.08374946292586,
+            "clean_fwhm": 3.1379530740233452,
+            "support_cardinality": 168,
+            "white_noise_gain": 0.24127627082218964,
+            "effective_second_moment": 9.953123746858745
+          }
+        },
+        {
+          "radius": 15,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 1.5264561688050307,
+            "clean_fwhm": 4.818103851460932,
+            "support_cardinality": 708,
+            "white_noise_gain": 0.010987598156692223,
+            "effective_second_moment": 34.34850400372263
+          },
+          "square_sg": {
+            "window_size": 23,
+            "half_side": 11,
+            "degree": 11,
+            "anisotropy_ratio": 1.7455408087559312,
+            "clean_fwhm": 4.611551116398881,
+            "support_cardinality": 528,
+            "white_noise_gain": 0.015934436016117798,
+            "effective_second_moment": 35.718463497578384
+          }
+        },
+        {
+          "radius": 25,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 1.234520135211439,
+            "clean_fwhm": 7.54517463547322,
+            "support_cardinality": 1960,
+            "white_noise_gain": 0.0014297399791228117,
+            "effective_second_moment": 96.76368446528615
+          },
+          "square_sg": {
+            "window_size": 37,
+            "half_side": 18,
+            "degree": 11,
+            "anisotropy_ratio": 1.5962551147206598,
+            "clean_fwhm": 7.0386055368652585,
+            "support_cardinality": 1368,
+            "white_noise_gain": 0.0021951070715177765,
+            "effective_second_moment": 96.32020691057893
+          }
+        },
+        {
+          "radius": 50,
+          "degree": 11,
+          "wvf": {
+            "anisotropy_ratio": 1.1214402695455972,
+            "clean_fwhm": 14.673978149659304,
+            "support_cardinality": 7844,
+            "white_noise_gain": 8.998553150423674e-05,
+            "effective_second_moment": 384.5756868324492
+          },
+          "square_sg": {
+            "window_size": 73,
+            "half_side": 36,
+            "degree": 11,
+            "anisotropy_ratio": 1.4967125076274714,
+            "clean_fwhm": 13.558602329389576,
+            "support_cardinality": 5328,
+            "white_noise_gain": 0.00013995254795666463,
+            "effective_second_moment": 382.056021483339
+          }
+        }
+      ]
+    }
+  }
+}
