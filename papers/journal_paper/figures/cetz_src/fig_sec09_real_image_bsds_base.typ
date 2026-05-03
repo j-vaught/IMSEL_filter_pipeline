@@ -326,7 +326,7 @@
     #summary-table(data)
   ]
 
-  #if data.has("wvf_trace") {
+  if data.has("wvf_trace") {
     pagebreak()
 
     [
