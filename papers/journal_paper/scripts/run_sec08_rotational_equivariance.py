@@ -14,7 +14,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from baseline_filters import build_method
+from baseline_filters import build_method, build_square_sg
 from section8_common import (
     CONTRAST,
     DEFAULT_BATCH_CASES,
@@ -43,6 +43,10 @@ JUNCTION_PHASE_STEP_PX = 0.25
 NOISE_SEED_BASE = 8210
 MAX_SUPPORT_SCALE = 50.0
 BATCH_CASES = DEFAULT_BATCH_CASES
+DEGREE_MATCHED_SQUARES = (
+    ("square_sg_degmatch_n21_d11", "Square SG N=21 d=11", 21, 11),
+    ("square_sg_degmatch_n25_d11", "Square SG N=25 d=11", 25, 11),
+)
 
 
 def _build_roster(validation_summary: dict[str, object]) -> list[dict[str, object]]:
@@ -55,6 +59,17 @@ def _build_roster(validation_summary: dict[str, object]) -> list[dict[str, objec
                 "label": str(row["label"]),
                 "config": config,
                 "kernel": build_method(str(row["method"]), **config),
+                "comparison_status": "validated",
+            }
+        )
+    for method_name, label, window_size, degree in DEGREE_MATCHED_SQUARES:
+        roster.append(
+            {
+                "method": str(method_name),
+                "label": str(label),
+                "config": {"N": int(window_size), "d": int(degree), "normalize_coords": True},
+                "kernel": build_square_sg(window_size=int(window_size), degree=int(degree), normalize_coords=True),
+                "comparison_status": "degree_matched_not_constraint_feasible",
             }
         )
     return roster
@@ -149,6 +164,10 @@ def run_experiment(
 ) -> dict[str, Path]:
     validation_summary = json.loads(validation_json.read_text())
     roster = _build_roster(validation_summary)
+    validation_wng = {
+        str(row["method"]): float(row["metrics"]["white_noise_gain"])
+        for row in validation_summary.get("method_roster", [])
+    }
 
     step_orientations = orientation_values(STEP_ORIENTATION_STEP_DEG, span_deg=180.0)
     step_phases = phase_values(STEP_PHASE_COUNT, STEP_PHASE_STEP_PX)
@@ -197,12 +216,29 @@ def run_experiment(
         methods_payload[str(item["method"])] = {
             "label": str(item["label"]),
             "config": dict(item["config"]),
+            "comparison_status": str(item["comparison_status"]),
             "step": step_payload,
             "junctions": {
                 "l_corner": {"branch_isotropy_mean": float(l_iso), "series": l_series},
                 "x_junction": {"branch_isotropy_mean": float(x_iso), "series": x_series},
             },
         }
+
+    reporting_table = []
+    for item in roster:
+        method_key = str(item["method"])
+        kernel = item["kernel"]
+        reporting_table.append(
+            {
+                "method": method_key,
+                "label": str(item["label"]),
+                "comparison_status": str(item["comparison_status"]),
+                "geometric_anisotropy_clean": float(methods_payload[method_key]["step"]["anisotropy_by_snr"]["inf"]),
+                "noise_robustness_wng": float(validation_wng.get(method_key, kernel.white_noise_gain)),
+                "junction_branch_isotropy_l_corner": float(methods_payload[method_key]["junctions"]["l_corner"]["branch_isotropy_mean"]),
+                "junction_branch_isotropy_x_junction": float(methods_payload[method_key]["junctions"]["x_junction"]["branch_isotropy_mean"]),
+            }
+        )
 
     payload = {
         "title": "Section 8.3.1 rotational equivariance and anisotropy",
@@ -218,6 +254,7 @@ def run_experiment(
             "fft_backend": str(fft_backend),
         },
         "method_order": [str(item["method"]) for item in roster],
+        "reporting_table": reporting_table,
         "methods": methods_payload,
     }
     _write_json(summary_json, payload)

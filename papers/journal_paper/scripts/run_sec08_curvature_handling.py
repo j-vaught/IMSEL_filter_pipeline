@@ -14,7 +14,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from baseline_filters import build_method
+from baseline_filters import build_method, build_square_sg
 from section8_common import (
     CONTRAST,
     CURVE_PATCH_HALF_SIZE,
@@ -39,6 +39,10 @@ SNR_DB = 10.0
 NOISE_SEED = 8430
 MAX_SUPPORT_SCALE = 50.0
 BATCH_CASES = DEFAULT_BATCH_CASES
+DEGREE_MATCHED_SQUARES = (
+    ("square_sg_degmatch_n21_d11", "Square SG N=21 d=11", 21, 11),
+    ("square_sg_degmatch_n25_d11", "Square SG N=25 d=11", 25, 11),
+)
 
 
 def _build_roster(validation_summary: dict[str, object]) -> list[dict[str, object]]:
@@ -51,6 +55,17 @@ def _build_roster(validation_summary: dict[str, object]) -> list[dict[str, objec
                 "label": str(row["label"]),
                 "config": config,
                 "kernel": build_method(str(row["method"]), **config),
+                "comparison_status": "validated",
+            }
+        )
+    for method_name, label, window_size, degree in DEGREE_MATCHED_SQUARES:
+        roster.append(
+            {
+                "method": str(method_name),
+                "label": str(label),
+                "config": {"N": int(window_size), "d": int(degree), "normalize_coords": True},
+                "kernel": build_square_sg(window_size=int(window_size), degree=int(degree), normalize_coords=True),
+                "comparison_status": "degree_matched_not_constraint_feasible",
             }
         )
     return roster
@@ -131,6 +146,7 @@ def run_experiment(
         methods_payload[str(item["method"])] = {
             "label": str(item["label"]),
             "config": dict(item["config"]),
+            "comparison_status": str(item["comparison_status"]),
             "curvature_metrics": metrics_by_curvature,
         }
         for curvature_radius in CURVATURE_RADII:
@@ -142,6 +158,9 @@ def run_experiment(
     payload = {
         "title": "Section 8.3.3 curvature handling",
         "subtitle": "Validation-tuned head-to-head comparison on smoothed arcs and S-curves at AWGN 10 dB",
+        "notes": {
+            "farid_simoncelli_support": "Farid-Simoncelli uses 7-tap support and is approximately matched-scale to WVF r=3, not the r=50 validation-selected WVF operating point."
+        },
         "config": {
             "curvature_radii": list(CURVATURE_RADII),
             "orientation_step_deg": ORIENTATION_STEP_DEG,

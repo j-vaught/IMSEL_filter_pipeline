@@ -14,7 +14,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from baseline_filters import build_method, build_wvf, recommended_wvf_degree
+from baseline_filters import build_dog, build_method, build_square_sg, build_wvf, recommended_wvf_degree
 from section8_common import (
     CONTRAST,
     DEFAULT_BATCH_CASES,
@@ -40,6 +40,9 @@ NOISE_SEED_BASE = 8320
 MAX_SUPPORT_SCALE = 50.0
 BATCH_CASES = DEFAULT_BATCH_CASES
 WVF_TRACE_RADII = (3, 5, 9, 15, 25, 50)
+DOG_SIGMAS = (0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0)
+SQUARE_WINDOWS = (3, 5, 7, 9, 11, 13, 15)
+SQUARE_DEGREES = (1, 3, 5)
 
 
 def _build_roster(validation_summary: dict[str, object]) -> list[dict[str, object]]:
@@ -61,6 +64,18 @@ def _noise_slug(snr_db: float) -> str:
     if math.isinf(float(snr_db)):
         return "inf"
     return f"{float(snr_db):g}".replace(".", "p")
+
+
+def _pareto_frontier(points: list[dict[str, object]]) -> list[dict[str, object]]:
+    ordered = sorted(points, key=lambda item: (float(item["white_noise_gain"]), float(item["fwhm"])))
+    frontier: list[dict[str, object]] = []
+    best_fwhm = float("inf")
+    for point in ordered:
+        fwhm = float(point["fwhm"])
+        if fwhm < best_fwhm - 1.0e-12:
+            frontier.append(point)
+            best_fwhm = fwhm
+    return frontier
 
 
 def _evaluate_step_metrics(kernel, cases, image_bank, fft_backend: str, device_index: int | None) -> dict[str, float]:
@@ -168,6 +183,36 @@ def run_experiment(
         )
         print(f"sec832 wvf_trace r={radius} d={degree} fwhm={metrics['fwhm']:.6e} wng={metrics['white_noise_gain']:.6e}")
 
+    dog_trace = []
+    for sigma in DOG_SIGMAS:
+        kernel = build_dog(float(sigma))
+        metrics = _evaluate_step_metrics(kernel, clean_cases, image_banks["inf"], fft_backend, device_index)
+        dog_trace.append(
+            {
+                "sigma": float(sigma),
+                "white_noise_gain": float(metrics["white_noise_gain"]),
+                "fwhm": float(metrics["fwhm"]),
+            }
+        )
+        print(f"sec832 dog_trace sigma={sigma:g} fwhm={metrics['fwhm']:.6e} wng={metrics['white_noise_gain']:.6e}")
+
+    square_trace_candidates = []
+    for window_size in SQUARE_WINDOWS:
+        for degree in SQUARE_DEGREES:
+            if degree >= window_size:
+                continue
+            kernel = build_square_sg(window_size=int(window_size), degree=int(degree), normalize_coords=True)
+            metrics = _evaluate_step_metrics(kernel, clean_cases, image_banks["inf"], fft_backend, device_index)
+            square_trace_candidates.append(
+                {
+                    "N": int(window_size),
+                    "d": int(degree),
+                    "white_noise_gain": float(metrics["white_noise_gain"]),
+                    "fwhm": float(metrics["fwhm"]),
+                }
+            )
+            print(f"sec832 square_trace N={window_size} d={degree} fwhm={metrics['fwhm']:.6e} wng={metrics['white_noise_gain']:.6e}")
+
     payload = {
         "title": "Section 8.3.2 noise-localisation Pareto",
         "subtitle": "Validation-tuned head-to-head comparison on smoothed step edges under AWGN",
@@ -180,7 +225,14 @@ def run_experiment(
         },
         "method_order": [str(item["method"]) for item in roster],
         "methods": methods_payload,
-        "wvf_trace": wvf_trace,
+        "traces": {
+            "wvf": {"points": wvf_trace, "frontier": _pareto_frontier(list(wvf_trace))},
+            "dog": {"points": dog_trace, "frontier": _pareto_frontier(list(dog_trace))},
+            "square_sg": {
+                "points": square_trace_candidates,
+                "frontier": _pareto_frontier(list(square_trace_candidates)),
+            },
+        },
     }
     _write_json(summary_json, payload)
 

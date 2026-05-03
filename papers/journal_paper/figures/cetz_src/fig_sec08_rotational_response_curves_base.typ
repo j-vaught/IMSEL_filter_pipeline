@@ -8,6 +8,8 @@
   if name == "wvf" { return garnet }
   if name == "scharr" { return atlantic }
   if name == "square_sg" { return congaree }
+  if name == "square_sg_degmatch_n21_d11" { return black50 }
+  if name == "square_sg_degmatch_n25_d11" { return black90 }
   if name == "dog" { return horseshoe }
   if name == "farid_simoncelli" { return honeycomb }
   if name == "sobel" { return rose }

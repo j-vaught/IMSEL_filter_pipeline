@@ -60,6 +60,16 @@ CONSTRAINTS = {
     "white_noise_gain": 0.001,
 }
 RELAX_FACTORS = (1.0, 1.5, 2.0, 4.0, 8.0, 16.0)
+THRESHOLD_SCENARIOS = (
+    ("loc_half", {"localization_rms": 0.5}),
+    ("loc_double", {"localization_rms": 2.0}),
+    ("bias_half", {"mag_bias_abs": 0.5}),
+    ("bias_double", {"mag_bias_abs": 2.0}),
+    ("wng_half", {"white_noise_gain": 0.5}),
+    ("wng_double", {"white_noise_gain": 2.0}),
+    ("all_half", {"localization_rms": 0.5, "mag_bias_abs": 0.5, "white_noise_gain": 0.5}),
+    ("all_double", {"localization_rms": 2.0, "mag_bias_abs": 2.0, "white_noise_gain": 2.0}),
+)
 
 
 def _directional_profile(case, gx: np.ndarray, gy: np.ndarray) -> np.ndarray:
@@ -128,11 +138,12 @@ def _candidate_payload(kernel) -> dict[str, object]:
     }
 
 
-def _pick_best(records: list[dict[str, object]]) -> dict[str, object]:
+def _pick_best(records: list[dict[str, object]], constraints: dict[str, float] | None = None) -> dict[str, object]:
+    limits = dict(CONSTRAINTS if constraints is None else constraints)
     for relax_factor in RELAX_FACTORS:
-        loc_limit = float(CONSTRAINTS["localization_rms"]) * float(relax_factor)
-        mag_limit = float(CONSTRAINTS["mag_bias_abs"]) * float(relax_factor)
-        wng_limit = float(CONSTRAINTS["white_noise_gain"]) * float(relax_factor)
+        loc_limit = float(limits["localization_rms"]) * float(relax_factor)
+        mag_limit = float(limits["mag_bias_abs"]) * float(relax_factor)
+        wng_limit = float(limits["white_noise_gain"]) * float(relax_factor)
         feasible = [
             record
             for record in records
@@ -161,6 +172,34 @@ def _pick_best(records: list[dict[str, object]]) -> dict[str, object]:
         "chosen": chosen,
         "feasible_count": 0,
     }
+
+
+def _threshold_sensitivity(baseline_selection: dict[str, dict[str, object]]) -> list[dict[str, object]]:
+    table: list[dict[str, object]] = []
+    for scenario_name, multipliers in THRESHOLD_SCENARIOS:
+        scenario_constraints = {
+            key: float(CONSTRAINTS[key]) * float(multipliers.get(key, 1.0))
+            for key in CONSTRAINTS
+        }
+        scenario_row = {
+            "scenario": str(scenario_name),
+            "constraints": scenario_constraints,
+            "methods": {},
+        }
+        for method_name, baseline in baseline_selection.items():
+            selected = _pick_best(list(baseline["candidates"]), constraints=scenario_constraints)
+            chosen = dict(selected["chosen"])
+            baseline_config = dict(baseline["chosen"]["config"])
+            scenario_row["methods"][str(method_name)] = {
+                "changed": bool(dict(chosen["config"]) != baseline_config),
+                "baseline_config": baseline_config,
+                "selected_config": dict(chosen["config"]),
+                "selection_mode": str(selected["selection_mode"]),
+                "relax_factor": selected["relax_factor"],
+                "grad_rmse_delta": float(chosen["metrics"]["grad_rmse"] - baseline["chosen"]["metrics"]["grad_rmse"]),
+            }
+        table.append(scenario_row)
+    return table
 
 
 def _write_json(path: Path, payload: dict[str, object]) -> None:
@@ -284,6 +323,14 @@ def run_experiment(summary_json: Path, fft_backend: str, device_index: int | Non
                 }
             )
 
+    baseline_selection = {
+        name: {
+            "candidates": list(result["candidates"]),
+            "chosen": dict(result["chosen"]),
+        }
+        for name, result in tuning_results.items()
+    }
+
     payload = {
         "title": "Section 8.1 baseline infrastructure and validation tuning",
         "subtitle": "Validation-tuned head-to-head method roster under AWGN 10 dB on smoothed step edges",
@@ -303,6 +350,7 @@ def run_experiment(summary_json: Path, fft_backend: str, device_index: int | Non
         "method_roster": method_roster,
         "fixed_methods": fixed_records,
         "tuning_results": tuning_results,
+        "threshold_sensitivity": _threshold_sensitivity(baseline_selection),
         "skipped_methods": skipped_methods,
     }
     _write_json(summary_json, payload)

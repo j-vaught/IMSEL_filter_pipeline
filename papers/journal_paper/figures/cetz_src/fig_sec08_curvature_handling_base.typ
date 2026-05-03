@@ -8,6 +8,8 @@
   if name == "wvf" { return garnet }
   if name == "scharr" { return atlantic }
   if name == "square_sg" { return congaree }
+  if name == "square_sg_degmatch_n21_d11" { return black50 }
+  if name == "square_sg_degmatch_n25_d11" { return black90 }
   if name == "dog" { return horseshoe }
   if name == "farid_simoncelli" { return honeycomb }
   if name == "sobel" { return rose }
@@ -46,6 +48,7 @@
 
     content((ox + pw / 2, oy + ph + 0.90), text(fill: black90, size: 10pt, weight: "bold")[Curvature handling at AWGN 10 dB])
     content((ox + pw / 2, oy + ph + 0.48), text(fill: black70, size: 8.0pt)[Curved-arc and S-curve bank])
+    content((ox + pw / 2, oy + ph + 0.22), text(fill: black50, size: 6.2pt)[Farid-Simoncelli uses 7-tap support and is approximately matched-scale to WVF $r = 3$, not the validated $r = 50$ point.])
 
     rect((ox, oy), (ox + pw, oy + ph), stroke: 0.45pt + black30)
     for radius in radii {
