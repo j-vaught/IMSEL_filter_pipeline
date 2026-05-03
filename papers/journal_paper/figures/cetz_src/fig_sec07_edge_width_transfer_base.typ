@@ -35,9 +35,10 @@
   let config = data.at("config")
   let widths = config.at("edge_widths_px")
   let trace = config.at("wvf_trace")
-  let radii = (
-    ..for item in trace { item.at("radius") }
-  )
+  let radii = ()
+  for item in trace {
+    radii.push(item.at("radius"))
+  }
   let cells = data.at("cells")
   let best-by-width = data.at("best_by_width")
 
@@ -165,13 +166,13 @@
     table-cells.push([best $r$ by arc MAE])
     table-cells.push([in band?])
     for row in best-by-width {
-      table-cells.push([#str(row.at("edge_width_px"))])
+      table-cells.push([str(row.at("edge_width_px"))])
       let band = row.at("hypothesis_radius_band_px")
-      table-cells.push([#str(calc.round(band.at(0), digits: 1)) + "-" + #str(calc.round(band.at(1), digits: 1))])
-      table-cells.push([#str(row.at("best_step_radius"))])
-      table-cells.push([#str(row.at("best_arc_radius"))])
+      table-cells.push([str(calc.round(band.at(0), digits: 1)) + "-" + str(calc.round(band.at(1), digits: 1))])
+      table-cells.push([str(row.at("best_step_radius"))])
+      table-cells.push([str(row.at("best_arc_radius"))])
       let verdict = (if row.at("best_step_in_band") { "step" } else { "" }) + (if row.at("best_step_in_band") and row.at("best_arc_in_band") { ", " } else { "" }) + (if row.at("best_arc_in_band") { "arc" } else { "" })
-      table-cells.push([#(if verdict == "" { "neither" } else { verdict })])
+      table-cells.push([(if verdict == "" { "neither" } else { verdict })])
     }
     content((table-x, table-y), table(columns: columns, stroke: 0.35pt + black30, inset: 3pt, align: center, ..table-cells), anchor: "south-west")
   })
