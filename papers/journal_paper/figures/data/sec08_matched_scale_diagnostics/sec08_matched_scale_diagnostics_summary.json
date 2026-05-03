@@ -1,6 +1,6 @@
 {
   "title": "Section 8.4 matched-scale diagnostics",
-  "subtitle": "WVF versus square SG on smoothed step edges at AWGN 10 dB",
+  "subtitle": "WVF versus square SG and derivative of Gaussian on smoothed step edges at AWGN 10 dB",
   "config": {
     "radius_schedule": [
       3,
@@ -15,7 +15,72 @@
     "calibration_orientation_step_deg": 5.0,
     "evaluation_orientation_step_deg": 0.5,
     "snr_db": 10.0,
-    "fft_backend": "vkfft"
+    "fft_backend": "cpu",
+    "dog_sigmas": [
+      0.5,
+      0.75,
+      1.0,
+      1.25,
+      1.5,
+      1.75,
+      2.0,
+      2.25,
+      2.5,
+      2.75,
+      3.0,
+      3.25,
+      3.5,
+      3.75,
+      4.0,
+      4.25,
+      4.5,
+      4.75,
+      5.0,
+      5.25,
+      5.5,
+      5.75,
+      6.0,
+      6.25,
+      6.5,
+      6.75,
+      7.0,
+      7.25,
+      7.5,
+      7.75,
+      8.0,
+      8.25,
+      8.5,
+      8.75,
+      9.0,
+      9.25,
+      9.5,
+      9.75,
+      10.0,
+      10.25,
+      10.5,
+      10.75,
+      11.0,
+      11.25,
+      11.5,
+      11.75,
+      12.0,
+      12.25,
+      12.5
+    ],
+    "overlay_square_windows": [
+      3,
+      5,
+      7,
+      9,
+      11,
+      13,
+      15
+    ],
+    "overlay_square_degrees": [
+      1,
+      3,
+      5
+    ]
   },
   "rule_order": [
     "bounding_radius",
@@ -24,656 +89,1929 @@
     "white_noise_gain",
     "effective_second_moment"
   ],
-  "rules": {
-    "bounding_radius": {
-      "rows": [
-        {
-          "radius": 3,
-          "degree": 5,
-          "wvf": {
-            "anisotropy_ratio": 2.140263680370334,
-            "clean_fwhm": 2.9125122741848517,
-            "support_cardinality": 28,
-            "white_noise_gain": 0.6104984126984088,
-            "effective_second_moment": 1.8026649353080566
-          },
-          "square_sg": {
-            "window_size": 7,
-            "half_side": 3,
-            "degree": 5,
-            "anisotropy_ratio": 2.0551316521931704,
-            "clean_fwhm": 3.164890644092816,
-            "support_cardinality": 48,
-            "white_noise_gain": 0.2255836139169478,
-            "effective_second_moment": 4.620119943479084
-          }
+  "comparator_order": [
+    "square_sg",
+    "dog"
+  ],
+  "comparators": {
+    "square_sg": {
+      "label": "Square SG",
+      "rules": {
+        "bounding_radius": {
+          "rows": [
+            {
+              "radius": 3,
+              "degree": 5,
+              "wvf": {
+                "config": {
+                  "r": 3,
+                  "d": 5,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 3,
+                "anisotropy_ratio": 2.140264483831054,
+                "clean_fwhm": 2.9125130702251516,
+                "support_cardinality": 28,
+                "white_noise_gain": 0.6104984126984088,
+                "effective_second_moment": 1.8026649353080566
+              },
+              "comparator": {
+                "config": {
+                  "N": 7,
+                  "d": 5,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 3,
+                "anisotropy_ratio": 2.055130950713779,
+                "clean_fwhm": 3.1648915893246095,
+                "support_cardinality": 49,
+                "white_noise_gain": 0.2255836139169478,
+                "effective_second_moment": 4.620119943479084
+              }
+            },
+            {
+              "radius": 5,
+              "degree": 9,
+              "wvf": {
+                "config": {
+                  "r": 5,
+                  "d": 9,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 5,
+                "anisotropy_ratio": 2.006228584968903,
+                "clean_fwhm": 2.889641980875193,
+                "support_cardinality": 80,
+                "white_noise_gain": 0.6165697650287708,
+                "effective_second_moment": 2.9488911754511924
+              },
+              "comparator": {
+                "config": {
+                  "N": 11,
+                  "d": 9,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 5,
+                "anisotropy_ratio": 2.1541624939132786,
+                "clean_fwhm": 3.1425415016811007,
+                "support_cardinality": 121,
+                "white_noise_gain": 0.23835846167250396,
+                "effective_second_moment": 8.104452246965039
+              }
+            },
+            {
+              "radius": 9,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 9,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 9,
+                "anisotropy_ratio": 2.1079204213022162,
+                "clean_fwhm": 3.3749749276878913,
+                "support_cardinality": 252,
+                "white_noise_gain": 0.08868650620066386,
+                "effective_second_moment": 11.814312590355133
+              },
+              "comparator": {
+                "config": {
+                  "N": 19,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 9,
+                "anisotropy_ratio": 1.8115617851749446,
+                "clean_fwhm": 3.9665520468075925,
+                "support_cardinality": 361,
+                "white_noise_gain": 0.036660585274004134,
+                "effective_second_moment": 23.610148356517552
+              }
+            },
+            {
+              "radius": 15,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 15,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 15,
+                "anisotropy_ratio": 1.5264558085534448,
+                "clean_fwhm": 4.8181047736574145,
+                "support_cardinality": 708,
+                "white_noise_gain": 0.010987598156692223,
+                "effective_second_moment": 34.34850400372263
+              },
+              "comparator": {
+                "config": {
+                  "N": 31,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 15,
+                "anisotropy_ratio": 1.572555828127682,
+                "clean_fwhm": 5.980069242133003,
+                "support_cardinality": 961,
+                "white_noise_gain": 0.0045472245188573,
+                "effective_second_moment": 66.88228687144715
+              }
+            },
+            {
+              "radius": 25,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 25,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 25,
+                "anisotropy_ratio": 1.2345200033820625,
+                "clean_fwhm": 7.545174199545114,
+                "support_cardinality": 1960,
+                "white_noise_gain": 0.0014297399791228117,
+                "effective_second_moment": 96.76368446528615
+              },
+              "comparator": {
+                "config": {
+                  "N": 51,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 25,
+                "anisotropy_ratio": 1.4762097793152513,
+                "clean_fwhm": 9.55419327658203,
+                "support_cardinality": 2601,
+                "white_noise_gain": 0.0005947542730246949,
+                "effective_second_moment": 185.2150011979589
+              }
+            },
+            {
+              "radius": 50,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 50,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 50,
+                "anisotropy_ratio": 1.1214402372285648,
+                "clean_fwhm": 14.67397720671609,
+                "support_cardinality": 7844,
+                "white_noise_gain": 8.998553150423674e-05,
+                "effective_second_moment": 384.5756868324492
+              },
+              "comparator": {
+                "config": {
+                  "N": 101,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 50,
+                "anisotropy_ratio": 1.4198910963048128,
+                "clean_fwhm": 18.687316154103605,
+                "support_cardinality": 10201,
+                "white_noise_gain": 3.7982572062894203e-05,
+                "effective_second_moment": 733.5999079884737
+              }
+            }
+          ]
         },
-        {
-          "radius": 5,
-          "degree": 9,
-          "wvf": {
-            "anisotropy_ratio": 2.0062302340164795,
-            "clean_fwhm": 2.889643036185965,
-            "support_cardinality": 80,
-            "white_noise_gain": 0.6165697650287708,
-            "effective_second_moment": 2.9488911754511924
-          },
-          "square_sg": {
-            "window_size": 11,
-            "half_side": 5,
-            "degree": 9,
-            "anisotropy_ratio": 2.1541631780900206,
-            "clean_fwhm": 3.1425432455948408,
-            "support_cardinality": 120,
-            "white_noise_gain": 0.23835846167250396,
-            "effective_second_moment": 8.104452246965039
-          }
+        "effective_response_width": {
+          "rows": [
+            {
+              "radius": 3,
+              "degree": 5,
+              "wvf": {
+                "config": {
+                  "r": 3,
+                  "d": 5,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 3,
+                "anisotropy_ratio": 2.140264483831054,
+                "clean_fwhm": 2.9125130702251516,
+                "support_cardinality": 28,
+                "white_noise_gain": 0.6104984126984088,
+                "effective_second_moment": 1.8026649353080566
+              },
+              "comparator": {
+                "config": {
+                  "N": 5,
+                  "d": 5,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 2,
+                "anisotropy_ratio": 2.073781246046313,
+                "clean_fwhm": 2.963839781175343,
+                "support_cardinality": 25,
+                "white_noise_gain": 0.4892027548202739,
+                "effective_second_moment": 1.774779301300146
+              }
+            },
+            {
+              "radius": 5,
+              "degree": 9,
+              "wvf": {
+                "config": {
+                  "r": 5,
+                  "d": 9,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 5,
+                "anisotropy_ratio": 2.006228584968903,
+                "clean_fwhm": 2.889641980875193,
+                "support_cardinality": 80,
+                "white_noise_gain": 0.6165697650287708,
+                "effective_second_moment": 2.9488911754511924
+              },
+              "comparator": {
+                "config": {
+                  "N": 7,
+                  "d": 9,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 3,
+                "anisotropy_ratio": 2.158825141237326,
+                "clean_fwhm": 2.888179407309303,
+                "support_cardinality": 49,
+                "white_noise_gain": 0.7773409131628247,
+                "effective_second_moment": 1.8193597528838135
+              }
+            },
+            {
+              "radius": 9,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 9,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 9,
+                "anisotropy_ratio": 2.1079204213022162,
+                "clean_fwhm": 3.3749749276878913,
+                "support_cardinality": 252,
+                "white_noise_gain": 0.08868650620066386,
+                "effective_second_moment": 11.814312590355133
+              },
+              "comparator": {
+                "config": {
+                  "N": 15,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 7,
+                "anisotropy_ratio": 1.9594943286405344,
+                "clean_fwhm": 3.383135970474375,
+                "support_cardinality": 225,
+                "white_noise_gain": 0.11083372673678721,
+                "effective_second_moment": 13.855377876327484
+              }
+            },
+            {
+              "radius": 15,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 15,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 15,
+                "anisotropy_ratio": 1.5264558085534448,
+                "clean_fwhm": 4.8181047736574145,
+                "support_cardinality": 708,
+                "white_noise_gain": 0.010987598156692223,
+                "effective_second_moment": 34.34850400372263
+              },
+              "comparator": {
+                "config": {
+                  "N": 25,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 12,
+                "anisotropy_ratio": 1.7154243390301467,
+                "clean_fwhm": 4.946500967740489,
+                "support_cardinality": 625,
+                "white_noise_gain": 0.01117642328953299,
+                "effective_second_moment": 42.64232314487009
+              }
+            },
+            {
+              "radius": 25,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 25,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 25,
+                "anisotropy_ratio": 1.2345200033820625,
+                "clean_fwhm": 7.545174199545114,
+                "support_cardinality": 1960,
+                "white_noise_gain": 0.0014297399791228117,
+                "effective_second_moment": 96.76368446528615
+              },
+              "comparator": {
+                "config": {
+                  "N": 39,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 19,
+                "anisotropy_ratio": 1.5747661909825652,
+                "clean_fwhm": 7.395063771738318,
+                "support_cardinality": 1521,
+                "white_noise_gain": 0.0017698736903556081,
+                "effective_second_moment": 107.28757930722712
+              }
+            },
+            {
+              "radius": 50,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 50,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 50,
+                "anisotropy_ratio": 1.1214402372285648,
+                "clean_fwhm": 14.67397720671609,
+                "support_cardinality": 7844,
+                "white_noise_gain": 8.998553150423674e-05,
+                "effective_second_moment": 384.5756868324492
+              },
+              "comparator": {
+                "config": {
+                  "N": 79,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 39,
+                "anisotropy_ratio": 1.478636822435062,
+                "clean_fwhm": 14.655696270503869,
+                "support_cardinality": 6241,
+                "white_noise_gain": 0.00010186541106902181,
+                "effective_second_moment": 447.86223789465595
+              }
+            }
+          ]
         },
-        {
-          "radius": 9,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 2.107922206871009,
-            "clean_fwhm": 3.3749746450981766,
-            "support_cardinality": 252,
-            "white_noise_gain": 0.08868650620066386,
-            "effective_second_moment": 11.814312590355133
-          },
-          "square_sg": {
-            "window_size": 19,
-            "half_side": 9,
-            "degree": 11,
-            "anisotropy_ratio": 1.8115614810701368,
-            "clean_fwhm": 3.9665517734537996,
-            "support_cardinality": 360,
-            "white_noise_gain": 0.036660585274004134,
-            "effective_second_moment": 23.610148356517552
-          }
+        "support_cardinality": {
+          "rows": [
+            {
+              "radius": 3,
+              "degree": 5,
+              "wvf": {
+                "config": {
+                  "r": 3,
+                  "d": 5,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 3,
+                "anisotropy_ratio": 2.140264483831054,
+                "clean_fwhm": 2.9125130702251516,
+                "support_cardinality": 28,
+                "white_noise_gain": 0.6104984126984088,
+                "effective_second_moment": 1.8026649353080566
+              },
+              "comparator": {
+                "config": {
+                  "N": 5,
+                  "d": 5,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 2,
+                "anisotropy_ratio": 2.073781246046313,
+                "clean_fwhm": 2.963839781175343,
+                "support_cardinality": 25,
+                "white_noise_gain": 0.4892027548202739,
+                "effective_second_moment": 1.774779301300146
+              }
+            },
+            {
+              "radius": 5,
+              "degree": 9,
+              "wvf": {
+                "config": {
+                  "r": 5,
+                  "d": 9,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 5,
+                "anisotropy_ratio": 2.006228584968903,
+                "clean_fwhm": 2.889641980875193,
+                "support_cardinality": 80,
+                "white_noise_gain": 0.6165697650287708,
+                "effective_second_moment": 2.9488911754511924
+              },
+              "comparator": {
+                "config": {
+                  "N": 9,
+                  "d": 9,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 4,
+                "anisotropy_ratio": 2.0254152490284216,
+                "clean_fwhm": 2.9479802305859653,
+                "support_cardinality": 81,
+                "white_noise_gain": 0.4452812534365992,
+                "effective_second_moment": 3.7610481874599233
+              }
+            },
+            {
+              "radius": 9,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 9,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 9,
+                "anisotropy_ratio": 2.1079204213022162,
+                "clean_fwhm": 3.3749749276878913,
+                "support_cardinality": 252,
+                "white_noise_gain": 0.08868650620066386,
+                "effective_second_moment": 11.814312590355133
+              },
+              "comparator": {
+                "config": {
+                  "N": 15,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 7,
+                "anisotropy_ratio": 1.9594943286405344,
+                "clean_fwhm": 3.383135970474375,
+                "support_cardinality": 225,
+                "white_noise_gain": 0.11083372673678721,
+                "effective_second_moment": 13.855377876327484
+              }
+            },
+            {
+              "radius": 15,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 15,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 15,
+                "anisotropy_ratio": 1.5264558085534448,
+                "clean_fwhm": 4.8181047736574145,
+                "support_cardinality": 708,
+                "white_noise_gain": 0.010987598156692223,
+                "effective_second_moment": 34.34850400372263
+              },
+              "comparator": {
+                "config": {
+                  "N": 27,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 13,
+                "anisotropy_ratio": 1.6796585219844646,
+                "clean_fwhm": 5.286923840815701,
+                "support_cardinality": 729,
+                "white_noise_gain": 0.008083499867856721,
+                "effective_second_moment": 50.14450300685377
+              }
+            },
+            {
+              "radius": 25,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 25,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 25,
+                "anisotropy_ratio": 1.2345200033820625,
+                "clean_fwhm": 7.545174199545114,
+                "support_cardinality": 1960,
+                "white_noise_gain": 0.0014297399791228117,
+                "effective_second_moment": 96.76368446528615
+              },
+              "comparator": {
+                "config": {
+                  "N": 45,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 22,
+                "anisotropy_ratio": 1.4761800530672706,
+                "clean_fwhm": 8.470987004763048,
+                "support_cardinality": 2025,
+                "white_noise_gain": 0.0009880565201549666,
+                "effective_second_moment": 143.65352948473085
+              }
+            },
+            {
+              "radius": 50,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 50,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 50,
+                "anisotropy_ratio": 1.1214402372285648,
+                "clean_fwhm": 14.67397720671609,
+                "support_cardinality": 7844,
+                "white_noise_gain": 8.998553150423674e-05,
+                "effective_second_moment": 384.5756868324492
+              },
+              "comparator": {
+                "config": {
+                  "N": 89,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 44,
+                "anisotropy_ratio": 1.4233169517478856,
+                "clean_fwhm": 16.486747000983435,
+                "support_cardinality": 7921,
+                "white_noise_gain": 6.310504686509244e-05,
+                "effective_second_moment": 569.0842590981283
+              }
+            }
+          ]
         },
-        {
-          "radius": 15,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 1.5264561688050307,
-            "clean_fwhm": 4.818103851460932,
-            "support_cardinality": 708,
-            "white_noise_gain": 0.010987598156692223,
-            "effective_second_moment": 34.34850400372263
-          },
-          "square_sg": {
-            "window_size": 31,
-            "half_side": 15,
-            "degree": 11,
-            "anisotropy_ratio": 1.5725570613685085,
-            "clean_fwhm": 5.980067996018125,
-            "support_cardinality": 960,
-            "white_noise_gain": 0.0045472245188573,
-            "effective_second_moment": 66.88228687144715
-          }
+        "white_noise_gain": {
+          "rows": [
+            {
+              "radius": 3,
+              "degree": 5,
+              "wvf": {
+                "config": {
+                  "r": 3,
+                  "d": 5,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 3,
+                "anisotropy_ratio": 2.140264483831054,
+                "clean_fwhm": 2.9125130702251516,
+                "support_cardinality": 28,
+                "white_noise_gain": 0.6104984126984088,
+                "effective_second_moment": 1.8026649353080566
+              },
+              "comparator": {
+                "config": {
+                  "N": 5,
+                  "d": 5,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 2,
+                "anisotropy_ratio": 2.073781246046313,
+                "clean_fwhm": 2.963839781175343,
+                "support_cardinality": 25,
+                "white_noise_gain": 0.4892027548202739,
+                "effective_second_moment": 1.774779301300146
+              }
+            },
+            {
+              "radius": 5,
+              "degree": 9,
+              "wvf": {
+                "config": {
+                  "r": 5,
+                  "d": 9,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 5,
+                "anisotropy_ratio": 2.006228584968903,
+                "clean_fwhm": 2.889641980875193,
+                "support_cardinality": 80,
+                "white_noise_gain": 0.6165697650287708,
+                "effective_second_moment": 2.9488911754511924
+              },
+              "comparator": {
+                "config": {
+                  "N": 3,
+                  "d": 9,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 1,
+                "anisotropy_ratio": 2.251184341196944,
+                "clean_fwhm": 3.121377840302073,
+                "support_cardinality": 9,
+                "white_noise_gain": 0.4732742086674478,
+                "effective_second_moment": 1.0
+              }
+            },
+            {
+              "radius": 9,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 9,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 9,
+                "anisotropy_ratio": 2.1079204213022162,
+                "clean_fwhm": 3.3749749276878913,
+                "support_cardinality": 252,
+                "white_noise_gain": 0.08868650620066386,
+                "effective_second_moment": 11.814312590355133
+              },
+              "comparator": {
+                "config": {
+                  "N": 15,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 7,
+                "anisotropy_ratio": 1.9594943286405344,
+                "clean_fwhm": 3.383135970474375,
+                "support_cardinality": 225,
+                "white_noise_gain": 0.11083372673678721,
+                "effective_second_moment": 13.855377876327484
+              }
+            },
+            {
+              "radius": 15,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 15,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 15,
+                "anisotropy_ratio": 1.5264558085534448,
+                "clean_fwhm": 4.8181047736574145,
+                "support_cardinality": 708,
+                "white_noise_gain": 0.010987598156692223,
+                "effective_second_moment": 34.34850400372263
+              },
+              "comparator": {
+                "config": {
+                  "N": 25,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 12,
+                "anisotropy_ratio": 1.7154243390301467,
+                "clean_fwhm": 4.946500967740489,
+                "support_cardinality": 625,
+                "white_noise_gain": 0.01117642328953299,
+                "effective_second_moment": 42.64232314487009
+              }
+            },
+            {
+              "radius": 25,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 25,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 25,
+                "anisotropy_ratio": 1.2345200033820625,
+                "clean_fwhm": 7.545174199545114,
+                "support_cardinality": 1960,
+                "white_noise_gain": 0.0014297399791228117,
+                "effective_second_moment": 96.76368446528615
+              },
+              "comparator": {
+                "config": {
+                  "N": 41,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 20,
+                "anisotropy_ratio": 1.5476607340776936,
+                "clean_fwhm": 7.752816683157915,
+                "support_cardinality": 1681,
+                "white_noise_gain": 0.001443143235519061,
+                "effective_second_moment": 118.83226751807848
+              }
+            },
+            {
+              "radius": 50,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 50,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 50,
+                "anisotropy_ratio": 1.1214402372285648,
+                "clean_fwhm": 14.67397720671609,
+                "support_cardinality": 7844,
+                "white_noise_gain": 8.998553150423674e-05,
+                "effective_second_moment": 384.5756868324492
+              },
+              "comparator": {
+                "config": {
+                  "N": 81,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 40,
+                "anisotropy_ratio": 1.4577165328653452,
+                "clean_fwhm": 15.021645989500447,
+                "support_cardinality": 6561,
+                "white_noise_gain": 9.212665247664427e-05,
+                "effective_second_moment": 470.9521420129578
+              }
+            }
+          ]
         },
-        {
-          "radius": 25,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 1.234520135211439,
-            "clean_fwhm": 7.54517463547322,
-            "support_cardinality": 1960,
-            "white_noise_gain": 0.0014297399791228117,
-            "effective_second_moment": 96.76368446528615
-          },
-          "square_sg": {
-            "window_size": 51,
-            "half_side": 25,
-            "degree": 11,
-            "anisotropy_ratio": 1.4762100649072423,
-            "clean_fwhm": 9.554193713792625,
-            "support_cardinality": 2600,
-            "white_noise_gain": 0.0005947542730246949,
-            "effective_second_moment": 185.2150011979589
-          }
-        },
-        {
-          "radius": 50,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 1.1214402695455972,
-            "clean_fwhm": 14.673978149659304,
-            "support_cardinality": 7844,
-            "white_noise_gain": 8.998553150423674e-05,
-            "effective_second_moment": 384.5756868324492
-          },
-          "square_sg": {
-            "window_size": 101,
-            "half_side": 50,
-            "degree": 11,
-            "anisotropy_ratio": 1.4198917844071608,
-            "clean_fwhm": 18.687317473072167,
-            "support_cardinality": 10200,
-            "white_noise_gain": 3.7982572062894203e-05,
-            "effective_second_moment": 733.5999079884737
-          }
+        "effective_second_moment": {
+          "rows": [
+            {
+              "radius": 3,
+              "degree": 5,
+              "wvf": {
+                "config": {
+                  "r": 3,
+                  "d": 5,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 3,
+                "anisotropy_ratio": 2.140264483831054,
+                "clean_fwhm": 2.9125130702251516,
+                "support_cardinality": 28,
+                "white_noise_gain": 0.6104984126984088,
+                "effective_second_moment": 1.8026649353080566
+              },
+              "comparator": {
+                "config": {
+                  "N": 5,
+                  "d": 5,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 2,
+                "anisotropy_ratio": 2.073781246046313,
+                "clean_fwhm": 2.963839781175343,
+                "support_cardinality": 25,
+                "white_noise_gain": 0.4892027548202739,
+                "effective_second_moment": 1.774779301300146
+              }
+            },
+            {
+              "radius": 5,
+              "degree": 9,
+              "wvf": {
+                "config": {
+                  "r": 5,
+                  "d": 9,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 5,
+                "anisotropy_ratio": 2.006228584968903,
+                "clean_fwhm": 2.889641980875193,
+                "support_cardinality": 80,
+                "white_noise_gain": 0.6165697650287708,
+                "effective_second_moment": 2.9488911754511924
+              },
+              "comparator": {
+                "config": {
+                  "N": 9,
+                  "d": 9,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 4,
+                "anisotropy_ratio": 2.0254152490284216,
+                "clean_fwhm": 2.9479802305859653,
+                "support_cardinality": 81,
+                "white_noise_gain": 0.4452812534365992,
+                "effective_second_moment": 3.7610481874599233
+              }
+            },
+            {
+              "radius": 9,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 9,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 9,
+                "anisotropy_ratio": 2.1079204213022162,
+                "clean_fwhm": 3.3749749276878913,
+                "support_cardinality": 252,
+                "white_noise_gain": 0.08868650620066386,
+                "effective_second_moment": 11.814312590355133
+              },
+              "comparator": {
+                "config": {
+                  "N": 13,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 6,
+                "anisotropy_ratio": 2.0837497335444284,
+                "clean_fwhm": 3.137952927214546,
+                "support_cardinality": 169,
+                "white_noise_gain": 0.24127627082218964,
+                "effective_second_moment": 9.953123746858745
+              }
+            },
+            {
+              "radius": 15,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 15,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 15,
+                "anisotropy_ratio": 1.5264558085534448,
+                "clean_fwhm": 4.8181047736574145,
+                "support_cardinality": 708,
+                "white_noise_gain": 0.010987598156692223,
+                "effective_second_moment": 34.34850400372263
+              },
+              "comparator": {
+                "config": {
+                  "N": 23,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 11,
+                "anisotropy_ratio": 1.7455404323975054,
+                "clean_fwhm": 4.611550940448302,
+                "support_cardinality": 529,
+                "white_noise_gain": 0.015934436016117798,
+                "effective_second_moment": 35.718463497578384
+              }
+            },
+            {
+              "radius": 25,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 25,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 25,
+                "anisotropy_ratio": 1.2345200033820625,
+                "clean_fwhm": 7.545174199545114,
+                "support_cardinality": 1960,
+                "white_noise_gain": 0.0014297399791228117,
+                "effective_second_moment": 96.76368446528615
+              },
+              "comparator": {
+                "config": {
+                  "N": 37,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 18,
+                "anisotropy_ratio": 1.596255110102387,
+                "clean_fwhm": 7.0386049003168205,
+                "support_cardinality": 1369,
+                "white_noise_gain": 0.0021951070715177765,
+                "effective_second_moment": 96.32020691057893
+              }
+            },
+            {
+              "radius": 50,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 50,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 50,
+                "anisotropy_ratio": 1.1214402372285648,
+                "clean_fwhm": 14.67397720671609,
+                "support_cardinality": 7844,
+                "white_noise_gain": 8.998553150423674e-05,
+                "effective_second_moment": 384.5756868324492
+              },
+              "comparator": {
+                "config": {
+                  "N": 73,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 36,
+                "anisotropy_ratio": 1.4967121102810463,
+                "clean_fwhm": 13.558601764374588,
+                "support_cardinality": 5329,
+                "white_noise_gain": 0.00013995254795666463,
+                "effective_second_moment": 382.056021483339
+              }
+            }
+          ]
         }
-      ]
+      }
     },
-    "effective_response_width": {
-      "rows": [
-        {
-          "radius": 3,
-          "degree": 5,
-          "wvf": {
-            "anisotropy_ratio": 2.140263680370334,
-            "clean_fwhm": 2.9125122741848517,
-            "support_cardinality": 28,
-            "white_noise_gain": 0.6104984126984088,
-            "effective_second_moment": 1.8026649353080566
-          },
-          "square_sg": {
-            "window_size": 5,
-            "half_side": 2,
-            "degree": 5,
-            "anisotropy_ratio": 2.0737806813741937,
-            "clean_fwhm": 2.9638404136869645,
-            "support_cardinality": 24,
-            "white_noise_gain": 0.4892027548202739,
-            "effective_second_moment": 1.774779301300146
-          }
+    "dog": {
+      "label": "Derivative of Gaussian",
+      "rules": {
+        "bounding_radius": {
+          "rows": [
+            {
+              "radius": 3,
+              "degree": 5,
+              "wvf": {
+                "config": {
+                  "r": 3,
+                  "d": 5,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 3,
+                "anisotropy_ratio": 2.140264483831054,
+                "clean_fwhm": 2.9125130702251516,
+                "support_cardinality": 28,
+                "white_noise_gain": 0.6104984126984088,
+                "effective_second_moment": 1.8026649353080566
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 0.75
+                },
+                "bounding_radius": 3,
+                "anisotropy_ratio": 1.997166147971008,
+                "clean_fwhm": 3.4120477138799092,
+                "support_cardinality": 49,
+                "white_noise_gain": 0.1167897931818702,
+                "effective_second_moment": 1.3140817017865056
+              }
+            },
+            {
+              "radius": 5,
+              "degree": 9,
+              "wvf": {
+                "config": {
+                  "r": 5,
+                  "d": 9,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 5,
+                "anisotropy_ratio": 2.006228584968903,
+                "clean_fwhm": 2.889641980875193,
+                "support_cardinality": 80,
+                "white_noise_gain": 0.6165697650287708,
+                "effective_second_moment": 2.9488911754511924
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 1.25
+                },
+                "bounding_radius": 5,
+                "anisotropy_ratio": 1.6803990626271776,
+                "clean_fwhm": 4.207578028447609,
+                "support_cardinality": 121,
+                "white_noise_gain": 0.01629727738487152,
+                "effective_second_moment": 3.125259534650948
+              }
+            },
+            {
+              "radius": 9,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 9,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 9,
+                "anisotropy_ratio": 2.1079204213022162,
+                "clean_fwhm": 3.3749749276878913,
+                "support_cardinality": 252,
+                "white_noise_gain": 0.08868650620066386,
+                "effective_second_moment": 11.814312590355133
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 2.25
+                },
+                "bounding_radius": 9,
+                "anisotropy_ratio": 1.2712997279408527,
+                "clean_fwhm": 6.154748855705335,
+                "support_cardinality": 361,
+                "white_noise_gain": 0.0015524944065584997,
+                "effective_second_moment": 10.124994923100973
+              }
+            },
+            {
+              "radius": 15,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 15,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 15,
+                "anisotropy_ratio": 1.5264558085534448,
+                "clean_fwhm": 4.8181047736574145,
+                "support_cardinality": 708,
+                "white_noise_gain": 0.010987598156692223,
+                "effective_second_moment": 34.34850400372263
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 3.75
+                },
+                "bounding_radius": 15,
+                "anisotropy_ratio": 1.1608103577070679,
+                "clean_fwhm": 9.396537416412432,
+                "support_cardinality": 961,
+                "white_noise_gain": 0.00020120325463323686,
+                "effective_second_moment": 28.124962621275493
+              }
+            },
+            {
+              "radius": 25,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 25,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 25,
+                "anisotropy_ratio": 1.2345200033820625,
+                "clean_fwhm": 7.545174199545114,
+                "support_cardinality": 1960,
+                "white_noise_gain": 0.0014297399791228117,
+                "effective_second_moment": 96.76368446528615
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 6.25
+                },
+                "bounding_radius": 25,
+                "anisotropy_ratio": 1.0873066532092022,
+                "clean_fwhm": 15.071303562292675,
+                "support_cardinality": 2601,
+                "white_noise_gain": 2.607593885363739e-05,
+                "effective_second_moment": 78.12482817163453
+              }
+            },
+            {
+              "radius": 50,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 50,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 50,
+                "anisotropy_ratio": 1.1214402372285648,
+                "clean_fwhm": 14.67397720671609,
+                "support_cardinality": 7844,
+                "white_noise_gain": 8.998553150423674e-05,
+                "effective_second_moment": 384.5756868324492
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 12.5
+                },
+                "bounding_radius": 50,
+                "anisotropy_ratio": 1.0381143772806825,
+                "clean_fwhm": 29.61079627308865,
+                "support_cardinality": 10201,
+                "white_noise_gain": 1.6297459851581039e-06,
+                "effective_second_moment": 312.49903585731755
+              }
+            }
+          ]
         },
-        {
-          "radius": 5,
-          "degree": 9,
-          "wvf": {
-            "anisotropy_ratio": 2.0062302340164795,
-            "clean_fwhm": 2.889643036185965,
-            "support_cardinality": 80,
-            "white_noise_gain": 0.6165697650287708,
-            "effective_second_moment": 2.9488911754511924
-          },
-          "square_sg": {
-            "window_size": 7,
-            "half_side": 3,
-            "degree": 9,
-            "anisotropy_ratio": 2.1588248311987375,
-            "clean_fwhm": 2.888178577712816,
-            "support_cardinality": 48,
-            "white_noise_gain": 0.7773409131628247,
-            "effective_second_moment": 1.8193597528838135
-          }
+        "effective_response_width": {
+          "rows": [
+            {
+              "radius": 3,
+              "degree": 5,
+              "wvf": {
+                "config": {
+                  "r": 3,
+                  "d": 5,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 3,
+                "anisotropy_ratio": 2.140264483831054,
+                "clean_fwhm": 2.9125130702251516,
+                "support_cardinality": 28,
+                "white_noise_gain": 0.6104984126984088,
+                "effective_second_moment": 1.8026649353080566
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 0.5
+                },
+                "bounding_radius": 2,
+                "anisotropy_ratio": 2.1032718409459594,
+                "clean_fwhm": 3.1836574282031225,
+                "support_cardinality": 25,
+                "white_noise_gain": 0.24624497275005577,
+                "effective_second_moment": 1.0354114335601914
+              }
+            },
+            {
+              "radius": 5,
+              "degree": 9,
+              "wvf": {
+                "config": {
+                  "r": 5,
+                  "d": 9,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 5,
+                "anisotropy_ratio": 2.006228584968903,
+                "clean_fwhm": 2.889641980875193,
+                "support_cardinality": 80,
+                "white_noise_gain": 0.6165697650287708,
+                "effective_second_moment": 2.9488911754511924
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 0.5
+                },
+                "bounding_radius": 2,
+                "anisotropy_ratio": 2.1032718409459594,
+                "clean_fwhm": 3.1836574282031225,
+                "support_cardinality": 25,
+                "white_noise_gain": 0.24624497275005577,
+                "effective_second_moment": 1.0354114335601914
+              }
+            },
+            {
+              "radius": 9,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 9,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 9,
+                "anisotropy_ratio": 2.1079204213022162,
+                "clean_fwhm": 3.3749749276878913,
+                "support_cardinality": 252,
+                "white_noise_gain": 0.08868650620066386,
+                "effective_second_moment": 11.814312590355133
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 0.75
+                },
+                "bounding_radius": 3,
+                "anisotropy_ratio": 1.997166147971008,
+                "clean_fwhm": 3.4120477138799092,
+                "support_cardinality": 49,
+                "white_noise_gain": 0.1167897931818702,
+                "effective_second_moment": 1.3140817017865056
+              }
+            },
+            {
+              "radius": 15,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 15,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 15,
+                "anisotropy_ratio": 1.5264558085534448,
+                "clean_fwhm": 4.8181047736574145,
+                "support_cardinality": 708,
+                "white_noise_gain": 0.010987598156692223,
+                "effective_second_moment": 34.34850400372263
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 1.5
+                },
+                "bounding_radius": 6,
+                "anisotropy_ratio": 1.5354758849300916,
+                "clean_fwhm": 4.664675706312148,
+                "support_cardinality": 169,
+                "white_noise_gain": 0.007859503119384784,
+                "effective_second_moment": 4.500000381758979
+              }
+            },
+            {
+              "radius": 25,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 25,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 25,
+                "anisotropy_ratio": 1.2345200033820625,
+                "clean_fwhm": 7.545174199545114,
+                "support_cardinality": 1960,
+                "white_noise_gain": 0.0014297399791228117,
+                "effective_second_moment": 96.76368446528615
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 3.0
+                },
+                "bounding_radius": 12,
+                "anisotropy_ratio": 1.1920849640396567,
+                "clean_fwhm": 7.748563354523744,
+                "support_cardinality": 625,
+                "white_noise_gain": 0.0004912189073129315,
+                "effective_second_moment": 17.999983072371954
+              }
+            },
+            {
+              "radius": 50,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 50,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 50,
+                "anisotropy_ratio": 1.1214402372285648,
+                "clean_fwhm": 14.67397720671609,
+                "support_cardinality": 7844,
+                "white_noise_gain": 8.998553150423674e-05,
+                "effective_second_moment": 384.5756868324492
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 6.0
+                },
+                "bounding_radius": 24,
+                "anisotropy_ratio": 1.0928492766312958,
+                "clean_fwhm": 14.496323857741679,
+                "support_cardinality": 2401,
+                "white_noise_gain": 3.0701177002745085e-05,
+                "effective_second_moment": 71.99984627828754
+              }
+            }
+          ]
         },
-        {
-          "radius": 9,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 2.107922206871009,
-            "clean_fwhm": 3.3749746450981766,
-            "support_cardinality": 252,
-            "white_noise_gain": 0.08868650620066386,
-            "effective_second_moment": 11.814312590355133
-          },
-          "square_sg": {
-            "window_size": 15,
-            "half_side": 7,
-            "degree": 11,
-            "anisotropy_ratio": 1.9594949657808407,
-            "clean_fwhm": 3.383135743551937,
-            "support_cardinality": 224,
-            "white_noise_gain": 0.11083372673678721,
-            "effective_second_moment": 13.855377876327484
-          }
+        "support_cardinality": {
+          "rows": [
+            {
+              "radius": 3,
+              "degree": 5,
+              "wvf": {
+                "config": {
+                  "r": 3,
+                  "d": 5,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 3,
+                "anisotropy_ratio": 2.140264483831054,
+                "clean_fwhm": 2.9125130702251516,
+                "support_cardinality": 28,
+                "white_noise_gain": 0.6104984126984088,
+                "effective_second_moment": 1.8026649353080566
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 0.5
+                },
+                "bounding_radius": 2,
+                "anisotropy_ratio": 2.1032718409459594,
+                "clean_fwhm": 3.1836574282031225,
+                "support_cardinality": 25,
+                "white_noise_gain": 0.24624497275005577,
+                "effective_second_moment": 1.0354114335601914
+              }
+            },
+            {
+              "radius": 5,
+              "degree": 9,
+              "wvf": {
+                "config": {
+                  "r": 5,
+                  "d": 9,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 5,
+                "anisotropy_ratio": 2.006228584968903,
+                "clean_fwhm": 2.889641980875193,
+                "support_cardinality": 80,
+                "white_noise_gain": 0.6165697650287708,
+                "effective_second_moment": 2.9488911754511924
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 1.0
+                },
+                "bounding_radius": 4,
+                "anisotropy_ratio": 1.86751983846747,
+                "clean_fwhm": 3.784848411215635,
+                "support_cardinality": 81,
+                "white_noise_gain": 0.03971571317214924,
+                "effective_second_moment": 2.0161026158760733
+              }
+            },
+            {
+              "radius": 9,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 9,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 9,
+                "anisotropy_ratio": 2.1079204213022162,
+                "clean_fwhm": 3.3749749276878913,
+                "support_cardinality": 252,
+                "white_noise_gain": 0.08868650620066386,
+                "effective_second_moment": 11.814312590355133
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 1.75
+                },
+                "bounding_radius": 7,
+                "anisotropy_ratio": 1.4228014528619346,
+                "clean_fwhm": 5.145054391714056,
+                "support_cardinality": 225,
+                "white_noise_gain": 0.00424236406522861,
+                "effective_second_moment": 6.124998613907788
+              }
+            },
+            {
+              "radius": 15,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 15,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 15,
+                "anisotropy_ratio": 1.5264558085534448,
+                "clean_fwhm": 4.8181047736574145,
+                "support_cardinality": 708,
+                "white_noise_gain": 0.010987598156692223,
+                "effective_second_moment": 34.34850400372263
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 3.25
+                },
+                "bounding_radius": 13,
+                "anisotropy_ratio": 1.1812430599624624,
+                "clean_fwhm": 8.293115115070812,
+                "support_cardinality": 729,
+                "white_noise_gain": 0.0003566372006907877,
+                "effective_second_moment": 21.12497724272996
+              }
+            },
+            {
+              "radius": 25,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 25,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 25,
+                "anisotropy_ratio": 1.2345200033820625,
+                "clean_fwhm": 7.545174199545114,
+                "support_cardinality": 1960,
+                "white_noise_gain": 0.0014297399791228117,
+                "effective_second_moment": 96.76368446528615
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 5.5
+                },
+                "bounding_radius": 22,
+                "anisotropy_ratio": 1.1049381060495458,
+                "clean_fwhm": 13.3511566923612,
+                "support_cardinality": 2025,
+                "white_noise_gain": 4.348197651433574e-05,
+                "effective_second_moment": 60.499879369879444
+              }
+            },
+            {
+              "radius": 50,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 50,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 50,
+                "anisotropy_ratio": 1.1214402372285648,
+                "clean_fwhm": 14.67397720671609,
+                "support_cardinality": 7844,
+                "white_noise_gain": 8.998553150423674e-05,
+                "effective_second_moment": 384.5756868324492
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 11.0
+                },
+                "bounding_radius": 44,
+                "anisotropy_ratio": 1.0430467691410479,
+                "clean_fwhm": 26.104047066071647,
+                "support_cardinality": 7921,
+                "white_noise_gain": 2.7176231854309744e-06,
+                "effective_second_moment": 241.99928566108176
+              }
+            }
+          ]
         },
-        {
-          "radius": 15,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 1.5264561688050307,
-            "clean_fwhm": 4.818103851460932,
-            "support_cardinality": 708,
-            "white_noise_gain": 0.010987598156692223,
-            "effective_second_moment": 34.34850400372263
-          },
-          "square_sg": {
-            "window_size": 25,
-            "half_side": 12,
-            "degree": 11,
-            "anisotropy_ratio": 1.7154234509782758,
-            "clean_fwhm": 4.946501089757486,
-            "support_cardinality": 624,
-            "white_noise_gain": 0.01117642328953299,
-            "effective_second_moment": 42.64232314487009
-          }
+        "white_noise_gain": {
+          "rows": [
+            {
+              "radius": 3,
+              "degree": 5,
+              "wvf": {
+                "config": {
+                  "r": 3,
+                  "d": 5,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 3,
+                "anisotropy_ratio": 2.140264483831054,
+                "clean_fwhm": 2.9125130702251516,
+                "support_cardinality": 28,
+                "white_noise_gain": 0.6104984126984088,
+                "effective_second_moment": 1.8026649353080566
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 0.5
+                },
+                "bounding_radius": 2,
+                "anisotropy_ratio": 2.1032718409459594,
+                "clean_fwhm": 3.1836574282031225,
+                "support_cardinality": 25,
+                "white_noise_gain": 0.24624497275005577,
+                "effective_second_moment": 1.0354114335601914
+              }
+            },
+            {
+              "radius": 5,
+              "degree": 9,
+              "wvf": {
+                "config": {
+                  "r": 5,
+                  "d": 9,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 5,
+                "anisotropy_ratio": 2.006228584968903,
+                "clean_fwhm": 2.889641980875193,
+                "support_cardinality": 80,
+                "white_noise_gain": 0.6165697650287708,
+                "effective_second_moment": 2.9488911754511924
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 0.5
+                },
+                "bounding_radius": 2,
+                "anisotropy_ratio": 2.1032718409459594,
+                "clean_fwhm": 3.1836574282031225,
+                "support_cardinality": 25,
+                "white_noise_gain": 0.24624497275005577,
+                "effective_second_moment": 1.0354114335601914
+              }
+            },
+            {
+              "radius": 9,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 9,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 9,
+                "anisotropy_ratio": 2.1079204213022162,
+                "clean_fwhm": 3.3749749276878913,
+                "support_cardinality": 252,
+                "white_noise_gain": 0.08868650620066386,
+                "effective_second_moment": 11.814312590355133
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 0.75
+                },
+                "bounding_radius": 3,
+                "anisotropy_ratio": 1.997166147971008,
+                "clean_fwhm": 3.4120477138799092,
+                "support_cardinality": 49,
+                "white_noise_gain": 0.1167897931818702,
+                "effective_second_moment": 1.3140817017865056
+              }
+            },
+            {
+              "radius": 15,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 15,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 15,
+                "anisotropy_ratio": 1.5264558085534448,
+                "clean_fwhm": 4.8181047736574145,
+                "support_cardinality": 708,
+                "white_noise_gain": 0.010987598156692223,
+                "effective_second_moment": 34.34850400372263
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 1.5
+                },
+                "bounding_radius": 6,
+                "anisotropy_ratio": 1.5354758849300916,
+                "clean_fwhm": 4.664675706312148,
+                "support_cardinality": 169,
+                "white_noise_gain": 0.007859503119384784,
+                "effective_second_moment": 4.500000381758979
+              }
+            },
+            {
+              "radius": 25,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 25,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 25,
+                "anisotropy_ratio": 1.2345200033820625,
+                "clean_fwhm": 7.545174199545114,
+                "support_cardinality": 1960,
+                "white_noise_gain": 0.0014297399791228117,
+                "effective_second_moment": 96.76368446528615
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 2.25
+                },
+                "bounding_radius": 9,
+                "anisotropy_ratio": 1.2712997279408527,
+                "clean_fwhm": 6.154748855705335,
+                "support_cardinality": 361,
+                "white_noise_gain": 0.0015524944065584997,
+                "effective_second_moment": 10.124994923100973
+              }
+            },
+            {
+              "radius": 50,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 50,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 50,
+                "anisotropy_ratio": 1.1214402372285648,
+                "clean_fwhm": 14.67397720671609,
+                "support_cardinality": 7844,
+                "white_noise_gain": 8.998553150423674e-05,
+                "effective_second_moment": 384.5756868324492
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 4.5
+                },
+                "bounding_radius": 18,
+                "anisotropy_ratio": 1.1336553824226545,
+                "clean_fwhm": 11.077640014852674,
+                "support_cardinality": 1369,
+                "white_noise_gain": 9.70308865316345e-05,
+                "effective_second_moment": 40.4999331107926
+              }
+            }
+          ]
         },
-        {
-          "radius": 25,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 1.234520135211439,
-            "clean_fwhm": 7.54517463547322,
-            "support_cardinality": 1960,
-            "white_noise_gain": 0.0014297399791228117,
-            "effective_second_moment": 96.76368446528615
-          },
-          "square_sg": {
-            "window_size": 39,
-            "half_side": 19,
-            "degree": 11,
-            "anisotropy_ratio": 1.574766853647647,
-            "clean_fwhm": 7.395064251436278,
-            "support_cardinality": 1520,
-            "white_noise_gain": 0.0017698736903556081,
-            "effective_second_moment": 107.28757930722712
-          }
-        },
-        {
-          "radius": 50,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 1.1214402695455972,
-            "clean_fwhm": 14.673978149659304,
-            "support_cardinality": 7844,
-            "white_noise_gain": 8.998553150423674e-05,
-            "effective_second_moment": 384.5756868324492
-          },
-          "square_sg": {
-            "window_size": 79,
-            "half_side": 39,
-            "degree": 11,
-            "anisotropy_ratio": 1.478637021931796,
-            "clean_fwhm": 14.65569646142638,
-            "support_cardinality": 6240,
-            "white_noise_gain": 0.00010186541106902181,
-            "effective_second_moment": 447.86223789465595
-          }
+        "effective_second_moment": {
+          "rows": [
+            {
+              "radius": 3,
+              "degree": 5,
+              "wvf": {
+                "config": {
+                  "r": 3,
+                  "d": 5,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 3,
+                "anisotropy_ratio": 2.140264483831054,
+                "clean_fwhm": 2.9125130702251516,
+                "support_cardinality": 28,
+                "white_noise_gain": 0.6104984126984088,
+                "effective_second_moment": 1.8026649353080566
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 1.0
+                },
+                "bounding_radius": 4,
+                "anisotropy_ratio": 1.86751983846747,
+                "clean_fwhm": 3.784848411215635,
+                "support_cardinality": 81,
+                "white_noise_gain": 0.03971571317214924,
+                "effective_second_moment": 2.0161026158760733
+              }
+            },
+            {
+              "radius": 5,
+              "degree": 9,
+              "wvf": {
+                "config": {
+                  "r": 5,
+                  "d": 9,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 5,
+                "anisotropy_ratio": 2.006228584968903,
+                "clean_fwhm": 2.889641980875193,
+                "support_cardinality": 80,
+                "white_noise_gain": 0.6165697650287708,
+                "effective_second_moment": 2.9488911754511924
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 1.25
+                },
+                "bounding_radius": 5,
+                "anisotropy_ratio": 1.6803990626271776,
+                "clean_fwhm": 4.207578028447609,
+                "support_cardinality": 121,
+                "white_noise_gain": 0.01629727738487152,
+                "effective_second_moment": 3.125259534650948
+              }
+            },
+            {
+              "radius": 9,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 9,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 9,
+                "anisotropy_ratio": 2.1079204213022162,
+                "clean_fwhm": 3.3749749276878913,
+                "support_cardinality": 252,
+                "white_noise_gain": 0.08868650620066386,
+                "effective_second_moment": 11.814312590355133
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 2.5
+                },
+                "bounding_radius": 10,
+                "anisotropy_ratio": 1.2332032026136348,
+                "clean_fwhm": 6.677925048261793,
+                "support_cardinality": 441,
+                "white_noise_gain": 0.0010185915622265315,
+                "effective_second_moment": 12.499991876856068
+              }
+            },
+            {
+              "radius": 15,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 15,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 15,
+                "anisotropy_ratio": 1.5264558085534448,
+                "clean_fwhm": 4.8181047736574145,
+                "support_cardinality": 708,
+                "white_noise_gain": 0.010987598156692223,
+                "effective_second_moment": 34.34850400372263
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 4.25
+                },
+                "bounding_radius": 17,
+                "anisotropy_ratio": 1.1421320841170883,
+                "clean_fwhm": 10.513956892081431,
+                "support_cardinality": 1225,
+                "white_noise_gain": 0.00012195632806867707,
+                "effective_second_moment": 36.12494396852291
+              }
+            },
+            {
+              "radius": 25,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 25,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 25,
+                "anisotropy_ratio": 1.2345200033820625,
+                "clean_fwhm": 7.545174199545114,
+                "support_cardinality": 1960,
+                "white_noise_gain": 0.0014297399791228117,
+                "effective_second_moment": 96.76368446528615
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 7.0
+                },
+                "bounding_radius": 28,
+                "anisotropy_ratio": 1.0724824988844133,
+                "clean_fwhm": 16.801194173261077,
+                "support_cardinality": 3249,
+                "white_noise_gain": 1.6571730175041295e-05,
+                "effective_second_moment": 97.99976759699335
+              }
+            },
+            {
+              "radius": 50,
+              "degree": 11,
+              "wvf": {
+                "config": {
+                  "r": 50,
+                  "d": 11,
+                  "normalize_coords": true
+                },
+                "bounding_radius": 50,
+                "anisotropy_ratio": 1.1214402372285648,
+                "clean_fwhm": 14.67397720671609,
+                "support_cardinality": 7844,
+                "white_noise_gain": 8.998553150423674e-05,
+                "effective_second_moment": 384.5756868324492
+              },
+              "comparator": {
+                "config": {
+                  "sigma": 12.5
+                },
+                "bounding_radius": 50,
+                "anisotropy_ratio": 1.0381143772806825,
+                "clean_fwhm": 29.61079627308865,
+                "support_cardinality": 10201,
+                "white_noise_gain": 1.6297459851581039e-06,
+                "effective_second_moment": 312.49903585731755
+              }
+            }
+          ]
         }
-      ]
-    },
-    "support_cardinality": {
-      "rows": [
-        {
-          "radius": 3,
-          "degree": 5,
-          "wvf": {
-            "anisotropy_ratio": 2.140263680370334,
-            "clean_fwhm": 2.9125122741848517,
-            "support_cardinality": 28,
-            "white_noise_gain": 0.6104984126984088,
-            "effective_second_moment": 1.8026649353080566
-          },
-          "square_sg": {
-            "window_size": 5,
-            "half_side": 2,
-            "degree": 5,
-            "anisotropy_ratio": 2.0737806813741937,
-            "clean_fwhm": 2.9638404136869645,
-            "support_cardinality": 24,
-            "white_noise_gain": 0.4892027548202739,
-            "effective_second_moment": 1.774779301300146
-          }
-        },
-        {
-          "radius": 5,
-          "degree": 9,
-          "wvf": {
-            "anisotropy_ratio": 2.0062302340164795,
-            "clean_fwhm": 2.889643036185965,
-            "support_cardinality": 80,
-            "white_noise_gain": 0.6165697650287708,
-            "effective_second_moment": 2.9488911754511924
-          },
-          "square_sg": {
-            "window_size": 9,
-            "half_side": 4,
-            "degree": 9,
-            "anisotropy_ratio": 2.0254145927863534,
-            "clean_fwhm": 2.9479794430823714,
-            "support_cardinality": 80,
-            "white_noise_gain": 0.4452812534365992,
-            "effective_second_moment": 3.7610481874599233
-          }
-        },
-        {
-          "radius": 9,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 2.107922206871009,
-            "clean_fwhm": 3.3749746450981766,
-            "support_cardinality": 252,
-            "white_noise_gain": 0.08868650620066386,
-            "effective_second_moment": 11.814312590355133
-          },
-          "square_sg": {
-            "window_size": 15,
-            "half_side": 7,
-            "degree": 11,
-            "anisotropy_ratio": 1.9594949657808407,
-            "clean_fwhm": 3.383135743551937,
-            "support_cardinality": 224,
-            "white_noise_gain": 0.11083372673678721,
-            "effective_second_moment": 13.855377876327484
-          }
-        },
-        {
-          "radius": 15,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 1.5264561688050307,
-            "clean_fwhm": 4.818103851460932,
-            "support_cardinality": 708,
-            "white_noise_gain": 0.010987598156692223,
-            "effective_second_moment": 34.34850400372263
-          },
-          "square_sg": {
-            "window_size": 27,
-            "half_side": 13,
-            "degree": 11,
-            "anisotropy_ratio": 1.6796575094215909,
-            "clean_fwhm": 5.286924365477291,
-            "support_cardinality": 728,
-            "white_noise_gain": 0.008083499867856721,
-            "effective_second_moment": 50.14450300685377
-          }
-        },
-        {
-          "radius": 25,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 1.234520135211439,
-            "clean_fwhm": 7.54517463547322,
-            "support_cardinality": 1960,
-            "white_noise_gain": 0.0014297399791228117,
-            "effective_second_moment": 96.76368446528615
-          },
-          "square_sg": {
-            "window_size": 45,
-            "half_side": 22,
-            "degree": 11,
-            "anisotropy_ratio": 1.4761802853774342,
-            "clean_fwhm": 8.470987120639645,
-            "support_cardinality": 2024,
-            "white_noise_gain": 0.0009880565201549666,
-            "effective_second_moment": 143.65352948473085
-          }
-        },
-        {
-          "radius": 50,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 1.1214402695455972,
-            "clean_fwhm": 14.673978149659304,
-            "support_cardinality": 7844,
-            "white_noise_gain": 8.998553150423674e-05,
-            "effective_second_moment": 384.5756868324492
-          },
-          "square_sg": {
-            "window_size": 89,
-            "half_side": 44,
-            "degree": 11,
-            "anisotropy_ratio": 1.4233167889304306,
-            "clean_fwhm": 16.48674734304836,
-            "support_cardinality": 7920,
-            "white_noise_gain": 6.310504686509244e-05,
-            "effective_second_moment": 569.0842590981283
-          }
-        }
-      ]
-    },
-    "white_noise_gain": {
-      "rows": [
-        {
-          "radius": 3,
-          "degree": 5,
-          "wvf": {
-            "anisotropy_ratio": 2.140263680370334,
-            "clean_fwhm": 2.9125122741848517,
-            "support_cardinality": 28,
-            "white_noise_gain": 0.6104984126984088,
-            "effective_second_moment": 1.8026649353080566
-          },
-          "square_sg": {
-            "window_size": 5,
-            "half_side": 2,
-            "degree": 5,
-            "anisotropy_ratio": 2.0737806813741937,
-            "clean_fwhm": 2.9638404136869645,
-            "support_cardinality": 24,
-            "white_noise_gain": 0.4892027548202739,
-            "effective_second_moment": 1.774779301300146
-          }
-        },
-        {
-          "radius": 5,
-          "degree": 9,
-          "wvf": {
-            "anisotropy_ratio": 2.0062302340164795,
-            "clean_fwhm": 2.889643036185965,
-            "support_cardinality": 80,
-            "white_noise_gain": 0.6165697650287708,
-            "effective_second_moment": 2.9488911754511924
-          },
-          "square_sg": {
-            "window_size": 3,
-            "half_side": 1,
-            "degree": 9,
-            "anisotropy_ratio": 2.251183867226847,
-            "clean_fwhm": 3.1213781917502885,
-            "support_cardinality": 8,
-            "white_noise_gain": 0.4732742086674478,
-            "effective_second_moment": 1.0
-          }
-        },
-        {
-          "radius": 9,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 2.107922206871009,
-            "clean_fwhm": 3.3749746450981766,
-            "support_cardinality": 252,
-            "white_noise_gain": 0.08868650620066386,
-            "effective_second_moment": 11.814312590355133
-          },
-          "square_sg": {
-            "window_size": 15,
-            "half_side": 7,
-            "degree": 11,
-            "anisotropy_ratio": 1.9594949657808407,
-            "clean_fwhm": 3.383135743551937,
-            "support_cardinality": 224,
-            "white_noise_gain": 0.11083372673678721,
-            "effective_second_moment": 13.855377876327484
-          }
-        },
-        {
-          "radius": 15,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 1.5264561688050307,
-            "clean_fwhm": 4.818103851460932,
-            "support_cardinality": 708,
-            "white_noise_gain": 0.010987598156692223,
-            "effective_second_moment": 34.34850400372263
-          },
-          "square_sg": {
-            "window_size": 25,
-            "half_side": 12,
-            "degree": 11,
-            "anisotropy_ratio": 1.7154234509782758,
-            "clean_fwhm": 4.946501089757486,
-            "support_cardinality": 624,
-            "white_noise_gain": 0.01117642328953299,
-            "effective_second_moment": 42.64232314487009
-          }
-        },
-        {
-          "radius": 25,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 1.234520135211439,
-            "clean_fwhm": 7.54517463547322,
-            "support_cardinality": 1960,
-            "white_noise_gain": 0.0014297399791228117,
-            "effective_second_moment": 96.76368446528615
-          },
-          "square_sg": {
-            "window_size": 41,
-            "half_side": 20,
-            "degree": 11,
-            "anisotropy_ratio": 1.5476606811267346,
-            "clean_fwhm": 7.752817301387923,
-            "support_cardinality": 1680,
-            "white_noise_gain": 0.001443143235519061,
-            "effective_second_moment": 118.83226751807848
-          }
-        },
-        {
-          "radius": 50,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 1.1214402695455972,
-            "clean_fwhm": 14.673978149659304,
-            "support_cardinality": 7844,
-            "white_noise_gain": 8.998553150423674e-05,
-            "effective_second_moment": 384.5756868324492
-          },
-          "square_sg": {
-            "window_size": 81,
-            "half_side": 40,
-            "degree": 11,
-            "anisotropy_ratio": 1.4577168231641016,
-            "clean_fwhm": 15.021647029012188,
-            "support_cardinality": 6560,
-            "white_noise_gain": 9.212665247664427e-05,
-            "effective_second_moment": 470.9521420129578
-          }
-        }
-      ]
-    },
-    "effective_second_moment": {
-      "rows": [
-        {
-          "radius": 3,
-          "degree": 5,
-          "wvf": {
-            "anisotropy_ratio": 2.140263680370334,
-            "clean_fwhm": 2.9125122741848517,
-            "support_cardinality": 28,
-            "white_noise_gain": 0.6104984126984088,
-            "effective_second_moment": 1.8026649353080566
-          },
-          "square_sg": {
-            "window_size": 5,
-            "half_side": 2,
-            "degree": 5,
-            "anisotropy_ratio": 2.0737806813741937,
-            "clean_fwhm": 2.9638404136869645,
-            "support_cardinality": 24,
-            "white_noise_gain": 0.4892027548202739,
-            "effective_second_moment": 1.774779301300146
-          }
-        },
-        {
-          "radius": 5,
-          "degree": 9,
-          "wvf": {
-            "anisotropy_ratio": 2.0062302340164795,
-            "clean_fwhm": 2.889643036185965,
-            "support_cardinality": 80,
-            "white_noise_gain": 0.6165697650287708,
-            "effective_second_moment": 2.9488911754511924
-          },
-          "square_sg": {
-            "window_size": 9,
-            "half_side": 4,
-            "degree": 9,
-            "anisotropy_ratio": 2.0254145927863534,
-            "clean_fwhm": 2.9479794430823714,
-            "support_cardinality": 80,
-            "white_noise_gain": 0.4452812534365992,
-            "effective_second_moment": 3.7610481874599233
-          }
-        },
-        {
-          "radius": 9,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 2.107922206871009,
-            "clean_fwhm": 3.3749746450981766,
-            "support_cardinality": 252,
-            "white_noise_gain": 0.08868650620066386,
-            "effective_second_moment": 11.814312590355133
-          },
-          "square_sg": {
-            "window_size": 13,
-            "half_side": 6,
-            "degree": 11,
-            "anisotropy_ratio": 2.08374946292586,
-            "clean_fwhm": 3.1379530740233452,
-            "support_cardinality": 168,
-            "white_noise_gain": 0.24127627082218964,
-            "effective_second_moment": 9.953123746858745
-          }
-        },
-        {
-          "radius": 15,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 1.5264561688050307,
-            "clean_fwhm": 4.818103851460932,
-            "support_cardinality": 708,
-            "white_noise_gain": 0.010987598156692223,
-            "effective_second_moment": 34.34850400372263
-          },
-          "square_sg": {
-            "window_size": 23,
-            "half_side": 11,
-            "degree": 11,
-            "anisotropy_ratio": 1.7455408087559312,
-            "clean_fwhm": 4.611551116398881,
-            "support_cardinality": 528,
-            "white_noise_gain": 0.015934436016117798,
-            "effective_second_moment": 35.718463497578384
-          }
-        },
-        {
-          "radius": 25,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 1.234520135211439,
-            "clean_fwhm": 7.54517463547322,
-            "support_cardinality": 1960,
-            "white_noise_gain": 0.0014297399791228117,
-            "effective_second_moment": 96.76368446528615
-          },
-          "square_sg": {
-            "window_size": 37,
-            "half_side": 18,
-            "degree": 11,
-            "anisotropy_ratio": 1.5962551147206598,
-            "clean_fwhm": 7.0386055368652585,
-            "support_cardinality": 1368,
-            "white_noise_gain": 0.0021951070715177765,
-            "effective_second_moment": 96.32020691057893
-          }
-        },
-        {
-          "radius": 50,
-          "degree": 11,
-          "wvf": {
-            "anisotropy_ratio": 1.1214402695455972,
-            "clean_fwhm": 14.673978149659304,
-            "support_cardinality": 7844,
-            "white_noise_gain": 8.998553150423674e-05,
-            "effective_second_moment": 384.5756868324492
-          },
-          "square_sg": {
-            "window_size": 73,
-            "half_side": 36,
-            "degree": 11,
-            "anisotropy_ratio": 1.4967125076274714,
-            "clean_fwhm": 13.558602329389576,
-            "support_cardinality": 5328,
-            "white_noise_gain": 0.00013995254795666463,
-            "effective_second_moment": 382.056021483339
-          }
-        }
-      ]
+      }
     }
+  },
+  "matched_fwhm_overlay": {
+    "targets_px": [
+      4.0,
+      8.0,
+      14.0
+    ],
+    "rows": [
+      {
+        "target_fwhm": 4.0,
+        "wvf": {
+          "config": {
+            "r": 9,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "bounding_radius": 9,
+          "anisotropy_ratio": 2.1079204213022162,
+          "clean_fwhm": 3.3749749276878913,
+          "support_cardinality": 252,
+          "white_noise_gain": 0.08868650620066386,
+          "effective_second_moment": 11.814312590355133
+        },
+        "dog": {
+          "config": {
+            "sigma": 1.25
+          },
+          "bounding_radius": 5,
+          "anisotropy_ratio": 1.6803990626271776,
+          "clean_fwhm": 4.207578028447609,
+          "support_cardinality": 121,
+          "white_noise_gain": 0.01629727738487152,
+          "effective_second_moment": 3.125259534650948
+        },
+        "square_sg": {
+          "config": {
+            "N": 11,
+            "d": 5,
+            "normalize_coords": true
+          },
+          "bounding_radius": 5,
+          "anisotropy_ratio": 1.7775135571688292,
+          "clean_fwhm": 4.158789020600406,
+          "support_cardinality": 121,
+          "white_noise_gain": 0.02691132078661206,
+          "effective_second_moment": 13.671482423347564
+        }
+      },
+      {
+        "target_fwhm": 8.0,
+        "wvf": {
+          "config": {
+            "r": 25,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "bounding_radius": 25,
+          "anisotropy_ratio": 1.2345200033820625,
+          "clean_fwhm": 7.545174199545114,
+          "support_cardinality": 1960,
+          "white_noise_gain": 0.0014297399791228117,
+          "effective_second_moment": 96.76368446528615
+        },
+        "dog": {
+          "config": {
+            "sigma": 3.0
+          },
+          "bounding_radius": 12,
+          "anisotropy_ratio": 1.1920849640396567,
+          "clean_fwhm": 7.748563354523744,
+          "support_cardinality": 625,
+          "white_noise_gain": 0.0004912189073129315,
+          "effective_second_moment": 17.999983072371954
+        },
+        "square_sg": {
+          "config": {
+            "N": 11,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "bounding_radius": 5,
+          "anisotropy_ratio": 1.263477949834416,
+          "clean_fwhm": 7.921867604487549,
+          "support_cardinality": 121,
+          "white_noise_gain": 0.0008264462809917355,
+          "effective_second_moment": 27.79999999999999
+        }
+      },
+      {
+        "target_fwhm": 14.0,
+        "wvf": {
+          "config": {
+            "r": 50,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "bounding_radius": 50,
+          "anisotropy_ratio": 1.1214402372285648,
+          "clean_fwhm": 14.67397720671609,
+          "support_cardinality": 7844,
+          "white_noise_gain": 8.998553150423674e-05,
+          "effective_second_moment": 384.5756868324492
+        },
+        "dog": {
+          "config": {
+            "sigma": 5.75
+          },
+          "bounding_radius": 23,
+          "anisotropy_ratio": 1.0987328316628238,
+          "clean_fwhm": 13.923193488913784,
+          "support_cardinality": 2209,
+          "white_noise_gain": 3.639893294051636e-05,
+          "effective_second_moment": 66.1248633439743
+        },
+        "square_sg": {
+          "config": {
+            "N": 15,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "bounding_radius": 7,
+          "anisotropy_ratio": 1.2212341924949077,
+          "clean_fwhm": 10.607452773850131,
+          "support_cardinality": 225,
+          "white_noise_gain": 0.00023809523809523793,
+          "effective_second_moment": 52.06666666666667
+        }
+      }
+    ]
   }
 }
