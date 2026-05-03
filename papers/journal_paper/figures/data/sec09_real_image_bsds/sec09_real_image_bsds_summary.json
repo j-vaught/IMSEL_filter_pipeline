@@ -1,0 +1,1258 @@
+{
+  "title": "Section 9 Scenario A natural images",
+  "subtitle": "BSDS500 real-image comparison with validation-tuned classical baselines",
+  "scenario": "A",
+  "dataset": {
+    "name": "BSDS500",
+    "data_root": "/tmp/edge-detection-filter-critique-sec09a-smoke/datasets/BSDS500/BSR/BSDS500/data"
+  },
+  "config": {
+    "crop_size_px": 160,
+    "crop_count": 5,
+    "crop_stride_px": 48,
+    "snr_levels": [
+      "inf",
+      "20",
+      "10",
+      "5"
+    ],
+    "noise_draws": 10,
+    "ods_threshold_count": 201,
+    "ods_tolerance_px": 3,
+    "vector_rmse_reference": "soft-boundary local-normal field with sign-invariant orientation",
+    "ods_noise_aggregation": "draw-averaged normalized magnitude map per crop",
+    "fft_backend": "vkfft",
+    "display_percentile": 99.5
+  },
+  "crop_order": [
+    "crop01",
+    "crop02",
+    "crop03",
+    "crop04",
+    "crop05"
+  ],
+  "crops": [
+    {
+      "crop_key": "crop01",
+      "label": "92014-1",
+      "image_id": "92014",
+      "x0": 240,
+      "y0": 0,
+      "width": 160,
+      "height": 160,
+      "selection_score": 3457.4236588106405,
+      "edge_mass": 1643.8,
+      "orientation_entropy": 0.9715517506658854,
+      "input_asset_path": "data/sec09_real_image_bsds/assets/crop01_input.png",
+      "soft_gt_asset_path": "data/sec09_real_image_bsds/assets/crop01_soft_gt.png"
+    },
+    {
+      "crop_key": "crop02",
+      "label": "81090-2",
+      "image_id": "81090",
+      "x0": 48,
+      "y0": 0,
+      "width": 160,
+      "height": 160,
+      "selection_score": 3286.092666811809,
+      "edge_mass": 1627.1999999999998,
+      "orientation_entropy": 0.9165437659360766,
+      "input_asset_path": "data/sec09_real_image_bsds/assets/crop02_input.png",
+      "soft_gt_asset_path": "data/sec09_real_image_bsds/assets/crop02_soft_gt.png"
+    },
+    {
+      "crop_key": "crop03",
+      "label": "188025-3",
+      "image_id": "188025",
+      "x0": 192,
+      "y0": 96,
+      "width": 160,
+      "height": 160,
+      "selection_score": 3135.369695836272,
+      "edge_mass": 1575.3999999999999,
+      "orientation_entropy": 0.8875120715022061,
+      "input_asset_path": "data/sec09_real_image_bsds/assets/crop03_input.png",
+      "soft_gt_asset_path": "data/sec09_real_image_bsds/assets/crop03_soft_gt.png"
+    },
+    {
+      "crop_key": "crop04",
+      "label": "288024-4",
+      "image_id": "288024",
+      "x0": 144,
+      "y0": 48,
+      "width": 160,
+      "height": 160,
+      "selection_score": 3098.1296417333833,
+      "edge_mass": 1561.3999999999999,
+      "orientation_entropy": 0.8826650363279803,
+      "input_asset_path": "data/sec09_real_image_bsds/assets/crop04_input.png",
+      "soft_gt_asset_path": "data/sec09_real_image_bsds/assets/crop04_soft_gt.png"
+    },
+    {
+      "crop_key": "crop05",
+      "label": "198087-5",
+      "image_id": "198087",
+      "x0": 48,
+      "y0": 192,
+      "width": 160,
+      "height": 160,
+      "selection_score": 3086.6792052281066,
+      "edge_mass": 1467.4999999999998,
+      "orientation_entropy": 0.9683167656593511,
+      "input_asset_path": "data/sec09_real_image_bsds/assets/crop05_input.png",
+      "soft_gt_asset_path": "data/sec09_real_image_bsds/assets/crop05_soft_gt.png"
+    }
+  ],
+  "method_order": [
+    "roberts",
+    "prewitt",
+    "sobel",
+    "scharr",
+    "dog",
+    "farid_simoncelli",
+    "square_sg",
+    "wvf"
+  ],
+  "methods": {
+    "roberts": {
+      "label": "Roberts",
+      "config": {
+        "window": "2x2-embedded"
+      },
+      "clean_assets": {
+        "crop01": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/roberts_crop01_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/roberts_crop01_orientation.png"
+        },
+        "crop02": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/roberts_crop02_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/roberts_crop02_orientation.png"
+        },
+        "crop03": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/roberts_crop03_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/roberts_crop03_orientation.png"
+        },
+        "crop04": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/roberts_crop04_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/roberts_crop04_orientation.png"
+        },
+        "crop05": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/roberts_crop05_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/roberts_crop05_orientation.png"
+        }
+      },
+      "snr_metrics": {
+        "inf": {
+          "gradient_vector_rmse_mean": 0.4218128642208313,
+          "ods_f_score": 0.5461441620222482,
+          "ods_threshold": 0.155,
+          "noise_draws": 1,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.3824640442638899,
+              "noise_draws": 1
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.3931856868431678,
+              "noise_draws": 1
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.44494492761027055,
+              "noise_draws": 1
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.42572393022485555,
+              "noise_draws": 1
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.46274573216197273,
+              "noise_draws": 1
+            }
+          }
+        },
+        "20": {
+          "gradient_vector_rmse_mean": 0.4180605879114439,
+          "ods_f_score": 0.546508870143681,
+          "ods_threshold": 0.17,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.37887744016013203,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.3899676899430263,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.4417224707576894,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.4219834821201086,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.45775185657626344,
+              "noise_draws": 10
+            }
+          }
+        },
+        "10": {
+          "gradient_vector_rmse_mean": 0.4102934095072922,
+          "ods_f_score": 0.5456693455670176,
+          "ods_threshold": 0.255,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.37090335876085134,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.3828123704264724,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.43519921974040593,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.41420555389153124,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.44834654471720015,
+              "noise_draws": 10
+            }
+          }
+        },
+        "5": {
+          "gradient_vector_rmse_mean": 0.41568188411943324,
+          "ods_f_score": 0.5427943330729933,
+          "ods_threshold": 0.36,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.37847300453717353,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.38832785980811424,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.4395795088624661,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.41479752110984147,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.4572315262795709,
+              "noise_draws": 10
+            }
+          }
+        }
+      }
+    },
+    "prewitt": {
+      "label": "Prewitt",
+      "config": {
+        "window": "3x3"
+      },
+      "clean_assets": {
+        "crop01": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/prewitt_crop01_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/prewitt_crop01_orientation.png"
+        },
+        "crop02": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/prewitt_crop02_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/prewitt_crop02_orientation.png"
+        },
+        "crop03": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/prewitt_crop03_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/prewitt_crop03_orientation.png"
+        },
+        "crop04": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/prewitt_crop04_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/prewitt_crop04_orientation.png"
+        },
+        "crop05": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/prewitt_crop05_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/prewitt_crop05_orientation.png"
+        }
+      },
+      "snr_metrics": {
+        "inf": {
+          "gradient_vector_rmse_mean": 0.3518752619920516,
+          "ods_f_score": 0.5555361820023799,
+          "ods_threshold": 0.19,
+          "noise_draws": 1,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.3339642054172468,
+              "noise_draws": 1
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.3369045920295841,
+              "noise_draws": 1
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.35037507892089514,
+              "noise_draws": 1
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.3784537187394868,
+              "noise_draws": 1
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.35967871485304515,
+              "noise_draws": 1
+            }
+          }
+        },
+        "20": {
+          "gradient_vector_rmse_mean": 0.35185074961196444,
+          "ods_f_score": 0.5555935685745255,
+          "ods_threshold": 0.18,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.33372298289399643,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.33687429154871407,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.34928625889291526,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.3792699454032384,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.36010026932095796,
+              "noise_draws": 10
+            }
+          }
+        },
+        "10": {
+          "gradient_vector_rmse_mean": 0.3546397903390228,
+          "ods_f_score": 0.556064069692089,
+          "ods_threshold": 0.225,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.3355276055829536,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.3395546423935706,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.35230397789734424,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.3815888021977315,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.36422392362351397,
+              "noise_draws": 10
+            }
+          }
+        },
+        "5": {
+          "gradient_vector_rmse_mean": 0.363510254108382,
+          "ods_f_score": 0.5583109344614389,
+          "ods_threshold": 0.29,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.3428705337865289,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.34628644334201486,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.3657072165715784,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.3861653017387418,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.3765217751030459,
+              "noise_draws": 10
+            }
+          }
+        }
+      }
+    },
+    "sobel": {
+      "label": "Sobel",
+      "config": {
+        "window": "3x3"
+      },
+      "clean_assets": {
+        "crop01": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/sobel_crop01_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/sobel_crop01_orientation.png"
+        },
+        "crop02": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/sobel_crop02_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/sobel_crop02_orientation.png"
+        },
+        "crop03": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/sobel_crop03_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/sobel_crop03_orientation.png"
+        },
+        "crop04": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/sobel_crop04_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/sobel_crop04_orientation.png"
+        },
+        "crop05": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/sobel_crop05_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/sobel_crop05_orientation.png"
+        }
+      },
+      "snr_metrics": {
+        "inf": {
+          "gradient_vector_rmse_mean": 0.3535871543224488,
+          "ods_f_score": 0.5538558135717292,
+          "ods_threshold": 0.185,
+          "noise_draws": 1,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.33457812862169256,
+              "noise_draws": 1
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.33806806440163256,
+              "noise_draws": 1
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.348932388397669,
+              "noise_draws": 1
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.38159189856755094,
+              "noise_draws": 1
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.3647652916236987,
+              "noise_draws": 1
+            }
+          }
+        },
+        "20": {
+          "gradient_vector_rmse_mean": 0.35362754178355027,
+          "ods_f_score": 0.5539391309981935,
+          "ods_threshold": 0.20500000000000002,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.33453984210149795,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.338085339867781,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.34944040045321734,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.3811830752904422,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.36488905120481285,
+              "noise_draws": 10
+            }
+          }
+        },
+        "10": {
+          "gradient_vector_rmse_mean": 0.3563103193173299,
+          "ods_f_score": 0.5546531609506257,
+          "ods_threshold": 0.22,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.3361931623861927,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.34077405752771683,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.35311086376348155,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.3831042031987128,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.36836930971054554,
+              "noise_draws": 10
+            }
+          }
+        },
+        "5": {
+          "gradient_vector_rmse_mean": 0.3652857337829353,
+          "ods_f_score": 0.5554869284909806,
+          "ods_threshold": 0.28,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.3426453084261535,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.34804720461754873,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.3677054197414683,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.38788032707585485,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.380150409053651,
+              "noise_draws": 10
+            }
+          }
+        }
+      }
+    },
+    "scharr": {
+      "label": "Scharr",
+      "config": {
+        "window": "3x3"
+      },
+      "clean_assets": {
+        "crop01": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/scharr_crop01_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/scharr_crop01_orientation.png"
+        },
+        "crop02": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/scharr_crop02_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/scharr_crop02_orientation.png"
+        },
+        "crop03": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/scharr_crop03_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/scharr_crop03_orientation.png"
+        },
+        "crop04": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/scharr_crop04_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/scharr_crop04_orientation.png"
+        },
+        "crop05": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/scharr_crop05_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/scharr_crop05_orientation.png"
+        }
+      },
+      "snr_metrics": {
+        "inf": {
+          "gradient_vector_rmse_mean": 0.355678284043206,
+          "ods_f_score": 0.5528737832227535,
+          "ods_threshold": 0.165,
+          "noise_draws": 1,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.3374349236146516,
+              "noise_draws": 1
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.3396367827035398,
+              "noise_draws": 1
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.3494365078907992,
+              "noise_draws": 1
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.38265204011395165,
+              "noise_draws": 1
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.36923116589308763,
+              "noise_draws": 1
+            }
+          }
+        },
+        "20": {
+          "gradient_vector_rmse_mean": 0.35546318454323056,
+          "ods_f_score": 0.5530826247069792,
+          "ods_threshold": 0.20500000000000002,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.3365891621981333,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.3394554776669495,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.3498460512645626,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.3824535027334742,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.368971728853033,
+              "noise_draws": 10
+            }
+          }
+        },
+        "10": {
+          "gradient_vector_rmse_mean": 0.3586163067063076,
+          "ods_f_score": 0.553600588533997,
+          "ods_threshold": 0.225,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.33839473631739986,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.342400488166244,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.3558430816344571,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.38372935655518453,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.3727138708582526,
+              "noise_draws": 10
+            }
+          }
+        },
+        "5": {
+          "gradient_vector_rmse_mean": 0.36903860241665676,
+          "ods_f_score": 0.5547413218307706,
+          "ods_threshold": 0.3,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.3459574708805159,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.3514638380710498,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.3721546404254867,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.38956533667281973,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.3860517260334116,
+              "noise_draws": 10
+            }
+          }
+        }
+      }
+    },
+    "dog": {
+      "label": "DoG",
+      "config": {
+        "sigma": 3.0
+      },
+      "clean_assets": {
+        "crop01": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/dog_crop01_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/dog_crop01_orientation.png"
+        },
+        "crop02": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/dog_crop02_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/dog_crop02_orientation.png"
+        },
+        "crop03": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/dog_crop03_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/dog_crop03_orientation.png"
+        },
+        "crop04": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/dog_crop04_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/dog_crop04_orientation.png"
+        },
+        "crop05": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/dog_crop05_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/dog_crop05_orientation.png"
+        }
+      },
+      "snr_metrics": {
+        "inf": {
+          "gradient_vector_rmse_mean": 0.3389781062393503,
+          "ods_f_score": 0.5638736416585991,
+          "ods_threshold": 0.18,
+          "noise_draws": 1,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.3259308108658853,
+              "noise_draws": 1
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.3542956482080208,
+              "noise_draws": 1
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.3100476816608095,
+              "noise_draws": 1
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.3757524534117259,
+              "noise_draws": 1
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.32886393705030986,
+              "noise_draws": 1
+            }
+          }
+        },
+        "20": {
+          "gradient_vector_rmse_mean": 0.33935867840335454,
+          "ods_f_score": 0.5630743521027187,
+          "ods_threshold": 0.17500000000000002,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.32661431045591527,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.35442427607506494,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.31009533748644147,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.37644883090477677,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.3292106370945741,
+              "noise_draws": 10
+            }
+          }
+        },
+        "10": {
+          "gradient_vector_rmse_mean": 0.33982691537479537,
+          "ods_f_score": 0.562209580194153,
+          "ods_threshold": 0.18,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.32656578254130375,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.3539352418440718,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.31072120794759783,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.3782680171385763,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.32964432740242744,
+              "noise_draws": 10
+            }
+          }
+        },
+        "5": {
+          "gradient_vector_rmse_mean": 0.34045024746661134,
+          "ods_f_score": 0.5632514585197409,
+          "ods_threshold": 0.2,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.3268264917156355,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.3529120110319088,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.311322085832522,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.38046038617464967,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.33073026257834093,
+              "noise_draws": 10
+            }
+          }
+        }
+      }
+    },
+    "farid_simoncelli": {
+      "label": "Farid-Simoncelli",
+      "config": {
+        "window": "7tap"
+      },
+      "clean_assets": {
+        "crop01": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/farid_simoncelli_crop01_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/farid_simoncelli_crop01_orientation.png"
+        },
+        "crop02": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/farid_simoncelli_crop02_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/farid_simoncelli_crop02_orientation.png"
+        },
+        "crop03": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/farid_simoncelli_crop03_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/farid_simoncelli_crop03_orientation.png"
+        },
+        "crop04": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/farid_simoncelli_crop04_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/farid_simoncelli_crop04_orientation.png"
+        },
+        "crop05": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/farid_simoncelli_crop05_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/farid_simoncelli_crop05_orientation.png"
+        }
+      },
+      "snr_metrics": {
+        "inf": {
+          "gradient_vector_rmse_mean": 0.3349414657590441,
+          "ods_f_score": 0.5670270357571913,
+          "ods_threshold": 0.21,
+          "noise_draws": 1,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.3129432972974588,
+              "noise_draws": 1
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.329493191630135,
+              "noise_draws": 1
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.33393605230070367,
+              "noise_draws": 1
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.3646333789325641,
+              "noise_draws": 1
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.3337014086343591,
+              "noise_draws": 1
+            }
+          }
+        },
+        "20": {
+          "gradient_vector_rmse_mean": 0.3354125506753983,
+          "ods_f_score": 0.5662898290302978,
+          "ods_threshold": 0.185,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.3138332464085393,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.3296628975857018,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.3335461314839964,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.36554589543538174,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.3344745824633722,
+              "noise_draws": 10
+            }
+          }
+        },
+        "10": {
+          "gradient_vector_rmse_mean": 0.3371899761426408,
+          "ods_f_score": 0.5666383652698612,
+          "ods_threshold": 0.2,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.3156402150803516,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.3313883578739897,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.3328167965031409,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.36859318075763403,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.3375113304980878,
+              "noise_draws": 10
+            }
+          }
+        },
+        "5": {
+          "gradient_vector_rmse_mean": 0.3419569797029705,
+          "ods_f_score": 0.566668675637674,
+          "ods_threshold": 0.245,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.3200484446485017,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.3338324765167614,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.3375207140077193,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.37370159301751193,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.34468167032435804,
+              "noise_draws": 10
+            }
+          }
+        }
+      }
+    },
+    "square_sg": {
+      "label": "Square SG",
+      "config": {
+        "N": 11,
+        "d": 1,
+        "normalize_coords": true
+      },
+      "clean_assets": {
+        "crop01": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/square_sg_crop01_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/square_sg_crop01_orientation.png"
+        },
+        "crop02": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/square_sg_crop02_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/square_sg_crop02_orientation.png"
+        },
+        "crop03": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/square_sg_crop03_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/square_sg_crop03_orientation.png"
+        },
+        "crop04": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/square_sg_crop04_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/square_sg_crop04_orientation.png"
+        },
+        "crop05": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/square_sg_crop05_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/square_sg_crop05_orientation.png"
+        }
+      },
+      "snr_metrics": {
+        "inf": {
+          "gradient_vector_rmse_mean": 0.34263935218336666,
+          "ods_f_score": 0.5628363295263482,
+          "ods_threshold": 0.16,
+          "noise_draws": 1,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.32745665892847226,
+              "noise_draws": 1
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.35585126277457135,
+              "noise_draws": 1
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.3151320253800221,
+              "noise_draws": 1
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.37782922297377586,
+              "noise_draws": 1
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.33692759085999174,
+              "noise_draws": 1
+            }
+          }
+        },
+        "20": {
+          "gradient_vector_rmse_mean": 0.34307195991643147,
+          "ods_f_score": 0.56241817028403,
+          "ods_threshold": 0.16,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.3285625929763597,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.355956871791967,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.31545338406663487,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.3784013460422841,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.33698560470491146,
+              "noise_draws": 10
+            }
+          }
+        },
+        "10": {
+          "gradient_vector_rmse_mean": 0.3435275950741269,
+          "ods_f_score": 0.5625685181546356,
+          "ods_threshold": 0.20500000000000002,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.3299707715074779,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.3557994951366937,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.31652472608991966,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.37792250966735563,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.3374204729691872,
+              "noise_draws": 10
+            }
+          }
+        },
+        "5": {
+          "gradient_vector_rmse_mean": 0.34412790465996707,
+          "ods_f_score": 0.5644236534812527,
+          "ods_threshold": 0.20500000000000002,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.33046077269600993,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.3545803075950019,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.31759794861504975,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.37927541772886525,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.3387250766649084,
+              "noise_draws": 10
+            }
+          }
+        }
+      }
+    },
+    "wvf": {
+      "label": "WVF",
+      "config": {
+        "r": 50,
+        "d": 11,
+        "normalize_coords": true
+      },
+      "clean_assets": {
+        "crop01": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/wvf_crop01_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/wvf_crop01_orientation.png"
+        },
+        "crop02": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/wvf_crop02_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/wvf_crop02_orientation.png"
+        },
+        "crop03": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/wvf_crop03_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/wvf_crop03_orientation.png"
+        },
+        "crop04": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/wvf_crop04_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/wvf_crop04_orientation.png"
+        },
+        "crop05": {
+          "magnitude_path": "data/sec09_real_image_bsds/assets/wvf_crop05_magnitude.png",
+          "orientation_path": "data/sec09_real_image_bsds/assets/wvf_crop05_orientation.png"
+        }
+      },
+      "snr_metrics": {
+        "inf": {
+          "gradient_vector_rmse_mean": 0.38135757450398494,
+          "ods_f_score": 0.5007936339853386,
+          "ods_threshold": 0.16,
+          "noise_draws": 1,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.36277230139087135,
+              "noise_draws": 1
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.36985675517735894,
+              "noise_draws": 1
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.3640304955309453,
+              "noise_draws": 1
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.41610344740999916,
+              "noise_draws": 1
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.39402487301075,
+              "noise_draws": 1
+            }
+          }
+        },
+        "20": {
+          "gradient_vector_rmse_mean": 0.3814064263098662,
+          "ods_f_score": 0.5006045169185179,
+          "ods_threshold": 0.16,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.36220043320812784,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.3699130766940461,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.3641015912161574,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.4166518119023512,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.39416521852864833,
+              "noise_draws": 10
+            }
+          }
+        },
+        "10": {
+          "gradient_vector_rmse_mean": 0.38096709145303437,
+          "ods_f_score": 0.500141157521902,
+          "ods_threshold": 0.155,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.3608274185676535,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.3696694280592818,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.3638927210878651,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.4161740070702523,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.3942718824801191,
+              "noise_draws": 10
+            }
+          }
+        },
+        "5": {
+          "gradient_vector_rmse_mean": 0.38058116183808877,
+          "ods_f_score": 0.4993520860722744,
+          "ods_threshold": 0.165,
+          "noise_draws": 10,
+          "per_crop": {
+            "crop01": {
+              "gradient_vector_rmse_mean": 0.360201937157803,
+              "noise_draws": 10
+            },
+            "crop02": {
+              "gradient_vector_rmse_mean": 0.36956128823054535,
+              "noise_draws": 10
+            },
+            "crop03": {
+              "gradient_vector_rmse_mean": 0.3633706881921472,
+              "noise_draws": 10
+            },
+            "crop04": {
+              "gradient_vector_rmse_mean": 0.41517361568985517,
+              "noise_draws": 10
+            },
+            "crop05": {
+              "gradient_vector_rmse_mean": 0.39459827992009316,
+              "noise_draws": 10
+            }
+          }
+        }
+      }
+    }
+  }
+}
