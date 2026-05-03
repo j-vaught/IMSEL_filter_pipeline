@@ -1,5 +1,5 @@
 #import "@preview/cetz:0.3.4"
-#import "../../colors.typ": garnet, black, black90, black70, black50, black30, black10, rose, atlantic, congaree, horseshoe, honeycomb, sandstorm, white
+#import "../../colors.typ": garnet, black, black90, black70, black50, black30, black10, rose, atlantic, congaree, horseshoe, honeycomb, sandstorm
 
 #set page(width: 12.25in, height: 9.5in, margin: 14pt)
 #set text(font: "New Computer Modern", size: 7.4pt)
@@ -261,7 +261,7 @@
       let metric = point.at("snr_metrics").at(snr-slug).at(metric-key)
       let highlight = point.at("snr_metrics").at(snr-slug).at("comparison").at(metric-key).at("overtakes_best_baseline")
       if highlight {
-        circle((tx(idx), ty(metric)), radius: 0.065, fill: white, stroke: 0.5pt + black90)
+        circle((tx(idx), ty(metric)), radius: 0.065, fill: rgb("#FFFFFF"), stroke: 0.5pt + black90)
       }
       circle((tx(idx), ty(metric)), radius: 0.04, fill: garnet, stroke: none)
     }
