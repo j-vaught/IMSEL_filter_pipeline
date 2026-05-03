@@ -14,9 +14,8 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
-from baseline_filters import build_square_sg, build_wvf, recommended_wvf_degree
+from baseline_filters import build_dog, build_square_sg, build_wvf, recommended_wvf_degree
 from section8_common import (
-    CONTRAST,
     DEFAULT_BATCH_CASES,
     EDGE_WIDTH_PX,
     add_awgn,
@@ -33,6 +32,7 @@ from section8_common import (
 
 RADIUS_SCHEDULE = (3, 5, 9, 15, 25, 50)
 MATCH_RULES = ("bounding_radius", "effective_response_width", "support_cardinality", "white_noise_gain", "effective_second_moment")
+COMPARATOR_ORDER = ("square_sg", "dog")
 CALIBRATION_ORIENTATION_STEP_DEG = 5.0
 EVAL_ORIENTATION_STEP_DEG = 0.5
 PHASE_COUNT = 4
@@ -42,10 +42,10 @@ NOISE_SEED = 8560
 MAX_SUPPORT_SCALE = 50.0
 BATCH_CASES = DEFAULT_BATCH_CASES
 SQUARE_WINDOWS = tuple(range(3, 122, 2))
-
-
-def _noise_slug(snr_db: float) -> str:
-    return f"{float(snr_db):g}".replace(".", "p")
+DOG_SIGMAS = tuple(0.25 * value for value in range(2, 51))
+OVERLAY_FWHM_TARGETS = (4.0, 8.0, 14.0)
+OVERLAY_SQUARE_WINDOWS = (3, 5, 7, 9, 11, 13, 15)
+OVERLAY_SQUARE_DEGREES = (1, 3, 5)
 
 
 def _effective_second_moment(kernel) -> float:
@@ -108,31 +108,101 @@ def _evaluate_step_bank(kernel, cases, image_bank, fft_backend: str, device_inde
     }
 
 
-def _square_candidate_table(degree: int, calibration_cases, calibration_images, fft_backend: str, device_index: int | None) -> list[dict[str, object]]:
+def _kernel_support_cardinality(kernel) -> int:
+    return int(np.asarray(kernel.kernel_x).size)
+
+
+def _candidate_key(family: str, config: dict[str, object]) -> tuple[object, ...]:
+    if family == "square_sg":
+        return (family, int(config["N"]), int(config["d"]))
+    if family == "dog":
+        return (family, float(config["sigma"]))
+    if family == "wvf":
+        return (family, int(config["r"]), int(config["d"]))
+    raise ValueError(f"unsupported candidate family {family!r}")
+
+
+def _candidate_record(
+    family: str,
+    kernel,
+    config: dict[str, object],
+    bounding_radius: int,
+    calibration_cases,
+    calibration_images,
+    fft_backend: str,
+    device_index: int | None,
+) -> dict[str, object]:
+    metrics = _evaluate_step_bank(kernel, calibration_cases, calibration_images, fft_backend, device_index)
+    record = {
+        "family": str(family),
+        "config": config,
+        "kernel": kernel,
+        "key": _candidate_key(str(family), config),
+        "bounding_radius": int(bounding_radius),
+        "support_cardinality": _kernel_support_cardinality(kernel),
+        "white_noise_gain": float(kernel.white_noise_gain),
+        "effective_second_moment": float(_effective_second_moment(kernel)),
+        "clean_fwhm": float(metrics["fwhm"]),
+    }
+    return record
+
+
+def _square_candidate_table(
+    degree: int,
+    windows: tuple[int, ...],
+    calibration_cases,
+    calibration_images,
+    fft_backend: str,
+    device_index: int | None,
+    log_prefix: str,
+) -> list[dict[str, object]]:
     candidates = []
-    for window_size in SQUARE_WINDOWS:
+    for window_size in windows:
         kernel = build_square_sg(window_size=int(window_size), degree=int(degree), normalize_coords=True)
-        metrics = _evaluate_step_bank(kernel, calibration_cases, calibration_images, fft_backend, device_index)
-        candidates.append(
-            {
-                "window_size": int(window_size),
-                "half_side": int(window_size // 2),
-                "degree": int(degree),
-                "kernel": kernel,
-                "support_cardinality": int(kernel.support_cardinality) if kernel.support_cardinality is not None else None,
-                "white_noise_gain": float(kernel.white_noise_gain),
-                "effective_second_moment": float(_effective_second_moment(kernel)),
-                "clean_fwhm": float(metrics["fwhm"]),
-            }
+        record = _candidate_record(
+            family="square_sg",
+            kernel=kernel,
+            config={"N": int(window_size), "d": int(degree), "normalize_coords": True},
+            bounding_radius=int(window_size // 2),
+            calibration_cases=calibration_cases,
+            calibration_images=calibration_images,
+            fft_backend=fft_backend,
+            device_index=device_index,
         )
-        print(f"sec84 square_cal degree={degree} N={window_size} fwhm={metrics['fwhm']:.6e}")
+        candidates.append(record)
+        print(f"{log_prefix} degree={degree} N={window_size} fwhm={record['clean_fwhm']:.6e}")
+    return candidates
+
+
+def _dog_candidate_table(
+    sigmas: tuple[float, ...],
+    calibration_cases,
+    calibration_images,
+    fft_backend: str,
+    device_index: int | None,
+) -> list[dict[str, object]]:
+    candidates = []
+    for sigma in sigmas:
+        kernel = build_dog(float(sigma))
+        record = _candidate_record(
+            family="dog",
+            kernel=kernel,
+            config={"sigma": float(sigma)},
+            bounding_radius=int(kernel.support_half_extent),
+            calibration_cases=calibration_cases,
+            calibration_images=calibration_images,
+            fft_backend=fft_backend,
+            device_index=device_index,
+        )
+        candidates.append(record)
+        print(f"sec84 dog_cal sigma={float(sigma):g} h={kernel.support_half_extent} fwhm={record['clean_fwhm']:.6e}")
     return candidates
 
 
 def _match_candidate(rule: str, wvf_info: dict[str, object], candidates: list[dict[str, object]]) -> dict[str, object]:
     if rule == "bounding_radius":
-        target_half_side = int(wvf_info["radius"])
-        return min(candidates, key=lambda item: (abs(int(item["half_side"]) - target_half_side), int(item["window_size"])))
+        target = int(wvf_info["radius"])
+        return min(candidates, key=lambda item: (abs(int(item["bounding_radius"]) - target), abs(float(item["clean_fwhm"]) - float(wvf_info["clean_fwhm"]))))
     metric_key = {
         "effective_response_width": "clean_fwhm",
         "support_cardinality": "support_cardinality",
@@ -140,7 +210,19 @@ def _match_candidate(rule: str, wvf_info: dict[str, object], candidates: list[di
         "effective_second_moment": "effective_second_moment",
     }[rule]
     target = float(wvf_info[metric_key])
-    return min(candidates, key=lambda item: (abs(float(item[metric_key]) - target), int(item["window_size"])))
+    return min(candidates, key=lambda item: (abs(float(item[metric_key]) - target), abs(float(item["clean_fwhm"]) - float(wvf_info["clean_fwhm"]))))
+
+
+def _serialize_candidate(candidate: dict[str, object], anisotropy_ratio: float) -> dict[str, object]:
+    return {
+        "config": dict(candidate["config"]),
+        "bounding_radius": int(candidate["bounding_radius"]),
+        "anisotropy_ratio": float(anisotropy_ratio),
+        "clean_fwhm": float(candidate["clean_fwhm"]),
+        "support_cardinality": int(candidate["support_cardinality"]),
+        "white_noise_gain": float(candidate["white_noise_gain"]),
+        "effective_second_moment": float(candidate["effective_second_moment"]),
+    }
 
 
 def _write_json(path: Path, payload: dict[str, object]) -> None:
@@ -169,23 +251,32 @@ def run_experiment(
         phases_px=phase_values(PHASE_COUNT, PHASE_STEP_PX),
     )
     rng = np.random.default_rng(NOISE_SEED)
-    noisy_eval_images = [
-        np.asarray(add_awgn(case.image, SNR_DB, rng), dtype=np.float32)
-        for case in eval_cases
-    ]
+    noisy_eval_images = [np.asarray(add_awgn(case.image, SNR_DB, rng), dtype=np.float32) for case in eval_cases]
 
-    candidate_tables: dict[int, list[dict[str, object]]] = {}
-    eval_cache: dict[tuple[str, int, int], dict[str, float]] = {}
     wvf_infos = []
+    degree_matched_square_tables: dict[int, list[dict[str, object]]] = {}
+    overlay_square_candidates: list[dict[str, object]] = []
+    seen_overlay_square_keys: set[tuple[object, ...]] = set()
+    dog_candidates = _dog_candidate_table(
+        sigmas=DOG_SIGMAS,
+        calibration_cases=calibration_cases,
+        calibration_images=calibration_images,
+        fft_backend=fft_backend,
+        device_index=device_index,
+    )
+    eval_cache: dict[tuple[object, ...], dict[str, float]] = {}
+
     for radius in RADIUS_SCHEDULE:
         degree = recommended_wvf_degree(int(radius))
-        if degree not in candidate_tables:
-            candidate_tables[int(degree)] = _square_candidate_table(
+        if degree not in degree_matched_square_tables:
+            degree_matched_square_tables[int(degree)] = _square_candidate_table(
                 degree=int(degree),
+                windows=SQUARE_WINDOWS,
                 calibration_cases=calibration_cases,
                 calibration_images=calibration_images,
                 fft_backend=fft_backend,
                 device_index=device_index,
+                log_prefix="sec84 square_cal",
             )
         kernel = build_wvf(radius=int(radius), degree=int(degree), normalize_coords=True)
         metrics = _evaluate_step_bank(kernel, calibration_cases, calibration_images, fft_backend, device_index)
@@ -194,6 +285,7 @@ def run_experiment(
                 "radius": int(radius),
                 "degree": int(degree),
                 "kernel": kernel,
+                "key": _candidate_key("wvf", {"r": int(radius), "d": int(degree)}),
                 "support_cardinality": int(kernel.support_cardinality) if kernel.support_cardinality is not None else None,
                 "white_noise_gain": float(kernel.white_noise_gain),
                 "effective_second_moment": float(_effective_second_moment(kernel)),
@@ -202,50 +294,126 @@ def run_experiment(
         )
         print(f"sec84 wvf_cal r={radius} d={degree} fwhm={metrics['fwhm']:.6e}")
 
-    rules_payload = {}
+    for degree in OVERLAY_SQUARE_DEGREES:
+        table = _square_candidate_table(
+            degree=int(degree),
+            windows=OVERLAY_SQUARE_WINDOWS,
+            calibration_cases=calibration_cases,
+            calibration_images=calibration_images,
+            fft_backend=fft_backend,
+            device_index=device_index,
+            log_prefix="sec84 square_overlay",
+        )
+        for candidate in table:
+            key = tuple(candidate["key"])
+            if key in seen_overlay_square_keys:
+                continue
+            seen_overlay_square_keys.add(key)
+            overlay_square_candidates.append(candidate)
+
+    comparator_payload: dict[str, object] = {
+        "square_sg": {
+            "label": "Square SG",
+            "rules": {},
+        },
+        "dog": {
+            "label": "Derivative of Gaussian",
+            "rules": {},
+        },
+    }
+
     for rule in MATCH_RULES:
-        rows = []
+        square_rows = []
+        dog_rows = []
         for wvf_info in wvf_infos:
-            square_match = _match_candidate(str(rule), wvf_info, candidate_tables[int(wvf_info["degree"])])
-            wvf_key = ("wvf", int(wvf_info["radius"]), int(wvf_info["degree"]))
+            wvf_key = tuple(wvf_info["key"])
             if wvf_key not in eval_cache:
                 eval_cache[wvf_key] = _evaluate_step_bank(wvf_info["kernel"], eval_cases, noisy_eval_images, fft_backend, device_index)
-            square_key = ("square_sg", int(square_match["window_size"]), int(square_match["degree"]))
+            wvf_eval = eval_cache[wvf_key]
+
+            square_match = _match_candidate(str(rule), wvf_info, degree_matched_square_tables[int(wvf_info["degree"])])
+            square_key = tuple(square_match["key"])
             if square_key not in eval_cache:
                 eval_cache[square_key] = _evaluate_step_bank(square_match["kernel"], eval_cases, noisy_eval_images, fft_backend, device_index)
-            wvf_eval = eval_cache[wvf_key]
             square_eval = eval_cache[square_key]
-            row = {
+            square_row = {
                 "radius": int(wvf_info["radius"]),
                 "degree": int(wvf_info["degree"]),
-                "wvf": {
-                    "anisotropy_ratio": float(wvf_eval["anisotropy_ratio"]),
-                    "clean_fwhm": float(wvf_info["clean_fwhm"]),
-                    "support_cardinality": int(wvf_info["support_cardinality"]),
-                    "white_noise_gain": float(wvf_info["white_noise_gain"]),
-                    "effective_second_moment": float(wvf_info["effective_second_moment"]),
-                },
-                "square_sg": {
-                    "window_size": int(square_match["window_size"]),
-                    "half_side": int(square_match["half_side"]),
-                    "degree": int(square_match["degree"]),
-                    "anisotropy_ratio": float(square_eval["anisotropy_ratio"]),
-                    "clean_fwhm": float(square_match["clean_fwhm"]),
-                    "support_cardinality": int(square_match["support_cardinality"]),
-                    "white_noise_gain": float(square_match["white_noise_gain"]),
-                    "effective_second_moment": float(square_match["effective_second_moment"]),
-                },
+                "wvf": _serialize_candidate(
+                    {
+                        "config": {"r": int(wvf_info["radius"]), "d": int(wvf_info["degree"]), "normalize_coords": True},
+                        "bounding_radius": int(wvf_info["radius"]),
+                        "clean_fwhm": float(wvf_info["clean_fwhm"]),
+                        "support_cardinality": int(wvf_info["support_cardinality"]),
+                        "white_noise_gain": float(wvf_info["white_noise_gain"]),
+                        "effective_second_moment": float(wvf_info["effective_second_moment"]),
+                    },
+                    anisotropy_ratio=float(wvf_eval["anisotropy_ratio"]),
+                ),
+                "comparator": _serialize_candidate(square_match, anisotropy_ratio=float(square_eval["anisotropy_ratio"])),
             }
+            square_rows.append(square_row)
+
+            dog_match = _match_candidate(str(rule), wvf_info, dog_candidates)
+            dog_key = tuple(dog_match["key"])
+            if dog_key not in eval_cache:
+                eval_cache[dog_key] = _evaluate_step_bank(dog_match["kernel"], eval_cases, noisy_eval_images, fft_backend, device_index)
+            dog_eval = eval_cache[dog_key]
+            dog_row = {
+                "radius": int(wvf_info["radius"]),
+                "degree": int(wvf_info["degree"]),
+                "wvf": square_row["wvf"],
+                "comparator": _serialize_candidate(dog_match, anisotropy_ratio=float(dog_eval["anisotropy_ratio"])),
+            }
+            dog_rows.append(dog_row)
+
             print(
-                f"sec84 rule={rule} r={row['radius']} "
-                f"wvfA={row['wvf']['anisotropy_ratio']:.6f} squareA={row['square_sg']['anisotropy_ratio']:.6f}"
+                f"sec84 rule={rule} r={int(wvf_info['radius'])} "
+                f"wvfA={float(wvf_eval['anisotropy_ratio']):.6f} "
+                f"squareA={float(square_eval['anisotropy_ratio']):.6f} "
+                f"dogA={float(dog_eval['anisotropy_ratio']):.6f}"
             )
-            rows.append(row)
-        rules_payload[str(rule)] = {"rows": rows}
+        comparator_payload["square_sg"]["rules"][str(rule)] = {"rows": square_rows}
+        comparator_payload["dog"]["rules"][str(rule)] = {"rows": dog_rows}
+
+    overlay_rows = []
+    for target_fwhm in OVERLAY_FWHM_TARGETS:
+        wvf_match = min(wvf_infos, key=lambda item: abs(float(item["clean_fwhm"]) - float(target_fwhm)))
+        dog_match = min(dog_candidates, key=lambda item: abs(float(item["clean_fwhm"]) - float(target_fwhm)))
+        square_match = min(overlay_square_candidates, key=lambda item: abs(float(item["clean_fwhm"]) - float(target_fwhm)))
+
+        for item in (wvf_match, dog_match, square_match):
+            key = tuple(item["key"])
+            if key not in eval_cache:
+                eval_cache[key] = _evaluate_step_bank(item["kernel"], eval_cases, noisy_eval_images, fft_backend, device_index)
+
+        overlay_row = {
+            "target_fwhm": float(target_fwhm),
+            "wvf": _serialize_candidate(
+                {
+                    "config": {"r": int(wvf_match["radius"]), "d": int(wvf_match["degree"]), "normalize_coords": True},
+                    "bounding_radius": int(wvf_match["radius"]),
+                    "clean_fwhm": float(wvf_match["clean_fwhm"]),
+                    "support_cardinality": int(wvf_match["support_cardinality"]),
+                    "white_noise_gain": float(wvf_match["white_noise_gain"]),
+                    "effective_second_moment": float(wvf_match["effective_second_moment"]),
+                },
+                anisotropy_ratio=float(eval_cache[tuple(wvf_match["key"])]["anisotropy_ratio"]),
+            ),
+            "dog": _serialize_candidate(dog_match, anisotropy_ratio=float(eval_cache[tuple(dog_match["key"])]["anisotropy_ratio"])),
+            "square_sg": _serialize_candidate(square_match, anisotropy_ratio=float(eval_cache[tuple(square_match["key"])]["anisotropy_ratio"])),
+        }
+        overlay_rows.append(overlay_row)
+        print(
+            f"sec84 overlay fwhm={float(target_fwhm):.1f} "
+            f"wvfA={overlay_row['wvf']['anisotropy_ratio']:.6f} "
+            f"dogA={overlay_row['dog']['anisotropy_ratio']:.6f} "
+            f"squareA={overlay_row['square_sg']['anisotropy_ratio']:.6f}"
+        )
 
     payload = {
         "title": "Section 8.4 matched-scale diagnostics",
-        "subtitle": "WVF versus square SG on smoothed step edges at AWGN 10 dB",
+        "subtitle": "WVF versus square SG and derivative of Gaussian on smoothed step edges at AWGN 10 dB",
         "config": {
             "radius_schedule": list(RADIUS_SCHEDULE),
             "phase_count": PHASE_COUNT,
@@ -254,9 +422,17 @@ def run_experiment(
             "evaluation_orientation_step_deg": EVAL_ORIENTATION_STEP_DEG,
             "snr_db": SNR_DB,
             "fft_backend": str(fft_backend),
+            "dog_sigmas": [float(value) for value in DOG_SIGMAS],
+            "overlay_square_windows": list(OVERLAY_SQUARE_WINDOWS),
+            "overlay_square_degrees": list(OVERLAY_SQUARE_DEGREES),
         },
         "rule_order": list(MATCH_RULES),
-        "rules": rules_payload,
+        "comparator_order": list(COMPARATOR_ORDER),
+        "comparators": comparator_payload,
+        "matched_fwhm_overlay": {
+            "targets_px": list(OVERLAY_FWHM_TARGETS),
+            "rows": overlay_rows,
+        },
     }
     _write_json(summary_json, payload)
 
@@ -266,6 +442,11 @@ def run_experiment(
         pdf = ROOT / "papers" / "journal_paper" / "figures" / "fig_sec08_matched_scale_diagnostics.pdf"
         compile_plot(src, pdf)
         outputs[pdf.stem] = pdf
+
+        overlay_src = ROOT / "papers" / "journal_paper" / "figures" / "cetz_src" / "fig_sec08_matched_fwhm_overlay.typ"
+        overlay_pdf = ROOT / "papers" / "journal_paper" / "figures" / "fig_sec08_matched_fwhm_overlay.pdf"
+        compile_plot(overlay_src, overlay_pdf)
+        outputs[overlay_pdf.stem] = overlay_pdf
     return outputs
 
 
@@ -279,7 +460,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--fft-backend", type=str, default="vkfft", help="FFT backend for applying precomputed kernels.")
     parser.add_argument("--device-index", type=int, default=None, help="Optional GPU device index for FFT execution.")
-    parser.add_argument("--compile-plots", action="store_true", help="Compile the Typst plot after writing the summary JSON.")
+    parser.add_argument("--compile-plots", action="store_true", help="Compile the Typst plots after writing the summary JSON.")
     args = parser.parse_args(argv)
     run_experiment(
         summary_json=args.summary_json.resolve(),
