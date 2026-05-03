@@ -1053,5 +1053,439 @@
       "feasible_count": 1
     }
   },
+  "threshold_sensitivity": [
+    {
+      "scenario": "loc_half",
+      "constraints": {
+        "localization_rms": 0.25,
+        "mag_bias_abs": 0.05,
+        "white_noise_gain": 0.001
+      },
+      "methods": {
+        "dog": {
+          "changed": false,
+          "baseline_config": {
+            "sigma": 3.0
+          },
+          "selected_config": {
+            "sigma": 3.0
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": 0.0
+        },
+        "square_sg": {
+          "changed": true,
+          "baseline_config": {
+            "N": 11,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "selected_config": {
+            "N": 9,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 2.0,
+          "grad_rmse_delta": -0.008910256455529758
+        },
+        "wvf": {
+          "changed": true,
+          "baseline_config": {
+            "r": 50,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "selected_config": {
+            "r": 25,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 2.0,
+          "grad_rmse_delta": -0.02375257205788711
+        }
+      }
+    },
+    {
+      "scenario": "loc_double",
+      "constraints": {
+        "localization_rms": 1.0,
+        "mag_bias_abs": 0.05,
+        "white_noise_gain": 0.001
+      },
+      "methods": {
+        "dog": {
+          "changed": false,
+          "baseline_config": {
+            "sigma": 3.0
+          },
+          "selected_config": {
+            "sigma": 3.0
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": 0.0
+        },
+        "square_sg": {
+          "changed": false,
+          "baseline_config": {
+            "N": 11,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "selected_config": {
+            "N": 11,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": 0.0
+        },
+        "wvf": {
+          "changed": false,
+          "baseline_config": {
+            "r": 50,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "selected_config": {
+            "r": 50,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": 0.0
+        }
+      }
+    },
+    {
+      "scenario": "bias_half",
+      "constraints": {
+        "localization_rms": 0.5,
+        "mag_bias_abs": 0.025,
+        "white_noise_gain": 0.001
+      },
+      "methods": {
+        "dog": {
+          "changed": false,
+          "baseline_config": {
+            "sigma": 3.0
+          },
+          "selected_config": {
+            "sigma": 3.0
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": 0.0
+        },
+        "square_sg": {
+          "changed": false,
+          "baseline_config": {
+            "N": 11,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "selected_config": {
+            "N": 11,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": 0.0
+        },
+        "wvf": {
+          "changed": false,
+          "baseline_config": {
+            "r": 50,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "selected_config": {
+            "r": 50,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": 0.0
+        }
+      }
+    },
+    {
+      "scenario": "bias_double",
+      "constraints": {
+        "localization_rms": 0.5,
+        "mag_bias_abs": 0.1,
+        "white_noise_gain": 0.001
+      },
+      "methods": {
+        "dog": {
+          "changed": false,
+          "baseline_config": {
+            "sigma": 3.0
+          },
+          "selected_config": {
+            "sigma": 3.0
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": 0.0
+        },
+        "square_sg": {
+          "changed": false,
+          "baseline_config": {
+            "N": 11,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "selected_config": {
+            "N": 11,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": 0.0
+        },
+        "wvf": {
+          "changed": false,
+          "baseline_config": {
+            "r": 50,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "selected_config": {
+            "r": 50,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": 0.0
+        }
+      }
+    },
+    {
+      "scenario": "wng_half",
+      "constraints": {
+        "localization_rms": 0.5,
+        "mag_bias_abs": 0.05,
+        "white_noise_gain": 0.0005
+      },
+      "methods": {
+        "dog": {
+          "changed": false,
+          "baseline_config": {
+            "sigma": 3.0
+          },
+          "selected_config": {
+            "sigma": 3.0
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": 0.0
+        },
+        "square_sg": {
+          "changed": true,
+          "baseline_config": {
+            "N": 11,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "selected_config": {
+            "N": 13,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.5,
+          "grad_rmse_delta": 0.007006493969740013
+        },
+        "wvf": {
+          "changed": false,
+          "baseline_config": {
+            "r": 50,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "selected_config": {
+            "r": 50,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": 0.0
+        }
+      }
+    },
+    {
+      "scenario": "wng_double",
+      "constraints": {
+        "localization_rms": 0.5,
+        "mag_bias_abs": 0.05,
+        "white_noise_gain": 0.002
+      },
+      "methods": {
+        "dog": {
+          "changed": false,
+          "baseline_config": {
+            "sigma": 3.0
+          },
+          "selected_config": {
+            "sigma": 3.0
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": 0.0
+        },
+        "square_sg": {
+          "changed": true,
+          "baseline_config": {
+            "N": 11,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "selected_config": {
+            "N": 9,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": -0.008910256455529758
+        },
+        "wvf": {
+          "changed": true,
+          "baseline_config": {
+            "r": 50,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "selected_config": {
+            "r": 25,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": -0.02375257205788711
+        }
+      }
+    },
+    {
+      "scenario": "all_half",
+      "constraints": {
+        "localization_rms": 0.25,
+        "mag_bias_abs": 0.025,
+        "white_noise_gain": 0.0005
+      },
+      "methods": {
+        "dog": {
+          "changed": false,
+          "baseline_config": {
+            "sigma": 3.0
+          },
+          "selected_config": {
+            "sigma": 3.0
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": 0.0
+        },
+        "square_sg": {
+          "changed": false,
+          "baseline_config": {
+            "N": 11,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "selected_config": {
+            "N": 11,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 2.0,
+          "grad_rmse_delta": 0.0
+        },
+        "wvf": {
+          "changed": false,
+          "baseline_config": {
+            "r": 50,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "selected_config": {
+            "r": 50,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 2.0,
+          "grad_rmse_delta": 0.0
+        }
+      }
+    },
+    {
+      "scenario": "all_double",
+      "constraints": {
+        "localization_rms": 1.0,
+        "mag_bias_abs": 0.1,
+        "white_noise_gain": 0.002
+      },
+      "methods": {
+        "dog": {
+          "changed": false,
+          "baseline_config": {
+            "sigma": 3.0
+          },
+          "selected_config": {
+            "sigma": 3.0
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": 0.0
+        },
+        "square_sg": {
+          "changed": true,
+          "baseline_config": {
+            "N": 11,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "selected_config": {
+            "N": 9,
+            "d": 1,
+            "normalize_coords": true
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": -0.008910256455529758
+        },
+        "wvf": {
+          "changed": true,
+          "baseline_config": {
+            "r": 50,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "selected_config": {
+            "r": 25,
+            "d": 11,
+            "normalize_coords": true
+          },
+          "selection_mode": "constrained_rmse",
+          "relax_factor": 1.0,
+          "grad_rmse_delta": -0.02375257205788711
+        }
+      }
+    }
+  ],
   "skipped_methods": []
 }
