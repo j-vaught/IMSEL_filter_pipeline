@@ -4,7 +4,7 @@
   "scenario": "B",
   "dataset": {
     "name": "DRIVE",
-    "data_root": "/home/j-vaught/tmp/edge-detection-filter-critique-sec09b-run/datasets/DRIVE",
+    "data_root": "/home/j-vaught/datasets/DRIVE",
     "input_channel": "green"
   },
   "config": {
@@ -1416,6 +1416,1454 @@
               "noise_draws": 10
             }
           }
+        }
+      }
+    }
+  },
+  "wvf_trace": {
+    "points": [
+      {
+        "radius": 3,
+        "degree": 5,
+        "config": {
+          "r": 3,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "white_noise_gain": 0.6104984126984088,
+        "support_half_extent": 3,
+        "snr_metrics": {
+          "inf": {
+            "gradient_vector_rmse_mean": 0.5279494631877513,
+            "orientation_mae_deg_mean": 22.67725846091588,
+            "ods_f_score": 0.6489267909040426,
+            "ods_threshold": 0.13,
+            "noise_draws": 1,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5469956892030299,
+                "orientation_mae_deg_mean": 23.53021566397954,
+                "noise_draws": 1
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5185016345435375,
+                "orientation_mae_deg_mean": 20.682001538858906,
+                "noise_draws": 1
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5004303020965217,
+                "orientation_mae_deg_mean": 21.66363197745465,
+                "noise_draws": 1
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5373586352417501,
+                "orientation_mae_deg_mean": 21.5007067837228,
+                "noise_draws": 1
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.536461054853917,
+                "orientation_mae_deg_mean": 26.0097363405635,
+                "noise_draws": 1
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.655565343145001,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.5290327136798019,
+                "overtakes_best_baseline": true
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 20.57385623259548,
+                "overtakes_best_baseline": false
+              }
+            }
+          },
+          "20": {
+            "gradient_vector_rmse_mean": 0.519637803537928,
+            "orientation_mae_deg_mean": 26.94554135881129,
+            "ods_f_score": 0.5953531069926965,
+            "ods_threshold": 0.19,
+            "noise_draws": 10,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5355998491684172,
+                "orientation_mae_deg_mean": 28.494560744173906,
+                "noise_draws": 10
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5115964817044072,
+                "orientation_mae_deg_mean": 24.760190041903833,
+                "noise_draws": 10
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.4991207163167394,
+                "orientation_mae_deg_mean": 24.829915840179666,
+                "noise_draws": 10
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5279464720328613,
+                "orientation_mae_deg_mean": 26.470292487956566,
+                "noise_draws": 10
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5239254984672153,
+                "orientation_mae_deg_mean": 30.172747679842484,
+                "noise_draws": 10
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 0.6445991796517557,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.5234234097750912,
+                "overtakes_best_baseline": true
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 23.022389211219224,
+                "overtakes_best_baseline": false
+              }
+            }
+          },
+          "10": {
+            "gradient_vector_rmse_mean": 0.5166389382070089,
+            "orientation_mae_deg_mean": 37.251625661994154,
+            "ods_f_score": 0.5668320744261472,
+            "ods_threshold": 0.325,
+            "noise_draws": 10,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5068703491655032,
+                "orientation_mae_deg_mean": 38.10229211303174,
+                "noise_draws": 10
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5123203185835753,
+                "orientation_mae_deg_mean": 36.21527402687963,
+                "noise_draws": 10
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5293622566787235,
+                "orientation_mae_deg_mean": 34.74102786798293,
+                "noise_draws": 10
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5221589041020026,
+                "orientation_mae_deg_mean": 38.039361841357646,
+                "noise_draws": 10
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.51248286250524,
+                "orientation_mae_deg_mean": 39.16017246071883,
+                "noise_draws": 10
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "roberts",
+                "best_baseline_label": "Roberts",
+                "best_baseline_value": 0.5876414223353166,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "sobel",
+                "best_baseline_label": "Sobel",
+                "best_baseline_value": 0.5122726465772857,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 30.44523640593859,
+                "overtakes_best_baseline": false
+              }
+            }
+          },
+          "5": {
+            "gradient_vector_rmse_mean": 0.5292991629396434,
+            "orientation_mae_deg_mean": 41.45727429338057,
+            "ods_f_score": 0.5887514706971225,
+            "ods_threshold": 0.425,
+            "noise_draws": 10,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5157230394431012,
+                "orientation_mae_deg_mean": 42.000919445257566,
+                "noise_draws": 10
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5286445395258518,
+                "orientation_mae_deg_mean": 40.799273062791954,
+                "noise_draws": 10
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5414123955143382,
+                "orientation_mae_deg_mean": 39.76051987660787,
+                "noise_draws": 10
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5361201097020126,
+                "orientation_mae_deg_mean": 42.189539754054024,
+                "noise_draws": 10
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5245957305129134,
+                "orientation_mae_deg_mean": 42.536119328191454,
+                "noise_draws": 10
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.5874221921350253,
+                "overtakes_best_baseline": true
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 0.5123110446643085,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "dog",
+                "best_baseline_label": "DoG",
+                "best_baseline_value": 35.19388327728143,
+                "overtakes_best_baseline": false
+              }
+            }
+          }
+        }
+      },
+      {
+        "radius": 5,
+        "degree": 9,
+        "config": {
+          "r": 5,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "white_noise_gain": 0.6165697650287708,
+        "support_half_extent": 5,
+        "snr_metrics": {
+          "inf": {
+            "gradient_vector_rmse_mean": 0.5275565015769733,
+            "orientation_mae_deg_mean": 22.930155213089257,
+            "ods_f_score": 0.6465784051680455,
+            "ods_threshold": 0.125,
+            "noise_draws": 1,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5465518162636374,
+                "orientation_mae_deg_mean": 23.780254047468766,
+                "noise_draws": 1
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5179950564415214,
+                "orientation_mae_deg_mean": 20.911175711624438,
+                "noise_draws": 1
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.500122177571956,
+                "orientation_mae_deg_mean": 21.981927336962602,
+                "noise_draws": 1
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5366205322469055,
+                "orientation_mae_deg_mean": 21.708996353300414,
+                "noise_draws": 1
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5364929253608461,
+                "orientation_mae_deg_mean": 26.268422616090064,
+                "noise_draws": 1
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.655565343145001,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.5290327136798019,
+                "overtakes_best_baseline": true
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 20.57385623259548,
+                "overtakes_best_baseline": false
+              }
+            }
+          },
+          "20": {
+            "gradient_vector_rmse_mean": 0.5193717455343924,
+            "orientation_mae_deg_mean": 27.150391765922784,
+            "ods_f_score": 0.593895692231113,
+            "ods_threshold": 0.19,
+            "noise_draws": 10,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.535353566094821,
+                "orientation_mae_deg_mean": 28.686730584142033,
+                "noise_draws": 10
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5112373399943018,
+                "orientation_mae_deg_mean": 24.980006525222176,
+                "noise_draws": 10
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.4988452810884317,
+                "orientation_mae_deg_mean": 25.08713158470001,
+                "noise_draws": 10
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5274750323206676,
+                "orientation_mae_deg_mean": 26.61131744882971,
+                "noise_draws": 10
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5239475081737399,
+                "orientation_mae_deg_mean": 30.386772686720008,
+                "noise_draws": 10
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 0.6445991796517557,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.5234234097750912,
+                "overtakes_best_baseline": true
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 23.022389211219224,
+                "overtakes_best_baseline": false
+              }
+            }
+          },
+          "10": {
+            "gradient_vector_rmse_mean": 0.5164748720130268,
+            "orientation_mae_deg_mean": 37.345364826872846,
+            "ods_f_score": 0.5672404021214447,
+            "ods_threshold": 0.315,
+            "noise_draws": 10,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5068447340336236,
+                "orientation_mae_deg_mean": 38.27858585764035,
+                "noise_draws": 10
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.51213198795679,
+                "orientation_mae_deg_mean": 36.25521869288275,
+                "noise_draws": 10
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5290957219373744,
+                "orientation_mae_deg_mean": 34.9154573301525,
+                "noise_draws": 10
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5217277082462928,
+                "orientation_mae_deg_mean": 38.06692729980947,
+                "noise_draws": 10
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5125742078910529,
+                "orientation_mae_deg_mean": 39.210634953879165,
+                "noise_draws": 10
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "roberts",
+                "best_baseline_label": "Roberts",
+                "best_baseline_value": 0.5876414223353166,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "sobel",
+                "best_baseline_label": "Sobel",
+                "best_baseline_value": 0.5122726465772857,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 30.44523640593859,
+                "overtakes_best_baseline": false
+              }
+            }
+          },
+          "5": {
+            "gradient_vector_rmse_mean": 0.5292162435548413,
+            "orientation_mae_deg_mean": 41.50166246076869,
+            "ods_f_score": 0.5884816419002399,
+            "ods_threshold": 0.425,
+            "noise_draws": 10,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.515622861633336,
+                "orientation_mae_deg_mean": 42.028158435947795,
+                "noise_draws": 10
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5284865535746941,
+                "orientation_mae_deg_mean": 40.76448148355513,
+                "noise_draws": 10
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5413318038911662,
+                "orientation_mae_deg_mean": 39.80664518964022,
+                "noise_draws": 10
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5358129110068854,
+                "orientation_mae_deg_mean": 42.34538592887265,
+                "noise_draws": 10
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5248270876681247,
+                "orientation_mae_deg_mean": 42.563641265827684,
+                "noise_draws": 10
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.5874221921350253,
+                "overtakes_best_baseline": true
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 0.5123110446643085,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "dog",
+                "best_baseline_label": "DoG",
+                "best_baseline_value": 35.19388327728143,
+                "overtakes_best_baseline": false
+              }
+            }
+          }
+        }
+      },
+      {
+        "radius": 9,
+        "degree": 11,
+        "config": {
+          "r": 9,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "white_noise_gain": 0.08868650620066386,
+        "support_half_extent": 9,
+        "snr_metrics": {
+          "inf": {
+            "gradient_vector_rmse_mean": 0.527576876922578,
+            "orientation_mae_deg_mean": 19.8865514047759,
+            "ods_f_score": 0.6419017763687597,
+            "ods_threshold": 0.08,
+            "noise_draws": 1,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5446257295875142,
+                "orientation_mae_deg_mean": 20.992344237594715,
+                "noise_draws": 1
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.514338147213322,
+                "orientation_mae_deg_mean": 17.147161582112645,
+                "noise_draws": 1
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.4999927061259755,
+                "orientation_mae_deg_mean": 20.38194911651408,
+                "noise_draws": 1
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5377619049899827,
+                "orientation_mae_deg_mean": 19.489105829972896,
+                "noise_draws": 1
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5411658966960959,
+                "orientation_mae_deg_mean": 21.42219625768518,
+                "noise_draws": 1
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.655565343145001,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.5290327136798019,
+                "overtakes_best_baseline": true
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 20.57385623259548,
+                "overtakes_best_baseline": true
+              }
+            }
+          },
+          "20": {
+            "gradient_vector_rmse_mean": 0.5244276089998099,
+            "orientation_mae_deg_mean": 23.145045388247073,
+            "ods_f_score": 0.6298637796116541,
+            "ods_threshold": 0.105,
+            "noise_draws": 10,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5408883259497395,
+                "orientation_mae_deg_mean": 25.160264482591774,
+                "noise_draws": 10
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5116052896669079,
+                "orientation_mae_deg_mean": 20.27307177451854,
+                "noise_draws": 10
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.4988483788040149,
+                "orientation_mae_deg_mean": 21.924131256562372,
+                "noise_draws": 10
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.534126395180588,
+                "orientation_mae_deg_mean": 22.97691334712706,
+                "noise_draws": 10
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5366696553977994,
+                "orientation_mae_deg_mean": 25.39084608043562,
+                "noise_draws": 10
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 0.6445991796517557,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.5234234097750912,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 23.022389211219224,
+                "overtakes_best_baseline": false
+              }
+            }
+          },
+          "10": {
+            "gradient_vector_rmse_mean": 0.5133111384219549,
+            "orientation_mae_deg_mean": 31.876001374873237,
+            "ods_f_score": 0.5674196154042817,
+            "ods_threshold": 0.2,
+            "noise_draws": 10,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.523053609286857,
+                "orientation_mae_deg_mean": 33.03462433903154,
+                "noise_draws": 10
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5020008843194586,
+                "orientation_mae_deg_mean": 29.409762536719523,
+                "noise_draws": 10
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5056234063615122,
+                "orientation_mae_deg_mean": 29.27098288901672,
+                "noise_draws": 10
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5193334398418556,
+                "orientation_mae_deg_mean": 32.785289334422785,
+                "noise_draws": 10
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5165443523000908,
+                "orientation_mae_deg_mean": 34.87934777517563,
+                "noise_draws": 10
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "roberts",
+                "best_baseline_label": "Roberts",
+                "best_baseline_value": 0.5876414223353166,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "sobel",
+                "best_baseline_label": "Sobel",
+                "best_baseline_value": 0.5122726465772857,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 30.44523640593859,
+                "overtakes_best_baseline": false
+              }
+            }
+          },
+          "5": {
+            "gradient_vector_rmse_mean": 0.5132981352320449,
+            "orientation_mae_deg_mean": 37.272813683819365,
+            "ods_f_score": 0.5660071185809458,
+            "ods_threshold": 0.335,
+            "noise_draws": 10,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5073425275433371,
+                "orientation_mae_deg_mean": 38.02627839360112,
+                "noise_draws": 10
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5059818475497384,
+                "orientation_mae_deg_mean": 35.64806702104534,
+                "noise_draws": 10
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5269182537011906,
+                "orientation_mae_deg_mean": 35.25687248804486,
+                "noise_draws": 10
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.517605415619172,
+                "orientation_mae_deg_mean": 37.9517728873037,
+                "noise_draws": 10
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5086426317467863,
+                "orientation_mae_deg_mean": 39.48107762910177,
+                "noise_draws": 10
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.5874221921350253,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 0.5123110446643085,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "dog",
+                "best_baseline_label": "DoG",
+                "best_baseline_value": 35.19388327728143,
+                "overtakes_best_baseline": false
+              }
+            }
+          }
+        }
+      },
+      {
+        "radius": 15,
+        "degree": 11,
+        "config": {
+          "r": 15,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "white_noise_gain": 0.010987598156692223,
+        "support_half_extent": 15,
+        "snr_metrics": {
+          "inf": {
+            "gradient_vector_rmse_mean": 0.53334092373335,
+            "orientation_mae_deg_mean": 23.22772028105647,
+            "ods_f_score": 0.5976748442205386,
+            "ods_threshold": 0.06,
+            "noise_draws": 1,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5449245291330556,
+                "orientation_mae_deg_mean": 24.422118910731175,
+                "noise_draws": 1
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.522872201342306,
+                "orientation_mae_deg_mean": 20.911135579891674,
+                "noise_draws": 1
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5092725977127149,
+                "orientation_mae_deg_mean": 23.092721431566627,
+                "noise_draws": 1
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.54517530115836,
+                "orientation_mae_deg_mean": 23.204201985465325,
+                "noise_draws": 1
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5444599893203134,
+                "orientation_mae_deg_mean": 24.508423497627554,
+                "noise_draws": 1
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.655565343145001,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.5290327136798019,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 20.57385623259548,
+                "overtakes_best_baseline": false
+              }
+            }
+          },
+          "20": {
+            "gradient_vector_rmse_mean": 0.5316814736154603,
+            "orientation_mae_deg_mean": 24.898880987948104,
+            "ods_f_score": 0.59901971431884,
+            "ods_threshold": 0.07,
+            "noise_draws": 10,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5431626867112371,
+                "orientation_mae_deg_mean": 26.398914856794363,
+                "noise_draws": 10
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5214718298000696,
+                "orientation_mae_deg_mean": 22.557838041611156,
+                "noise_draws": 10
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5083634868521627,
+                "orientation_mae_deg_mean": 23.765119096058168,
+                "noise_draws": 10
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5429983611476471,
+                "orientation_mae_deg_mean": 25.267023018591395,
+                "noise_draws": 10
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5424110035661848,
+                "orientation_mae_deg_mean": 26.505509926685455,
+                "noise_draws": 10
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 0.6445991796517557,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.5234234097750912,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 23.022389211219224,
+                "overtakes_best_baseline": false
+              }
+            }
+          },
+          "10": {
+            "gradient_vector_rmse_mean": 0.5237515945650667,
+            "orientation_mae_deg_mean": 30.588808825801333,
+            "ods_f_score": 0.5741283591972154,
+            "ods_threshold": 0.115,
+            "noise_draws": 10,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5343613049871554,
+                "orientation_mae_deg_mean": 31.609887030994514,
+                "noise_draws": 10
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5134482916135074,
+                "orientation_mae_deg_mean": 28.438932195543668,
+                "noise_draws": 10
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5070424761168029,
+                "orientation_mae_deg_mean": 27.775788551133978,
+                "noise_draws": 10
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5323357246368673,
+                "orientation_mae_deg_mean": 31.74102858013861,
+                "noise_draws": 10
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5315701754710009,
+                "orientation_mae_deg_mean": 33.37840777119591,
+                "noise_draws": 10
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "roberts",
+                "best_baseline_label": "Roberts",
+                "best_baseline_value": 0.5876414223353166,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "sobel",
+                "best_baseline_label": "Sobel",
+                "best_baseline_value": 0.5122726465772857,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 30.44523640593859,
+                "overtakes_best_baseline": false
+              }
+            }
+          },
+          "5": {
+            "gradient_vector_rmse_mean": 0.5156762412392506,
+            "orientation_mae_deg_mean": 34.778233870020415,
+            "ods_f_score": 0.5625346915572185,
+            "ods_threshold": 0.185,
+            "noise_draws": 10,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5224846288380084,
+                "orientation_mae_deg_mean": 35.48297685494484,
+                "noise_draws": 10
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5062537281273063,
+                "orientation_mae_deg_mean": 33.24262725341217,
+                "noise_draws": 10
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5111459196774455,
+                "orientation_mae_deg_mean": 31.950830008426074,
+                "noise_draws": 10
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5204222256867308,
+                "orientation_mae_deg_mean": 35.95077334494698,
+                "noise_draws": 10
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5180747038667619,
+                "orientation_mae_deg_mean": 37.26396188837202,
+                "noise_draws": 10
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.5874221921350253,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 0.5123110446643085,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "dog",
+                "best_baseline_label": "DoG",
+                "best_baseline_value": 35.19388327728143,
+                "overtakes_best_baseline": true
+              }
+            }
+          }
+        }
+      },
+      {
+        "radius": 25,
+        "degree": 11,
+        "config": {
+          "r": 25,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "white_noise_gain": 0.0014297399791228117,
+        "support_half_extent": 25,
+        "snr_metrics": {
+          "inf": {
+            "gradient_vector_rmse_mean": 0.5487720450857678,
+            "orientation_mae_deg_mean": 29.813522035093285,
+            "ods_f_score": 0.5338696531316504,
+            "ods_threshold": 0.04,
+            "noise_draws": 1,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5554867653402308,
+                "orientation_mae_deg_mean": 30.29676335417294,
+                "noise_draws": 1
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5465036088119707,
+                "orientation_mae_deg_mean": 28.10310984259052,
+                "noise_draws": 1
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5224524271423243,
+                "orientation_mae_deg_mean": 29.991794118504274,
+                "noise_draws": 1
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5617439978291052,
+                "orientation_mae_deg_mean": 29.160565381560897,
+                "noise_draws": 1
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5576734263052083,
+                "orientation_mae_deg_mean": 31.515377478637788,
+                "noise_draws": 1
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.655565343145001,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.5290327136798019,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 20.57385623259548,
+                "overtakes_best_baseline": false
+              }
+            }
+          },
+          "20": {
+            "gradient_vector_rmse_mean": 0.5479625294206022,
+            "orientation_mae_deg_mean": 30.446313808512166,
+            "ods_f_score": 0.5364106740908211,
+            "ods_threshold": 0.045,
+            "noise_draws": 10,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5547033351271938,
+                "orientation_mae_deg_mean": 31.100708675679073,
+                "noise_draws": 10
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5457850007855506,
+                "orientation_mae_deg_mean": 28.81472280569712,
+                "noise_draws": 10
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5221012400660626,
+                "orientation_mae_deg_mean": 30.2143787955589,
+                "noise_draws": 10
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5605906813103567,
+                "orientation_mae_deg_mean": 29.813976355080353,
+                "noise_draws": 10
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5566323898138477,
+                "orientation_mae_deg_mean": 32.28778241054538,
+                "noise_draws": 10
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 0.6445991796517557,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.5234234097750912,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 23.022389211219224,
+                "overtakes_best_baseline": false
+              }
+            }
+          },
+          "10": {
+            "gradient_vector_rmse_mean": 0.5427010799201132,
+            "orientation_mae_deg_mean": 33.32736286888701,
+            "ods_f_score": 0.5372891901805843,
+            "ods_threshold": 0.07,
+            "noise_draws": 10,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5497726598306183,
+                "orientation_mae_deg_mean": 34.20121007676483,
+                "noise_draws": 10
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5401060523023643,
+                "orientation_mae_deg_mean": 31.249980222255054,
+                "noise_draws": 10
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5204087978349826,
+                "orientation_mae_deg_mean": 31.48206439415295,
+                "noise_draws": 10
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5534783583509509,
+                "orientation_mae_deg_mean": 33.87001586508272,
+                "noise_draws": 10
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5497395312816501,
+                "orientation_mae_deg_mean": 35.833543786179476,
+                "noise_draws": 10
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "roberts",
+                "best_baseline_label": "Roberts",
+                "best_baseline_value": 0.5876414223353166,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "sobel",
+                "best_baseline_label": "Sobel",
+                "best_baseline_value": 0.5122726465772857,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 30.44523640593859,
+                "overtakes_best_baseline": false
+              }
+            }
+          },
+          "5": {
+            "gradient_vector_rmse_mean": 0.5348350610200248,
+            "orientation_mae_deg_mean": 36.048447140350405,
+            "ods_f_score": 0.535752839868117,
+            "ods_threshold": 0.11,
+            "noise_draws": 10,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5419581603937557,
+                "orientation_mae_deg_mean": 36.84113661395815,
+                "noise_draws": 10
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5319101020020686,
+                "orientation_mae_deg_mean": 34.67857278842194,
+                "noise_draws": 10
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5183916322075416,
+                "orientation_mae_deg_mean": 33.43615915337749,
+                "noise_draws": 10
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5428083667775414,
+                "orientation_mae_deg_mean": 36.71698350130369,
+                "noise_draws": 10
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.539107043719216,
+                "orientation_mae_deg_mean": 38.56938364469072,
+                "noise_draws": 10
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.5874221921350253,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 0.5123110446643085,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "dog",
+                "best_baseline_label": "DoG",
+                "best_baseline_value": 35.19388327728143,
+                "overtakes_best_baseline": false
+              }
+            }
+          }
+        }
+      },
+      {
+        "radius": 50,
+        "degree": 11,
+        "config": {
+          "r": 50,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "white_noise_gain": 8.998553150423674e-05,
+        "support_half_extent": 50,
+        "snr_metrics": {
+          "inf": {
+            "gradient_vector_rmse_mean": 0.5635478433289863,
+            "orientation_mae_deg_mean": 39.412774441293934,
+            "ods_f_score": 0.4719793485404467,
+            "ods_threshold": 0.015,
+            "noise_draws": 1,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5662709093304572,
+                "orientation_mae_deg_mean": 40.08962270312737,
+                "noise_draws": 1
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.566721154539699,
+                "orientation_mae_deg_mean": 39.01886629687453,
+                "noise_draws": 1
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5328996231496359,
+                "orientation_mae_deg_mean": 37.87832918136976,
+                "noise_draws": 1
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.577553827123473,
+                "orientation_mae_deg_mean": 38.69050308806583,
+                "noise_draws": 1
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5742937025016668,
+                "orientation_mae_deg_mean": 41.386550937032176,
+                "noise_draws": 1
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.655565343145001,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.5290327136798019,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 20.57385623259548,
+                "overtakes_best_baseline": false
+              }
+            }
+          },
+          "20": {
+            "gradient_vector_rmse_mean": 0.5633379147826632,
+            "orientation_mae_deg_mean": 39.52143976203938,
+            "ods_f_score": 0.4727396666556528,
+            "ods_threshold": 0.02,
+            "noise_draws": 10,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.566037463118158,
+                "orientation_mae_deg_mean": 40.0284894991611,
+                "noise_draws": 10
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5664897560633829,
+                "orientation_mae_deg_mean": 39.05453706462369,
+                "noise_draws": 10
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5328835445353826,
+                "orientation_mae_deg_mean": 37.95176362064795,
+                "noise_draws": 10
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5772753103966721,
+                "orientation_mae_deg_mean": 38.894730655621615,
+                "noise_draws": 10
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5740034997997202,
+                "orientation_mae_deg_mean": 41.67767797014253,
+                "noise_draws": 10
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 0.6445991796517557,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.5234234097750912,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 23.022389211219224,
+                "overtakes_best_baseline": false
+              }
+            }
+          },
+          "10": {
+            "gradient_vector_rmse_mean": 0.5613861279266228,
+            "orientation_mae_deg_mean": 40.177518326893676,
+            "ods_f_score": 0.47275299246537633,
+            "ods_threshold": 0.03,
+            "noise_draws": 10,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5641113616866898,
+                "orientation_mae_deg_mean": 40.67377168270486,
+                "noise_draws": 10
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5643566402481074,
+                "orientation_mae_deg_mean": 39.53856815612708,
+                "noise_draws": 10
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5323260267499783,
+                "orientation_mae_deg_mean": 38.12755774107197,
+                "noise_draws": 10
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5746787006025196,
+                "orientation_mae_deg_mean": 39.80103937809636,
+                "noise_draws": 10
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.5714579103458186,
+                "orientation_mae_deg_mean": 42.746654676468104,
+                "noise_draws": 10
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "roberts",
+                "best_baseline_label": "Roberts",
+                "best_baseline_value": 0.5876414223353166,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "sobel",
+                "best_baseline_label": "Sobel",
+                "best_baseline_value": 0.5122726465772857,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 30.44523640593859,
+                "overtakes_best_baseline": false
+              }
+            }
+          },
+          "5": {
+            "gradient_vector_rmse_mean": 0.5577570690173886,
+            "orientation_mae_deg_mean": 40.97381230429945,
+            "ods_f_score": 0.4739719292487558,
+            "ods_threshold": 0.045,
+            "noise_draws": 10,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.5600756159965613,
+                "orientation_mae_deg_mean": 41.45793573113578,
+                "noise_draws": 10
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.5603553462492914,
+                "orientation_mae_deg_mean": 40.43936058819524,
+                "noise_draws": 10
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.5320130915431631,
+                "orientation_mae_deg_mean": 38.62102226546832,
+                "noise_draws": 10
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.5699548420225498,
+                "orientation_mae_deg_mean": 41.01566667484979,
+                "noise_draws": 10
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.566386449275378,
+                "orientation_mae_deg_mean": 43.33507626184813,
+                "noise_draws": 10
+              }
+            },
+            "comparison": {
+              "ods_f_score": {
+                "best_baseline_method": "scharr",
+                "best_baseline_label": "Scharr",
+                "best_baseline_value": 0.5874221921350253,
+                "overtakes_best_baseline": false
+              },
+              "gradient_vector_rmse_mean": {
+                "best_baseline_method": "farid_simoncelli",
+                "best_baseline_label": "Farid-Simoncelli",
+                "best_baseline_value": 0.5123110446643085,
+                "overtakes_best_baseline": false
+              },
+              "orientation_mae_deg_mean": {
+                "best_baseline_method": "dog",
+                "best_baseline_label": "DoG",
+                "best_baseline_value": 35.19388327728143,
+                "overtakes_best_baseline": false
+              }
+            }
+          }
+        }
+      }
+    ],
+    "baseline_best": {
+      "inf": {
+        "ods_f_score": {
+          "method": "scharr",
+          "label": "Scharr",
+          "value": 0.655565343145001
+        },
+        "gradient_vector_rmse_mean": {
+          "method": "scharr",
+          "label": "Scharr",
+          "value": 0.5290327136798019
+        },
+        "orientation_mae_deg_mean": {
+          "method": "farid_simoncelli",
+          "label": "Farid-Simoncelli",
+          "value": 20.57385623259548
+        }
+      },
+      "20": {
+        "ods_f_score": {
+          "method": "farid_simoncelli",
+          "label": "Farid-Simoncelli",
+          "value": 0.6445991796517557
+        },
+        "gradient_vector_rmse_mean": {
+          "method": "scharr",
+          "label": "Scharr",
+          "value": 0.5234234097750912
+        },
+        "orientation_mae_deg_mean": {
+          "method": "farid_simoncelli",
+          "label": "Farid-Simoncelli",
+          "value": 23.022389211219224
+        }
+      },
+      "10": {
+        "ods_f_score": {
+          "method": "roberts",
+          "label": "Roberts",
+          "value": 0.5876414223353166
+        },
+        "gradient_vector_rmse_mean": {
+          "method": "sobel",
+          "label": "Sobel",
+          "value": 0.5122726465772857
+        },
+        "orientation_mae_deg_mean": {
+          "method": "farid_simoncelli",
+          "label": "Farid-Simoncelli",
+          "value": 30.44523640593859
+        }
+      },
+      "5": {
+        "ods_f_score": {
+          "method": "scharr",
+          "label": "Scharr",
+          "value": 0.5874221921350253
+        },
+        "gradient_vector_rmse_mean": {
+          "method": "farid_simoncelli",
+          "label": "Farid-Simoncelli",
+          "value": 0.5123110446643085
+        },
+        "orientation_mae_deg_mean": {
+          "method": "dog",
+          "label": "DoG",
+          "value": 35.19388327728143
         }
       }
     }
