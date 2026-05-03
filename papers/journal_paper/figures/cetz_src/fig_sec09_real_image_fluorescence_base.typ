@@ -59,18 +59,18 @@
 #let bar-chart(data, metric-key, title, y-label, log-scale: false) = {
   let methods = data.at("methods")
   let order = data.at("method_order")
-  let values = (
-    ..for method in order (
-      methods.at(method).at(metric-key)
-    )
-  )
-  let mapped = if log-scale {
-    (
-      ..for value in values (
-        calc.log(calc.max(value, 1e-12), base: 10)
-      )
-    )
-  } else { values }
+  let values = ()
+  for method in order {
+    values.push(methods.at(method).at(metric-key))
+  }
+  let mapped = ()
+  for value in values {
+    mapped.push(if log-scale {
+      calc.log(calc.max(value, 1e-12), base: 10)
+    } else {
+      value
+    })
+  }
   let y-min = 0.0
   let y-max = calc.max(..mapped)
   let pad = if y-max > y-min { 0.08 * (y-max - y-min) } else { 0.1 }
