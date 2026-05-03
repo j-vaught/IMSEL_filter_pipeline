@@ -1,6 +1,9 @@
 {
   "title": "Section 8.3.3 curvature handling",
   "subtitle": "Validation-tuned head-to-head comparison on smoothed arcs and S-curves at AWGN 10 dB",
+  "notes": {
+    "farid_simoncelli_support": "Farid-Simoncelli uses 7-tap support and is approximately matched-scale to WVF r=3, not the r=50 validation-selected WVF operating point."
+  },
   "config": {
     "curvature_radii": [
       20,
@@ -22,7 +25,9 @@
     "dog",
     "farid_simoncelli",
     "square_sg",
-    "wvf"
+    "wvf",
+    "square_sg_degmatch_n21_d11",
+    "square_sg_degmatch_n25_d11"
   ],
   "methods": {
     "roberts": {
@@ -30,6 +35,7 @@
       "config": {
         "window": "2x2-embedded"
       },
+      "comparison_status": "validated",
       "curvature_metrics": {
         "20": {
           "grad_rmse": 0.489479528100286,
@@ -58,6 +64,7 @@
       "config": {
         "window": "3x3"
       },
+      "comparison_status": "validated",
       "curvature_metrics": {
         "20": {
           "grad_rmse": 0.33920644666265165,
@@ -86,6 +93,7 @@
       "config": {
         "window": "3x3"
       },
+      "comparison_status": "validated",
       "curvature_metrics": {
         "20": {
           "grad_rmse": 0.343185398721759,
@@ -114,6 +122,7 @@
       "config": {
         "window": "3x3"
       },
+      "comparison_status": "validated",
       "curvature_metrics": {
         "20": {
           "grad_rmse": 0.3558348990000703,
@@ -142,6 +151,7 @@
       "config": {
         "sigma": 3.0
       },
+      "comparison_status": "validated",
       "curvature_metrics": {
         "20": {
           "grad_rmse": 0.3242775465857968,
@@ -170,6 +180,7 @@
       "config": {
         "window": "7tap"
       },
+      "comparison_status": "validated",
       "curvature_metrics": {
         "20": {
           "grad_rmse": 0.2914215498268573,
@@ -200,6 +211,7 @@
         "d": 1,
         "normalize_coords": true
       },
+      "comparison_status": "validated",
       "curvature_metrics": {
         "20": {
           "grad_rmse": 0.3243844108312443,
@@ -230,6 +242,7 @@
         "d": 11,
         "normalize_coords": true
       },
+      "comparison_status": "validated",
       "curvature_metrics": {
         "20": {
           "grad_rmse": 0.3425926244355769,
@@ -250,6 +263,68 @@
           "grad_rmse": 0.10255852430330273,
           "ang_mae_deg": 1.9751696518202546,
           "mag_bias": -0.012801448900575352
+        }
+      }
+    },
+    "square_sg_degmatch_n21_d11": {
+      "label": "Square SG N=21 d=11",
+      "config": {
+        "N": 21,
+        "d": 11,
+        "normalize_coords": true
+      },
+      "comparison_status": "degree_matched_not_constraint_feasible",
+      "curvature_metrics": {
+        "20": {
+          "grad_rmse": 0.2954131922604539,
+          "ang_mae_deg": 23.186465918171482,
+          "mag_bias": -0.022832224799527415
+        },
+        "50": {
+          "grad_rmse": 0.1358881890461966,
+          "ang_mae_deg": 25.693341158842394,
+          "mag_bias": 0.029939626691254433
+        },
+        "100": {
+          "grad_rmse": 0.08274536152585489,
+          "ang_mae_deg": 29.02314706375926,
+          "mag_bias": 0.037021698077618986
+        },
+        "200": {
+          "grad_rmse": 0.07833828836935991,
+          "ang_mae_deg": 29.930029434958314,
+          "mag_bias": 0.03688285147831014
+        }
+      }
+    },
+    "square_sg_degmatch_n25_d11": {
+      "label": "Square SG N=25 d=11",
+      "config": {
+        "N": 25,
+        "d": 11,
+        "normalize_coords": true
+      },
+      "comparison_status": "degree_matched_not_constraint_feasible",
+      "curvature_metrics": {
+        "20": {
+          "grad_rmse": 0.29616832021498746,
+          "ang_mae_deg": 19.1695695512002,
+          "mag_bias": -0.042340250446763435
+        },
+        "50": {
+          "grad_rmse": 0.13310839387871196,
+          "ang_mae_deg": 20.963284631070433,
+          "mag_bias": 0.015956428652928865
+        },
+        "100": {
+          "grad_rmse": 0.07365851149378094,
+          "ang_mae_deg": 24.061323065343668,
+          "mag_bias": 0.025355633205937297
+        },
+        "200": {
+          "grad_rmse": 0.0678407591279466,
+          "ang_mae_deg": 25.095373877072866,
+          "mag_bias": 0.02539431291985917
         }
       }
     }
