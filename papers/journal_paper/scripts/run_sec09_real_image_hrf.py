@@ -618,6 +618,7 @@ def _evaluate_wvf_trace(
     device_index: int | None,
     noise_draws: int,
     snr_levels: tuple[float, ...],
+    asset_max_width_px: int | None,
 ) -> list[dict[str, object]]:
     points = []
     for spec in trace_specs:
@@ -633,6 +634,7 @@ def _evaluate_wvf_trace(
             assets_dir=assets_dir,
             fft_backend=fft_backend,
             device_index=device_index,
+            asset_max_width_px=asset_max_width_px,
         )
         snr_metrics = {}
         for snr_db in snr_levels:
@@ -758,6 +760,7 @@ def _assemble_summary_payload(
     image_payload: list[dict[str, object]],
     methods_payload: dict[str, object],
     wvf_points: list[dict[str, object]],
+    asset_rendering: dict[str, object] | None,
     partial_request: dict[str, object] | None,
 ) -> dict[str, object]:
     methods_full = dict(methods_payload)
@@ -802,6 +805,8 @@ def _assemble_summary_payload(
         "methods": methods_full,
         "wvf_trace": wvf_trace,
     }
+    if asset_rendering is not None:
+        payload["asset_rendering"] = asset_rendering
     if partial_request is not None:
         payload["partial_request"] = partial_request
     if baseline_methods and wvf_trace.get("points"):
@@ -833,6 +838,7 @@ def _merge_partial_summaries(
     snr_slugs = tuple(str(value) for value in first["config"]["snr_levels"])
     noise_draws = int(first["config"]["noise_draws"])
     ods_threshold_count = int(first["config"]["ods_threshold_count"])
+    asset_rendering = first.get("asset_rendering")
     _set_ods_threshold_count(ods_threshold_count)
 
     merged_methods: dict[str, object] = {}
@@ -844,6 +850,8 @@ def _merge_partial_summaries(
             raise RuntimeError("HRF shard merge failed because SNR schedules differ")
         if int(payload["config"]["noise_draws"]) != noise_draws:
             raise RuntimeError("HRF shard merge failed because noise draw counts differ")
+        if payload.get("asset_rendering") != asset_rendering:
+            raise RuntimeError("HRF shard merge failed because asset rendering settings differ")
         for method_name, method_payload in payload.get("methods", {}).items():
             merged_methods[str(method_name)] = method_payload
         for point in payload.get("wvf_trace", {}).get("points", []):
@@ -860,6 +868,7 @@ def _merge_partial_summaries(
         image_payload=image_payload,
         methods_payload=merged_methods,
         wvf_points=list(merged_points.values()),
+        asset_rendering=asset_rendering,
         partial_request=None,
     )
     summary_json.parent.mkdir(parents=True, exist_ok=True)
@@ -888,6 +897,7 @@ def run_experiment(
     noise_draws: int,
     ods_threshold_count: int,
     snr_levels: tuple[float, ...],
+    asset_max_width_px: int | None,
     selection_summary_json: Path | None,
     skip_methods: bool,
     method_filter: set[str],
@@ -904,6 +914,16 @@ def run_experiment(
     existing_summary = json.loads(selection_source.read_text()) if selection_source.exists() else None
     existing_selection = None if existing_summary is None else _selection_from_summary(existing_summary)
     selections = existing_selection if existing_selection is not None else _select_images(data_root)
+    asset_max_width_px = None if asset_max_width_px is None else int(asset_max_width_px)
+    assets_dir_name = "assets" if asset_max_width_px is None else f"assets_w{asset_max_width_px}"
+    asset_rendering = {
+        "asset_dir_name": assets_dir_name,
+        "asset_max_width_px": asset_max_width_px,
+        "full_resolution_assets_available": asset_max_width_px is None,
+        "note": (
+            "When asset_max_width_px is set, saved preview PNGs are downsampled for figure embedding while metrics remain unchanged."
+        ),
+    }
 
     green_images: dict[str, np.ndarray] = {}
     soft_boundary_map: dict[str, np.ndarray] = {}
@@ -912,7 +932,7 @@ def run_experiment(
     tangent_angle_map: dict[str, np.ndarray] = {}
     tangent_valid_map: dict[str, np.ndarray] = {}
     fov_mask_map: dict[str, np.ndarray] = {}
-    assets_dir = output_dir / "assets"
+    assets_dir = output_dir / assets_dir_name
     image_payload = []
 
     for selection in selections:
@@ -937,8 +957,8 @@ def run_experiment(
 
         input_path = assets_dir / f"{selection.image_key}_input.png"
         mask_path = assets_dir / f"{selection.image_key}_vessel_mask.png"
-        _save_rgb(input_path, rgb)
-        _save_gray(mask_path, np.asarray(vessel_mask, dtype=np.float64))
+        _save_rgb(input_path, rgb, max_width_px=asset_max_width_px)
+        _save_gray(mask_path, np.asarray(vessel_mask, dtype=np.float64), max_width_px=asset_max_width_px)
         image_payload.append(
             {
                 "image_key": str(selection.image_key),
@@ -950,6 +970,7 @@ def run_experiment(
                 "selection_score": float(selection.selection_score),
                 "vessel_pixels": int(selection.vessel_pixels),
                 "orientation_entropy": float(selection.orientation_entropy),
+                "asset_max_width_px": asset_max_width_px,
                 "input_asset_path": str(input_path.relative_to(ROOT / "papers" / "journal_paper" / "figures")),
                 "vessel_mask_asset_path": str(mask_path.relative_to(ROOT / "papers" / "journal_paper" / "figures")),
             }
@@ -964,6 +985,7 @@ def run_experiment(
                 assets_dir=assets_dir,
                 fft_backend=fft_backend,
                 device_index=device_index,
+                asset_max_width_px=asset_max_width_px,
             )
             snr_metrics = {}
             for snr_db in snr_levels:
@@ -1009,6 +1031,7 @@ def run_experiment(
         device_index=device_index,
         noise_draws=int(noise_draws),
         snr_levels=snr_levels,
+        asset_max_width_px=asset_max_width_px,
     )
 
     partial_request = {
@@ -1027,6 +1050,7 @@ def run_experiment(
         image_payload=image_payload,
         methods_payload=methods_payload,
         wvf_points=wvf_points,
+        asset_rendering=asset_rendering,
         partial_request=partial_request,
     )
     summary_json.parent.mkdir(parents=True, exist_ok=True)
@@ -1077,6 +1101,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--noise-draws", type=int, default=HRF_NOISE_DRAWS)
     parser.add_argument("--ods-threshold-count", type=int, default=HRF_ODS_THRESHOLD_COUNT)
     parser.add_argument("--snr-levels", type=str, default="inf,20,10,5")
+    parser.add_argument("--asset-max-width-px", type=int, default=None)
     parser.add_argument("--skip-methods", action="store_true")
     parser.add_argument("--method-filter", type=str, default="")
     parser.add_argument("--skip-wvf-trace", action="store_true")
@@ -1112,6 +1137,7 @@ def main(argv: list[str] | None = None) -> int:
         noise_draws=int(args.noise_draws),
         ods_threshold_count=int(args.ods_threshold_count),
         snr_levels=_parse_snr_levels(str(args.snr_levels)),
+        asset_max_width_px=args.asset_max_width_px,
         skip_methods=bool(args.skip_methods),
         method_filter=_parse_method_filter(str(args.method_filter)),
         skip_wvf_trace=bool(args.skip_wvf_trace),

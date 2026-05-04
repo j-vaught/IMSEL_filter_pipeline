@@ -174,15 +174,28 @@ def _fov_mask_from_green(green: np.ndarray) -> np.ndarray:
     return np.asarray(green > float(FOV_THRESHOLD), dtype=bool)
 
 
-def _save_rgb(path: Path, rgb: np.ndarray) -> None:
+def _resize_image_if_needed(image: Image.Image, max_width_px: int | None) -> Image.Image:
+    if max_width_px is None:
+        return image
+    width, height = image.size
+    target_width = int(max_width_px)
+    if target_width <= 0 or width <= target_width:
+        return image
+    target_height = max(1, int(round(height * (target_width / float(width)))))
+    return image.resize((target_width, target_height), resample=Image.Resampling.BICUBIC)
+
+
+def _save_rgb(path: Path, rgb: np.ndarray, max_width_px: int | None = None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    Image.fromarray(np.asarray(rgb, dtype=np.uint8), mode="RGB").save(path)
+    image = Image.fromarray(np.asarray(rgb, dtype=np.uint8), mode="RGB")
+    _resize_image_if_needed(image, max_width_px).save(path)
 
 
-def _save_gray(path: Path, gray: np.ndarray) -> None:
+def _save_gray(path: Path, gray: np.ndarray, max_width_px: int | None = None) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     image_u8 = np.clip(np.round(np.asarray(gray, dtype=np.float64) * 255.0), 0.0, 255.0).astype(np.uint8)
-    Image.fromarray(image_u8, mode="L").save(path)
+    image = Image.fromarray(image_u8, mode="L")
+    _resize_image_if_needed(image, max_width_px).save(path)
 
 
 def _robust_scale(values: np.ndarray) -> float:
@@ -475,6 +488,7 @@ def _clean_assets_for_method(
     assets_dir: Path,
     fft_backend: str,
     device_index: int | None,
+    asset_max_width_px: int | None = None,
 ) -> dict[str, dict[str, str]]:
     kernel = method_item["kernel"]
     image_keys = list(green_images.keys())
@@ -486,8 +500,12 @@ def _clean_assets_for_method(
         mag_norm, _ = _normalize_magnitude(magnitude)
         mag_path = assets_dir / f"{method_item['method']}_{image_key}_magnitude.png"
         ori_path = assets_dir / f"{method_item['method']}_{image_key}_orientation.png"
-        _save_gray(mag_path, mag_norm)
-        _save_rgb(ori_path, _orientation_rgb(np.asarray(gx, dtype=np.float64), np.asarray(gy, dtype=np.float64)))
+        _save_gray(mag_path, mag_norm, max_width_px=asset_max_width_px)
+        _save_rgb(
+            ori_path,
+            _orientation_rgb(np.asarray(gx, dtype=np.float64), np.asarray(gy, dtype=np.float64)),
+            max_width_px=asset_max_width_px,
+        )
         outputs[image_key] = {
             "magnitude_path": str(mag_path.relative_to(ROOT / "papers" / "journal_paper" / "figures")),
             "orientation_path": str(ori_path.relative_to(ROOT / "papers" / "journal_paper" / "figures")),
