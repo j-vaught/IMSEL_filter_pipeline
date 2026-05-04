@@ -46,8 +46,9 @@
       "selection_score": 1299621.072747602,
       "vessel_pixels": 864171,
       "orientation_entropy": 0.9768869006266334,
-      "input_asset_path": "data/sec09_real_image_hrf/assets/img01_input.png",
-      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets/img01_vessel_mask.png"
+      "asset_max_width_px": 800,
+      "input_asset_path": "data/sec09_real_image_hrf/assets_w800/img01_input.png",
+      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets_w800/img01_vessel_mask.png"
     },
     {
       "image_key": "img02",
@@ -59,8 +60,9 @@
       "selection_score": 1297134.371750966,
       "vessel_pixels": 859295,
       "orientation_entropy": 0.9879701779181183,
-      "input_asset_path": "data/sec09_real_image_hrf/assets/img02_input.png",
-      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets/img02_vessel_mask.png"
+      "asset_max_width_px": 800,
+      "input_asset_path": "data/sec09_real_image_hrf/assets_w800/img02_input.png",
+      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets_w800/img02_vessel_mask.png"
     },
     {
       "image_key": "img03",
@@ -72,8 +74,9 @@
       "selection_score": 1063478.6006157082,
       "vessel_pixels": 714889,
       "orientation_entropy": 0.9695415645168769,
-      "input_asset_path": "data/sec09_real_image_hrf/assets/img03_input.png",
-      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets/img03_vessel_mask.png"
+      "asset_max_width_px": 800,
+      "input_asset_path": "data/sec09_real_image_hrf/assets_w800/img03_input.png",
+      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets_w800/img03_vessel_mask.png"
     },
     {
       "image_key": "img04",
@@ -85,8 +88,9 @@
       "selection_score": 1038971.4777261899,
       "vessel_pixels": 692937,
       "orientation_entropy": 0.9788336182128528,
-      "input_asset_path": "data/sec09_real_image_hrf/assets/img04_input.png",
-      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets/img04_vessel_mask.png"
+      "asset_max_width_px": 800,
+      "input_asset_path": "data/sec09_real_image_hrf/assets_w800/img04_input.png",
+      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets_w800/img04_vessel_mask.png"
     },
     {
       "image_key": "img05",
@@ -98,8 +102,9 @@
       "selection_score": 1014250.4557255898,
       "vessel_pixels": 676424,
       "orientation_entropy": 0.9792031147004041,
-      "input_asset_path": "data/sec09_real_image_hrf/assets/img05_input.png",
-      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets/img05_vessel_mask.png"
+      "asset_max_width_px": 800,
+      "input_asset_path": "data/sec09_real_image_hrf/assets_w800/img05_input.png",
+      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets_w800/img05_vessel_mask.png"
     }
   ],
   "method_order": [
@@ -122,24 +127,24 @@
       },
       "clean_assets": {
         "img01": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/square_sg_img01_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/square_sg_img01_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/square_sg_img01_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/square_sg_img01_orientation.png"
         },
         "img02": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/square_sg_img02_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/square_sg_img02_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/square_sg_img02_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/square_sg_img02_orientation.png"
         },
         "img03": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/square_sg_img03_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/square_sg_img03_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/square_sg_img03_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/square_sg_img03_orientation.png"
         },
         "img04": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/square_sg_img04_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/square_sg_img04_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/square_sg_img04_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/square_sg_img04_orientation.png"
         },
         "img05": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/square_sg_img05_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/square_sg_img05_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/square_sg_img05_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/square_sg_img05_orientation.png"
         }
       },
       "snr_metrics": {
@@ -288,24 +293,24 @@
       },
       "clean_assets": {
         "img01": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/dog_img01_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/dog_img01_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/dog_img01_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/dog_img01_orientation.png"
         },
         "img02": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/dog_img02_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/dog_img02_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/dog_img02_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/dog_img02_orientation.png"
         },
         "img03": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/dog_img03_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/dog_img03_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/dog_img03_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/dog_img03_orientation.png"
         },
         "img04": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/dog_img04_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/dog_img04_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/dog_img04_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/dog_img04_orientation.png"
         },
         "img05": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/dog_img05_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/dog_img05_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/dog_img05_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/dog_img05_orientation.png"
         }
       },
       "snr_metrics": {
@@ -454,24 +459,24 @@
       },
       "clean_assets": {
         "img01": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/farid_simoncelli_img01_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/farid_simoncelli_img01_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/farid_simoncelli_img01_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/farid_simoncelli_img01_orientation.png"
         },
         "img02": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/farid_simoncelli_img02_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/farid_simoncelli_img02_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/farid_simoncelli_img02_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/farid_simoncelli_img02_orientation.png"
         },
         "img03": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/farid_simoncelli_img03_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/farid_simoncelli_img03_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/farid_simoncelli_img03_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/farid_simoncelli_img03_orientation.png"
         },
         "img04": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/farid_simoncelli_img04_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/farid_simoncelli_img04_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/farid_simoncelli_img04_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/farid_simoncelli_img04_orientation.png"
         },
         "img05": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/farid_simoncelli_img05_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/farid_simoncelli_img05_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/farid_simoncelli_img05_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/farid_simoncelli_img05_orientation.png"
         }
       },
       "snr_metrics": {
@@ -620,24 +625,24 @@
       },
       "clean_assets": {
         "img01": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/roberts_img01_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/roberts_img01_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/roberts_img01_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/roberts_img01_orientation.png"
         },
         "img02": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/roberts_img02_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/roberts_img02_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/roberts_img02_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/roberts_img02_orientation.png"
         },
         "img03": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/roberts_img03_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/roberts_img03_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/roberts_img03_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/roberts_img03_orientation.png"
         },
         "img04": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/roberts_img04_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/roberts_img04_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/roberts_img04_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/roberts_img04_orientation.png"
         },
         "img05": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/roberts_img05_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/roberts_img05_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/roberts_img05_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/roberts_img05_orientation.png"
         }
       },
       "snr_metrics": {
@@ -786,24 +791,24 @@
       },
       "clean_assets": {
         "img01": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/prewitt_img01_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/prewitt_img01_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/prewitt_img01_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/prewitt_img01_orientation.png"
         },
         "img02": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/prewitt_img02_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/prewitt_img02_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/prewitt_img02_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/prewitt_img02_orientation.png"
         },
         "img03": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/prewitt_img03_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/prewitt_img03_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/prewitt_img03_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/prewitt_img03_orientation.png"
         },
         "img04": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/prewitt_img04_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/prewitt_img04_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/prewitt_img04_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/prewitt_img04_orientation.png"
         },
         "img05": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/prewitt_img05_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/prewitt_img05_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/prewitt_img05_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/prewitt_img05_orientation.png"
         }
       },
       "snr_metrics": {
@@ -952,24 +957,24 @@
       },
       "clean_assets": {
         "img01": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/sobel_img01_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/sobel_img01_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/sobel_img01_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/sobel_img01_orientation.png"
         },
         "img02": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/sobel_img02_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/sobel_img02_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/sobel_img02_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/sobel_img02_orientation.png"
         },
         "img03": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/sobel_img03_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/sobel_img03_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/sobel_img03_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/sobel_img03_orientation.png"
         },
         "img04": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/sobel_img04_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/sobel_img04_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/sobel_img04_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/sobel_img04_orientation.png"
         },
         "img05": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/sobel_img05_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/sobel_img05_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/sobel_img05_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/sobel_img05_orientation.png"
         }
       },
       "snr_metrics": {
@@ -1118,24 +1123,24 @@
       },
       "clean_assets": {
         "img01": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/scharr_img01_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/scharr_img01_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/scharr_img01_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/scharr_img01_orientation.png"
         },
         "img02": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/scharr_img02_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/scharr_img02_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/scharr_img02_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/scharr_img02_orientation.png"
         },
         "img03": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/scharr_img03_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/scharr_img03_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/scharr_img03_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/scharr_img03_orientation.png"
         },
         "img04": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/scharr_img04_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/scharr_img04_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/scharr_img04_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/scharr_img04_orientation.png"
         },
         "img05": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/scharr_img05_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/scharr_img05_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/scharr_img05_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/scharr_img05_orientation.png"
         }
       },
       "snr_metrics": {
@@ -1286,24 +1291,24 @@
       },
       "clean_assets": {
         "img01": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img01_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img01_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img01_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img01_orientation.png"
         },
         "img02": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img02_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img02_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img02_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img02_orientation.png"
         },
         "img03": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img03_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img03_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img03_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img03_orientation.png"
         },
         "img04": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img04_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img04_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img04_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img04_orientation.png"
         },
         "img05": {
-          "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img05_magnitude.png",
-          "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img05_orientation.png"
+          "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img05_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img05_orientation.png"
         }
       },
       "snr_metrics": {
@@ -1460,24 +1465,24 @@
         "support_half_extent": 3,
         "clean_assets": {
           "img01": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img01_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img01_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img01_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img01_orientation.png"
           },
           "img02": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img02_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img02_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img02_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img02_orientation.png"
           },
           "img03": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img03_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img03_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img03_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img03_orientation.png"
           },
           "img04": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img04_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img04_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img04_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img04_orientation.png"
           },
           "img05": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img05_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img05_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img05_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img05_orientation.png"
           }
         },
         "snr_metrics": {
@@ -1711,24 +1716,24 @@
         "support_half_extent": 5,
         "clean_assets": {
           "img01": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img01_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img01_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img01_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img01_orientation.png"
           },
           "img02": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img02_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img02_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img02_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img02_orientation.png"
           },
           "img03": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img03_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img03_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img03_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img03_orientation.png"
           },
           "img04": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img04_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img04_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img04_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img04_orientation.png"
           },
           "img05": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img05_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img05_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img05_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img05_orientation.png"
           }
         },
         "snr_metrics": {
@@ -1962,24 +1967,24 @@
         "support_half_extent": 9,
         "clean_assets": {
           "img01": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img01_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img01_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img01_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img01_orientation.png"
           },
           "img02": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img02_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img02_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img02_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img02_orientation.png"
           },
           "img03": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img03_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img03_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img03_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img03_orientation.png"
           },
           "img04": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img04_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img04_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img04_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img04_orientation.png"
           },
           "img05": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img05_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img05_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img05_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img05_orientation.png"
           }
         },
         "snr_metrics": {
@@ -2213,24 +2218,24 @@
         "support_half_extent": 15,
         "clean_assets": {
           "img01": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img01_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img01_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img01_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img01_orientation.png"
           },
           "img02": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img02_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img02_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img02_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img02_orientation.png"
           },
           "img03": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img03_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img03_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img03_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img03_orientation.png"
           },
           "img04": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img04_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img04_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img04_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img04_orientation.png"
           },
           "img05": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img05_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img05_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img05_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img05_orientation.png"
           }
         },
         "snr_metrics": {
@@ -2464,24 +2469,24 @@
         "support_half_extent": 25,
         "clean_assets": {
           "img01": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img01_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img01_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img01_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img01_orientation.png"
           },
           "img02": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img02_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img02_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img02_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img02_orientation.png"
           },
           "img03": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img03_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img03_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img03_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img03_orientation.png"
           },
           "img04": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img04_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img04_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img04_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img04_orientation.png"
           },
           "img05": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img05_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img05_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img05_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img05_orientation.png"
           }
         },
         "snr_metrics": {
@@ -2715,24 +2720,24 @@
         "support_half_extent": 50,
         "clean_assets": {
           "img01": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img01_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img01_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img01_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img01_orientation.png"
           },
           "img02": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img02_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img02_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img02_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img02_orientation.png"
           },
           "img03": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img03_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img03_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img03_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img03_orientation.png"
           },
           "img04": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img04_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img04_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img04_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img04_orientation.png"
           },
           "img05": {
-            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img05_magnitude.png",
-            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img05_orientation.png"
+            "magnitude_path": "data/sec09_real_image_hrf/assets_w800/wvf_img05_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets_w800/wvf_img05_orientation.png"
           }
         },
         "snr_metrics": {
@@ -3287,5 +3292,11 @@
         }
       }
     }
+  },
+  "asset_rendering": {
+    "asset_dir_name": "assets_w800",
+    "asset_max_width_px": 800,
+    "full_resolution_assets_available": false,
+    "note": "When asset_max_width_px is set, saved preview PNGs are downsampled for figure embedding while metrics remain unchanged."
   }
 }

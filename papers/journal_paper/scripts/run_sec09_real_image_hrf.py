@@ -885,6 +885,71 @@ def _merge_partial_summaries(
     return outputs
 
 
+def _refresh_assets_only_summary(
+    *,
+    existing_summary: dict[str, object],
+    green_images: dict[str, np.ndarray],
+    image_payload: list[dict[str, object]],
+    assets_dir: Path,
+    fft_backend: str,
+    device_index: int | None,
+    asset_max_width_px: int | None,
+    asset_rendering: dict[str, object],
+    summary_json: Path,
+    compile_plots: bool,
+) -> dict[str, Path]:
+    for method_name, method_payload in existing_summary.get("methods", {}).items():
+        config = dict(method_payload["config"])
+        method_item = {
+            "method": str(method_name),
+            "label": str(method_payload["label"]),
+            "config": config,
+            "kernel": build_method(str(method_name), **config),
+        }
+        method_payload["clean_assets"] = _clean_assets_for_method(
+            method_item=method_item,
+            green_images=green_images,
+            assets_dir=assets_dir,
+            fft_backend=fft_backend,
+            device_index=device_index,
+            asset_max_width_px=asset_max_width_px,
+        )
+
+    for point in existing_summary.get("wvf_trace", {}).get("points", []):
+        config = dict(point["config"])
+        method_item = {
+            "method": "wvf",
+            "label": "WVF",
+            "config": config,
+            "kernel": build_method("wvf", **config),
+        }
+        point["clean_assets"] = _clean_assets_for_method(
+            method_item=method_item,
+            green_images=green_images,
+            assets_dir=assets_dir,
+            fft_backend=fft_backend,
+            device_index=device_index,
+            asset_max_width_px=asset_max_width_px,
+        )
+
+    existing_summary["image_order"] = [str(row["image_key"]) for row in image_payload]
+    existing_summary["images"] = image_payload
+    existing_summary["asset_rendering"] = asset_rendering
+
+    summary_json.parent.mkdir(parents=True, exist_ok=True)
+    with summary_json.open("w", encoding="utf-8") as handle:
+        json.dump(existing_summary, handle, indent=2)
+        handle.write("\n")
+
+    outputs: dict[str, Path] = {"summary_json": summary_json}
+    if compile_plots:
+        figure_src = ROOT / "papers" / "journal_paper" / "figures" / "cetz_src" / "fig_sec09_real_image_hrf.typ"
+        figure_pdf = ROOT / "papers" / "journal_paper" / "figures" / "fig_sec09_real_image_hrf.pdf"
+        compile_plot(figure_src, figure_pdf)
+        outputs["figure_pdf"] = figure_pdf
+    return outputs
+
+
 def run_experiment(
     validation_json: Path,
     dataset_root: Path,
@@ -907,8 +972,6 @@ def run_experiment(
 ) -> dict[str, Path]:
     _set_ods_threshold_count(int(ods_threshold_count))
     validation_summary = json.loads(validation_json.read_text())
-    roster = _build_roster(validation_summary)
-    roster = _select_roster_entries(roster, method_filter)
     data_root = _ensure_hrf_root(dataset_root, auto_download=bool(auto_download))
     selection_source = selection_summary_json.resolve() if selection_summary_json is not None else summary_json.resolve()
     existing_summary = json.loads(selection_source.read_text()) if selection_source.exists() else None
@@ -924,6 +987,18 @@ def run_experiment(
             "When asset_max_width_px is set, saved preview PNGs are downsampled for figure embedding while metrics remain unchanged."
         ),
     }
+    refresh_assets_only = (
+        asset_max_width_px is not None
+        and existing_summary is not None
+        and not bool(skip_methods)
+        and not bool(method_filter)
+        and not bool(skip_wvf_trace)
+        and not bool(wvf_trace_radii)
+    )
+    roster: list[dict[str, object]] = []
+    if not refresh_assets_only:
+        roster = _build_roster(validation_summary)
+        roster = _select_roster_entries(roster, method_filter)
 
     green_images: dict[str, np.ndarray] = {}
     soft_boundary_map: dict[str, np.ndarray] = {}
@@ -974,6 +1049,20 @@ def run_experiment(
                 "input_asset_path": str(input_path.relative_to(ROOT / "papers" / "journal_paper" / "figures")),
                 "vessel_mask_asset_path": str(mask_path.relative_to(ROOT / "papers" / "journal_paper" / "figures")),
             }
+        )
+
+    if refresh_assets_only:
+        return _refresh_assets_only_summary(
+            existing_summary=existing_summary,
+            green_images=green_images,
+            image_payload=image_payload,
+            assets_dir=assets_dir,
+            fft_backend=fft_backend,
+            device_index=device_index,
+            asset_max_width_px=asset_max_width_px,
+            asset_rendering=asset_rendering,
+            summary_json=summary_json,
+            compile_plots=compile_plots,
         )
 
     methods_payload = {}

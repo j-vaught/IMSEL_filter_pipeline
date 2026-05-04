@@ -27,6 +27,9 @@ Operational notes from the matched-protocol HRF rerun:
 - For lighter figure assets, use `--asset-max-width-px 800`. This writes
   downsampled preview PNGs under `assets_w800/` while leaving the metrics
   unchanged.
+- If the summary JSON already exists, rerunning with `--asset-max-width-px 800`
+  refreshes only the clean preview assets and rewrites the summary asset paths.
+  It does not recompute the noisy metrics.
 
 ### comech-2080 CUDA Host Compiler
 
