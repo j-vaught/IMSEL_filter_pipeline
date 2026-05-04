@@ -96,7 +96,11 @@ def _class_alias(raw: str) -> str | None:
     value = raw.lower()
     if "healthy" in value:
         return "healthy"
+    if re.search(r"(^|[_/.-])h($|[_/.-])", value):
+        return "healthy"
     if "glau" in value:
+        return "glaucoma"
+    if re.search(r"(^|[_/.-])g($|[_/.-])", value):
         return "glaucoma"
     if "diabetic" in value or "retinopathy" in value or re.search(r"(^|[^a-z])dr([^a-z]|$)", value):
         return "diabetic_retinopathy"
