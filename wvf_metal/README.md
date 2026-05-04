@@ -25,6 +25,16 @@ inspect and does not require the native extension.
 - `rust` and `cargo`
 - Linux or macOS
 
+Platform-specific setup:
+
+- macOS:
+  - Xcode command line tools
+- Linux GPU FFT:
+  - an NVIDIA GPU
+  - a working NVIDIA driver
+  - a CUDA toolkit
+  - a CUDA-compatible host C++ compiler if `nvcc` does not accept the system default
+
 For Linux GPU FFT execution you also need:
 
 - an NVIDIA GPU
@@ -36,6 +46,10 @@ For Linux GPU FFT execution you also need:
   - `/usr/local/cuda`
 
 For CLI image-file input you also need `imageio`.
+
+For the pure Python reference fallback from the full repository, install the
+repository root with `python -m pip install .`. That path depends on `scipy` in
+addition to `numpy`.
 
 ## Install
 
@@ -68,6 +82,22 @@ wvf-metal-doctor
 
 The first real call builds the native library and caches it under
 `wvf_metal/build/target`.
+
+Useful preflight checks:
+
+```bash
+python --version
+cargo --version
+rustc --version
+```
+
+For Linux CUDA builds:
+
+```bash
+nvcc --version
+echo $WVF_CUDA_HOME
+echo $WVF_CUDA_HOST_CXX
+```
 
 ## Backend Choice
 
