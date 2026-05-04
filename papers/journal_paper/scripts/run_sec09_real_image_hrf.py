@@ -64,6 +64,14 @@ TRACE_METRICS = (
 GRID_PRIMARY_METRIC_KEY = "orientation_mae_deg_mean"
 GRID_PRIMARY_SNR_SLUG = "10"
 SMALL_STENCIL_METHODS = ("roberts", "prewitt", "sobel", "scharr")
+WVF_TRACE_SPECS = (
+    {"r": 3, "d": 5, "normalize_coords": True},
+    {"r": 5, "d": 9, "normalize_coords": True},
+    {"r": 9, "d": 11, "normalize_coords": True},
+    {"r": 15, "d": 11, "normalize_coords": True},
+    {"r": 25, "d": 11, "normalize_coords": True},
+    {"r": 50, "d": 11, "normalize_coords": True},
+)
 
 drive_mod.ODS_THRESHOLDS = np.linspace(0.0, 1.0, HRF_ODS_THRESHOLD_COUNT, dtype=np.float64)
 ODS_THRESHOLDS = drive_mod.ODS_THRESHOLDS
@@ -467,6 +475,85 @@ def _evaluate_wvf_grid(
     }
 
 
+def _evaluate_wvf_trace(
+    green_images: dict[str, np.ndarray],
+    soft_boundary_map: dict[str, np.ndarray],
+    boundary_normals_map: dict[str, np.ndarray],
+    boundary_valid_map: dict[str, np.ndarray],
+    tangent_angle_map: dict[str, np.ndarray],
+    tangent_valid_map: dict[str, np.ndarray],
+    fov_mask_map: dict[str, np.ndarray],
+    methods_payload: dict[str, object],
+    fft_backend: str,
+    device_index: int | None,
+    noise_draws: int,
+) -> dict[str, object]:
+    baseline_best: dict[str, dict[str, object]] = {}
+    for snr_db in SNR_LEVELS:
+        snr_slug = _noise_slug(float(snr_db))
+        baseline_best[snr_slug] = {}
+        for metric_key, higher_is_better in TRACE_METRICS:
+            baseline_best[snr_slug][metric_key] = _best_baseline_by_metric(
+                methods_payload=methods_payload,
+                snr_slug=snr_slug,
+                metric_key=metric_key,
+                higher_is_better=bool(higher_is_better),
+            )
+
+    points = []
+    for spec in WVF_TRACE_SPECS:
+        method_item = {
+            "method": "wvf",
+            "label": "WVF",
+            "config": dict(spec),
+            "kernel": build_method("wvf", **spec),
+        }
+        snr_metrics = {}
+        for snr_db in SNR_LEVELS:
+            snr_slug = _noise_slug(float(snr_db))
+            metrics = _evaluate_snr_bank(
+                method_item=method_item,
+                green_images=green_images,
+                soft_boundary_map=soft_boundary_map,
+                boundary_normals_map=boundary_normals_map,
+                boundary_valid_map=boundary_valid_map,
+                tangent_angle_map=tangent_angle_map,
+                tangent_valid_map=tangent_valid_map,
+                fov_mask_map=fov_mask_map,
+                snr_db=float(snr_db),
+                noise_draws=int(noise_draws),
+                fft_backend=fft_backend,
+                device_index=device_index,
+            )
+            comparisons = {}
+            for metric_key, higher_is_better in TRACE_METRICS:
+                best = baseline_best[snr_slug][metric_key]
+                value = float(metrics[metric_key])
+                overtakes = value > float(best["value"]) if higher_is_better else value < float(best["value"])
+                comparisons[metric_key] = {
+                    "best_baseline_method": str(best["method"]),
+                    "best_baseline_label": str(best["label"]),
+                    "best_baseline_value": float(best["value"]),
+                    "overtakes_best_baseline": bool(spec["r"] < 50 and overtakes),
+                }
+            snr_metrics[snr_slug] = metrics | {"comparison": comparisons}
+            print(
+                f"sec09HRF-trace r={spec['r']} d={spec['d']} snr={snr_slug} "
+                f"rmse={metrics['gradient_vector_rmse_mean']:.6e} ods={metrics['ods_f_score']:.6f} ang={metrics['orientation_mae_deg_mean']:.4f}"
+            )
+        points.append(
+            {
+                "radius": int(spec["r"]),
+                "degree": int(spec["d"]),
+                "config": dict(spec),
+                "white_noise_gain": float(method_item["kernel"].white_noise_gain),
+                "support_half_extent": int(method_item["kernel"].support_half_extent),
+                "snr_metrics": snr_metrics,
+            }
+        )
+    return {"points": points, "baseline_best": baseline_best}
+
+
 def _best_small_stencil(methods_payload: dict[str, object], snr_slug: str, metric_key: str) -> dict[str, object]:
     best_method = ""
     best_value: float | None = None
@@ -482,19 +569,20 @@ def _best_small_stencil(methods_payload: dict[str, object], snr_slug: str, metri
     return {"method": best_method, "value": float(best_value)}
 
 
-def _best_wvf_metric(wvf_grid: dict[str, object], snr_slug: str, metric_key: str) -> dict[str, object]:
-    best_cell: dict[str, object] | None = None
-    for cell in wvf_grid["cells"]:
-        value = float(cell["snr_metrics"][snr_slug][metric_key])
-        if best_cell is None or value < float(best_cell["value"]):
-            best_cell = {
-                "radius": int(cell["radius"]),
-                "degree": int(cell["degree"]),
+def _best_wvf_metric(wvf_payload: dict[str, object], snr_slug: str, metric_key: str) -> dict[str, object]:
+    best_point: dict[str, object] | None = None
+    points = wvf_payload.get("cells", wvf_payload.get("points", []))
+    for point in points:
+        value = float(point["snr_metrics"][snr_slug][metric_key])
+        if best_point is None or value < float(best_point["value"]):
+            best_point = {
+                "radius": int(point["radius"]),
+                "degree": int(point["degree"]),
                 "value": float(value),
             }
-    if best_cell is None:
-        raise RuntimeError(f"no WVF grid cells found for metric {metric_key} at SNR {snr_slug}")
-    return best_cell
+    if best_point is None:
+        raise RuntimeError(f"no WVF cells found for metric {metric_key} at SNR {snr_slug}")
+    return best_point
 
 
 def _drive_low_res_delta(drive_summary: dict[str, object]) -> dict[str, object]:
@@ -519,7 +607,7 @@ def _drive_low_res_delta(drive_summary: dict[str, object]) -> dict[str, object]:
     return deltas
 
 
-def _hrf_delta_summary(methods_payload: dict[str, object], wvf_grid: dict[str, object]) -> dict[str, object]:
+def _hrf_delta_summary(methods_payload: dict[str, object], wvf_trace: dict[str, object]) -> dict[str, object]:
     metrics = {
         "gradient_vector_rmse_mean": "Vector RMSE delta",
         "orientation_mae_deg_mean": "Orientation MAE delta",
@@ -528,7 +616,7 @@ def _hrf_delta_summary(methods_payload: dict[str, object], wvf_grid: dict[str, o
     for metric_key, label in metrics.items():
         per_snr = {}
         for snr_slug in SNR_LEVELS_LABELS:
-            best_wvf = _best_wvf_metric(wvf_grid, snr_slug, metric_key)
+            best_wvf = _best_wvf_metric(wvf_trace, snr_slug, metric_key)
             best_small = _best_small_stencil(methods_payload, snr_slug, metric_key)
             per_snr[snr_slug] = {
                 "best_wvf": best_wvf,
@@ -646,7 +734,7 @@ def run_experiment(
             "snr_metrics": snr_metrics,
         }
 
-    wvf_grid = _evaluate_wvf_grid(
+    wvf_trace = _evaluate_wvf_trace(
         green_images=green_images,
         soft_boundary_map=soft_boundary_map,
         boundary_normals_map=boundary_normals_map,
@@ -687,12 +775,12 @@ def run_experiment(
         "images": image_payload,
         "method_order": [str(method_item["method"]) for method_item in roster],
         "methods": methods_payload,
-        "wvf_grid": wvf_grid,
+        "wvf_trace": wvf_trace,
         "comparison_to_drive": {
             "drive_image_shape_px": [565, 584],
             "drive_summary_json": str(drive_summary_json),
             "drive_deltas": _drive_low_res_delta(drive_summary),
-            "hrf_deltas": _hrf_delta_summary(methods_payload, wvf_grid),
+            "hrf_deltas": _hrf_delta_summary(methods_payload, wvf_trace),
         },
     }
     summary_json.parent.mkdir(parents=True, exist_ok=True)

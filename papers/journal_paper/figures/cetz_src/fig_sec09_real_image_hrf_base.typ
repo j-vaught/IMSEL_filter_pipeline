@@ -1,6 +1,6 @@
 #import "@preview/cetz:0.3.4"
 #import "../../colors.typ": garnet, black90, black70, black30, atlantic
-#import "fig_sec09_real_image_drive_base.typ": method-color, fmt, image-grid, metric-chart, legend, summary-table, wvf-grid-heatmap
+#import "fig_sec09_real_image_drive_base.typ": method-color, fmt, image-grid, metric-chart, legend, summary-table, wvf-trace-chart
 
 #set page(width: 12.25in, height: 9.5in, margin: 14pt)
 #set text(font: "New Computer Modern", size: 7.4pt)
@@ -144,28 +144,37 @@
     legend(data)
   ]
 
-  if "wvf_grid" in data {
+  if "wvf_trace" in data {
     pagebreak()
 
     [
       align(center)[
         text(fill: black90, size: 11pt, weight: "bold")[title]
         linebreak()
-        text(fill: black70, size: 8pt)[Fine-grained WVF radius and degree sweep on the fixed HRF image set.]
+        text(fill: black70, size: 8pt)[WVF radius-trace follow-up on the fixed HRF image set.]
         linebreak()
-        text(fill: black70, size: 6.8pt)[The heatmap shows 10 dB centerline orientation MAE across the feasible $(r,d)$ grid. Crossed cells were skipped by the Section 7 conditioning gate. The outlined cell is the annotated optimum.]
+        text(fill: black70, size: 6.8pt)[The garnet trace sweeps WVF across $(r,d)=(3,5),(5,9),(9,11),(15,11),(25,11),(50,11)$. Thin horizontal lines are the fixed baseline methods.]
       ]
       v(8pt)
-      wvf-grid-heatmap(data, [10 dB centerline orientation MAE across the feasible WVF grid])
-      v(10pt)
-      align(left)[
-        text(fill: black90, size: 7.2pt, weight: "bold")[Annotated optimum. ]
-        text(fill: black90, size: 7.2pt)[#data.at("wvf_grid").at("annotated_optimum").at("label")]
-        text(fill: black90, size: 7.2pt)[ with orientation MAE #fmt(data.at("wvf_grid").at("annotated_optimum").at("value"), digits: 4).]
-        linebreak()
-        text(fill: black90, size: 7.2pt, weight: "bold")[Driver assessment. ]
-        text(fill: black90, size: 7.2pt)[#data.at("wvf_grid").at("driver_assessment").at("rationale")]
-      ]
+      grid(
+        columns: 2,
+        column-gutter: 10pt,
+        row-gutter: 10pt,
+        [
+          wvf-trace-chart(data, "gradient_vector_rmse_mean", "inf", [Vector RMSE versus WVF radius, clean], [Vector RMSE])
+        ],
+        [
+          wvf-trace-chart(data, "orientation_mae_deg_mean", "inf", [Orientation MAE versus WVF radius, clean], [Angle MAE (deg)])
+        ],
+        [
+          wvf-trace-chart(data, "gradient_vector_rmse_mean", "10", [Vector RMSE versus WVF radius, 10 dB], [Vector RMSE])
+        ],
+        [
+          wvf-trace-chart(data, "orientation_mae_deg_mean", "10", [Orientation MAE versus WVF radius, 10 dB], [Angle MAE (deg)])
+        ],
+      )
+      v(8pt)
+      legend(data)
     ]
   }
 
