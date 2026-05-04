@@ -1,0 +1,463 @@
+{
+  "title": "Section 9 Scenario B-HD high-resolution retinal vessels",
+  "subtitle": "HRF real-image comparison on high-resolution retinal vasculature",
+  "scenario": "B-HD",
+  "dataset": {
+    "name": "HRF",
+    "data_root": "/home/jvaught2/edge-detection-filter-critique-sec09-fullproto/datasets/HRF",
+    "page_url": "https://www5.cs.fau.de/research/data/fundus-images/",
+    "resolution_px": [
+      3504,
+      2336
+    ],
+    "input_channel": "green"
+  },
+  "config": {
+    "snr_levels": [
+      "inf",
+      "20",
+      "10",
+      "5"
+    ],
+    "noise_draws": 100,
+    "image_count": 5,
+    "ods_threshold_count": 201,
+    "ods_tolerance_px": 3,
+    "vector_rmse_reference": "manual vessel boundary map derived from segmentation",
+    "orientation_reference": "manual vessel centerline tangent direction",
+    "fft_backend": "vkfft",
+    "display_percentile": 99.5
+  },
+  "image_order": [
+    "img01",
+    "img02",
+    "img03",
+    "img04",
+    "img05"
+  ],
+  "images": [
+    {
+      "image_key": "img01",
+      "image_id": "healthy:03_h",
+      "condition_class": "healthy",
+      "image_path": "/home/jvaught2/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/images/03_h.jpg",
+      "label_path": "/home/jvaught2/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/manual1/03_h.tif",
+      "fov_path": "/home/jvaught2/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/mask/03_h_mask.tif",
+      "selection_score": 1299621.072747602,
+      "vessel_pixels": 864171,
+      "orientation_entropy": 0.9768869006266334,
+      "input_asset_path": "data/sec09_real_image_hrf/assets/img01_input.png",
+      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets/img01_vessel_mask.png"
+    },
+    {
+      "image_key": "img02",
+      "image_id": "healthy:12_h",
+      "condition_class": "healthy",
+      "image_path": "/home/jvaught2/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/images/12_h.jpg",
+      "label_path": "/home/jvaught2/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/manual1/12_h.tif",
+      "fov_path": "/home/jvaught2/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/mask/12_h_mask.tif",
+      "selection_score": 1297134.371750966,
+      "vessel_pixels": 859295,
+      "orientation_entropy": 0.9879701779181183,
+      "input_asset_path": "data/sec09_real_image_hrf/assets/img02_input.png",
+      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets/img02_vessel_mask.png"
+    },
+    {
+      "image_key": "img03",
+      "image_id": "diabetic_retinopathy:10_dr",
+      "condition_class": "diabetic_retinopathy",
+      "image_path": "/home/jvaught2/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/images/10_dr.JPG",
+      "label_path": "/home/jvaught2/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/manual1/10_dr.tif",
+      "fov_path": "/home/jvaught2/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/mask/10_dr_mask.tif",
+      "selection_score": 1063478.6006157082,
+      "vessel_pixels": 714889,
+      "orientation_entropy": 0.9695415645168769,
+      "input_asset_path": "data/sec09_real_image_hrf/assets/img03_input.png",
+      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets/img03_vessel_mask.png"
+    },
+    {
+      "image_key": "img04",
+      "image_id": "diabetic_retinopathy:11_dr",
+      "condition_class": "diabetic_retinopathy",
+      "image_path": "/home/jvaught2/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/images/11_dr.JPG",
+      "label_path": "/home/jvaught2/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/manual1/11_dr.tif",
+      "fov_path": "/home/jvaught2/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/mask/11_dr_mask.tif",
+      "selection_score": 1038971.4777261899,
+      "vessel_pixels": 692937,
+      "orientation_entropy": 0.9788336182128528,
+      "input_asset_path": "data/sec09_real_image_hrf/assets/img04_input.png",
+      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets/img04_vessel_mask.png"
+    },
+    {
+      "image_key": "img05",
+      "image_id": "glaucoma:12_g",
+      "condition_class": "glaucoma",
+      "image_path": "/home/jvaught2/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/images/12_g.jpg",
+      "label_path": "/home/jvaught2/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/manual1/12_g.tif",
+      "fov_path": "/home/jvaught2/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/mask/12_g_mask.tif",
+      "selection_score": 1014250.4557255898,
+      "vessel_pixels": 676424,
+      "orientation_entropy": 0.9792031147004041,
+      "input_asset_path": "data/sec09_real_image_hrf/assets/img05_input.png",
+      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets/img05_vessel_mask.png"
+    }
+  ],
+  "method_order": [],
+  "methods": {},
+  "wvf_trace": {
+    "points": [
+      {
+        "radius": 3,
+        "degree": 5,
+        "config": {
+          "r": 3,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "white_noise_gain": 0.6104984126984088,
+        "support_half_extent": 3,
+        "clean_assets": {
+          "img01": {
+            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img01_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img01_orientation.png"
+          },
+          "img02": {
+            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img02_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img02_orientation.png"
+          },
+          "img03": {
+            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img03_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img03_orientation.png"
+          },
+          "img04": {
+            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img04_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img04_orientation.png"
+          },
+          "img05": {
+            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img05_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img05_orientation.png"
+          }
+        },
+        "snr_metrics": {
+          "inf": {
+            "gradient_vector_rmse_mean": 0.40498254936430433,
+            "orientation_mae_deg_mean": 15.055820102648465,
+            "ods_f_score": 0.5183533434223245,
+            "ods_threshold": 0.535,
+            "noise_draws": 1,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.38948028212305275,
+                "orientation_mae_deg_mean": 14.002166169481184,
+                "noise_draws": 1
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.37248798791595616,
+                "orientation_mae_deg_mean": 9.934244991757259,
+                "noise_draws": 1
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.42623011560916535,
+                "orientation_mae_deg_mean": 19.581537045700106,
+                "noise_draws": 1
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.4203249941974556,
+                "orientation_mae_deg_mean": 16.97034908324872,
+                "noise_draws": 1
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.416389366975892,
+                "orientation_mae_deg_mean": 14.790803223055063,
+                "noise_draws": 1
+              }
+            }
+          },
+          "20": {
+            "gradient_vector_rmse_mean": 0.44998925770531467,
+            "orientation_mae_deg_mean": 22.965915808646518,
+            "ods_f_score": 0.5147578272471148,
+            "ods_threshold": 0.48,
+            "noise_draws": 100,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.4385637027802541,
+                "orientation_mae_deg_mean": 22.73004447199894,
+                "noise_draws": 100
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.4354955499085296,
+                "orientation_mae_deg_mean": 16.965641561837927,
+                "noise_draws": 100
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.4562162587207744,
+                "orientation_mae_deg_mean": 26.520427738983145,
+                "noise_draws": 100
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.4584427152416159,
+                "orientation_mae_deg_mean": 24.18397820826518,
+                "noise_draws": 100
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.4612280618753992,
+                "orientation_mae_deg_mean": 24.429487062147402,
+                "noise_draws": 100
+              }
+            }
+          },
+          "10": {
+            "gradient_vector_rmse_mean": 0.4728427833682822,
+            "orientation_mae_deg_mean": 39.016700241284056,
+            "ods_f_score": 0.4431235207287362,
+            "ods_threshold": 0.435,
+            "noise_draws": 100,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.46292786020559584,
+                "orientation_mae_deg_mean": 38.64344774064747,
+                "noise_draws": 100
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.47223748711991215,
+                "orientation_mae_deg_mean": 36.96946675499309,
+                "noise_draws": 100
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.4710017554964396,
+                "orientation_mae_deg_mean": 39.998604508403545,
+                "noise_draws": 100
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.47840731690165766,
+                "orientation_mae_deg_mean": 39.01160032848665,
+                "noise_draws": 100
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.47963949711780585,
+                "orientation_mae_deg_mean": 40.460381873889546,
+                "noise_draws": 100
+              }
+            }
+          },
+          "5": {
+            "gradient_vector_rmse_mean": 0.47609045654143517,
+            "orientation_mae_deg_mean": 42.86913644534154,
+            "ods_f_score": 0.2892526089533922,
+            "ods_threshold": 0.43,
+            "noise_draws": 100,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.4659725842449248,
+                "orientation_mae_deg_mean": 42.6341928574321,
+                "noise_draws": 100
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.47787949880985403,
+                "orientation_mae_deg_mean": 42.15770782751422,
+                "noise_draws": 100
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.4732836912400593,
+                "orientation_mae_deg_mean": 43.221521968528386,
+                "noise_draws": 100
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.4811526079462775,
+                "orientation_mae_deg_mean": 42.83283128189307,
+                "noise_draws": 100
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.48216390046606017,
+                "orientation_mae_deg_mean": 43.4994282913399,
+                "noise_draws": 100
+              }
+            }
+          }
+        }
+      },
+      {
+        "radius": 5,
+        "degree": 9,
+        "config": {
+          "r": 5,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "white_noise_gain": 0.6165697650287708,
+        "support_half_extent": 5,
+        "clean_assets": {
+          "img01": {
+            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img01_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img01_orientation.png"
+          },
+          "img02": {
+            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img02_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img02_orientation.png"
+          },
+          "img03": {
+            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img03_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img03_orientation.png"
+          },
+          "img04": {
+            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img04_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img04_orientation.png"
+          },
+          "img05": {
+            "magnitude_path": "data/sec09_real_image_hrf/assets/wvf_img05_magnitude.png",
+            "orientation_path": "data/sec09_real_image_hrf/assets/wvf_img05_orientation.png"
+          }
+        },
+        "snr_metrics": {
+          "inf": {
+            "gradient_vector_rmse_mean": 0.406343256998269,
+            "orientation_mae_deg_mean": 15.411904537945698,
+            "ods_f_score": 0.5132265251857936,
+            "ods_threshold": 0.54,
+            "noise_draws": 1,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.39094177533068164,
+                "orientation_mae_deg_mean": 14.368075624634299,
+                "noise_draws": 1
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.37424740392018324,
+                "orientation_mae_deg_mean": 10.202121463828236,
+                "noise_draws": 1
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.42780505761661736,
+                "orientation_mae_deg_mean": 20.087856389878166,
+                "noise_draws": 1
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.42148820196842857,
+                "orientation_mae_deg_mean": 17.33611296288355,
+                "noise_draws": 1
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.4172338461554343,
+                "orientation_mae_deg_mean": 15.065356248504246,
+                "noise_draws": 1
+              }
+            }
+          },
+          "20": {
+            "gradient_vector_rmse_mean": 0.45025843993524706,
+            "orientation_mae_deg_mean": 23.466341850993174,
+            "ods_f_score": 0.509882625234375,
+            "ods_threshold": 0.485,
+            "noise_draws": 100,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.43887173280285735,
+                "orientation_mae_deg_mean": 23.24508976909468,
+                "noise_draws": 100
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.4359236521079466,
+                "orientation_mae_deg_mean": 17.494649144603326,
+                "noise_draws": 100
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.4564969205922829,
+                "orientation_mae_deg_mean": 27.032942857395337,
+                "noise_draws": 100
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.4586723817861435,
+                "orientation_mae_deg_mean": 24.666278589220745,
+                "noise_draws": 100
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.46132751238700515,
+                "orientation_mae_deg_mean": 24.892748894651774,
+                "noise_draws": 100
+              }
+            }
+          },
+          "10": {
+            "gradient_vector_rmse_mean": 0.47285889681954324,
+            "orientation_mae_deg_mean": 39.28657852562817,
+            "ods_f_score": 0.43980310084903723,
+            "ods_threshold": 0.435,
+            "noise_draws": 100,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.4629330187709568,
+                "orientation_mae_deg_mean": 38.88617833493007,
+                "noise_draws": 100
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.47227244266217594,
+                "orientation_mae_deg_mean": 37.34390444429273,
+                "noise_draws": 100
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.47102496328279275,
+                "orientation_mae_deg_mean": 40.22989100179906,
+                "noise_draws": 100
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.4784253682773016,
+                "orientation_mae_deg_mean": 39.293471701270676,
+                "noise_draws": 100
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.47963869110448903,
+                "orientation_mae_deg_mean": 40.67944714584834,
+                "noise_draws": 100
+              }
+            }
+          },
+          "5": {
+            "gradient_vector_rmse_mean": 0.4760597112784044,
+            "orientation_mae_deg_mean": 42.975479427241694,
+            "ods_f_score": 0.28854731985988374,
+            "ods_threshold": 0.43,
+            "noise_draws": 100,
+            "per_image": {
+              "img01": {
+                "gradient_vector_rmse_mean": 0.46591161678301285,
+                "orientation_mae_deg_mean": 42.71919775642991,
+                "noise_draws": 100
+              },
+              "img02": {
+                "gradient_vector_rmse_mean": 0.4778279818081667,
+                "orientation_mae_deg_mean": 42.30415435042098,
+                "noise_draws": 100
+              },
+              "img03": {
+                "gradient_vector_rmse_mean": 0.47324190816766604,
+                "orientation_mae_deg_mean": 43.315042345577666,
+                "noise_draws": 100
+              },
+              "img04": {
+                "gradient_vector_rmse_mean": 0.48116345700575125,
+                "orientation_mae_deg_mean": 42.967539919289266,
+                "noise_draws": 100
+              },
+              "img05": {
+                "gradient_vector_rmse_mean": 0.48215359262742524,
+                "orientation_mae_deg_mean": 43.57146276449064,
+                "noise_draws": 100
+              }
+            }
+          }
+        }
+      }
+    ],
+    "baseline_best": {}
+  },
+  "partial_request": {
+    "skip_methods": true,
+    "method_filter": [],
+    "skip_wvf_trace": false,
+    "wvf_trace_radii": [
+      3,
+      5
+    ]
+  }
+}

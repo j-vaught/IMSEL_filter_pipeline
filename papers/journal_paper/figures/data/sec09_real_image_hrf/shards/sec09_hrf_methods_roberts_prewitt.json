@@ -1,0 +1,526 @@
+{
+  "title": "Section 9 Scenario B-HD high-resolution retinal vessels",
+  "subtitle": "HRF real-image comparison on high-resolution retinal vasculature",
+  "scenario": "B-HD",
+  "dataset": {
+    "name": "HRF",
+    "data_root": "/home/j-vaught/edge-detection-filter-critique-sec09-followup/datasets/HRF",
+    "page_url": "https://www5.cs.fau.de/research/data/fundus-images/",
+    "resolution_px": [
+      3504,
+      2336
+    ],
+    "input_channel": "green"
+  },
+  "config": {
+    "snr_levels": [
+      "inf",
+      "20",
+      "10",
+      "5"
+    ],
+    "noise_draws": 100,
+    "image_count": 5,
+    "ods_threshold_count": 201,
+    "ods_tolerance_px": 3,
+    "vector_rmse_reference": "manual vessel boundary map derived from segmentation",
+    "orientation_reference": "manual vessel centerline tangent direction",
+    "fft_backend": "vkfft",
+    "display_percentile": 99.5
+  },
+  "image_order": [
+    "img01",
+    "img02",
+    "img03",
+    "img04",
+    "img05"
+  ],
+  "images": [
+    {
+      "image_key": "img01",
+      "image_id": "healthy:03_h",
+      "condition_class": "healthy",
+      "image_path": "/home/j-vaught/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/images/03_h.jpg",
+      "label_path": "/home/j-vaught/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/manual1/03_h.tif",
+      "fov_path": "/home/j-vaught/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/mask/03_h_mask.tif",
+      "selection_score": 1299621.072747602,
+      "vessel_pixels": 864171,
+      "orientation_entropy": 0.9768869006266334,
+      "input_asset_path": "data/sec09_real_image_hrf/assets/img01_input.png",
+      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets/img01_vessel_mask.png"
+    },
+    {
+      "image_key": "img02",
+      "image_id": "healthy:12_h",
+      "condition_class": "healthy",
+      "image_path": "/home/j-vaught/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/images/12_h.jpg",
+      "label_path": "/home/j-vaught/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/manual1/12_h.tif",
+      "fov_path": "/home/j-vaught/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/mask/12_h_mask.tif",
+      "selection_score": 1297134.371750966,
+      "vessel_pixels": 859295,
+      "orientation_entropy": 0.9879701779181183,
+      "input_asset_path": "data/sec09_real_image_hrf/assets/img02_input.png",
+      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets/img02_vessel_mask.png"
+    },
+    {
+      "image_key": "img03",
+      "image_id": "diabetic_retinopathy:10_dr",
+      "condition_class": "diabetic_retinopathy",
+      "image_path": "/home/j-vaught/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/images/10_dr.JPG",
+      "label_path": "/home/j-vaught/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/manual1/10_dr.tif",
+      "fov_path": "/home/j-vaught/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/mask/10_dr_mask.tif",
+      "selection_score": 1063478.6006157082,
+      "vessel_pixels": 714889,
+      "orientation_entropy": 0.9695415645168769,
+      "input_asset_path": "data/sec09_real_image_hrf/assets/img03_input.png",
+      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets/img03_vessel_mask.png"
+    },
+    {
+      "image_key": "img04",
+      "image_id": "diabetic_retinopathy:11_dr",
+      "condition_class": "diabetic_retinopathy",
+      "image_path": "/home/j-vaught/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/images/11_dr.JPG",
+      "label_path": "/home/j-vaught/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/manual1/11_dr.tif",
+      "fov_path": "/home/j-vaught/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/mask/11_dr_mask.tif",
+      "selection_score": 1038971.4777261899,
+      "vessel_pixels": 692937,
+      "orientation_entropy": 0.9788336182128528,
+      "input_asset_path": "data/sec09_real_image_hrf/assets/img04_input.png",
+      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets/img04_vessel_mask.png"
+    },
+    {
+      "image_key": "img05",
+      "image_id": "glaucoma:12_g",
+      "condition_class": "glaucoma",
+      "image_path": "/home/j-vaught/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/images/12_g.jpg",
+      "label_path": "/home/j-vaught/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/manual1/12_g.tif",
+      "fov_path": "/home/j-vaught/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/mask/12_g_mask.tif",
+      "selection_score": 1014250.4557255898,
+      "vessel_pixels": 676424,
+      "orientation_entropy": 0.9792031147004041,
+      "input_asset_path": "data/sec09_real_image_hrf/assets/img05_input.png",
+      "vessel_mask_asset_path": "data/sec09_real_image_hrf/assets/img05_vessel_mask.png"
+    }
+  ],
+  "method_order": [
+    "roberts",
+    "prewitt"
+  ],
+  "methods": {
+    "roberts": {
+      "label": "Roberts",
+      "config": {
+        "window": "2x2-embedded"
+      },
+      "clean_assets": {
+        "img01": {
+          "magnitude_path": "data/sec09_real_image_hrf/assets/roberts_img01_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets/roberts_img01_orientation.png"
+        },
+        "img02": {
+          "magnitude_path": "data/sec09_real_image_hrf/assets/roberts_img02_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets/roberts_img02_orientation.png"
+        },
+        "img03": {
+          "magnitude_path": "data/sec09_real_image_hrf/assets/roberts_img03_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets/roberts_img03_orientation.png"
+        },
+        "img04": {
+          "magnitude_path": "data/sec09_real_image_hrf/assets/roberts_img04_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets/roberts_img04_orientation.png"
+        },
+        "img05": {
+          "magnitude_path": "data/sec09_real_image_hrf/assets/roberts_img05_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets/roberts_img05_orientation.png"
+        }
+      },
+      "snr_metrics": {
+        "inf": {
+          "gradient_vector_rmse_mean": 0.4873703892989628,
+          "orientation_mae_deg_mean": 44.820194224381666,
+          "ods_f_score": 0.5079979622194603,
+          "ods_threshold": 0.585,
+          "noise_draws": 1,
+          "per_image": {
+            "img01": {
+              "gradient_vector_rmse_mean": 0.46921852332021763,
+              "orientation_mae_deg_mean": 44.821140692001244,
+              "noise_draws": 1
+            },
+            "img02": {
+              "gradient_vector_rmse_mean": 0.4988068836331831,
+              "orientation_mae_deg_mean": 45.0841183301389,
+              "noise_draws": 1
+            },
+            "img03": {
+              "gradient_vector_rmse_mean": 0.4823313779169413,
+              "orientation_mae_deg_mean": 44.43807519209619,
+              "noise_draws": 1
+            },
+            "img04": {
+              "gradient_vector_rmse_mean": 0.4921642961568027,
+              "orientation_mae_deg_mean": 45.019929874848536,
+              "noise_draws": 1
+            },
+            "img05": {
+              "gradient_vector_rmse_mean": 0.4943308654676694,
+              "orientation_mae_deg_mean": 44.737707032823444,
+              "noise_draws": 1
+            }
+          }
+        },
+        "20": {
+          "gradient_vector_rmse_mean": 0.4888892484986679,
+          "orientation_mae_deg_mean": 44.96016627570295,
+          "ods_f_score": 0.5034188306642013,
+          "ods_threshold": 0.47000000000000003,
+          "noise_draws": 100,
+          "per_image": {
+            "img01": {
+              "gradient_vector_rmse_mean": 0.47837872671005116,
+              "orientation_mae_deg_mean": 44.80240460244438,
+              "noise_draws": 100
+            },
+            "img02": {
+              "gradient_vector_rmse_mean": 0.4993378078424655,
+              "orientation_mae_deg_mean": 45.08989343806687,
+              "noise_draws": 100
+            },
+            "img03": {
+              "gradient_vector_rmse_mean": 0.48377083602709375,
+              "orientation_mae_deg_mean": 44.87793112865935,
+              "noise_draws": 100
+            },
+            "img04": {
+              "gradient_vector_rmse_mean": 0.49157685219536484,
+              "orientation_mae_deg_mean": 45.02965912692546,
+              "noise_draws": 100
+            },
+            "img05": {
+              "gradient_vector_rmse_mean": 0.49138201971836426,
+              "orientation_mae_deg_mean": 45.0009430824187,
+              "noise_draws": 100
+            }
+          }
+        },
+        "10": {
+          "gradient_vector_rmse_mean": 0.479601745318513,
+          "orientation_mae_deg_mean": 44.976894752496015,
+          "ods_f_score": 0.3815807509056626,
+          "ods_threshold": 0.435,
+          "noise_draws": 100,
+          "per_image": {
+            "img01": {
+              "gradient_vector_rmse_mean": 0.4695332530609857,
+              "orientation_mae_deg_mean": 44.918361867311916,
+              "noise_draws": 100
+            },
+            "img02": {
+              "gradient_vector_rmse_mean": 0.4838221355348047,
+              "orientation_mae_deg_mean": 45.02601479873796,
+              "noise_draws": 100
+            },
+            "img03": {
+              "gradient_vector_rmse_mean": 0.4764034490847581,
+              "orientation_mae_deg_mean": 44.91690582574912,
+              "noise_draws": 100
+            },
+            "img04": {
+              "gradient_vector_rmse_mean": 0.48390698263045073,
+              "orientation_mae_deg_mean": 45.008787146176985,
+              "noise_draws": 100
+            },
+            "img05": {
+              "gradient_vector_rmse_mean": 0.48434290628156595,
+              "orientation_mae_deg_mean": 45.01440412450409,
+              "noise_draws": 100
+            }
+          }
+        },
+        "5": {
+          "gradient_vector_rmse_mean": 0.4785727069459287,
+          "orientation_mae_deg_mean": 44.994235929965484,
+          "ods_f_score": 0.2569091716790864,
+          "ods_threshold": 0.43,
+          "noise_draws": 100,
+          "per_image": {
+            "img01": {
+              "gradient_vector_rmse_mean": 0.46864998115504974,
+              "orientation_mae_deg_mean": 44.96959736243386,
+              "noise_draws": 100
+            },
+            "img02": {
+              "gradient_vector_rmse_mean": 0.48198301823937384,
+              "orientation_mae_deg_mean": 45.032709768853884,
+              "noise_draws": 100
+            },
+            "img03": {
+              "gradient_vector_rmse_mean": 0.47537682388364944,
+              "orientation_mae_deg_mean": 44.94316619005328,
+              "noise_draws": 100
+            },
+            "img04": {
+              "gradient_vector_rmse_mean": 0.4831161778252339,
+              "orientation_mae_deg_mean": 45.00938585858797,
+              "noise_draws": 100
+            },
+            "img05": {
+              "gradient_vector_rmse_mean": 0.48373753362633637,
+              "orientation_mae_deg_mean": 45.01632046989843,
+              "noise_draws": 100
+            }
+          }
+        }
+      }
+    },
+    "prewitt": {
+      "label": "Prewitt",
+      "config": {
+        "window": "3x3"
+      },
+      "clean_assets": {
+        "img01": {
+          "magnitude_path": "data/sec09_real_image_hrf/assets/prewitt_img01_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets/prewitt_img01_orientation.png"
+        },
+        "img02": {
+          "magnitude_path": "data/sec09_real_image_hrf/assets/prewitt_img02_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets/prewitt_img02_orientation.png"
+        },
+        "img03": {
+          "magnitude_path": "data/sec09_real_image_hrf/assets/prewitt_img03_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets/prewitt_img03_orientation.png"
+        },
+        "img04": {
+          "magnitude_path": "data/sec09_real_image_hrf/assets/prewitt_img04_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets/prewitt_img04_orientation.png"
+        },
+        "img05": {
+          "magnitude_path": "data/sec09_real_image_hrf/assets/prewitt_img05_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hrf/assets/prewitt_img05_orientation.png"
+        }
+      },
+      "snr_metrics": {
+        "inf": {
+          "gradient_vector_rmse_mean": 0.3912293908362714,
+          "orientation_mae_deg_mean": 12.687112920753112,
+          "ods_f_score": 0.5552343660120703,
+          "ods_threshold": 0.43,
+          "noise_draws": 1,
+          "per_image": {
+            "img01": {
+              "gradient_vector_rmse_mean": 0.374578325243565,
+              "orientation_mae_deg_mean": 11.711007659988935,
+              "noise_draws": 1
+            },
+            "img02": {
+              "gradient_vector_rmse_mean": 0.3563486297415964,
+              "orientation_mae_deg_mean": 8.326474103882013,
+              "noise_draws": 1
+            },
+            "img03": {
+              "gradient_vector_rmse_mean": 0.41167964230696286,
+              "orientation_mae_deg_mean": 16.013924290927626,
+              "noise_draws": 1
+            },
+            "img04": {
+              "gradient_vector_rmse_mean": 0.40792918196648087,
+              "orientation_mae_deg_mean": 14.181309818221033,
+              "noise_draws": 1
+            },
+            "img05": {
+              "gradient_vector_rmse_mean": 0.4056111749227518,
+              "orientation_mae_deg_mean": 13.202848730745954,
+              "noise_draws": 1
+            }
+          }
+        },
+        "20": {
+          "gradient_vector_rmse_mean": 0.4198667883168604,
+          "orientation_mae_deg_mean": 16.313329078654068,
+          "ods_f_score": 0.5550486477035036,
+          "ods_threshold": 0.425,
+          "noise_draws": 100,
+          "per_image": {
+            "img01": {
+              "gradient_vector_rmse_mean": 0.4053593726442778,
+              "orientation_mae_deg_mean": 15.851930523273971,
+              "noise_draws": 100
+            },
+            "img02": {
+              "gradient_vector_rmse_mean": 0.39470222793678694,
+              "orientation_mae_deg_mean": 10.962860364604994,
+              "noise_draws": 100
+            },
+            "img03": {
+              "gradient_vector_rmse_mean": 0.43191189016016424,
+              "orientation_mae_deg_mean": 19.538622238676734,
+              "noise_draws": 100
+            },
+            "img04": {
+              "gradient_vector_rmse_mean": 0.4318813566912078,
+              "orientation_mae_deg_mean": 17.54861685847907,
+              "noise_draws": 100
+            },
+            "img05": {
+              "gradient_vector_rmse_mean": 0.43547909415186525,
+              "orientation_mae_deg_mean": 17.66461540823558,
+              "noise_draws": 100
+            }
+          }
+        },
+        "10": {
+          "gradient_vector_rmse_mean": 0.46436833695815316,
+          "orientation_mae_deg_mean": 31.486157960134783,
+          "ods_f_score": 0.5463605803856405,
+          "ods_threshold": 0.43,
+          "noise_draws": 100,
+          "per_image": {
+            "img01": {
+              "gradient_vector_rmse_mean": 0.4545516094303375,
+              "orientation_mae_deg_mean": 31.30472433609014,
+              "noise_draws": 100
+            },
+            "img02": {
+              "gradient_vector_rmse_mean": 0.4581826801991597,
+              "orientation_mae_deg_mean": 27.0158529266185,
+              "noise_draws": 100
+            },
+            "img03": {
+              "gradient_vector_rmse_mean": 0.46519417246891054,
+              "orientation_mae_deg_mean": 33.46698063648547,
+              "noise_draws": 100
+            },
+            "img04": {
+              "gradient_vector_rmse_mean": 0.4711816872844294,
+              "orientation_mae_deg_mean": 32.00875640901963,
+              "noise_draws": 100
+            },
+            "img05": {
+              "gradient_vector_rmse_mean": 0.4727315354079286,
+              "orientation_mae_deg_mean": 33.63447549246018,
+              "noise_draws": 100
+            }
+          }
+        },
+        "5": {
+          "gradient_vector_rmse_mean": 0.47289620537849963,
+          "orientation_mae_deg_mean": 39.14044140434612,
+          "ods_f_score": 0.44914190463674786,
+          "ods_threshold": 0.435,
+          "noise_draws": 100,
+          "per_image": {
+            "img01": {
+              "gradient_vector_rmse_mean": 0.4629479948534506,
+              "orientation_mae_deg_mean": 38.79238439368053,
+              "noise_draws": 100
+            },
+            "img02": {
+              "gradient_vector_rmse_mean": 0.47222948974474116,
+              "orientation_mae_deg_mean": 37.08174278509645,
+              "noise_draws": 100
+            },
+            "img03": {
+              "gradient_vector_rmse_mean": 0.47093830891584687,
+              "orientation_mae_deg_mean": 40.043665442378035,
+              "noise_draws": 100
+            },
+            "img04": {
+              "gradient_vector_rmse_mean": 0.47853023903130826,
+              "orientation_mae_deg_mean": 39.225027430608286,
+              "noise_draws": 100
+            },
+            "img05": {
+              "gradient_vector_rmse_mean": 0.47983499434715116,
+              "orientation_mae_deg_mean": 40.559386969967306,
+              "noise_draws": 100
+            }
+          }
+        }
+      }
+    }
+  },
+  "wvf_trace": {
+    "points": [],
+    "baseline_best": {
+      "inf": {
+        "ods_f_score": {
+          "method": "prewitt",
+          "label": "Prewitt",
+          "value": 0.5552343660120703
+        },
+        "gradient_vector_rmse_mean": {
+          "method": "prewitt",
+          "label": "Prewitt",
+          "value": 0.3912293908362714
+        },
+        "orientation_mae_deg_mean": {
+          "method": "prewitt",
+          "label": "Prewitt",
+          "value": 12.687112920753112
+        }
+      },
+      "20": {
+        "ods_f_score": {
+          "method": "prewitt",
+          "label": "Prewitt",
+          "value": 0.5550486477035036
+        },
+        "gradient_vector_rmse_mean": {
+          "method": "prewitt",
+          "label": "Prewitt",
+          "value": 0.4198667883168604
+        },
+        "orientation_mae_deg_mean": {
+          "method": "prewitt",
+          "label": "Prewitt",
+          "value": 16.313329078654068
+        }
+      },
+      "10": {
+        "ods_f_score": {
+          "method": "prewitt",
+          "label": "Prewitt",
+          "value": 0.5463605803856405
+        },
+        "gradient_vector_rmse_mean": {
+          "method": "prewitt",
+          "label": "Prewitt",
+          "value": 0.46436833695815316
+        },
+        "orientation_mae_deg_mean": {
+          "method": "prewitt",
+          "label": "Prewitt",
+          "value": 31.486157960134783
+        }
+      },
+      "5": {
+        "ods_f_score": {
+          "method": "prewitt",
+          "label": "Prewitt",
+          "value": 0.44914190463674786
+        },
+        "gradient_vector_rmse_mean": {
+          "method": "prewitt",
+          "label": "Prewitt",
+          "value": 0.47289620537849963
+        },
+        "orientation_mae_deg_mean": {
+          "method": "prewitt",
+          "label": "Prewitt",
+          "value": 39.14044140434612
+        }
+      }
+    },
+    "best_by_snr": {}
+  },
+  "partial_request": {
+    "skip_methods": false,
+    "method_filter": [
+      "prewitt",
+      "roberts"
+    ],
+    "skip_wvf_trace": true,
+    "wvf_trace_radii": []
+  }
+}
