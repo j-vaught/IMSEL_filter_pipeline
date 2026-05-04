@@ -19,11 +19,11 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
+import run_sec09_real_image_drive as drive_mod
 from baseline_filters import build_method
 from run_sec09_real_image_drive import (
     DISPLAY_PERCENTILE,
     EPS,
-    NOISE_DRAWS,
     ODS_THRESHOLDS,
     ODS_TOLERANCE_PX,
     SNR_LEVELS,
@@ -49,6 +49,8 @@ TITLE = "Section 9 Scenario B-HD high-resolution retinal vessels"
 SUBTITLE = "HRF real-image comparison on high-resolution retinal vasculature"
 DATASET_PAGE_URL = "https://www5.cs.fau.de/research/data/fundus-images/"
 SNR_LEVELS_LABELS = ("inf", "20", "10", "5")
+HRF_NOISE_DRAWS = 3
+HRF_ODS_THRESHOLD_COUNT = 51
 HRF_SELECTION_PLAN = (
     ("healthy", 2),
     ("diabetic_retinopathy", 2),
@@ -62,6 +64,9 @@ TRACE_METRICS = (
 GRID_PRIMARY_METRIC_KEY = "orientation_mae_deg_mean"
 GRID_PRIMARY_SNR_SLUG = "10"
 SMALL_STENCIL_METHODS = ("roberts", "prewitt", "sobel", "scharr")
+
+drive_mod.ODS_THRESHOLDS = np.linspace(0.0, 1.0, HRF_ODS_THRESHOLD_COUNT, dtype=np.float64)
+ODS_THRESHOLDS = drive_mod.ODS_THRESHOLDS
 
 
 @dataclass(frozen=True)
@@ -734,7 +739,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--fft-backend", type=str, default="vkfft", choices=("vkfft", "cpu"))
     parser.add_argument("--device-index", type=int, default=None)
     parser.add_argument("--compile-plots", action="store_true")
-    parser.add_argument("--noise-draws", type=int, default=NOISE_DRAWS)
+    parser.add_argument("--noise-draws", type=int, default=HRF_NOISE_DRAWS)
     parser.add_argument("--auto-download", action="store_true")
     return parser.parse_args(argv)
 
