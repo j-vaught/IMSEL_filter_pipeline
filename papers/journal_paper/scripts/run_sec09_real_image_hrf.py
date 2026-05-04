@@ -24,9 +24,8 @@ from baseline_filters import build_method
 from run_sec09_real_image_drive import (
     DISPLAY_PERCENTILE,
     EPS,
-    ODS_THRESHOLDS,
     ODS_TOLERANCE_PX,
-    SNR_LEVELS,
+    SNR_LEVELS as DRIVE_SNR_LEVELS,
     _boundary_normal_field,
     _boundary_soft_mask,
     _centerline_mask,
@@ -48,9 +47,9 @@ from section8_common import compile_plot
 TITLE = "Section 9 Scenario B-HD high-resolution retinal vessels"
 SUBTITLE = "HRF real-image comparison on high-resolution retinal vasculature"
 DATASET_PAGE_URL = "https://www5.cs.fau.de/research/data/fundus-images/"
-SNR_LEVELS_LABELS = ("inf", "20", "10", "5")
-HRF_NOISE_DRAWS = 3
-HRF_ODS_THRESHOLD_COUNT = 51
+HRF_NOISE_DRAWS = 100
+HRF_ODS_THRESHOLD_COUNT = 201
+DEFAULT_SNR_LEVELS = tuple(float(value) for value in DRIVE_SNR_LEVELS)
 HRF_SELECTION_PLAN = (
     ("healthy", 2),
     ("diabetic_retinopathy", 2),
@@ -73,8 +72,17 @@ WVF_TRACE_SPECS = (
     {"r": 50, "d": 11, "normalize_coords": True},
 )
 
-drive_mod.ODS_THRESHOLDS = np.linspace(0.0, 1.0, HRF_ODS_THRESHOLD_COUNT, dtype=np.float64)
 ODS_THRESHOLDS = drive_mod.ODS_THRESHOLDS
+
+
+def _set_ods_threshold_count(count: int) -> np.ndarray:
+    global ODS_THRESHOLDS
+    ODS_THRESHOLDS = np.linspace(0.0, 1.0, int(count), dtype=np.float64)
+    drive_mod.ODS_THRESHOLDS = ODS_THRESHOLDS
+    return ODS_THRESHOLDS
+
+
+_set_ods_threshold_count(HRF_ODS_THRESHOLD_COUNT)
 
 
 @dataclass(frozen=True)
@@ -103,6 +111,16 @@ def _build_roster(validation_summary: dict[str, object]) -> list[dict[str, objec
             }
         )
     return roster
+
+
+def _parse_method_filter(raw: str) -> set[str]:
+    values = [token.strip() for token in str(raw).split(",") if token.strip()]
+    return set(values)
+
+
+def _parse_trace_radii(raw: str) -> set[int]:
+    values = [token.strip() for token in str(raw).split(",") if token.strip()]
+    return {int(token) for token in values}
 
 
 def _class_alias(raw: str) -> str | None:
@@ -330,6 +348,22 @@ def _best_baseline_by_metric(
     return {"method": best_method, "label": best_label, "value": float(best_value)}
 
 
+def _parse_snr_levels(raw: str) -> tuple[float, ...]:
+    levels: list[float] = []
+    for token in [item.strip() for item in str(raw).split(",") if item.strip()]:
+        if token.lower() in {"inf", "infinity"}:
+            levels.append(math.inf)
+        else:
+            levels.append(float(token))
+    if not levels:
+        raise ValueError("at least one SNR level is required")
+    return tuple(levels)
+
+
+def _snr_slugs(snr_levels: tuple[float, ...]) -> tuple[str, ...]:
+    return tuple(_noise_slug(float(value)) for value in snr_levels)
+
+
 def _classify_optimum_driver(best_by_snr: dict[str, dict[str, object]]) -> dict[str, object]:
     ordered_slugs = ("inf", "20", "10", "5")
     radii = [int(best_by_snr[slug]["radius"]) for slug in ordered_slugs if slug in best_by_snr]
@@ -361,6 +395,101 @@ def _classify_optimum_driver(best_by_snr: dict[str, dict[str, object]]) -> dict[
             "affects the best vessel-orientation operating point."
         ),
     }
+
+
+def _select_roster_entries(roster: list[dict[str, object]], method_filter: set[str]) -> list[dict[str, object]]:
+    if not method_filter:
+        return list(roster)
+    return [row for row in roster if str(row["method"]) in method_filter]
+
+
+def _select_wvf_trace_specs(radii_filter: set[int]) -> list[dict[str, object]]:
+    if not radii_filter:
+        return [dict(spec) for spec in WVF_TRACE_SPECS]
+    return [dict(spec) for spec in WVF_TRACE_SPECS if int(spec["r"]) in radii_filter]
+
+
+def _decorate_wvf_trace(
+    points: list[dict[str, object]],
+    methods_payload: dict[str, object],
+    snr_levels: tuple[float, ...],
+) -> dict[str, object]:
+    sorted_points = sorted(points, key=lambda row: (int(row["radius"]), int(row["degree"])))
+    if not methods_payload:
+        return {"points": sorted_points, "baseline_best": {}}
+
+    baseline_best: dict[str, dict[str, object]] = {}
+    best_by_snr: dict[str, dict[str, object]] = {}
+    for snr_db in snr_levels:
+        snr_slug = _noise_slug(float(snr_db))
+        baseline_best[snr_slug] = {}
+        for metric_key, higher_is_better in TRACE_METRICS:
+            baseline_best[snr_slug][metric_key] = _best_baseline_by_metric(
+                methods_payload=methods_payload,
+                snr_slug=snr_slug,
+                metric_key=metric_key,
+                higher_is_better=bool(higher_is_better),
+            )
+
+    decorated_points = []
+    for point in sorted_points:
+        snr_metrics = {}
+        for snr_db in snr_levels:
+            snr_slug = _noise_slug(float(snr_db))
+            metrics = dict(point["snr_metrics"][snr_slug])
+            comparisons = {}
+            for metric_key, higher_is_better in TRACE_METRICS:
+                best = baseline_best[snr_slug][metric_key]
+                value = float(metrics[metric_key])
+                overtakes = value > float(best["value"]) if higher_is_better else value < float(best["value"])
+                comparisons[metric_key] = {
+                    "best_baseline_method": str(best["method"]),
+                    "best_baseline_label": str(best["label"]),
+                    "best_baseline_value": float(best["value"]),
+                    "overtakes_best_baseline": bool(int(point["radius"]) < 50 and overtakes),
+                }
+            snr_metrics[snr_slug] = metrics | {"comparison": comparisons}
+            candidate = {
+                "radius": int(point["radius"]),
+                "degree": int(point["degree"]),
+                "value": float(metrics[GRID_PRIMARY_METRIC_KEY]),
+                "overtakes_best_baseline": bool(
+                    comparisons[GRID_PRIMARY_METRIC_KEY]["overtakes_best_baseline"]
+                ),
+            }
+            current = best_by_snr.get(snr_slug)
+            if current is None or float(candidate["value"]) < float(current["value"]):
+                best_by_snr[snr_slug] = candidate
+        decorated_points.append(dict(point) | {"snr_metrics": snr_metrics})
+
+    optimum = None
+    if GRID_PRIMARY_SNR_SLUG in best_by_snr:
+        optimum = dict(best_by_snr[GRID_PRIMARY_SNR_SLUG])
+        optimum["snr_slug"] = GRID_PRIMARY_SNR_SLUG
+        optimum["metric_key"] = GRID_PRIMARY_METRIC_KEY
+        optimum["label"] = f"r={int(optimum['radius'])}, d={int(optimum['degree'])}"
+
+    payload = {
+        "points": decorated_points,
+        "baseline_best": baseline_best,
+        "best_by_snr": best_by_snr,
+    }
+    if optimum is not None:
+        payload["annotated_optimum"] = optimum
+        payload["driver_assessment"] = _classify_optimum_driver(best_by_snr)
+    return payload
+
+
+def _fixed_wvf_from_trace(points: list[dict[str, object]]) -> dict[str, object] | None:
+    for point in points:
+        if int(point["radius"]) == 50 and int(point["degree"]) == 11:
+            return {
+                "label": "WVF",
+                "config": {"r": 50, "d": 11, "normalize_coords": True},
+                "clean_assets": dict(point.get("clean_assets", {})),
+                "snr_metrics": dict(point["snr_metrics"]),
+            }
+    return None
 
 
 def _evaluate_wvf_grid(
@@ -483,33 +612,30 @@ def _evaluate_wvf_trace(
     tangent_angle_map: dict[str, np.ndarray],
     tangent_valid_map: dict[str, np.ndarray],
     fov_mask_map: dict[str, np.ndarray],
-    methods_payload: dict[str, object],
+    trace_specs: list[dict[str, object]],
+    assets_dir: Path,
     fft_backend: str,
     device_index: int | None,
     noise_draws: int,
-) -> dict[str, object]:
-    baseline_best: dict[str, dict[str, object]] = {}
-    for snr_db in SNR_LEVELS:
-        snr_slug = _noise_slug(float(snr_db))
-        baseline_best[snr_slug] = {}
-        for metric_key, higher_is_better in TRACE_METRICS:
-            baseline_best[snr_slug][metric_key] = _best_baseline_by_metric(
-                methods_payload=methods_payload,
-                snr_slug=snr_slug,
-                metric_key=metric_key,
-                higher_is_better=bool(higher_is_better),
-            )
-
+    snr_levels: tuple[float, ...],
+) -> list[dict[str, object]]:
     points = []
-    for spec in WVF_TRACE_SPECS:
+    for spec in trace_specs:
         method_item = {
             "method": "wvf",
             "label": "WVF",
             "config": dict(spec),
             "kernel": build_method("wvf", **spec),
         }
+        clean_assets = _clean_assets_for_method(
+            method_item=method_item,
+            green_images=green_images,
+            assets_dir=assets_dir,
+            fft_backend=fft_backend,
+            device_index=device_index,
+        )
         snr_metrics = {}
-        for snr_db in SNR_LEVELS:
+        for snr_db in snr_levels:
             snr_slug = _noise_slug(float(snr_db))
             metrics = _evaluate_snr_bank(
                 method_item=method_item,
@@ -525,18 +651,7 @@ def _evaluate_wvf_trace(
                 fft_backend=fft_backend,
                 device_index=device_index,
             )
-            comparisons = {}
-            for metric_key, higher_is_better in TRACE_METRICS:
-                best = baseline_best[snr_slug][metric_key]
-                value = float(metrics[metric_key])
-                overtakes = value > float(best["value"]) if higher_is_better else value < float(best["value"])
-                comparisons[metric_key] = {
-                    "best_baseline_method": str(best["method"]),
-                    "best_baseline_label": str(best["label"]),
-                    "best_baseline_value": float(best["value"]),
-                    "overtakes_best_baseline": bool(spec["r"] < 50 and overtakes),
-                }
-            snr_metrics[snr_slug] = metrics | {"comparison": comparisons}
+            snr_metrics[snr_slug] = metrics
             print(
                 f"sec09HRF-trace r={spec['r']} d={spec['d']} snr={snr_slug} "
                 f"rmse={metrics['gradient_vector_rmse_mean']:.6e} ods={metrics['ods_f_score']:.6f} ang={metrics['orientation_mae_deg_mean']:.4f}"
@@ -548,10 +663,11 @@ def _evaluate_wvf_trace(
                 "config": dict(spec),
                 "white_noise_gain": float(method_item["kernel"].white_noise_gain),
                 "support_half_extent": int(method_item["kernel"].support_half_extent),
+                "clean_assets": clean_assets,
                 "snr_metrics": snr_metrics,
             }
         )
-    return {"points": points, "baseline_best": baseline_best}
+    return points
 
 
 def _best_small_stencil(methods_payload: dict[str, object], snr_slug: str, metric_key: str) -> dict[str, object]:
@@ -585,7 +701,7 @@ def _best_wvf_metric(wvf_payload: dict[str, object], snr_slug: str, metric_key: 
     return best_point
 
 
-def _drive_low_res_delta(drive_summary: dict[str, object]) -> dict[str, object]:
+def _drive_low_res_delta(drive_summary: dict[str, object], snr_slugs: tuple[str, ...]) -> dict[str, object]:
     metrics = {
         "gradient_vector_rmse_mean": "Vector RMSE delta",
         "orientation_mae_deg_mean": "Orientation MAE delta",
@@ -595,7 +711,7 @@ def _drive_low_res_delta(drive_summary: dict[str, object]) -> dict[str, object]:
     wvf_grid = drive_summary["wvf_grid"]
     for metric_key, label in metrics.items():
         per_snr = {}
-        for snr_slug in SNR_LEVELS_LABELS:
+        for snr_slug in snr_slugs:
             best_wvf = _best_wvf_metric(wvf_grid, snr_slug, metric_key)
             best_small = _best_small_stencil(methods_payload, snr_slug, metric_key)
             per_snr[snr_slug] = {
@@ -607,7 +723,11 @@ def _drive_low_res_delta(drive_summary: dict[str, object]) -> dict[str, object]:
     return deltas
 
 
-def _hrf_delta_summary(methods_payload: dict[str, object], wvf_trace: dict[str, object]) -> dict[str, object]:
+def _hrf_delta_summary(
+    methods_payload: dict[str, object],
+    wvf_trace: dict[str, object],
+    snr_slugs: tuple[str, ...],
+) -> dict[str, object]:
     metrics = {
         "gradient_vector_rmse_mean": "Vector RMSE delta",
         "orientation_mae_deg_mean": "Orientation MAE delta",
@@ -615,7 +735,7 @@ def _hrf_delta_summary(methods_payload: dict[str, object], wvf_trace: dict[str, 
     deltas: dict[str, dict[str, object]] = {}
     for metric_key, label in metrics.items():
         per_snr = {}
-        for snr_slug in SNR_LEVELS_LABELS:
+        for snr_slug in snr_slugs:
             best_wvf = _best_wvf_metric(wvf_trace, snr_slug, metric_key)
             best_small = _best_small_stencil(methods_payload, snr_slug, metric_key)
             per_snr[snr_slug] = {
@@ -625,6 +745,135 @@ def _hrf_delta_summary(methods_payload: dict[str, object], wvf_trace: dict[str, 
             }
         deltas[metric_key] = {"label": label, "per_snr": per_snr}
     return deltas
+
+
+def _assemble_summary_payload(
+    *,
+    validation_summary: dict[str, object],
+    data_root: Path,
+    drive_summary_json: Path,
+    fft_backend: str,
+    noise_draws: int,
+    snr_levels: tuple[float, ...],
+    image_payload: list[dict[str, object]],
+    methods_payload: dict[str, object],
+    wvf_points: list[dict[str, object]],
+    partial_request: dict[str, object] | None,
+) -> dict[str, object]:
+    methods_full = dict(methods_payload)
+    baseline_methods = {key: value for key, value in methods_full.items() if str(key) != "wvf"}
+    if "wvf" not in methods_full:
+        fixed_wvf = _fixed_wvf_from_trace(wvf_points)
+        if fixed_wvf is not None:
+            methods_full["wvf"] = fixed_wvf
+
+    wvf_trace = _decorate_wvf_trace(wvf_points, methods_full if baseline_methods else {}, snr_levels)
+    snr_slugs = _snr_slugs(snr_levels)
+    method_order = [
+        str(row["method"])
+        for row in validation_summary.get("method_roster", [])
+        if str(row["method"]) in methods_full
+    ]
+    payload = {
+        "title": TITLE,
+        "subtitle": SUBTITLE,
+        "scenario": "B-HD",
+        "dataset": {
+            "name": "HRF",
+            "data_root": str(data_root),
+            "page_url": DATASET_PAGE_URL,
+            "resolution_px": [3504, 2336],
+            "input_channel": "green",
+        },
+        "config": {
+            "snr_levels": list(snr_slugs),
+            "noise_draws": int(noise_draws),
+            "image_count": int(len(image_payload)),
+            "ods_threshold_count": int(ODS_THRESHOLDS.shape[0]),
+            "ods_tolerance_px": int(ODS_TOLERANCE_PX),
+            "vector_rmse_reference": "manual vessel boundary map derived from segmentation",
+            "orientation_reference": "manual vessel centerline tangent direction",
+            "fft_backend": str(fft_backend),
+            "display_percentile": float(DISPLAY_PERCENTILE),
+        },
+        "image_order": [str(row["image_key"]) for row in image_payload],
+        "images": image_payload,
+        "method_order": method_order,
+        "methods": methods_full,
+        "wvf_trace": wvf_trace,
+    }
+    if partial_request is not None:
+        payload["partial_request"] = partial_request
+    if baseline_methods and wvf_trace.get("points"):
+        drive_summary = json.loads(drive_summary_json.read_text())
+        payload["comparison_to_drive"] = {
+            "drive_image_shape_px": [565, 584],
+            "drive_summary_json": str(drive_summary_json),
+            "drive_deltas": _drive_low_res_delta(drive_summary, snr_slugs),
+            "hrf_deltas": _hrf_delta_summary(methods_full, wvf_trace, snr_slugs),
+        }
+    return payload
+
+
+def _merge_partial_summaries(
+    *,
+    validation_summary: dict[str, object],
+    drive_summary_json: Path,
+    partial_paths: list[Path],
+    summary_json: Path,
+    fft_backend: str,
+    compile_plots: bool,
+) -> dict[str, Path]:
+    partials = [json.loads(path.read_text()) for path in partial_paths]
+    if not partials:
+        raise RuntimeError("no shard summaries were provided for merge")
+    first = partials[0]
+    dataset_root = Path(str(first["dataset"]["data_root"]))
+    image_payload = list(first["images"])
+    snr_slugs = tuple(str(value) for value in first["config"]["snr_levels"])
+    noise_draws = int(first["config"]["noise_draws"])
+    ods_threshold_count = int(first["config"]["ods_threshold_count"])
+    _set_ods_threshold_count(ods_threshold_count)
+
+    merged_methods: dict[str, object] = {}
+    merged_points: dict[tuple[int, int], dict[str, object]] = {}
+    for payload in partials:
+        if list(payload["image_order"]) != list(first["image_order"]):
+            raise RuntimeError("HRF shard merge failed because image selections differ")
+        if tuple(str(value) for value in payload["config"]["snr_levels"]) != snr_slugs:
+            raise RuntimeError("HRF shard merge failed because SNR schedules differ")
+        if int(payload["config"]["noise_draws"]) != noise_draws:
+            raise RuntimeError("HRF shard merge failed because noise draw counts differ")
+        for method_name, method_payload in payload.get("methods", {}).items():
+            merged_methods[str(method_name)] = method_payload
+        for point in payload.get("wvf_trace", {}).get("points", []):
+            merged_points[(int(point["radius"]), int(point["degree"]))] = point
+
+    snr_levels = _parse_snr_levels(",".join(snr_slugs))
+    merged_payload = _assemble_summary_payload(
+        validation_summary=validation_summary,
+        data_root=dataset_root,
+        drive_summary_json=drive_summary_json,
+        fft_backend=fft_backend,
+        noise_draws=noise_draws,
+        snr_levels=snr_levels,
+        image_payload=image_payload,
+        methods_payload=merged_methods,
+        wvf_points=list(merged_points.values()),
+        partial_request=None,
+    )
+    summary_json.parent.mkdir(parents=True, exist_ok=True)
+    with summary_json.open("w", encoding="utf-8") as handle:
+        json.dump(merged_payload, handle, indent=2)
+        handle.write("\n")
+
+    outputs: dict[str, Path] = {"summary_json": summary_json}
+    if compile_plots:
+        figure_src = ROOT / "papers" / "journal_paper" / "figures" / "cetz_src" / "fig_sec09_real_image_hrf.typ"
+        figure_pdf = ROOT / "papers" / "journal_paper" / "figures" / "fig_sec09_real_image_hrf.pdf"
+        compile_plot(figure_src, figure_pdf)
+        outputs["figure_pdf"] = figure_pdf
+    return outputs
 
 
 def run_experiment(
@@ -637,12 +886,22 @@ def run_experiment(
     device_index: int | None,
     compile_plots: bool,
     noise_draws: int,
+    ods_threshold_count: int,
+    snr_levels: tuple[float, ...],
+    selection_summary_json: Path | None,
+    skip_methods: bool,
+    method_filter: set[str],
+    skip_wvf_trace: bool,
+    wvf_trace_radii: set[int],
     auto_download: bool,
 ) -> dict[str, Path]:
+    _set_ods_threshold_count(int(ods_threshold_count))
     validation_summary = json.loads(validation_json.read_text())
     roster = _build_roster(validation_summary)
+    roster = _select_roster_entries(roster, method_filter)
     data_root = _ensure_hrf_root(dataset_root, auto_download=bool(auto_download))
-    existing_summary = json.loads(summary_json.read_text()) if summary_json.exists() else None
+    selection_source = selection_summary_json.resolve() if selection_summary_json is not None else summary_json.resolve()
+    existing_summary = json.loads(selection_source.read_text()) if selection_source.exists() else None
     existing_selection = None if existing_summary is None else _selection_from_summary(existing_summary)
     selections = existing_selection if existing_selection is not None else _select_images(data_root)
 
@@ -697,44 +956,46 @@ def run_experiment(
         )
 
     methods_payload = {}
-    for method_item in roster:
-        clean_assets = _clean_assets_for_method(
-            method_item=method_item,
-            green_images=green_images,
-            assets_dir=assets_dir,
-            fft_backend=fft_backend,
-            device_index=device_index,
-        )
-        snr_metrics = {}
-        for snr_db in SNR_LEVELS:
-            slug = _noise_slug(float(snr_db))
-            metrics = _evaluate_snr_bank(
+    if not skip_methods:
+        for method_item in roster:
+            clean_assets = _clean_assets_for_method(
                 method_item=method_item,
                 green_images=green_images,
-                soft_boundary_map=soft_boundary_map,
-                boundary_normals_map=boundary_normals_map,
-                boundary_valid_map=boundary_valid_map,
-                tangent_angle_map=tangent_angle_map,
-                tangent_valid_map=tangent_valid_map,
-                fov_mask_map=fov_mask_map,
-                snr_db=float(snr_db),
-                noise_draws=int(noise_draws),
+                assets_dir=assets_dir,
                 fft_backend=fft_backend,
                 device_index=device_index,
             )
-            snr_metrics[slug] = metrics
-            print(
-                f"sec09HRF {method_item['method']} snr={slug} rmse={metrics['gradient_vector_rmse_mean']:.6e} "
-                f"ods={metrics['ods_f_score']:.6f} ang={metrics['orientation_mae_deg_mean']:.4f}"
-            )
-        methods_payload[str(method_item["method"])] = {
-            "label": str(method_item["label"]),
-            "config": dict(method_item["config"]),
-            "clean_assets": clean_assets,
-            "snr_metrics": snr_metrics,
-        }
+            snr_metrics = {}
+            for snr_db in snr_levels:
+                slug = _noise_slug(float(snr_db))
+                metrics = _evaluate_snr_bank(
+                    method_item=method_item,
+                    green_images=green_images,
+                    soft_boundary_map=soft_boundary_map,
+                    boundary_normals_map=boundary_normals_map,
+                    boundary_valid_map=boundary_valid_map,
+                    tangent_angle_map=tangent_angle_map,
+                    tangent_valid_map=tangent_valid_map,
+                    fov_mask_map=fov_mask_map,
+                    snr_db=float(snr_db),
+                    noise_draws=int(noise_draws),
+                    fft_backend=fft_backend,
+                    device_index=device_index,
+                )
+                snr_metrics[slug] = metrics
+                print(
+                    f"sec09HRF {method_item['method']} snr={slug} rmse={metrics['gradient_vector_rmse_mean']:.6e} "
+                    f"ods={metrics['ods_f_score']:.6f} ang={metrics['orientation_mae_deg_mean']:.4f}"
+                )
+            methods_payload[str(method_item["method"])] = {
+                "label": str(method_item["label"]),
+                "config": dict(method_item["config"]),
+                "clean_assets": clean_assets,
+                "snr_metrics": snr_metrics,
+            }
 
-    wvf_trace = _evaluate_wvf_trace(
+    trace_specs = [] if skip_wvf_trace else _select_wvf_trace_specs(wvf_trace_radii)
+    wvf_points = _evaluate_wvf_trace(
         green_images=green_images,
         soft_boundary_map=soft_boundary_map,
         boundary_normals_map=boundary_normals_map,
@@ -742,47 +1003,32 @@ def run_experiment(
         tangent_angle_map=tangent_angle_map,
         tangent_valid_map=tangent_valid_map,
         fov_mask_map=fov_mask_map,
-        methods_payload=methods_payload,
+        trace_specs=trace_specs,
+        assets_dir=assets_dir,
         fft_backend=fft_backend,
         device_index=device_index,
         noise_draws=int(noise_draws),
+        snr_levels=snr_levels,
     )
 
-    drive_summary = json.loads(drive_summary_json.read_text())
-    payload = {
-        "title": TITLE,
-        "subtitle": SUBTITLE,
-        "scenario": "B-HD",
-        "dataset": {
-            "name": "HRF",
-            "data_root": str(data_root),
-            "page_url": DATASET_PAGE_URL,
-            "resolution_px": [3504, 2336],
-            "input_channel": "green",
-        },
-        "config": {
-            "snr_levels": list(SNR_LEVELS_LABELS),
-            "noise_draws": int(noise_draws),
-            "image_count": int(len(selections)),
-            "ods_threshold_count": int(ODS_THRESHOLDS.shape[0]),
-            "ods_tolerance_px": int(ODS_TOLERANCE_PX),
-            "vector_rmse_reference": "manual vessel boundary map derived from segmentation",
-            "orientation_reference": "manual vessel centerline tangent direction",
-            "fft_backend": str(fft_backend),
-            "display_percentile": float(DISPLAY_PERCENTILE),
-        },
-        "image_order": [str(row["image_key"]) for row in image_payload],
-        "images": image_payload,
-        "method_order": [str(method_item["method"]) for method_item in roster],
-        "methods": methods_payload,
-        "wvf_trace": wvf_trace,
-        "comparison_to_drive": {
-            "drive_image_shape_px": [565, 584],
-            "drive_summary_json": str(drive_summary_json),
-            "drive_deltas": _drive_low_res_delta(drive_summary),
-            "hrf_deltas": _hrf_delta_summary(methods_payload, wvf_trace),
-        },
+    partial_request = {
+        "skip_methods": bool(skip_methods),
+        "method_filter": sorted(method_filter),
+        "skip_wvf_trace": bool(skip_wvf_trace),
+        "wvf_trace_radii": sorted(int(value) for value in wvf_trace_radii),
     }
+    payload = _assemble_summary_payload(
+        validation_summary=validation_summary,
+        data_root=data_root,
+        drive_summary_json=drive_summary_json,
+        fft_backend=fft_backend,
+        noise_draws=int(noise_draws),
+        snr_levels=snr_levels,
+        image_payload=image_payload,
+        methods_payload=methods_payload,
+        wvf_points=wvf_points,
+        partial_request=partial_request,
+    )
     summary_json.parent.mkdir(parents=True, exist_ok=True)
     with summary_json.open("w", encoding="utf-8") as handle:
         json.dump(payload, handle, indent=2)
@@ -824,26 +1070,52 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         default=ROOT / "papers" / "journal_paper" / "figures" / "data" / "sec09_real_image_hrf" / "sec09_real_image_hrf_summary.json",
     )
+    parser.add_argument("--selection-summary-json", type=Path, default=None)
     parser.add_argument("--fft-backend", type=str, default="vkfft", choices=("vkfft", "cpu"))
     parser.add_argument("--device-index", type=int, default=None)
     parser.add_argument("--compile-plots", action="store_true")
     parser.add_argument("--noise-draws", type=int, default=HRF_NOISE_DRAWS)
+    parser.add_argument("--ods-threshold-count", type=int, default=HRF_ODS_THRESHOLD_COUNT)
+    parser.add_argument("--snr-levels", type=str, default="inf,20,10,5")
+    parser.add_argument("--skip-methods", action="store_true")
+    parser.add_argument("--method-filter", type=str, default="")
+    parser.add_argument("--skip-wvf-trace", action="store_true")
+    parser.add_argument("--wvf-trace-radii", type=str, default="")
+    parser.add_argument("--merge-shard-jsons", type=Path, nargs="+", default=None)
     parser.add_argument("--auto-download", action="store_true")
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    if args.merge_shard_jsons:
+        validation_summary = json.loads(args.validation_json.resolve().read_text())
+        _merge_partial_summaries(
+            validation_summary=validation_summary,
+            drive_summary_json=args.drive_summary_json.resolve(),
+            partial_paths=[path.resolve() for path in args.merge_shard_jsons],
+            summary_json=args.summary_json.resolve(),
+            fft_backend=str(args.fft_backend),
+            compile_plots=bool(args.compile_plots),
+        )
+        return 0
     run_experiment(
         validation_json=args.validation_json.resolve(),
         dataset_root=args.dataset_root.resolve(),
         drive_summary_json=args.drive_summary_json.resolve(),
         output_dir=args.output_dir.resolve(),
         summary_json=args.summary_json.resolve(),
+        selection_summary_json=None if args.selection_summary_json is None else args.selection_summary_json.resolve(),
         fft_backend=str(args.fft_backend),
         device_index=args.device_index,
         compile_plots=bool(args.compile_plots),
         noise_draws=int(args.noise_draws),
+        ods_threshold_count=int(args.ods_threshold_count),
+        snr_levels=_parse_snr_levels(str(args.snr_levels)),
+        skip_methods=bool(args.skip_methods),
+        method_filter=_parse_method_filter(str(args.method_filter)),
+        skip_wvf_trace=bool(args.skip_wvf_trace),
+        wvf_trace_radii=_parse_trace_radii(str(args.wvf_trace_radii)),
         auto_download=bool(args.auto_download),
     )
     return 0

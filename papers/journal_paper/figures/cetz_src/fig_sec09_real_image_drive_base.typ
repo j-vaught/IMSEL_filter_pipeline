@@ -81,7 +81,7 @@
 #let metric-chart(data, metric-key, title, y-label) = {
   let methods = data.at("methods")
   let order = data.at("method_order")
-  let x-order = ("inf", "20", "10", "5")
+  let x-order = data.at("config").at("snr_levels")
   let y-min = 1e30
   let y-max = -1e30
   for method in order {
@@ -102,11 +102,12 @@
     let h = 2.1
     let ox = 0.8
     let oy = 0.55
-    let tx(i) = ox + i / 3.0 * w
+    let span = if x-order.len() > 1 { x-order.len() - 1 } else { 1 }
+    let tx(i) = ox + i / span * w
     let ty(v) = oy + (v - y0) / (y1 - y0) * h
     rect((ox, oy), (ox + w, oy + h), stroke: 0.45pt + black30)
     content((ox + w / 2, oy + h + 0.22), text(fill: black90, size: 7.8pt, weight: "bold")[title])
-    for idx in range(4) {
+    for idx in range(x-order.len()) {
       let x = tx(idx)
       line((x, oy), (x, oy + h), stroke: 0.18pt + black30)
       content((x, oy - 0.16), text(fill: black70, size: 6pt)[snr-label(x-order.at(idx))], anchor: "north")
@@ -119,14 +120,14 @@
     }
     for method in order {
       let method-data = methods.at(method)
-      for idx in range(3) {
+      for idx in range(x-order.len() - 1) {
         let slug-a = x-order.at(idx)
         let slug-b = x-order.at(idx + 1)
         let a = method-data.at("snr_metrics").at(slug-a).at(metric-key)
         let b = method-data.at("snr_metrics").at(slug-b).at(metric-key)
         line((tx(idx), ty(a)), (tx(idx + 1), ty(b)), stroke: 0.85pt + method-color(method))
       }
-      for idx in range(4) {
+      for idx in range(x-order.len()) {
         let value = method-data.at("snr_metrics").at(x-order.at(idx)).at(metric-key)
         circle((tx(idx), ty(value)), radius: 0.035, fill: method-color(method), stroke: none)
       }

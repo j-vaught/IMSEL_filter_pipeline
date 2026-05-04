@@ -16,7 +16,7 @@
 #let delta-chart(data, metric-key, title, y-label) = {
   let drive = data.at("comparison_to_drive").at("drive_deltas").at(metric-key).at("per_snr")
   let hrf = data.at("comparison_to_drive").at("hrf_deltas").at(metric-key).at("per_snr")
-  let slugs = ("inf", "20", "10", "5")
+  let slugs = data.at("config").at("snr_levels")
   let values = ()
   for slug in slugs {
     values.push(drive.at(slug).at("delta_small_minus_wvf"))
@@ -34,11 +34,12 @@
     let h = 2.0
     let ox = 0.85
     let oy = 0.58
-    let tx(i) = ox + i / 3.0 * w
+    let span = if slugs.len() > 1 { slugs.len() - 1 } else { 1 }
+    let tx(i) = ox + i / span * w
     let ty(v) = oy + (v - y0) / (y1 - y0) * h
     rect((ox, oy), (ox + w, oy + h), stroke: 0.45pt + black30)
     content((ox + w / 2, oy + h + 0.22), text(fill: black90, size: 7.6pt, weight: "bold")[title])
-    for idx in range(4) {
+    for idx in range(slugs.len()) {
       let x = tx(idx)
       line((x, oy), (x, oy + h), stroke: 0.18pt + black30)
       content((x, oy - 0.17), text(fill: black70, size: 5.8pt)[#snr-label(slugs.at(idx))], anchor: "north")
@@ -49,7 +50,7 @@
       line((ox, y), (ox + w, y), stroke: 0.18pt + black30)
       content((ox - 0.12, y), text(fill: black70, size: 5.8pt)[#fmt(tick)], anchor: "east")
     }
-    for idx in range(3) {
+    for idx in range(slugs.len() - 1) {
       let a0 = drive.at(slugs.at(idx)).at("delta_small_minus_wvf")
       let a1 = drive.at(slugs.at(idx + 1)).at("delta_small_minus_wvf")
       line((tx(idx), ty(a0)), (tx(idx + 1), ty(a1)), stroke: 0.9pt + atlantic)
@@ -57,7 +58,7 @@
       let b1 = hrf.at(slugs.at(idx + 1)).at("delta_small_minus_wvf")
       line((tx(idx), ty(b0)), (tx(idx + 1), ty(b1)), stroke: 1.05pt + garnet)
     }
-    for idx in range(4) {
+    for idx in range(slugs.len()) {
       let drive-v = drive.at(slugs.at(idx)).at("delta_small_minus_wvf")
       let hrf-v = hrf.at(slugs.at(idx)).at("delta_small_minus_wvf")
       circle((tx(idx), ty(drive-v)), radius: 0.038, fill: atlantic, stroke: none)
