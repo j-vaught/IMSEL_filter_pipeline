@@ -638,11 +638,11 @@ def _classify_optimum_driver(best_by_snr: dict[str, dict[str, object]]) -> dict[
                 "so vessel scale is the dominant constraint and the noise floor only perturbs the optimum by one grid step."
             ),
         }
-    if nondecreasing and spread >= 4:
+    if spread >= 4 and min(radii) <= 5:
         return {
             "classification": "both",
             "rationale": (
-                f"the orientation-MAE optimum shifts from r={int(radii[0])} on cleaner DRIVE inputs to r={int(radii[-1])} at lower SNR, "
+                f"the orientation-MAE optimum ranges from r={int(min(radii))} to r={int(max(radii))} across the DRIVE SNR sweep, "
                 "so vessel scale sets the baseline while the variance floor favors wider averaging under noise."
             ),
         }

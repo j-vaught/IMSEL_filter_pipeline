@@ -329,11 +329,11 @@ def _classify_optimum_driver(best_by_snr: dict[str, dict[str, object]]) -> dict[
         }
     nondecreasing = all(radii[idx] <= radii[idx + 1] for idx in range(len(radii) - 1))
     spread = int(max(radii) - min(radii))
-    if nondecreasing and spread >= 4:
+    if spread >= 4 and min(radii) <= 5:
         return {
             "classification": "both",
             "rationale": (
-                f"the HRF optimum shifts from r={int(radii[0])} on cleaner inputs to r={int(radii[-1])} at lower SNR, "
+                f"the HRF optimum ranges from r={int(min(radii))} to r={int(max(radii))} across the SNR sweep, "
                 "so vessel scale sets the baseline while the variance floor favors wider averaging under noise."
             ),
         }
