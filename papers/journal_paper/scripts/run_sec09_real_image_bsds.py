@@ -607,6 +607,14 @@ def _classify_optimum_driver(best_by_snr: dict[str, dict[str, object]]) -> dict[
         }
     nondecreasing = all(radii[idx] <= radii[idx + 1] for idx in range(len(radii) - 1))
     spread = int(max(radii) - min(radii))
+    if spread <= 2:
+        return {
+            "classification": "bias_upper_bound",
+            "rationale": (
+                f"the optimum BSDS radius stays in a narrow band from r={int(min(radii))} to r={int(max(radii))} across the SNR sweep, "
+                "so feature scale is the dominant constraint and the noise floor only perturbs the optimum by one grid step."
+            ),
+        }
     if nondecreasing and spread >= 4:
         return {
             "classification": "both",
