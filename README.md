@@ -1,48 +1,30 @@
 # Edge Detection Filter Critique
 
-Implementation-only repository for the WVF/LF edge pipeline.
+This repository contains the research code and paper assets for the Wide View
+Filter work.
 
-Kept source areas:
+If you only need the WVF library, start here:
+
+- standalone package: [wvf_metal/README.md](wvf_metal/README.md)
+- pure Python reference path: `src/wvf/`
+
+## Repository Layout
 
 ```text
-metal/edgecritic_metal/ Rust/Metal kernels and FFI
-src/                    Python implementations and bindings
-papers/                 Paper sources and figures
+wvf_metal/   standalone WVF package with CPU FFT and GPU FFT backends
+src/wvf/     pure Python WVF reference implementation
+papers/      paper sources, scripts, data, and figures
 ```
 
-Python package layout:
+## Installed Commands
 
 ```text
-src/wvf/          WVF reference code, radius kernels, Metal binding
-src/lf/           LF reference code, LF response reference, Metal binding
-src/orientation/  orientation recovery reference and Metal binding
-src/cgmm/         two-pass c-GMM reference and Metal binding
-src/nms/          enhanced NMS and related reference helpers
-src/pipeline/     fused pipeline binding and runnable pipeline helpers
-```
-
-Metal layout:
-
-```text
-metal/edgecritic_metal/src/lib.rs                  Rust FFI and Metal host orchestration
-metal/edgecritic_metal/src/shaders/common.metal    shared Metal structs/helpers
-metal/edgecritic_metal/src/shaders/wvf.metal       WVF kernels
-metal/edgecritic_metal/src/shaders/lf.metal        LF kernels
-metal/edgecritic_metal/src/shaders/orientation.metal orientation recovery kernels
-metal/edgecritic_metal/src/shaders/cgmm.metal      c-GMM kernels
-```
-
-Installed command-line helpers:
-
-```text
+wvf-metal
+wvf-metal-doctor
+wvf-metal-regression
 edgecritic-nms
 edgecritic-pipeline-full-dump
 edgecritic-pipeline-fusion-dump
 edgecritic-pipeline-synthetic-eval
 edgecritic-pipeline-verify
-wvf-metal
 ```
-
-The retained implementation covers WVF, LF, hybrid orientation recovery,
-multi-channel c-GMM fusion, fused Metal front-end execution, and enhanced
-NMS.
