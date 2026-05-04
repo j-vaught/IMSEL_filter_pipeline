@@ -10,6 +10,14 @@ It gives you one public API for three practical cases:
 
 If you are sending WVF to a colleague, this is the directory to send.
 
+## Platform Support
+
+| Platform | Status | Notes |
+| --- | --- | --- |
+| Linux | supported | CPU FFT and CUDA/VkFFT GPU FFT |
+| macOS | supported | CPU FFT and Metal spatial variants |
+| Windows | not supported natively | use WSL2 for `wvf_metal`, or use the pure Python fallback from the full repository |
+
 ## What You Install
 
 - Standalone package: `wvf_metal/`
@@ -62,6 +70,8 @@ python -m pip install --upgrade pip
 python -m pip install ./wvf_metal
 ```
 
+This is the standard install flow on Linux and macOS.
+
 If you want CLI image-file support:
 
 ```bash
@@ -73,6 +83,44 @@ python -m pip install './wvf_metal[image]'
 ```bash
 python -m pip install "git+https://github.com/j-vaught/edge-detection-filter-critique.git#subdirectory=wvf_metal"
 ```
+
+### Linux Notes
+
+For Linux CPU-only use, the install above is enough as long as `cargo` works.
+
+For Linux CUDA/VkFFT use, make sure these are available before first import:
+
+```bash
+python --version
+cargo --version
+rustc --version
+nvcc --version
+echo $WVF_CUDA_HOME
+echo $WVF_CUDA_HOST_CXX
+```
+
+If `nvcc` does not accept the system compiler, set:
+
+```bash
+export WVF_CUDA_HOME=/usr/local/cuda
+export WVF_CUDA_HOST_CXX=/path/to/g++
+```
+
+### Windows Notes
+
+The native `wvf_metal` extension is not supported on Windows.
+
+If someone needs Windows, the practical options are:
+
+1. Use WSL2 with Ubuntu and follow the Linux install path.
+2. Use the pure Python reference path from the full repository:
+
+```bash
+python -m pip install .
+```
+
+That fallback is slower, but it does not require the native `wvf_metal`
+extension.
 
 ### Sanity Check
 
