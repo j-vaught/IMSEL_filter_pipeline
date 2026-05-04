@@ -27,8 +27,18 @@
 }
 
 #let radius-label(radius) = str(radius)
+#let degree-label(degree) = str(degree)
 
 #let thumb(path, width: 1.38in) = image("../" + path, width: width)
+
+#let heat-color(t) = {
+  if t <= 0.16 { return garnet }
+  if t <= 0.32 { return rose }
+  if t <= 0.48 { return honeycomb }
+  if t <= 0.64 { return atlantic }
+  if t <= 0.80 { return black50 }
+  black10
+}
 
 #let image-grid(data, heading, asset-key, show-input: false) = {
   let images = data.at("images")
@@ -228,6 +238,76 @@
   })
 }
 
+#let wvf-grid-heatmap(data, title) = {
+  let grid = data.at("wvf_grid")
+  let radii = grid.at("grid_radii")
+  let degrees = grid.at("grid_degrees")
+  let cells = grid.at("cells")
+  let primary-snr = grid.at("primary_snr_slug")
+  let primary-metric = grid.at("primary_metric_key")
+  let optimum = grid.at("annotated_optimum")
+  let values = ()
+  for cell in cells {
+    values.push(cell.at("snr_metrics").at(primary-snr).at(primary-metric))
+  }
+  let v-min = calc.min(..values)
+  let v-max = calc.max(..values)
+  let span = calc.max(v-max - v-min, 1e-12)
+  let cell-map = (:)
+  for cell in cells {
+    cell-map.insert(str(cell.at("radius")) + "-" + str(cell.at("degree")), cell)
+  }
+
+  cetz.canvas({
+    import cetz.draw: *
+    let w = 5.2
+    let h = 3.0
+    let ox = 0.9
+    let oy = 0.55
+    let cols = radii.len()
+    let rows = degrees.len()
+    let cw = w / cols
+    let ch = h / rows
+
+    rect((ox, oy), (ox + w, oy + h), stroke: 0.45pt + black30)
+    content((ox + w / 2, oy + h + 0.24), text(fill: black90, size: 8.0pt, weight: "bold")[title])
+    for cidx in range(cols) {
+      let radius = radii.at(cidx)
+      let x0 = ox + cidx * cw
+      content((x0 + cw / 2, oy - 0.18), text(fill: black70, size: 5.8pt)[r=#radius-label(radius)], anchor: "north")
+    }
+    for ridx in range(rows) {
+      let degree = degrees.at(ridx)
+      let y0 = oy + (rows - 1 - ridx) * ch
+      content((ox - 0.12, y0 + ch / 2), text(fill: black70, size: 5.8pt)[d=#degree-label(degree)], anchor: "east")
+    }
+    for ridx in range(rows) {
+      let degree = degrees.at(ridx)
+      for cidx in range(cols) {
+        let radius = radii.at(cidx)
+        let x0 = ox + cidx * cw
+        let y0 = oy + (rows - 1 - ridx) * ch
+        let key = str(radius) + "-" + str(degree)
+        if key in cell-map {
+          let cell = cell-map.at(key)
+          let raw = cell.at("snr_metrics").at(primary-snr).at(primary-metric)
+          let norm = (raw - v-min) / span
+          rect((x0, y0), (x0 + cw, y0 + ch), fill: heat-color(norm), stroke: 0.25pt + black30)
+          if radius == optimum.at("radius") and degree == optimum.at("degree") {
+            rect((x0 + 0.02, y0 + 0.02), (x0 + cw - 0.02, y0 + ch - 0.02), fill: none, stroke: 0.55pt + black)
+          }
+        } else {
+          rect((x0, y0), (x0 + cw, y0 + ch), fill: sandstorm, stroke: 0.25pt + black30)
+          line((x0 + 0.05, y0 + 0.05), (x0 + cw - 0.05, y0 + ch - 0.05), stroke: 0.25pt + black50)
+          line((x0 + 0.05, y0 + ch - 0.05), (x0 + cw - 0.05, y0 + 0.05), stroke: 0.25pt + black50)
+        }
+      }
+    }
+    content((ox + w / 2, oy - 0.42), text(fill: black90, size: 6.4pt)[WVF radius])
+    content((0.14, oy + h / 2), angle: 90deg, text(fill: black90, size: 6.4pt)[Polynomial degree])
+  })
+}
+
 #let render(data-path) = {
   let data = json(data-path)
   let title = data.at("title")
@@ -360,6 +440,31 @@
       )
       v(8pt)
       legend(data)
+    ]
+  }
+
+  if "wvf_grid" in data {
+    pagebreak()
+
+    [
+      align(center)[
+        text(fill: black90, size: 11pt, weight: "bold")[title]
+        linebreak()
+        text(fill: black70, size: 8pt)[Fine-grained WVF radius and degree sweep on the fixed DRIVE image set.]
+        linebreak()
+        text(fill: black70, size: 6.8pt)[The heatmap shows 10 dB centerline orientation MAE across the feasible $(r,d)$ grid. Crossed cells were skipped by the Section 7 conditioning gate. The outlined cell is the annotated optimum.]
+      ]
+      v(8pt)
+      wvf-grid-heatmap(data, [10 dB centerline orientation MAE across the feasible WVF grid])
+      v(10pt)
+      align(left)[
+        text(fill: black90, size: 7.2pt, weight: "bold")[Annotated optimum. ]
+        text(fill: black90, size: 7.2pt)[#data.at("wvf_grid").at("annotated_optimum").at("label")]
+        text(fill: black90, size: 7.2pt)[ with orientation MAE #fmt(data.at("wvf_grid").at("annotated_optimum").at("value"), digits: 4).]
+        linebreak()
+        text(fill: black90, size: 7.2pt, weight: "bold")[Driver assessment. ]
+        text(fill: black90, size: 7.2pt)[#data.at("wvf_grid").at("driver_assessment").at("rationale")]
+      ]
     ]
   }
 }

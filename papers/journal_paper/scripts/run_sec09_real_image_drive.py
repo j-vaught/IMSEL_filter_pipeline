@@ -19,6 +19,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from baseline_filters import build_method
+from sec09_wvf_grid import WVF_GRID_DEGREES, WVF_GRID_RADII, feasible_wvf_grid
 from section8_common import apply_images_batched, compile_plot
 
 
@@ -52,6 +53,8 @@ TRACE_METRICS = (
     ("gradient_vector_rmse_mean", False),
     ("orientation_mae_deg_mean", False),
 )
+GRID_PRIMARY_METRIC_KEY = "orientation_mae_deg_mean"
+GRID_PRIMARY_SNR_SLUG = "10"
 
 
 @dataclass(frozen=True)
@@ -611,6 +614,158 @@ def _best_baseline_by_metric(
     }
 
 
+def _classify_optimum_driver(best_by_snr: dict[str, dict[str, object]]) -> dict[str, object]:
+    ordered_slugs = ("inf", "20", "10", "5")
+    radii = [int(best_by_snr[slug]["radius"]) for slug in ordered_slugs if slug in best_by_snr]
+    if not radii:
+        return {
+            "classification": "unknown",
+            "rationale": "no feasible WVF cells were evaluated for the requested SNR levels.",
+        }
+    if len(set(radii)) == 1:
+        radius = int(radii[0])
+        return {
+            "classification": "bias_upper_bound",
+            "rationale": f"the orientation-MAE optimum stayed fixed at r={radius} across clean and noisy DRIVE runs, so vessel scale dominates the choice.",
+        }
+    nondecreasing = all(radii[idx] <= radii[idx + 1] for idx in range(len(radii) - 1))
+    spread = int(max(radii) - min(radii))
+    if nondecreasing and spread >= 4:
+        return {
+            "classification": "both",
+            "rationale": (
+                f"the orientation-MAE optimum shifts from r={int(radii[0])} on cleaner DRIVE inputs to r={int(radii[-1])} at lower SNR, "
+                "so vessel scale sets the baseline while the variance floor favors wider averaging under noise."
+            ),
+        }
+    return {
+        "classification": "variance_lower_bound",
+        "rationale": (
+            f"the preferred radius varies across SNR levels with a total spread of {spread} px, indicating that the noise floor materially "
+            "affects the best vessel-orientation operating point."
+        ),
+    }
+
+
+def _evaluate_wvf_grid(
+    green_images: dict[str, np.ndarray],
+    soft_boundary_map: dict[str, np.ndarray],
+    boundary_normals_map: dict[str, np.ndarray],
+    boundary_valid_map: dict[str, np.ndarray],
+    tangent_angle_map: dict[str, np.ndarray],
+    tangent_valid_map: dict[str, np.ndarray],
+    fov_mask_map: dict[str, np.ndarray],
+    methods_payload: dict[str, object],
+    fft_backend: str,
+    device_index: int | None,
+    noise_draws: int,
+) -> dict[str, object]:
+    feasible_cells = feasible_wvf_grid(normalize_coords=True)
+    baseline_best: dict[str, dict[str, object]] = {}
+    for snr_db in SNR_LEVELS:
+        snr_slug = _noise_slug(float(snr_db))
+        baseline_best[snr_slug] = {}
+        for metric_key, higher_is_better in TRACE_METRICS:
+            baseline_best[snr_slug][metric_key] = _best_baseline_by_metric(
+                methods_payload=methods_payload,
+                snr_slug=snr_slug,
+                metric_key=metric_key,
+                higher_is_better=bool(higher_is_better),
+            )
+
+    cells = []
+    best_by_snr: dict[str, dict[str, object]] = {}
+    for cell_info in feasible_cells:
+        spec = {
+            "r": int(cell_info["radius"]),
+            "d": int(cell_info["degree"]),
+            "normalize_coords": True,
+        }
+        method_item = {
+            "method": "wvf",
+            "label": "WVF",
+            "config": dict(spec),
+            "kernel": build_method("wvf", **spec),
+        }
+        snr_metrics = {}
+        for snr_db in SNR_LEVELS:
+            snr_slug = _noise_slug(float(snr_db))
+            metrics = _evaluate_snr_bank(
+                method_item=method_item,
+                green_images=green_images,
+                soft_boundary_map=soft_boundary_map,
+                boundary_normals_map=boundary_normals_map,
+                boundary_valid_map=boundary_valid_map,
+                tangent_angle_map=tangent_angle_map,
+                tangent_valid_map=tangent_valid_map,
+                fov_mask_map=fov_mask_map,
+                snr_db=float(snr_db),
+                noise_draws=int(noise_draws),
+                fft_backend=fft_backend,
+                device_index=device_index,
+            )
+            comparisons = {}
+            for metric_key, higher_is_better in TRACE_METRICS:
+                best = baseline_best[snr_slug][metric_key]
+                value = float(metrics[metric_key])
+                overtakes = value > float(best["value"]) if higher_is_better else value < float(best["value"])
+                comparisons[metric_key] = {
+                    "best_baseline_method": str(best["method"]),
+                    "best_baseline_label": str(best["label"]),
+                    "best_baseline_value": float(best["value"]),
+                    "overtakes_best_baseline": bool(overtakes),
+                }
+            snr_metrics[snr_slug] = metrics | {"comparison": comparisons}
+            candidate = {
+                "radius": int(spec["r"]),
+                "degree": int(spec["d"]),
+                "value": float(metrics[GRID_PRIMARY_METRIC_KEY]),
+                "overtakes_best_baseline": bool(
+                    comparisons[GRID_PRIMARY_METRIC_KEY]["overtakes_best_baseline"]
+                ),
+            }
+            current = best_by_snr.get(snr_slug)
+            if current is None or float(candidate["value"]) < float(current["value"]):
+                best_by_snr[snr_slug] = candidate
+            print(
+                f"sec09B-grid r={spec['r']} d={spec['d']} snr={snr_slug} "
+                f"rmse={metrics['gradient_vector_rmse_mean']:.6e} "
+                f"ods={metrics['ods_f_score']:.6f} "
+                f"ang={metrics['orientation_mae_deg_mean']:.4f}"
+            )
+        cells.append(
+            {
+                "radius": int(spec["r"]),
+                "degree": int(spec["d"]),
+                "config": dict(spec),
+                "support_cardinality": int(cell_info["support_cardinality"]),
+                "coefficient_count": int(cell_info["coefficient_count"]),
+                "kappa_design_matrix": float(cell_info["kappa_design_matrix"]),
+                "sigma_min": float(cell_info["sigma_min"]),
+                "rank_deficient_count": int(cell_info["rank_deficient_count"]),
+                "white_noise_gain": float(method_item["kernel"].white_noise_gain),
+                "snr_metrics": snr_metrics,
+            }
+        )
+
+    optimum = dict(best_by_snr[GRID_PRIMARY_SNR_SLUG])
+    optimum["snr_slug"] = GRID_PRIMARY_SNR_SLUG
+    optimum["metric_key"] = GRID_PRIMARY_METRIC_KEY
+    optimum["label"] = f"r={int(optimum['radius'])}, d={int(optimum['degree'])}"
+    return {
+        "primary_metric_key": GRID_PRIMARY_METRIC_KEY,
+        "primary_metric_label": "Centerline orientation MAE",
+        "primary_snr_slug": GRID_PRIMARY_SNR_SLUG,
+        "grid_radii": [int(value) for value in WVF_GRID_RADII],
+        "grid_degrees": [int(value) for value in WVF_GRID_DEGREES],
+        "cells": cells,
+        "best_by_snr": best_by_snr,
+        "annotated_optimum": optimum,
+        "driver_assessment": _classify_optimum_driver(best_by_snr),
+        "conditioning_gate": "Cells are included only when rank_deficient_count == 0 under the scaled-epsilon SVD cutoff.",
+    }
+
+
 def _evaluate_wvf_trace(
     green_images: dict[str, np.ndarray],
     soft_boundary_map: dict[str, np.ndarray],
@@ -813,6 +968,19 @@ def run_experiment(
         device_index=device_index,
         noise_draws=int(noise_draws),
     )
+    wvf_grid = _evaluate_wvf_grid(
+        green_images=green_images,
+        soft_boundary_map=soft_boundary_map,
+        boundary_normals_map=boundary_normals_map,
+        boundary_valid_map=boundary_valid_map,
+        tangent_angle_map=tangent_angle_map,
+        tangent_valid_map=tangent_valid_map,
+        fov_mask_map=fov_mask_map,
+        methods_payload=methods_payload,
+        fft_backend=fft_backend,
+        device_index=device_index,
+        noise_draws=int(noise_draws),
+    )
 
     payload = {
         "title": TITLE,
@@ -838,6 +1006,7 @@ def run_experiment(
         "method_order": [str(method_item["method"]) for method_item in roster],
         "methods": methods_payload,
         "wvf_trace": wvf_trace,
+        "wvf_grid": wvf_grid,
     }
     _write_json(summary_json, payload)
 

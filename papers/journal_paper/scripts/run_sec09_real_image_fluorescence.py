@@ -19,6 +19,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 from baseline_filters import build_method
+from sec09_wvf_grid import WVF_GRID_DEGREES, WVF_GRID_RADII, feasible_wvf_grid
 from section8_common import apply_images_batched, compile_plot
 
 
@@ -43,6 +44,7 @@ TRACE_METRICS = (
     "background_gradient_mad_mean",
     "background_gradient_median_mean",
 )
+GRID_PRIMARY_METRIC_KEY = "background_gradient_mad_mean"
 
 
 @dataclass(frozen=True)
@@ -319,6 +321,112 @@ def _best_baseline_by_metric(methods_payload: dict[str, object], metric_key: str
     }
 
 
+def _classify_optimum_driver(optimum_radius: int) -> dict[str, object]:
+    radius = int(optimum_radius)
+    if radius <= 5:
+        return {
+            "classification": "bias_upper_bound",
+            "rationale": f"the native-noise fluorescence optimum lands at a very narrow support r={radius}, indicating that fine feature scale dominates over additional averaging.",
+        }
+    if radius >= 25:
+        return {
+            "classification": "variance_lower_bound",
+            "rationale": f"the native-noise fluorescence optimum stays in the widest tested regime at r={radius}, indicating that noise averaging dominates this modality.",
+        }
+    return {
+        "classification": "both",
+        "rationale": (
+            f"the native-noise fluorescence optimum is intermediate at r={radius}, which is consistent with a compromise between fine transition scale and the modality's empirical noise floor."
+        ),
+    }
+
+
+def _evaluate_wvf_grid(
+    images: dict[str, np.ndarray],
+    methods_payload: dict[str, object],
+    fft_backend: str,
+    device_index: int | None,
+) -> dict[str, object]:
+    feasible_cells = feasible_wvf_grid(normalize_coords=True)
+    baseline_best = {metric_key: _best_baseline_by_metric(methods_payload, metric_key) for metric_key in TRACE_METRICS}
+    assets_dir = ROOT / "papers" / "journal_paper" / "figures" / "data" / "sec09_real_image_fluorescence" / "assets"
+    cells = []
+    optimum: dict[str, object] | None = None
+    for cell_info in feasible_cells:
+        spec = {
+            "r": int(cell_info["radius"]),
+            "d": int(cell_info["degree"]),
+            "normalize_coords": True,
+        }
+        method_item = {
+            "method": "wvf",
+            "label": "WVF",
+            "config": dict(spec),
+            "kernel": build_method("wvf", **spec),
+        }
+        _, clean_stats = _clean_assets_for_method(
+            method_item=method_item,
+            images=images,
+            assets_dir=assets_dir,
+            fft_backend=fft_backend,
+            device_index=device_index,
+        )
+        bg_medians = [float(clean_stats[key]["background_gradient_median"]) for key in clean_stats]
+        bg_mads = [float(clean_stats[key]["background_gradient_mad"]) for key in clean_stats]
+        cell = {
+            "radius": int(spec["r"]),
+            "degree": int(spec["d"]),
+            "config": dict(spec),
+            "support_cardinality": int(cell_info["support_cardinality"]),
+            "coefficient_count": int(cell_info["coefficient_count"]),
+            "kappa_design_matrix": float(cell_info["kappa_design_matrix"]),
+            "sigma_min": float(cell_info["sigma_min"]),
+            "rank_deficient_count": int(cell_info["rank_deficient_count"]),
+            "white_noise_gain": float(method_item["kernel"].white_noise_gain),
+            "background_gradient_median_mean": float(np.mean(np.asarray(bg_medians, dtype=np.float64))),
+            "background_gradient_mad_mean": float(np.mean(np.asarray(bg_mads, dtype=np.float64))),
+        }
+        comparison = {}
+        for metric_key in TRACE_METRICS:
+            best = baseline_best[metric_key]
+            value = float(cell[metric_key])
+            comparison[metric_key] = {
+                "best_baseline_method": str(best["method"]),
+                "best_baseline_label": str(best["label"]),
+                "best_baseline_value": float(best["value"]),
+                "overtakes_best_baseline": bool(value < float(best["value"])),
+            }
+        cell["comparison"] = comparison
+        if optimum is None or float(cell[GRID_PRIMARY_METRIC_KEY]) < float(optimum["value"]):
+            optimum = {
+                "radius": int(spec["r"]),
+                "degree": int(spec["d"]),
+                "value": float(cell[GRID_PRIMARY_METRIC_KEY]),
+                "overtakes_best_baseline": bool(comparison[GRID_PRIMARY_METRIC_KEY]["overtakes_best_baseline"]),
+            }
+        print(
+            f"sec09C-grid r={spec['r']} d={spec['d']} "
+            f"wng={cell['white_noise_gain']:.6e} "
+            f"bgmad={cell['background_gradient_mad_mean']:.6e} "
+            f"bgmed={cell['background_gradient_median_mean']:.6e}"
+        )
+        cells.append(cell)
+    if optimum is None:
+        raise RuntimeError("no feasible WVF grid cells were evaluated for fluorescence scenario")
+    optimum["metric_key"] = GRID_PRIMARY_METRIC_KEY
+    optimum["label"] = f"r={int(optimum['radius'])}, d={int(optimum['degree'])}"
+    return {
+        "primary_metric_key": GRID_PRIMARY_METRIC_KEY,
+        "primary_metric_label": "Background gradient MAD",
+        "grid_radii": [int(value) for value in WVF_GRID_RADII],
+        "grid_degrees": [int(value) for value in WVF_GRID_DEGREES],
+        "cells": cells,
+        "annotated_optimum": optimum,
+        "driver_assessment": _classify_optimum_driver(int(optimum["radius"])),
+        "conditioning_gate": "Cells are included only when rank_deficient_count == 0 under the scaled-epsilon SVD cutoff.",
+    }
+
+
 def _evaluate_wvf_trace(
     images: dict[str, np.ndarray],
     methods_payload: dict[str, object],
@@ -451,6 +559,12 @@ def run_experiment(
         fft_backend=fft_backend,
         device_index=device_index,
     )
+    wvf_grid = _evaluate_wvf_grid(
+        images=images,
+        methods_payload=methods_payload,
+        fft_backend=fft_backend,
+        device_index=device_index,
+    )
 
     payload = {
         "title": TITLE,
@@ -472,6 +586,7 @@ def run_experiment(
         "method_order": [str(method_item["method"]) for method_item in roster],
         "methods": methods_payload,
         "wvf_trace": wvf_trace,
+        "wvf_grid": wvf_grid,
     }
     _write_json(summary_json, payload)
 
