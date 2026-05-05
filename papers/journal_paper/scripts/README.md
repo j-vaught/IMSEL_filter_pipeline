@@ -48,4 +48,4 @@ the `2080`.
 
 ## Zoom-Stack Viewer
 
-Run `make viewer` to open the Streamlit zoom-stack inspector backed by `papers/journal_paper/figures/data/sec09_real_image_zoom_stack/sec09_real_image_zoom_stack_summary.json`.
+Run `make viewer` to open the Streamlit HD tuning inspector backed by `papers/journal_paper/figures/data/sec09_real_image_hd_viewer/sec09_real_image_hd_viewer_summary.json` after generating assets with `run_sec09_real_image_hd_viewer.py`.
