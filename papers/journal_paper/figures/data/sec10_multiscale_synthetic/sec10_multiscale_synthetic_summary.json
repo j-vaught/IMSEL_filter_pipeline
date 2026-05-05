@@ -22,6 +22,10 @@
       {
         "radius": 25,
         "degree": 11
+      },
+      {
+        "radius": 50,
+        "degree": 11
       }
     ],
     "single_scale_trace": [
@@ -116,6 +120,15 @@
       "kappa_design_matrix": 117823575691.6982,
       "sigma_min": 3.816558725510507e-10,
       "rank_deficient_count": 0
+    },
+    {
+      "radius": 50,
+      "degree": 11,
+      "intrinsic_fwhm": 14.67397799669368,
+      "white_noise_gain": 8.998553150423674e-05,
+      "kappa_design_matrix": 120836956449.25183,
+      "sigma_min": 7.444576874456035e-10,
+      "rank_deficient_count": 0
     }
   ],
   "strategies": {
@@ -126,284 +139,289 @@
         {
           "radius": 3,
           "degree": 5,
-          "weight": 0.0022048615836894685
+          "weight": 0.0001480963904890998
         },
         {
           "radius": 5,
           "degree": 9,
-          "weight": 0.002722051337888233
+          "weight": 0.000182835049986543
         },
         {
           "radius": 9,
           "degree": 11,
-          "weight": 0.014579084757456893
+          "weight": 0.0009792496024177211
         },
         {
           "radius": 15,
           "degree": 11,
-          "weight": 0.11249293794334023
+          "weight": 0.007555938290260193
         },
         {
           "radius": 25,
           "degree": 11,
-          "weight": 0.8680010643776253
+          "weight": 0.058301992980402735
+        },
+        {
+          "radius": 50,
+          "degree": 11,
+          "weight": 0.9328318876864438
         }
       ],
       "steerability": {
-        "max_residual": 2.5877997271092634e-10,
-        "worst_theta_deg": 55.0,
-        "pass_count": 1,
+        "max_residual": 6.123106757955146e-11,
+        "worst_theta_deg": 175.0,
+        "pass_count": 2,
         "total_count": 36,
         "records": [
           {
             "theta_deg": 0.0,
             "residual": 0.0,
-            "kernel_max": 0.005572252664413517,
+            "kernel_max": 0.0006302735295038065,
             "threshold": 1e-12,
             "passed": true
           },
           {
             "theta_deg": 5.0,
-            "residual": 2.286805841260689e-11,
-            "kernel_max": 0.0055510485606577765,
+            "residual": 1.9625353317280492e-11,
+            "kernel_max": 0.0006278751484276747,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 10.0,
-            "residual": 6.637838434291055e-11,
-            "kernel_max": 0.005487597625540666,
+            "residual": 1.8407377889734927e-11,
+            "kernel_max": 0.0006316568525808629,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 15.0,
-            "residual": 1.9220160924241728e-11,
-            "kernel_max": 0.005382382758991152,
+            "residual": 1.7164212352859323e-11,
+            "kernel_max": 0.0006307142160197564,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 20.0,
-            "residual": 1.8120698233483994e-11,
-            "kernel_max": 0.005519853797732118,
+            "residual": 1.5373360326724136e-11,
+            "kernel_max": 0.0006338565286120201,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 25.0,
-            "residual": 1.7506130036261738e-11,
-            "kernel_max": 0.005723183620122467,
+            "residual": 1.4332465959497262e-11,
+            "kernel_max": 0.0006332750769890867,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 30.0,
-            "residual": 2.932436720748735e-11,
-            "kernel_max": 0.00588295655941093,
+            "residual": 1.0940579605461798e-11,
+            "kernel_max": 0.0006371155915726897,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 35.0,
-            "residual": 1.4520131245369244e-11,
-            "kernel_max": 0.005997956647055984,
+            "residual": 1.0505698524662654e-11,
+            "kernel_max": 0.0006379920557880131,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 40.0,
-            "residual": 1.2674249887448252e-11,
-            "kernel_max": 0.006067308662951698,
+            "residual": 8.327064108777996e-12,
+            "kernel_max": 0.0006340130152286537,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 45.0,
-            "residual": 1.0964114165179506e-11,
-            "kernel_max": 0.006090484796381215,
+            "residual": 6.487245988876303e-12,
+            "kernel_max": 0.0006301413020931736,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 50.0,
-            "residual": 2.56191202367001e-10,
-            "kernel_max": 0.0060673086629750034,
+            "residual": 1.8060779461608403e-11,
+            "kernel_max": 0.000634013015233277,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 55.0,
-            "residual": 2.5877997271092634e-10,
-            "kernel_max": 0.0059979566471024155,
+            "residual": 1.7391002348062998e-11,
+            "kernel_max": 0.0006379920558267425,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 60.0,
-            "residual": 5.773559364971592e-12,
-            "kernel_max": 0.005882956559480136,
+            "residual": 5.761700388714e-13,
+            "kernel_max": 0.0006371155916452307,
             "threshold": 1e-12,
-            "passed": false
+            "passed": true
           },
           {
             "theta_deg": 65.0,
-            "residual": 3.508678471462329e-11,
-            "kernel_max": 0.00572318362021392,
+            "residual": 6.952997815630642e-12,
+            "kernel_max": 0.0006332750767687366,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 70.0,
-            "residual": 1.1963232428345918e-10,
-            "kernel_max": 0.005519853797845122,
+            "residual": 8.116041909714267e-12,
+            "kernel_max": 0.000633856528345117,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 75.0,
-            "residual": 9.479628713948696e-11,
-            "kernel_max": 0.005382382757728203,
+            "residual": 1.1130732674533711e-11,
+            "kernel_max": 0.000630714215779753,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 80.0,
-            "residual": 3.2843431289506994e-11,
-            "kernel_max": 0.005487597624108468,
+            "residual": 3.2886405892332965e-11,
+            "kernel_max": 0.0006316568523254819,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 85.0,
-            "residual": 7.035131364182406e-11,
-            "kernel_max": 0.0055510485590672285,
+            "residual": 1.2462697188261526e-11,
+            "kernel_max": 0.000627875148136578,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 90.0,
-            "residual": 9.047075371845792e-12,
-            "kernel_max": 0.005572252662676726,
+            "residual": 1.211494339364242e-11,
+            "kernel_max": 0.000630273529201779,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 95.0,
-            "residual": 8.616829331228176e-11,
-            "kernel_max": 0.005551048558905103,
+            "residual": 1.3868524248927469e-11,
+            "kernel_max": 0.0006278751481401923,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 100.0,
-            "residual": 1.238427760948818e-10,
-            "kernel_max": 0.005487597623785451,
+            "residual": 1.1568435364381693e-11,
+            "kernel_max": 0.0006316568523863318,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 105.0,
-            "residual": 1.3628000355807302e-10,
-            "kernel_max": 0.005382382757246751,
+            "residual": 1.701961518225069e-11,
+            "kernel_max": 0.0006307142158449711,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 110.0,
-            "residual": 5.25880139131199e-11,
-            "kernel_max": 0.005519853797966994,
+            "residual": 1.8448476660172172e-11,
+            "kernel_max": 0.0006338565286579524,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 115.0,
-            "residual": 1.6200952227983165e-11,
-            "kernel_max": 0.005723183620348118,
+            "residual": 4.951651485759004e-11,
+            "kernel_max": 0.0006332750770824168,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 120.0,
-            "residual": 1.7141610722005984e-11,
-            "kernel_max": 0.00588295655962564,
+            "residual": 2.2804779088335045e-11,
+            "kernel_max": 0.000637115591844472,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 125.0,
-            "residual": 1.8841427658518317e-11,
-            "kernel_max": 0.005997956647258119,
+            "residual": 2.1788948575095224e-11,
+            "kernel_max": 0.0006379920560474125,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 130.0,
-            "residual": 1.99587098353971e-11,
-            "kernel_max": 0.006067308663139721,
+            "residual": 3.658331874806524e-11,
+            "kernel_max": 0.000634013015473696,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 135.0,
-            "residual": 2.188347723516837e-11,
-            "kernel_max": 0.006090484796553693,
+            "residual": 2.3052830369456323e-11,
+            "kernel_max": 0.0006301413023343691,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 140.0,
-            "residual": 2.1823302334082056e-11,
-            "kernel_max": 0.006067308663130624,
+            "residual": 2.6792532141451872e-11,
+            "kernel_max": 0.0006340130155294586,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 145.0,
-            "residual": 5.038156903388463e-11,
-            "kernel_max": 0.005997956647239995,
+            "residual": 2.511971435980448e-11,
+            "kernel_max": 0.0006379920560930798,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 150.0,
-            "residual": 4.3895526861785494e-11,
-            "kernel_max": 0.005882956559598626,
+            "residual": 2.3691155631787135e-11,
+            "kernel_max": 0.0006371155918796968,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 155.0,
-            "residual": 2.3022265734432e-11,
-            "kernel_max": 0.005723183620312421,
+            "residual": 2.3903601781326625e-11,
+            "kernel_max": 0.0006332750769248735,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 160.0,
-            "residual": 1.0899958561606804e-10,
-            "kernel_max": 0.005519853797922883,
+            "residual": 1.919370508341421e-11,
+            "kernel_max": 0.0006338565285074829,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 165.0,
-            "residual": 2.342231042364723e-11,
-            "kernel_max": 0.0053823827593390255,
+            "residual": 2.248464457156596e-11,
+            "kernel_max": 0.0006307142161524045,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 170.0,
-            "residual": 2.3273199123083343e-11,
-            "kernel_max": 0.005487597625774064,
+            "residual": 1.872408174688478e-11,
+            "kernel_max": 0.0006316568526742672,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 175.0,
-            "residual": 2.1892637876164134e-11,
-            "kernel_max": 0.005551048560774921,
+            "residual": 6.123106757955146e-11,
+            "kernel_max": 0.0006278751484613285,
             "threshold": 1e-12,
             "passed": false
           }
@@ -417,31 +435,36 @@
         {
           "radius": 3,
           "degree": 5,
-          "weight": 0.2
+          "weight": 0.16666666666666666
         },
         {
           "radius": 5,
           "degree": 9,
-          "weight": 0.2
+          "weight": 0.16666666666666666
         },
         {
           "radius": 9,
           "degree": 11,
-          "weight": 0.2
+          "weight": 0.16666666666666666
         },
         {
           "radius": 15,
           "degree": 11,
-          "weight": 0.2
+          "weight": 0.16666666666666666
         },
         {
           "radius": 25,
           "degree": 11,
-          "weight": 0.2
+          "weight": 0.16666666666666666
+        },
+        {
+          "radius": 50,
+          "degree": 11,
+          "weight": 0.16666666666666666
         }
       ],
       "steerability": {
-        "max_residual": 9.117710091707115e-10,
+        "max_residual": 7.597573609737646e-10,
         "worst_theta_deg": 10.0,
         "pass_count": 1,
         "total_count": 36,
@@ -449,252 +472,252 @@
           {
             "theta_deg": 0.0,
             "residual": 0.0,
-            "kernel_max": 0.17578521942482217,
+            "kernel_max": 0.14650260042753063,
             "threshold": 1e-12,
             "passed": true
           },
           {
             "theta_deg": 5.0,
-            "residual": 3.1587595148048486e-10,
-            "kernel_max": 0.17511630359362468,
+            "residual": 2.631759903320291e-10,
+            "kernel_max": 0.1459451138023295,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 10.0,
-            "residual": 9.117710091707115e-10,
-            "kernel_max": 0.1731146469539646,
+            "residual": 7.597573609737646e-10,
+            "kernel_max": 0.1442768967370235,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 15.0,
-            "residual": 2.6387108492155475e-10,
-            "kernel_max": 0.1697954833215031,
+            "residual": 2.1983114590826136e-10,
+            "kernel_max": 0.14151064537077668,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 20.0,
-            "residual": 2.45203548763194e-10,
-            "kernel_max": 0.16518407353564898,
+            "residual": 2.0432653117206934e-10,
+            "kernel_max": 0.13766741254679438,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 25.0,
-            "residual": 2.2891475976068165e-10,
-            "kernel_max": 0.15931551320931797,
+            "residual": 1.907324386320533e-10,
+            "kernel_max": 0.13277644758747453,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 30.0,
-            "residual": 2.109254494155055e-10,
-            "kernel_max": 0.15223446563012705,
+            "residual": 1.7573106381521542e-10,
+            "kernel_max": 0.12687497368940295,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 35.0,
-            "residual": 1.9073645007167128e-10,
-            "kernel_max": 0.1465500156087189,
+            "residual": 1.589157497001309e-10,
+            "kernel_max": 0.12214567867794832,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 40.0,
-            "residual": 1.6304706976916217e-10,
-            "kernel_max": 0.14824451585349052,
+            "residual": 1.3585547292173372e-10,
+            "kernel_max": 0.12355800116428772,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 45.0,
-            "residual": 1.4174660707341746e-10,
-            "kernel_max": 0.14881078582013108,
+            "residual": 1.1813619375279638e-10,
+            "kernel_max": 0.124029972655406,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 50.0,
-            "residual": 1.135240395612469e-10,
-            "kernel_max": 0.14824451585227125,
+            "residual": 9.459866852530585e-11,
+            "kernel_max": 0.12355800116327151,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 55.0,
-            "residual": 5.962664872483439e-11,
-            "kernel_max": 0.1465500156062896,
+            "residual": 4.9690524861045055e-11,
+            "kernel_max": 0.12214567867592366,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 60.0,
-            "residual": 6.07296912411015e-11,
-            "kernel_max": 0.15223446562281676,
+            "residual": 5.060061310929731e-11,
+            "kernel_max": 0.12687497368331047,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 65.0,
-            "residual": 6.202542993105631e-11,
-            "kernel_max": 0.1593155132005551,
+            "residual": 5.167395434073005e-11,
+            "kernel_max": 0.13277644758017315,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 70.0,
-            "residual": 2.0865790562388242e-10,
-            "kernel_max": 0.16518407352550024,
+            "residual": 1.7388115892882222e-10,
+            "kernel_max": 0.13766741253833964,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 75.0,
-            "residual": 4.28080279991222e-10,
-            "kernel_max": 0.1697954833100457,
+            "residual": 3.5672190180045804e-10,
+            "kernel_max": 0.14151064536123292,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 80.0,
-            "residual": 4.50418723260855e-10,
-            "kernel_max": 0.17311464694128575,
+            "residual": 3.7529317297607147e-10,
+            "kernel_max": 0.14427689672646338,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 85.0,
-            "residual": 3.170992439981146e-10,
-            "kernel_max": 0.1751163035798209,
+            "residual": 2.642559432993602e-10,
+            "kernel_max": 0.14594511379083336,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 90.0,
-            "residual": 1.0798594830829789e-10,
-            "kernel_max": 0.17578521940999844,
+            "residual": 8.994624034301679e-11,
+            "kernel_max": 0.14650260041518595,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 95.0,
-            "residual": 1.5511592802320423e-10,
-            "kernel_max": 0.17511630357844843,
+            "residual": 1.2923054542712115e-10,
+            "kernel_max": 0.14594511378969027,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 100.0,
-            "residual": 1.5905084150766302e-10,
-            "kernel_max": 0.17311464693855133,
+            "residual": 1.32583344043119e-10,
+            "kernel_max": 0.14427689672418592,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 105.0,
-            "residual": 1.7887464079380244e-10,
-            "kernel_max": 0.16979548330597014,
+            "residual": 1.4900583306283466e-10,
+            "kernel_max": 0.14151064535783847,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 110.0,
-            "residual": 7.184165211511495e-10,
-            "kernel_max": 0.1651840735201145,
+            "residual": 5.98636457245505e-10,
+            "kernel_max": 0.13766741253385395,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 115.0,
-            "residual": 2.2223132600633633e-10,
-            "kernel_max": 0.15931551319390022,
+            "residual": 1.8522220898969238e-10,
+            "kernel_max": 0.13277644757463042,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 120.0,
-            "residual": 2.391395117139986e-10,
-            "kernel_max": 0.15223446561494333,
+            "residual": 1.9930207836730066e-10,
+            "kernel_max": 0.1268749736767529,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 125.0,
-            "residual": 2.582406205108717e-10,
-            "kernel_max": 0.14655001560552092,
+            "residual": 2.1514707561082896e-10,
+            "kernel_max": 0.12214567867526377,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 130.0,
-            "residual": 2.7358111468530483e-10,
-            "kernel_max": 0.1482445158510868,
+            "residual": 2.278586704084276e-10,
+            "kernel_max": 0.12355800116226648,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 135.0,
-            "residual": 2.888673523472607e-10,
-            "kernel_max": 0.1488107858185399,
+            "residual": 2.407145507227204e-10,
+            "kernel_max": 0.12402997265406344,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 140.0,
-            "residual": 2.98139193942535e-10,
-            "kernel_max": 0.14824451585150472,
+            "residual": 2.483180436177023e-10,
+            "kernel_max": 0.12355800116261789,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 145.0,
-            "residual": 3.0711312095851873e-10,
-            "kernel_max": 0.14655001560635353,
+            "residual": 2.559190762953245e-10,
+            "kernel_max": 0.1221456786759639,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 150.0,
-            "residual": 5.962369939676963e-10,
-            "kernel_max": 0.1522344656333085,
+            "residual": 4.969353489901046e-10,
+            "kernel_max": 0.12687497369204206,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 155.0,
-            "residual": 3.168592434873302e-10,
-            "kernel_max": 0.15931551321200704,
+            "residual": 2.6398563012213633e-10,
+            "kernel_max": 0.1327764475897052,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 160.0,
-            "residual": 3.192799198853749e-10,
-            "kernel_max": 0.16518407353782524,
+            "residual": 2.660494850142449e-10,
+            "kernel_max": 0.13766741254859963,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 165.0,
-            "residual": 3.1743004156193494e-10,
-            "kernel_max": 0.16979548332314995,
+            "residual": 2.644622681654066e-10,
+            "kernel_max": 0.14151064537214278,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 170.0,
-            "residual": 3.2001231027069255e-10,
-            "kernel_max": 0.1731146469550695,
+            "residual": 2.6663331742157736e-10,
+            "kernel_max": 0.14427689673794006,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 175.0,
-            "residual": 2.974696294410356e-10,
-            "kernel_max": 0.17511630359417923,
+            "residual": 2.477221626613624e-10,
+            "kernel_max": 0.14594511380278952,
             "threshold": 1e-12,
             "passed": false
           }
@@ -708,31 +731,36 @@
         {
           "radius": 3,
           "degree": 5,
-          "weight": 0.2589740463071484
+          "weight": 0.2463131687689732
         },
         {
           "radius": 5,
           "degree": 9,
-          "weight": 0.2610236993825804
+          "weight": 0.24826261718315124
         },
         {
           "radius": 9,
           "degree": 11,
-          "weight": 0.22348762519979673
+          "weight": 0.21256162896851294
         },
         {
           "radius": 15,
           "degree": 11,
-          "weight": 0.15654807334404905
+          "weight": 0.14889465782342373
         },
         {
           "radius": 25,
           "degree": 11,
-          "weight": 0.0999665557664253
+          "weight": 0.09507933120272996
+        },
+        {
+          "radius": 50,
+          "degree": 11,
+          "weight": 0.04888859605320889
         }
       ],
       "steerability": {
-        "max_residual": 1.0189094251482345e-09,
+        "max_residual": 9.69081175765732e-10,
         "worst_theta_deg": 10.0,
         "pass_count": 1,
         "total_count": 36,
@@ -740,252 +768,252 @@
           {
             "theta_deg": 0.0,
             "residual": 0.0,
-            "kernel_max": 0.2244688555930607,
+            "kernel_max": 0.21349926418079873,
             "threshold": 1e-12,
             "passed": true
           },
           {
             "theta_deg": 5.0,
-            "residual": 3.532600264827962e-10,
-            "kernel_max": 0.2236146838282314,
+            "residual": 3.359738086697317e-10,
+            "kernel_max": 0.21268683502311814,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 10.0,
-            "residual": 1.0189094251482345e-09,
-            "kernel_max": 0.22105866929723153,
+            "residual": 9.69081175765732e-10,
+            "kernel_max": 0.21025573062708938,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 15.0,
-            "residual": 2.9488119216401765e-10,
-            "kernel_max": 0.2168202648140058,
+            "residual": 2.804468465181925e-10,
+            "kernel_max": 0.20622445316510724,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 20.0,
-            "residual": 2.739483453452485e-10,
-            "kernel_max": 0.21093172719589004,
+            "residual": 2.60552532891159e-10,
+            "kernel_max": 0.20062368309280926,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 25.0,
-            "residual": 2.5547222323729635e-10,
-            "kernel_max": 0.20343787176975445,
+            "residual": 2.4297378583941487e-10,
+            "kernel_max": 0.19349604565228307,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 30.0,
-            "residual": 2.352256727074231e-10,
-            "kernel_max": 0.19439573130030555,
+            "residual": 2.2371404425139407e-10,
+            "kernel_max": 0.18489578646823623,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 35.0,
-            "residual": 2.1320740875921396e-10,
-            "kernel_max": 0.18564614199725232,
+            "residual": 2.027748186375633e-10,
+            "kernel_max": 0.176576224646069,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 40.0,
-            "residual": 1.822366411420584e-10,
-            "kernel_max": 0.18779269538900062,
+            "residual": 1.7332233565037214e-10,
+            "kernel_max": 0.178617906147437,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 45.0,
-            "residual": 1.584280246054448e-10,
-            "kernel_max": 0.18851003297650887,
+            "residual": 1.5068681372132353e-10,
+            "kernel_max": 0.17930019753058252,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 50.0,
-            "residual": 1.2647746955654626e-10,
-            "kernel_max": 0.18779269538759588,
+            "residual": 1.2029278614877903e-10,
+            "kernel_max": 0.17861790614610093,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 55.0,
-            "residual": 5.716810575276399e-11,
-            "kernel_max": 0.18564614199445356,
+            "residual": 5.437095261864866e-11,
+            "kernel_max": 0.176576224643407,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 60.0,
-            "residual": 6.7689976020191e-11,
-            "kernel_max": 0.19439573129240564,
+            "residual": 6.437851987617371e-11,
+            "kernel_max": 0.18489578646072236,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 65.0,
-            "residual": 4.854373148030153e-11,
-            "kernel_max": 0.20343787176028746,
+            "residual": 4.617075368947357e-11,
+            "kernel_max": 0.19349604564327919,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 70.0,
-            "residual": 1.6315498919342725e-10,
-            "kernel_max": 0.21093172718492795,
+            "residual": 1.5517844496361344e-10,
+            "kernel_max": 0.20062368308238385,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 75.0,
-            "residual": 4.782117417985107e-10,
-            "kernel_max": 0.21682026480163205,
+            "residual": 4.5482921942618937e-10,
+            "kernel_max": 0.20622445315333965,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 80.0,
-            "residual": 5.035817411940674e-10,
-            "kernel_max": 0.22105866928354034,
+            "residual": 4.789459799353808e-10,
+            "kernel_max": 0.2102557306140692,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 85.0,
-            "residual": 3.5350164635794545e-10,
-            "kernel_max": 0.22361468381332697,
+            "residual": 3.36221373875914e-10,
+            "kernel_max": 0.21268683500894442,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 90.0,
-            "residual": 1.206912829225526e-10,
-            "kernel_max": 0.22446885557705643,
+            "residual": 1.1477852110593212e-10,
+            "kernel_max": 0.21349926416557935,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 95.0,
-            "residual": 1.3899176601328556e-10,
-            "kernel_max": 0.22361468381184377,
+            "residual": 1.3219096650640694e-10,
+            "kernel_max": 0.21268683500753388,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 100.0,
-            "residual": 1.7538317065995956e-10,
-            "kernel_max": 0.2210586692805852,
+            "residual": 1.668209537522558e-10,
+            "kernel_max": 0.21025573061125888,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 105.0,
-            "residual": 1.9989561676932166e-10,
-            "kernel_max": 0.21682026479722746,
+            "residual": 1.9010646594257163e-10,
+            "kernel_max": 0.20622445314915094,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 110.0,
-            "residual": 8.02711017013763e-10,
-            "kernel_max": 0.21093172717910746,
+            "residual": 7.634547026687255e-10,
+            "kernel_max": 0.20062368307684864,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 115.0,
-            "residual": 2.4841517124590817e-10,
-            "kernel_max": 0.20343787175309536,
+            "residual": 2.3627913709779735e-10,
+            "kernel_max": 0.19349604563643957,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 120.0,
-            "residual": 2.671992172062921e-10,
-            "kernel_max": 0.19439573128389664,
+            "residual": 2.541418405203281e-10,
+            "kernel_max": 0.1848957864526304,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 125.0,
-            "residual": 2.886317356995405e-10,
-            "kernel_max": 0.1856461419934507,
+            "residual": 2.7450525890999194e-10,
+            "kernel_max": 0.1765762246424475,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 130.0,
-            "residual": 3.05774487544333e-10,
-            "kernel_max": 0.18779269538610494,
+            "residual": 2.9078876145113147e-10,
+            "kernel_max": 0.1786179061446776,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 135.0,
-            "residual": 3.224898447243274e-10,
-            "kernel_max": 0.1885100329745412,
+            "residual": 3.067213501413424e-10,
+            "kernel_max": 0.17930019752870613,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 140.0,
-            "residual": 3.3316712686219316e-10,
-            "kernel_max": 0.18779269538657117,
+            "residual": 3.168405434393097e-10,
+            "kernel_max": 0.17861790614512194,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 145.0,
-            "residual": 3.4121259290254e-10,
-            "kernel_max": 0.1856461419943796,
+            "residual": 3.2452868734336726e-10,
+            "kernel_max": 0.17657622464333284,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 150.0,
-            "residual": 6.660010426045573e-10,
-            "kernel_max": 0.19439573130411783,
+            "residual": 6.334620683361679e-10,
+            "kernel_max": 0.1848957864718667,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 155.0,
-            "residual": 3.5416295536463277e-10,
-            "kernel_max": 0.20343787177269163,
+            "residual": 3.3682972882219386e-10,
+            "kernel_max": 0.19349604565508083,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 160.0,
-            "residual": 3.56379443317012e-10,
-            "kernel_max": 0.2109317271982236,
+            "residual": 3.389515320978073e-10,
+            "kernel_max": 0.2006236830950263,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 165.0,
-            "residual": 3.548722538699797e-10,
-            "kernel_max": 0.21682026481577163,
+            "residual": 3.375046360009487e-10,
+            "kernel_max": 0.20622445316678492,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 170.0,
-            "residual": 3.5766683299971735e-10,
-            "kernel_max": 0.2210586692984163,
+            "residual": 3.401682121748073e-10,
+            "kernel_max": 0.21025573062821498,
             "threshold": 1e-12,
             "passed": false
           },
           {
             "theta_deg": 175.0,
-            "residual": 3.323009749311989e-10,
-            "kernel_max": 0.22361468382882604,
+            "residual": 3.160056168561437e-10,
+            "kernel_max": 0.21268683502368307,
             "threshold": 1e-12,
             "passed": false
           }
@@ -1060,35 +1088,35 @@
       "strategies": {
         "l2_variance_inverse": {
           "label": "L2 variance-inverse",
-          "step_grad_rmse": 0.30492742231224307,
-          "arc_orientation_mae_deg": 14.5670479377935,
-          "step_rmse_delta_to_best_single": -0.007020355815615997,
-          "step_rmse_relative_improvement": -0.02356559009551216,
-          "arc_orientation_delta_to_best_single_deg": -3.7505623652219224
+          "step_grad_rmse": 0.3174355866248078,
+          "arc_orientation_mae_deg": 10.828577886061444,
+          "step_rmse_delta_to_best_single": -0.019528520128180737,
+          "step_rmse_relative_improvement": -0.06555238973628658,
+          "arc_orientation_delta_to_best_single_deg": -0.012092313489866058
         },
         "l2_equal": {
           "label": "L2 equal",
-          "step_grad_rmse": 0.2955122377270568,
-          "arc_orientation_mae_deg": 38.58357939312377,
-          "step_rmse_delta_to_best_single": 0.0023948287695702564,
-          "step_rmse_relative_improvement": 0.0080388451262111,
-          "arc_orientation_delta_to_best_single_deg": -27.76709382055219
+          "step_grad_rmse": 0.28974196333099533,
+          "arc_orientation_mae_deg": 37.97021804807862,
+          "step_rmse_delta_to_best_single": 0.008165103165631737,
+          "step_rmse_relative_improvement": 0.027408222509297822,
+          "arc_orientation_delta_to_best_single_deg": -27.15373247550704
         },
         "l2_fwhm": {
           "label": "L2 FWHM-inverse",
-          "step_grad_rmse": 0.3123743562855868,
-          "arc_orientation_mae_deg": 39.56954707170167,
-          "step_rmse_delta_to_best_single": -0.014467289788959725,
-          "step_rmse_relative_improvement": -0.04856309707283672,
-          "arc_orientation_delta_to_best_single_deg": -28.75306149913009
+          "step_grad_rmse": 0.3080752561873435,
+          "arc_orientation_mae_deg": 39.49614939074214,
+          "step_rmse_delta_to_best_single": -0.010168189690716423,
+          "step_rmse_relative_improvement": -0.034132086258623705,
+          "arc_orientation_delta_to_best_single_deg": -28.67966381817056
         },
         "l3_max": {
           "label": "L3 max-across-scales",
-          "step_grad_rmse": 0.45698251373515175,
-          "arc_orientation_mae_deg": 38.73934471685627,
-          "step_rmse_delta_to_best_single": -0.15907544723852468,
-          "step_rmse_relative_improvement": -0.5339767502303465,
-          "arc_orientation_delta_to_best_single_deg": -27.922859144284693
+          "step_grad_rmse": 0.4569826191953752,
+          "arc_orientation_mae_deg": 38.737102322174024,
+          "step_rmse_delta_to_best_single": -0.15907555269874812,
+          "step_rmse_relative_improvement": -0.5339771042341125,
+          "arc_orientation_delta_to_best_single_deg": -27.920616749602445
         }
       }
     },
@@ -1154,35 +1182,35 @@
       "strategies": {
         "l2_variance_inverse": {
           "label": "L2 variance-inverse",
-          "step_grad_rmse": 0.14512119865017628,
-          "arc_orientation_mae_deg": 12.436287957713837,
-          "step_rmse_delta_to_best_single": -0.012540839058427289,
-          "step_rmse_relative_improvement": -0.09459047401171596,
-          "arc_orientation_delta_to_best_single_deg": -10.480544203831556
+          "step_grad_rmse": 0.16713792577327705,
+          "arc_orientation_mae_deg": 2.015971195159421,
+          "step_rmse_delta_to_best_single": -0.034557566181528054,
+          "step_rmse_relative_improvement": -0.26065373700856,
+          "arc_orientation_delta_to_best_single_deg": -0.06022744127714086
         },
         "l2_equal": {
           "label": "L2 equal",
-          "step_grad_rmse": 0.16833743163157439,
-          "arc_orientation_mae_deg": 38.05188832041171,
-          "step_rmse_delta_to_best_single": -0.035757072039825394,
-          "step_rmse_relative_improvement": -0.2697011242836507,
-          "arc_orientation_delta_to_best_single_deg": -36.09614456652943
+          "step_grad_rmse": 0.15311387732523346,
+          "arc_orientation_mae_deg": 37.28855981042493,
+          "step_rmse_delta_to_best_single": -0.02053351773348447,
+          "step_rmse_relative_improvement": -0.1548760147936901,
+          "arc_orientation_delta_to_best_single_deg": -35.33281605654265
         },
         "l2_fwhm": {
           "label": "L2 FWHM-inverse",
-          "step_grad_rmse": 0.20143100089829377,
-          "arc_orientation_mae_deg": 39.38909629106929,
-          "step_rmse_delta_to_best_single": -0.06885064130654478,
-          "step_rmse_relative_improvement": -0.5193125250116581,
-          "arc_orientation_delta_to_best_single_deg": -37.43335253718701
+          "step_grad_rmse": 0.19368852968068864,
+          "arc_orientation_mae_deg": 39.27338186956124,
+          "step_rmse_delta_to_best_single": -0.06110817008893965,
+          "step_rmse_relative_improvement": -0.46091419782770493,
+          "arc_orientation_delta_to_best_single_deg": -37.31763811567896
         },
         "l3_max": {
           "label": "L3 max-across-scales",
-          "step_grad_rmse": 0.3866996802636079,
-          "arc_orientation_mae_deg": 39.585966516428655,
-          "step_rmse_delta_to_best_single": -0.25411932067185894,
-          "step_rmse_relative_improvement": -1.9167191992415882,
-          "arc_orientation_delta_to_best_single_deg": -37.630222762546374
+          "step_grad_rmse": 0.3866998364609413,
+          "arc_orientation_mae_deg": 39.58076962473276,
+          "step_rmse_delta_to_best_single": -0.25411947686919234,
+          "step_rmse_relative_improvement": -1.9167203773748642,
+          "arc_orientation_delta_to_best_single_deg": -37.62502587085048
         }
       }
     },
@@ -1248,35 +1276,35 @@
       "strategies": {
         "l2_variance_inverse": {
           "label": "L2 variance-inverse",
-          "step_grad_rmse": 0.04202685239931988,
-          "arc_orientation_mae_deg": 10.033570807785088,
-          "step_rmse_delta_to_best_single": 0.003296708759447438,
-          "step_rmse_relative_improvement": 0.07273719617704241,
-          "arc_orientation_delta_to_best_single_deg": -8.000734971765697
+          "step_grad_rmse": 0.06633630286878184,
+          "arc_orientation_mae_deg": 2.085285631356038,
+          "step_rmse_delta_to_best_single": -0.02101274171001452,
+          "step_rmse_relative_improvement": -0.46361629961969236,
+          "arc_orientation_delta_to_best_single_deg": -0.052449795336646954
         },
         "l2_equal": {
           "label": "L2 equal",
-          "step_grad_rmse": 0.15100214812858886,
-          "arc_orientation_mae_deg": 38.28083754987091,
-          "step_rmse_delta_to_best_single": -0.10567858696982155,
-          "step_rmse_relative_improvement": -2.3316479170653,
-          "arc_orientation_delta_to_best_single_deg": -36.24800171385152
+          "step_grad_rmse": 0.12705476164641177,
+          "arc_orientation_mae_deg": 37.033777427644985,
+          "step_rmse_delta_to_best_single": -0.08173120048764446,
+          "step_rmse_relative_improvement": -1.8032828488772557,
+          "arc_orientation_delta_to_best_single_deg": -35.00094159162559
         },
         "l2_fwhm": {
           "label": "L2 FWHM-inverse",
-          "step_grad_rmse": 0.1917916345426549,
-          "arc_orientation_mae_deg": 40.25257381474474,
-          "step_rmse_delta_to_best_single": -0.1464680733838876,
-          "step_rmse_relative_improvement": -3.2316099979614035,
-          "arc_orientation_delta_to_best_single_deg": -38.21973797872535
+          "step_grad_rmse": 0.18253864397647096,
+          "arc_orientation_mae_deg": 40.027803360793776,
+          "step_rmse_delta_to_best_single": -0.13721508281770364,
+          "step_rmse_relative_improvement": -3.0274559039401736,
+          "arc_orientation_delta_to_best_single_deg": -37.99496752477438
         },
         "l3_max": {
           "label": "L3 max-across-scales",
-          "step_grad_rmse": 0.38645335975286266,
-          "arc_orientation_mae_deg": 41.53970234254777,
-          "step_rmse_delta_to_best_single": -0.3411297985940953,
-          "step_rmse_relative_improvement": -7.526544469864715,
-          "arc_orientation_delta_to_best_single_deg": -39.50686650652838
+          "step_grad_rmse": 0.3864532398106872,
+          "arc_orientation_mae_deg": 41.534050766214484,
+          "step_rmse_delta_to_best_single": -0.3411296786519199,
+          "step_rmse_relative_improvement": -7.5265418235109784,
+          "arc_orientation_delta_to_best_single_deg": -39.50121493019509
         }
       }
     },
@@ -1342,35 +1370,35 @@
       "strategies": {
         "l2_variance_inverse": {
           "label": "L2 variance-inverse",
-          "step_grad_rmse": 0.018084836113303155,
-          "arc_orientation_mae_deg": 10.472095495360907,
-          "step_rmse_delta_to_best_single": -0.008256906007599166,
-          "step_rmse_relative_improvement": -0.8401470013311324,
-          "arc_orientation_delta_to_best_single_deg": -7.895332266861466
+          "step_grad_rmse": 0.009415366849794184,
+          "arc_orientation_mae_deg": 2.6601289894854108,
+          "step_rmse_delta_to_best_single": 0.00041256325590980497,
+          "step_rmse_relative_improvement": 0.041978651808925585,
+          "arc_orientation_delta_to_best_single_deg": -0.08336576098596948
         },
         "l2_equal": {
           "label": "L2 equal",
-          "step_grad_rmse": 0.15052132609838398,
-          "arc_orientation_mae_deg": 42.23794732788777,
-          "step_rmse_delta_to_best_single": -0.14069339599268,
-          "step_rmse_relative_improvement": -14.315669167307526,
-          "arc_orientation_delta_to_best_single_deg": -39.66118409938832
+          "step_grad_rmse": 0.1254673056630474,
+          "arc_orientation_mae_deg": 41.24930747827193,
+          "step_rmse_delta_to_best_single": -0.11563937555734341,
+          "step_rmse_relative_improvement": -11.766401909007064,
+          "arc_orientation_delta_to_best_single_deg": -38.672544249772486
         },
         "l2_fwhm": {
           "label": "L2 FWHM-inverse",
-          "step_grad_rmse": 0.1916143670506229,
-          "arc_orientation_mae_deg": 43.25550165123585,
-          "step_rmse_delta_to_best_single": -0.18178643694491892,
-          "step_rmse_relative_improvement": -18.49692000143679,
-          "arc_orientation_delta_to_best_single_deg": -40.678738422736416
+          "step_grad_rmse": 0.18225214138120777,
+          "arc_orientation_mae_deg": 43.09873572081798,
+          "step_rmse_delta_to_best_single": -0.17242421127550378,
+          "step_rmse_relative_improvement": -17.544305812210776,
+          "arc_orientation_delta_to_best_single_deg": -40.52197249231854
         },
         "l3_max": {
           "label": "L3 max-across-scales",
-          "step_grad_rmse": 0.38986657415886244,
-          "arc_orientation_mae_deg": 43.970562273682525,
-          "step_rmse_delta_to_best_single": -0.38003864405315846,
-          "step_rmse_relative_improvement": -38.669245707454664,
-          "arc_orientation_delta_to_best_single_deg": -41.39379904518309
+          "step_grad_rmse": 0.38986639222495645,
+          "arc_orientation_mae_deg": 43.96927981953961,
+          "step_rmse_delta_to_best_single": -0.38003846211925246,
+          "step_rmse_relative_improvement": -38.669227195529565,
+          "arc_orientation_delta_to_best_single_deg": -41.39251659104016
         }
       }
     },
@@ -1446,35 +1474,35 @@
       "strategies": {
         "l2_variance_inverse": {
           "label": "L2 variance-inverse",
-          "step_grad_rmse": 0.17075946466348196,
-          "arc_orientation_mae_deg": 11.784215480494263,
-          "step_rmse_delta_to_best_single": -0.003861858689444775,
-          "step_rmse_relative_improvement": -0.023139089784460602,
-          "arc_orientation_delta_to_best_single_deg": -7.554928561879539
+          "step_grad_rmse": 0.1829897702609525,
+          "arc_orientation_mae_deg": 4.278379950974963,
+          "step_rmse_delta_to_best_single": -0.016092164286915317,
+          "step_rmse_relative_improvement": -0.09641938356754282,
+          "arc_orientation_delta_to_best_single_deg": -0.049093032360238986
         },
         "l2_equal": {
           "label": "L2 equal",
-          "step_grad_rmse": 0.2010639172402569,
-          "arc_orientation_mae_deg": 38.83768763669576,
-          "step_rmse_delta_to_best_single": -0.03416631126621972,
-          "step_rmse_relative_improvement": -0.20471420825254183,
-          "arc_orientation_delta_to_best_single_deg": -34.608400718081036
+          "step_grad_rmse": 0.18700529002800603,
+          "arc_orientation_mae_deg": 37.898659558023006,
+          "step_rmse_delta_to_best_single": -0.020107684053968844,
+          "step_rmse_relative_improvement": -0.12047916407558788,
+          "arc_orientation_delta_to_best_single_deg": -33.66937263940828
         },
         "l2_fwhm": {
           "label": "L2 FWHM-inverse",
-          "step_grad_rmse": 0.23032797167427613,
-          "arc_orientation_mae_deg": 40.28370241770683,
-          "step_rmse_delta_to_best_single": -0.06343036570023894,
-          "step_rmse_relative_improvement": -0.38005557557312264,
-          "arc_orientation_delta_to_best_single_deg": -36.0544154990921
+          "step_grad_rmse": 0.22334437001446492,
+          "arc_orientation_mae_deg": 40.1317577573715,
+          "step_rmse_delta_to_best_single": -0.05644676404042773,
+          "step_rmse_relative_improvement": -0.33821194564773244,
+          "arc_orientation_delta_to_best_single_deg": -35.90247083875678
         },
         "l3_max": {
           "label": "L3 max-across-scales",
-          "step_grad_rmse": 0.4062138496382864,
-          "arc_orientation_mae_deg": 40.7089297153374,
-          "step_rmse_delta_to_best_single": -0.2393162436642492,
-          "step_rmse_relative_improvement": -1.433910584082779,
-          "arc_orientation_delta_to_best_single_deg": -36.47964279672267
+          "step_grad_rmse": 0.4062138414521728,
+          "arc_orientation_mae_deg": 40.70480205226978,
+          "step_rmse_delta_to_best_single": -0.23931623547813563,
+          "step_rmse_relative_improvement": -1.4339105350340615,
+          "arc_orientation_delta_to_best_single_deg": -36.47551513365505
         }
       }
     }
@@ -1508,91 +1536,116 @@
     ],
     "rmse_delta_matrix": [
       [
-        -0.007020355815615997,
-        -0.012540839058427289,
-        0.003296708759447438,
-        -0.008256906007599166,
-        -0.003861858689444775
+        -0.019528520128180737,
+        -0.034557566181528054,
+        -0.02101274171001452,
+        0.00041256325590980497,
+        -0.016092164286915317
       ],
       [
-        0.0023948287695702564,
-        -0.035757072039825394,
-        -0.10567858696982155,
-        -0.14069339599268,
-        -0.03416631126621972
+        0.008165103165631737,
+        -0.02053351773348447,
+        -0.08173120048764446,
+        -0.11563937555734341,
+        -0.020107684053968844
       ],
       [
-        -0.014467289788959725,
-        -0.06885064130654478,
-        -0.1464680733838876,
-        -0.18178643694491892,
-        -0.06343036570023894
+        -0.010168189690716423,
+        -0.06110817008893965,
+        -0.13721508281770364,
+        -0.17242421127550378,
+        -0.05644676404042773
       ],
       [
-        -0.15907544723852468,
-        -0.25411932067185894,
-        -0.3411297985940953,
-        -0.38003864405315846,
-        -0.2393162436642492
+        -0.15907555269874812,
+        -0.25411947686919234,
+        -0.3411296786519199,
+        -0.38003846211925246,
+        -0.23931623547813563
       ]
     ],
     "percent_improvement_matrix": [
       [
-        -2.356559009551216,
-        -9.459047401171595,
-        7.273719617704241,
-        -84.01470013311324,
-        -2.3139089784460602
+        -6.555238973628658,
+        -26.065373700856,
+        -46.361629961969236,
+        4.197865180892559,
+        -9.641938356754281
       ],
       [
-        0.80388451262111,
-        -26.970112428365066,
-        -233.16479170653,
-        -1431.5669167307526,
-        -20.47142082525418
+        2.7408222509297824,
+        -15.48760147936901,
+        -180.32828488772557,
+        -1176.6401909007063,
+        -12.047916407558787
       ],
       [
-        -4.856309707283672,
-        -51.931252501165815,
-        -323.16099979614035,
-        -1849.6920001436793,
-        -38.005557557312265
+        -3.4132086258623704,
+        -46.091419782770494,
+        -302.74559039401737,
+        -1754.4305812210775,
+        -33.82119456477324
       ],
       [
-        -53.39767502303465,
-        -191.67191992415883,
-        -752.6544469864715,
-        -3866.9245707454666,
-        -143.3910584082779
+        -53.39771042341125,
+        -191.67203773748642,
+        -752.6541823510978,
+        -3866.9227195529566,
+        -143.39105350340614
       ]
     ]
   },
   "decision": {
-    "best_linear": {
-      "stimulus_key": "w9",
+    "best_linear_any_stimulus": {
+      "stimulus_key": "w27",
       "strategy_key": "l2_variance_inverse",
-      "step_rmse_relative_improvement": 0.07273719617704241
+      "step_rmse_relative_improvement": 0.041978651808925585
+    },
+    "best_linear_composite": {
+      "stimulus_key": "multi_scale_composite",
+      "strategy_key": "l2_variance_inverse",
+      "step_rmse_relative_improvement": -0.09641938356754282
     },
     "best_l3": {
       "stimulus_key": "w1",
       "strategy_key": "l3_max",
-      "step_rmse_relative_improvement": -0.5339767502303465
+      "step_rmse_relative_improvement": -0.5339771042341125
     },
-    "proceed_to_phase2": true,
-    "decision_rule": "Proceed if the best linear strategy beats best single-scale by at least 2% on any stimulus. If only L3 clears 2%, proceed but frame the contribution as nonlinear.",
-    "outcome": "linear_strategy_clears_gate"
+    "proceed_to_phase2": false,
+    "decision_rule": "Proceed only if the best linear strategy on the restored six-scale stack beats best single-scale by at least 2% on the multi_scale_composite stimulus.",
+    "outcome": "phase15_null_result"
   },
-  "wall_clock_seconds": 3378.9160084370524,
+  "composite_orientation_diagnostic": {
+    "asset_path": "/Users/user/Documents/edge-detection-filter-critique/papers/journal_paper/figures/data/sec10_multiscale_synthetic/assets_w400/composite_orientation_error_l2_vs_best_single.png",
+    "asset_dir_name": "assets_w400",
+    "asset_max_width_px": 400,
+    "case": {
+      "orientation_deg": 0.0,
+      "phase_px": 0.0,
+      "snr_db": 10.0,
+      "draw_index": 0
+    },
+    "l2_orientation_mae_deg_mean": 4.344786479334471,
+    "best_single_orientation_mae_deg_mean": 4.285421664263777,
+    "best_single_config": {
+      "radius": 50,
+      "degree": 11
+    },
+    "clip_deg": 45.0
+  },
+  "wall_clock_seconds": 3703.883522029966,
   "shards": {
     "files": [
-      "/tmp/sec10_multiscale_shard_a.json",
-      "/tmp/sec10_multiscale_shard_b.json",
-      "/tmp/sec10_multiscale_shard_c.json"
+      "/tmp/sec10_phase15_shard_a.json",
+      "/tmp/sec10_phase15_shard_b.json",
+      "/tmp/sec10_phase15_shard_c.json",
+      "/tmp/sec10_phase15_shard_d.json"
     ],
-    "wall_clock_seconds": [
-      1748.6593654993922,
-      1814.4353611748666,
-      3378.9160084370524
-    ]
+    "wall_clock_seconds": {
+      "a": 1888.5136921564117,
+      "b": 996.3649960150942,
+      "c": 955.4128087805584,
+      "d": 3703.883522029966
+    }
   }
 }

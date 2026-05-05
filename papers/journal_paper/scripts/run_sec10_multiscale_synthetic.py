@@ -915,7 +915,8 @@ def _composite_orientation_diagnostic(
 def _decision(summary_rows: list[dict[str, object]]) -> dict[str, object]:
     linear_keys = ("l2_variance_inverse", "l2_equal", "l2_fwhm")
     nonlinear_key = "l3_max"
-    best_linear: dict[str, object] | None = None
+    best_linear_any: dict[str, object] | None = None
+    best_linear_composite: dict[str, object] | None = None
     best_l3: dict[str, object] | None = None
 
     for row in summary_rows:
@@ -925,8 +926,11 @@ def _decision(summary_rows: list[dict[str, object]]) -> dict[str, object]:
                 "strategy_key": str(strategy_key),
                 "step_rmse_relative_improvement": float(row["strategies"][strategy_key]["step_rmse_relative_improvement"]),
             }
-            if best_linear is None or float(candidate["step_rmse_relative_improvement"]) > float(best_linear["step_rmse_relative_improvement"]):
-                best_linear = candidate
+            if best_linear_any is None or float(candidate["step_rmse_relative_improvement"]) > float(best_linear_any["step_rmse_relative_improvement"]):
+                best_linear_any = candidate
+            if str(row["stimulus_key"]) == str(COMPOSITE_LABEL):
+                if best_linear_composite is None or float(candidate["step_rmse_relative_improvement"]) > float(best_linear_composite["step_rmse_relative_improvement"]):
+                    best_linear_composite = candidate
         candidate_l3 = {
             "stimulus_key": str(row["stimulus_key"]),
             "strategy_key": str(nonlinear_key),
@@ -935,21 +939,17 @@ def _decision(summary_rows: list[dict[str, object]]) -> dict[str, object]:
         if best_l3 is None or float(candidate_l3["step_rmse_relative_improvement"]) > float(best_l3["step_rmse_relative_improvement"]):
             best_l3 = candidate_l3
 
-    best_linear = best_linear or {"stimulus_key": None, "strategy_key": None, "step_rmse_relative_improvement": 0.0}
+    best_linear_any = best_linear_any or {"stimulus_key": None, "strategy_key": None, "step_rmse_relative_improvement": 0.0}
+    best_linear_composite = best_linear_composite or {"stimulus_key": None, "strategy_key": None, "step_rmse_relative_improvement": 0.0}
     best_l3 = best_l3 or {"stimulus_key": None, "strategy_key": None, "step_rmse_relative_improvement": 0.0}
-    proceed = False
-    rationale = "stop"
-    if float(best_linear["step_rmse_relative_improvement"]) >= 0.02:
-        proceed = True
-        rationale = "linear_strategy_clears_gate"
-    elif float(best_l3["step_rmse_relative_improvement"]) >= 0.02:
-        proceed = True
-        rationale = "nonlinear_strategy_only"
+    proceed = float(best_linear_composite["step_rmse_relative_improvement"]) >= 0.02
+    rationale = "composite_linear_clears_gate" if proceed else "phase15_null_result"
     return {
-        "best_linear": best_linear,
+        "best_linear_any_stimulus": best_linear_any,
+        "best_linear_composite": best_linear_composite,
         "best_l3": best_l3,
         "proceed_to_phase2": bool(proceed),
-        "decision_rule": "Proceed if the best linear strategy beats best single-scale by at least 2% on any stimulus. If only L3 clears 2%, proceed but frame the contribution as nonlinear.",
+        "decision_rule": "Proceed only if the best linear strategy on the restored six-scale stack beats best single-scale by at least 2% on the multi_scale_composite stimulus.",
         "outcome": str(rationale),
     }
 
