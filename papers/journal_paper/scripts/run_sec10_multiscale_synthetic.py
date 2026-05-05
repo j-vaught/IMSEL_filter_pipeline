@@ -565,32 +565,26 @@ def _buffers_to_outputs(
     ]
 
 
-def _mean_step_rmse(
+def _step_rmse_sum(
     cases: tuple[StepCase | GradientFieldCase, ...],
     responses: list[tuple[np.ndarray, np.ndarray]],
-) -> float:
-    return float(
-        mean(
-            [
-                float(case_gradient_metrics(case, gx, gy)["grad_rmse"])
-                for case, (gx, gy) in zip(cases, responses, strict=True)
-            ]
-        )
-    )
+) -> tuple[float, int]:
+    values = [
+        float(case_gradient_metrics(case, gx, gy)["grad_rmse"])
+        for case, (gx, gy) in zip(cases, responses, strict=True)
+    ]
+    return float(sum(values)), int(len(values))
 
 
-def _mean_arc_orientation_mae(
+def _arc_orientation_mae_sum(
     cases: tuple[CurvedCase | GradientFieldCase, ...],
     responses: list[tuple[np.ndarray, np.ndarray]],
-) -> float:
-    return float(
-        mean(
-            [
-                float(case_gradient_metrics(case, gx, gy)["ang_mae_deg"])
-                for case, (gx, gy) in zip(cases, responses, strict=True)
-            ]
-        )
-    )
+) -> tuple[float, int]:
+    values = [
+        float(case_gradient_metrics(case, gx, gy)["ang_mae_deg"])
+        for case, (gx, gy) in zip(cases, responses, strict=True)
+    ]
+    return float(sum(values)), int(len(values))
 
 
 def _split_outputs(
@@ -623,49 +617,80 @@ def _evaluate_stimulus(
         for strategy_key, weight_rows in linear_weight_map.items()
     }
 
-    clean_step_cases = list(stimulus.step_cases)
-    clean_arc_cases = list(stimulus.arc_cases)
-    all_clean_cases = clean_step_cases + clean_arc_cases
-    step_count = len(clean_step_cases)
-
     stimulus_seed = _stable_key_seed(str(stimulus.key))
     for draw_index in range(int(noise_draws)):
         rng = np.random.default_rng(int(NOISE_SEED_BASE + 1000 * stimulus_seed + draw_index))
-        noisy_cases = [
-            _clone_case(case, add_awgn(np.asarray(case.image, dtype=np.float64), float(snr_db), rng))
-            for case in all_clean_cases
-        ]
-        linear_step_buffers = {key: _zero_response_buffers(stimulus.step_cases) for key in linear_weight_map}
-        linear_arc_buffers = {key: _zero_response_buffers(stimulus.arc_cases) for key in linear_weight_map}
-        l3_step_buffers = _l3_response_buffers(stimulus.step_cases)
-        l3_arc_buffers = _l3_response_buffers(stimulus.arc_cases)
+        baseline_step_sums = {record.key: 0.0 for record in baseline_scales}
+        baseline_arc_sums = {record.key: 0.0 for record in baseline_scales}
+        strategy_step_sums = {key: 0.0 for key in strategy_step_draws}
+        strategy_arc_sums = {key: 0.0 for key in strategy_arc_draws}
+        total_step_cases = 0
+        total_arc_cases = 0
+
+        for start in range(0, len(stimulus.step_cases), int(batch_cases)):
+            batch_cases_clean = stimulus.step_cases[start : start + int(batch_cases)]
+            noisy_cases = [
+                _clone_case(case, add_awgn(np.asarray(case.image, dtype=np.float64), float(snr_db), rng))
+                for case in batch_cases_clean
+            ]
+            linear_step_buffers = {key: _zero_response_buffers(tuple(batch_cases_clean)) for key in linear_weight_map}
+            l3_step_buffers = _l3_response_buffers(tuple(batch_cases_clean))
+            for record in baseline_scales:
+                outputs = apply_cases_batched(
+                    noisy_cases,
+                    record.kernel,
+                    fft_backend,
+                    device_index,
+                    batch_cases=int(batch_cases),
+                )
+                metric_sum, metric_count = _step_rmse_sum(tuple(batch_cases_clean), outputs)
+                baseline_step_sums[record.key] += float(metric_sum)
+                total_step_cases += 0 if record != baseline_scales[0] else int(metric_count)
+                if record.key in active_weight_lookup["l2_variance_inverse"]:
+                    for strategy_key, weights_by_key in active_weight_lookup.items():
+                        _accumulate_linear_buffers(linear_step_buffers[strategy_key], outputs, float(weights_by_key[record.key]))
+                    _update_l3_buffers(l3_step_buffers, outputs)
+            for strategy_key in linear_weight_map:
+                metric_sum, _ = _step_rmse_sum(tuple(batch_cases_clean), _buffers_to_outputs(linear_step_buffers[strategy_key]))
+                strategy_step_sums[strategy_key] += float(metric_sum)
+            metric_sum, _ = _step_rmse_sum(tuple(batch_cases_clean), _buffers_to_outputs(l3_step_buffers))
+            strategy_step_sums["l3_max"] += float(metric_sum)
+
+        for start in range(0, len(stimulus.arc_cases), int(batch_cases)):
+            batch_cases_clean = stimulus.arc_cases[start : start + int(batch_cases)]
+            noisy_cases = [
+                _clone_case(case, add_awgn(np.asarray(case.image, dtype=np.float64), float(snr_db), rng))
+                for case in batch_cases_clean
+            ]
+            linear_arc_buffers = {key: _zero_response_buffers(tuple(batch_cases_clean)) for key in linear_weight_map}
+            l3_arc_buffers = _l3_response_buffers(tuple(batch_cases_clean))
+            for record in baseline_scales:
+                outputs = apply_cases_batched(
+                    noisy_cases,
+                    record.kernel,
+                    fft_backend,
+                    device_index,
+                    batch_cases=int(batch_cases),
+                )
+                metric_sum, metric_count = _arc_orientation_mae_sum(tuple(batch_cases_clean), outputs)
+                baseline_arc_sums[record.key] += float(metric_sum)
+                total_arc_cases += 0 if record != baseline_scales[0] else int(metric_count)
+                if record.key in active_weight_lookup["l2_variance_inverse"]:
+                    for strategy_key, weights_by_key in active_weight_lookup.items():
+                        _accumulate_linear_buffers(linear_arc_buffers[strategy_key], outputs, float(weights_by_key[record.key]))
+                    _update_l3_buffers(l3_arc_buffers, outputs)
+            for strategy_key in linear_weight_map:
+                metric_sum, _ = _arc_orientation_mae_sum(tuple(batch_cases_clean), _buffers_to_outputs(linear_arc_buffers[strategy_key]))
+                strategy_arc_sums[strategy_key] += float(metric_sum)
+            metric_sum, _ = _arc_orientation_mae_sum(tuple(batch_cases_clean), _buffers_to_outputs(l3_arc_buffers))
+            strategy_arc_sums["l3_max"] += float(metric_sum)
+
         for record in baseline_scales:
-            outputs = apply_cases_batched(
-                noisy_cases,
-                record.kernel,
-                fft_backend,
-                device_index,
-                batch_cases=int(batch_cases),
-            )
-            step_outputs, arc_outputs = _split_outputs(outputs, step_count)
-            baseline_step_draws[record.key].append(_mean_step_rmse(stimulus.step_cases, step_outputs))
-            baseline_arc_draws[record.key].append(_mean_arc_orientation_mae(stimulus.arc_cases, arc_outputs))
-            if record.key in active_weight_lookup["l2_variance_inverse"]:
-                for strategy_key, weights_by_key in active_weight_lookup.items():
-                    weight = float(weights_by_key[record.key])
-                    _accumulate_linear_buffers(linear_step_buffers[strategy_key], step_outputs, weight)
-                    _accumulate_linear_buffers(linear_arc_buffers[strategy_key], arc_outputs, weight)
-                _update_l3_buffers(l3_step_buffers, step_outputs)
-                _update_l3_buffers(l3_arc_buffers, arc_outputs)
-
-        for strategy_key in linear_weight_map:
-            step_combined = _buffers_to_outputs(linear_step_buffers[strategy_key])
-            arc_combined = _buffers_to_outputs(linear_arc_buffers[strategy_key])
-            strategy_step_draws[strategy_key].append(_mean_step_rmse(stimulus.step_cases, step_combined))
-            strategy_arc_draws[strategy_key].append(_mean_arc_orientation_mae(stimulus.arc_cases, arc_combined))
-
-        strategy_step_draws["l3_max"].append(_mean_step_rmse(stimulus.step_cases, _buffers_to_outputs(l3_step_buffers)))
-        strategy_arc_draws["l3_max"].append(_mean_arc_orientation_mae(stimulus.arc_cases, _buffers_to_outputs(l3_arc_buffers)))
+            baseline_step_draws[record.key].append(float(baseline_step_sums[record.key] / max(total_step_cases, 1)))
+            baseline_arc_draws[record.key].append(float(baseline_arc_sums[record.key] / max(total_arc_cases, 1)))
+        for strategy_key in strategy_step_draws:
+            strategy_step_draws[strategy_key].append(float(strategy_step_sums[strategy_key] / max(total_step_cases, 1)))
+            strategy_arc_draws[strategy_key].append(float(strategy_arc_sums[strategy_key] / max(total_arc_cases, 1)))
 
     baseline_rows = []
     for record in baseline_scales:
