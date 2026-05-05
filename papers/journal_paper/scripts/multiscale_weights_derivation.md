@@ -289,3 +289,22 @@ baseline.
 If the later synthetic or real-image phases show that `(25, 11)` still
 dominates too strongly, the next refinement should be covariance-aware linear
 weighting rather than immediately jumping to learned combiners.
+
+## Phase 1 and 1.5 close-out
+
+The synthetic Phase 1 and Phase 1.5 runs close this thread for the current
+paper. With the five-scale active stack, the best linear strategy cleared the
+formal gate only on the unimodal `w = 9 px` stimulus and did not improve the
+multi-scale composite. Restoring `(50, 11)` in Phase 1.5 fixed the obvious
+wide-scale handicap and flipped the `w = 27 px` case positive, but the
+composite stimulus still remained negative and the best linear `L2` rule again
+collapsed toward the largest scale whenever the stimulus rewarded it.
+
+The more important observation is that orientation accuracy degraded under every
+naive multi-scale combiner, and the representative composite orientation-error
+diagnostic showed that this is not a simple weight-normalization issue. The
+clean interpretation is that linear combination without a runtime bias surrogate
+does not work well for this operator family because it mixes responses whose
+phase alignment differs across scales. The natural follow-up is therefore not
+more brute-force real-image evaluation, but a bias-aware combiner that can
+weight scales using local feature geometry rather than variance alone.
