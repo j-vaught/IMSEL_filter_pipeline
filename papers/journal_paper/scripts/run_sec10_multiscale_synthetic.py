@@ -141,6 +141,17 @@ def _stimulus_label(edge_width_px: float | None, composite: bool = False) -> str
     return f"w={int(round(float(edge_width_px)))} px"
 
 
+def _parse_key_list(text: str | None) -> tuple[str, ...]:
+    if text is None:
+        return tuple()
+    keys: list[str] = []
+    for raw in str(text).split(","):
+        item = raw.strip()
+        if item:
+            keys.append(str(item))
+    return tuple(keys)
+
+
 def _clone_case(
     case: StepCase | CurvedCase | GradientFieldCase,
     image: np.ndarray,
@@ -794,6 +805,7 @@ def run_experiment(
     compile_plots: bool,
     batch_cases: int,
     noise_draws: int,
+    stimulus_keys: tuple[str, ...] = tuple(),
 ) -> dict[str, Path]:
     start_time = time.perf_counter()
     active_records, excluded_scales = _prepare_scale_records(
@@ -831,6 +843,11 @@ def run_experiment(
     phases = phase_values(int(PHASE_COUNT), float(PHASE_STEP_PX))
     stimuli = _make_single_scale_stimuli(EDGE_WIDTHS_PX, orientations, phases)
     stimuli.append(_make_composite_stimulus(orientations, phases))
+    if stimulus_keys:
+        requested = set(str(key) for key in stimulus_keys)
+        stimuli = [stimulus for stimulus in stimuli if str(stimulus.key) in requested]
+        if not stimuli:
+            raise RuntimeError("stimulus filter removed every synthetic validation stimulus")
 
     summary_rows: list[dict[str, object]] = []
     for stimulus in stimuli:
@@ -895,6 +912,7 @@ def run_experiment(
             "fft_backend": str(fft_backend),
             "normalize_coords": bool(NORMALIZE_COORDS),
             "patch_half_size": int(PATCH_HALF_SIZE),
+            "stimulus_filter": [str(key) for key in stimulus_keys],
         },
         "conditioning_gate": "Cells are included only when rank_deficient_count == 0 under the scaled-epsilon SVD cutoff.",
         "excluded_scales": {
@@ -997,6 +1015,12 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Compile the CeTZ figure after writing the summary JSON.",
     )
+    parser.add_argument(
+        "--stimulus-keys",
+        type=str,
+        default=None,
+        help="Optional comma-separated subset of stimulus keys to evaluate.",
+    )
     args = parser.parse_args(argv)
 
     outputs = run_experiment(
@@ -1006,6 +1030,7 @@ def main(argv: list[str] | None = None) -> int:
         compile_plots=bool(args.compile_plots),
         batch_cases=int(args.batch_cases),
         noise_draws=int(args.noise_draws),
+        stimulus_keys=_parse_key_list(args.stimulus_keys),
     )
     for key, value in outputs.items():
         print(f"{key}: {value}")
