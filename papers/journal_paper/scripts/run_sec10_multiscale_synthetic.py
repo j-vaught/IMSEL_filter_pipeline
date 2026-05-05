@@ -10,6 +10,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 import numpy as np
+from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[3]
 SRC = ROOT / "src"
@@ -51,8 +52,9 @@ ACTIVE_STACK = (
     {"radius": 9, "degree": 11},
     {"radius": 15, "degree": 11},
     {"radius": 25, "degree": 11},
+    {"radius": 50, "degree": 11},
 )
-SINGLE_SCALE_TRACE = ACTIVE_STACK + ({"radius": 50, "degree": 11},)
+SINGLE_SCALE_TRACE = ACTIVE_STACK
 EDGE_WIDTHS_PX = (1.0, 3.0, 9.0, 27.0)
 BEST_SINGLE_RADIUS_BY_WIDTH = {
     1.0: 15,
@@ -79,6 +81,7 @@ NOISE_SEED_BASE = 10120
 COMPOSITE_LABEL = "multi_scale_composite"
 COMPOSITE_WIDTHS = EDGE_WIDTHS_PX
 COMPOSITE_TILE_ORDER = EDGE_WIDTHS_PX
+COMPOSITE_DIAGNOSTIC_MAX_WIDTH_PX = 400
 
 
 @dataclass(frozen=True)
@@ -150,6 +153,73 @@ def _parse_key_list(text: str | None) -> tuple[str, ...]:
         if item:
             keys.append(str(item))
     return tuple(keys)
+
+
+def _resize_image_if_needed(image: Image.Image, max_width_px: int | None) -> Image.Image:
+    if max_width_px is None or image.width <= int(max_width_px):
+        return image
+    new_width = int(max_width_px)
+    new_height = max(1, int(round(image.height * (new_width / float(image.width)))))
+    return image.resize((new_width, new_height), resample=Image.Resampling.BICUBIC)
+
+
+def _orientation_error_deg_map(
+    true_gx: np.ndarray,
+    true_gy: np.ndarray,
+    est_gx: np.ndarray,
+    est_gy: np.ndarray,
+    mask: np.ndarray,
+) -> np.ndarray:
+    true_angle = np.mod(np.arctan2(np.asarray(true_gy, dtype=np.float64), np.asarray(true_gx, dtype=np.float64)), np.pi)
+    est_angle = np.mod(np.arctan2(np.asarray(est_gy, dtype=np.float64), np.asarray(est_gx, dtype=np.float64)), np.pi)
+    diff = np.abs((est_angle - true_angle + 0.5 * np.pi) % np.pi - 0.5 * np.pi)
+    diff_deg = np.degrees(diff)
+    masked = np.asarray(diff_deg, dtype=np.float64)
+    masked[~np.asarray(mask, dtype=bool)] = np.nan
+    return masked
+
+
+def _error_map_to_rgb(
+    error_deg: np.ndarray,
+    clip_deg: float = 45.0,
+) -> np.ndarray:
+    errors = np.asarray(error_deg, dtype=np.float64)
+    valid = np.isfinite(errors)
+    t = np.zeros_like(errors, dtype=np.float64)
+    t[valid] = np.clip(errors[valid] / float(clip_deg), 0.0, 1.0)
+    rgb = np.full(errors.shape + (3,), 255, dtype=np.uint8)
+    garnet = np.asarray((115, 0, 10), dtype=np.float64)
+    white = np.asarray((255, 255, 255), dtype=np.float64)
+    blended = (1.0 - t[..., None]) * white + t[..., None] * garnet
+    rgb[valid] = np.clip(np.round(blended[valid]), 0.0, 255.0).astype(np.uint8)
+    rgb[~valid] = np.asarray((236, 236, 236), dtype=np.uint8)
+    return rgb
+
+
+def _write_composite_orientation_diagnostic(
+    path: Path,
+    left_rgb: np.ndarray,
+    right_rgb: np.ndarray,
+    left_label: str,
+    right_label: str,
+    max_width_px: int,
+) -> None:
+    gap_px = 12
+    title_band = 28
+    left_image = Image.fromarray(np.asarray(left_rgb, dtype=np.uint8), mode="RGB")
+    right_image = Image.fromarray(np.asarray(right_rgb, dtype=np.uint8), mode="RGB")
+    canvas = Image.new(
+        "RGB",
+        (left_image.width + right_image.width + gap_px, max(left_image.height, right_image.height) + title_band),
+        color=(255, 255, 255),
+    )
+    draw = ImageDraw.Draw(canvas)
+    draw.text((8, 6), str(left_label), fill=(54, 54, 54))
+    draw.text((left_image.width + gap_px + 8, 6), str(right_label), fill=(54, 54, 54))
+    canvas.paste(left_image, (0, title_band))
+    canvas.paste(right_image, (left_image.width + gap_px, title_band))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    _resize_image_if_needed(canvas, int(max_width_px)).save(path)
 
 
 def _clone_case(
@@ -749,6 +819,99 @@ def _evaluate_stimulus(
     }
 
 
+def _composite_orientation_diagnostic(
+    stimulus: StimulusSpec,
+    active_scales: list[ScaleRecord],
+    trace_scales: list[ScaleRecord],
+    l2_weights: list[dict[str, float]],
+    best_single_arc: dict[str, object],
+    fft_backend: str,
+    device_index: int | None,
+    output_dir: Path,
+) -> dict[str, object]:
+    representative = None
+    for case in stimulus.arc_cases:
+        if abs(float(case.orientation_deg)) <= 1.0e-12 and abs(float(case.phase_px)) <= 1.0e-12:
+            representative = case
+            break
+    if representative is None:
+        representative = stimulus.arc_cases[0]
+
+    seed = _stable_key_seed(str(stimulus.key))
+    rng = np.random.default_rng(int(NOISE_SEED_BASE + 1000 * seed))
+    noisy_case = _clone_case(
+        representative,
+        add_awgn(np.asarray(representative.image, dtype=np.float64), float(SNR_DB), rng),
+    )
+
+    best_radius = int(best_single_arc["radius"])
+    best_degree = int(best_single_arc["degree"])
+    best_record = next(record for record in trace_scales if record.key == (best_radius, best_degree))
+
+    best_outputs = apply_cases_batched([noisy_case], best_record.kernel, fft_backend, device_index, batch_cases=1)
+    best_gx, best_gy = best_outputs[0]
+
+    l2_weight_lookup = {
+        (int(row["radius"]), int(row["degree"])): float(row["weight"])
+        for row in l2_weights
+    }
+    combined_gx = None
+    combined_gy = None
+    for record in active_scales:
+        outputs = apply_cases_batched([noisy_case], record.kernel, fft_backend, device_index, batch_cases=1)
+        gx, gy = outputs[0]
+        weight = float(l2_weight_lookup[record.key])
+        if combined_gx is None:
+            combined_gx = weight * np.asarray(gx, dtype=np.float64)
+            combined_gy = weight * np.asarray(gy, dtype=np.float64)
+        else:
+            combined_gx += weight * np.asarray(gx, dtype=np.float64)
+            combined_gy += weight * np.asarray(gy, dtype=np.float64)
+    assert combined_gx is not None and combined_gy is not None
+
+    mask = np.asarray(representative.eval_mask, dtype=bool)
+    l2_error = _orientation_error_deg_map(
+        representative.true_gx,
+        representative.true_gy,
+        combined_gx,
+        combined_gy,
+        mask,
+    )
+    best_error = _orientation_error_deg_map(
+        representative.true_gx,
+        representative.true_gy,
+        best_gx,
+        best_gy,
+        mask,
+    )
+
+    asset_dir = output_dir / f"assets_w{int(COMPOSITE_DIAGNOSTIC_MAX_WIDTH_PX)}"
+    asset_path = asset_dir / "composite_orientation_error_l2_vs_best_single.png"
+    _write_composite_orientation_diagnostic(
+        asset_path,
+        _error_map_to_rgb(l2_error),
+        _error_map_to_rgb(best_error),
+        left_label="L2 variance-inverse",
+        right_label=f"Best single WVF (r={best_radius}, d={best_degree})",
+        max_width_px=int(COMPOSITE_DIAGNOSTIC_MAX_WIDTH_PX),
+    )
+    return {
+        "asset_path": str(asset_path),
+        "asset_dir_name": str(asset_dir.name),
+        "asset_max_width_px": int(COMPOSITE_DIAGNOSTIC_MAX_WIDTH_PX),
+        "case": {
+            "orientation_deg": float(representative.orientation_deg),
+            "phase_px": float(representative.phase_px),
+            "snr_db": float(SNR_DB),
+            "draw_index": 0,
+        },
+        "l2_orientation_mae_deg_mean": float(np.nanmean(l2_error)),
+        "best_single_orientation_mae_deg_mean": float(np.nanmean(best_error)),
+        "best_single_config": {"radius": int(best_radius), "degree": int(best_degree)},
+        "clip_deg": 45.0,
+    }
+
+
 def _decision(summary_rows: list[dict[str, object]]) -> dict[str, object]:
     linear_keys = ("l2_variance_inverse", "l2_equal", "l2_fwhm")
     nonlinear_key = "l3_max"
@@ -808,6 +971,7 @@ def run_experiment(
     stimulus_keys: tuple[str, ...] = tuple(),
 ) -> dict[str, Path]:
     start_time = time.perf_counter()
+    output_dir = summary_json.parent
     active_records, excluded_scales = _prepare_scale_records(
         specs=tuple(dict(item) for item in ACTIVE_STACK),
         fft_backend=fft_backend,
@@ -878,6 +1042,20 @@ def run_experiment(
         for key, weights in linear_weight_map.items()
     }
     decision = _decision(summary_rows)
+    composite_diagnostic = None
+    composite_row = next((row for row in summary_rows if str(row["stimulus_key"]) == str(COMPOSITE_LABEL)), None)
+    composite_stimulus = next((stimulus for stimulus in stimuli if str(stimulus.key) == str(COMPOSITE_LABEL)), None)
+    if composite_row is not None and composite_stimulus is not None:
+        composite_diagnostic = _composite_orientation_diagnostic(
+            stimulus=composite_stimulus,
+            active_scales=active_records,
+            trace_scales=trace_records,
+            l2_weights=l2_weights,
+            best_single_arc=dict(composite_row["best_single_scale"]["arc"]),
+            fft_backend=fft_backend,
+            device_index=device_index,
+            output_dir=output_dir,
+        )
 
     heatmap_stimuli = [row["stimulus_key"] for row in summary_rows]
     heatmap_labels = [row["label"] for row in summary_rows]
@@ -965,6 +1143,7 @@ def run_experiment(
             "percent_improvement_matrix": percent_matrix,
         },
         "decision": decision,
+        "composite_orientation_diagnostic": composite_diagnostic,
         "wall_clock_seconds": float(time.perf_counter() - start_time),
     }
     _write_json(summary_json, payload)

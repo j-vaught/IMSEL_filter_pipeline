@@ -259,6 +259,33 @@ Phase 1 should therefore test:
 - `L2`, with the five-scale variance-inverse weights above
 - `L3`, as the nonlinear max-magnitude baseline
 
+## Phase 1.5 addendum
+
+The synthetic Phase 1 follow-up exposed a methodological problem with using the
+`>90%` concentration rule as a hard exclusion rule.
+
+When the single-scale optimum itself sits at the largest available support,
+excluding that support handicaps the multi-scale stack relative to the
+single-scale baseline on exactly the stimuli where the large scale is supposed
+to win. That makes the concentration rule useful as a diagnostic, but not as a
+universal stack-pruning rule.
+
+So for Phase 1.5 the six-scale stack is restored:
+
+- `(3, 5)`
+- `(5, 9)`
+- `(9, 11)`
+- `(15, 11)`
+- `(25, 11)`
+- `(50, 11)`
+
+The concentration calculation above remains valid and still matters
+interpretively. It means the variance-inverse `L2` rule is expected to behave
+almost like the largest-scale WVF whenever the data support that bias. But the
+Phase 1.5 rerun uses the full six-scale stack so the multi-scale combiner is no
+longer competing with a strictly weaker scale set than the single-scale
+baseline.
+
 If the later synthetic or real-image phases show that `(25, 11)` still
 dominates too strongly, the next refinement should be covariance-aware linear
 weighting rather than immediately jumping to learned combiners.
