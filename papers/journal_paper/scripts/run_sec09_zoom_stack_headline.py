@@ -405,6 +405,11 @@ def run_experiment(
 ) -> dict[str, Path]:
     data_root = _ensure_hrf_root(dataset_root, auto_download=bool(auto_download))
     selection = _select_hrf_image(data_root, image_stem=image_stem)
+    print(
+        f"zoom-stack start image={selection['image_id']} fft_backend={fft_backend} "
+        f"noise_draws={noise_draws} asset_max_width_px={asset_max_width_px}",
+        flush=True,
+    )
     rgb, green = _load_drive_input(Path(selection["image_path"]))
     vessel_mask = _load_vessel_mask(Path(selection["label_path"]))
 
@@ -428,6 +433,11 @@ def run_experiment(
     for zoom_index, zoom_spec in enumerate(selected_zooms):
         zoom_view = _prepare_zoom_view(rgb, green, vessel_mask, zoom_spec)
         zoom_key = str(zoom_view["slug"])
+        print(
+            f"zoom={zoom_key} start downsample_factor={zoom_view['downsample_factor']} "
+            f"effective_vessel_diameter_px={zoom_view['effective_vessel_diameter_px']}",
+            flush=True,
+        )
         input_path = assets_dir / f"{zoom_key}_input.png"
         mask_path = assets_dir / f"{zoom_key}_vessel_mask.png"
         _write_rgb_asset(input_path, np.asarray(zoom_view["rgb"], dtype=np.uint8), max_width_px=asset_max_width_px)
@@ -469,8 +479,10 @@ def run_experiment(
                 "clean_assets": clean_assets,
                 "snr_metrics": metrics_by_snr,
             }
+        print(f"zoom={zoom_key} baselines_done methods={','.join(baseline_specs.keys())}", flush=True)
 
         wvf_cells: list[dict[str, object]] = []
+        total_cells = len(feasible_cells)
         for cell_index, cell in enumerate(feasible_cells):
             radius = int(cell["radius"])
             degree = int(cell["degree"])
@@ -506,6 +518,12 @@ def run_experiment(
                     "snr_metrics": snr_metrics,
                 }
             )
+            if (cell_index + 1) % 10 == 0 or (cell_index + 1) == total_cells:
+                print(
+                    f"zoom={zoom_key} wvf_progress {cell_index + 1}/{total_cells} "
+                    f"last_r={radius} last_d={degree}",
+                    flush=True,
+                )
 
         best_wvf_by_snr = {}
         for snr_db in SNR_LEVELS:
@@ -570,6 +588,11 @@ def run_experiment(
             "primary_metric_key": PRIMARY_METRIC_KEY,
             "conditioning_gate": "Cells are included only when rank_deficient_count == 0 under the scaled-epsilon SVD cutoff.",
         }
+        print(
+            f"zoom={zoom_key} complete clean_best={best_wvf_by_snr['inf']['label']} "
+            f"snr10_best={best_wvf_by_snr['10']['label']}",
+            flush=True,
+        )
 
     payload = {
         "title": TITLE,
@@ -609,6 +632,7 @@ def run_experiment(
     with summary_json.open("w", encoding="utf-8") as handle:
         json.dump(payload, handle, indent=2)
         handle.write("\n")
+    print(f"zoom-stack summary_written path={summary_json}", flush=True)
 
     outputs: dict[str, Path] = {"summary_json": summary_json}
     if compile_plots:
