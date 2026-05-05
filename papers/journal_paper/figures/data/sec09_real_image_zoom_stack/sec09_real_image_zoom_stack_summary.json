@@ -13,8 +13,8 @@
   "selected_image": {
     "image_id": "diabetic_retinopathy:10_dr",
     "condition_class": "diabetic_retinopathy",
-    "image_path": "/home/jvaught2/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/images/10_dr.JPG",
-    "label_path": "/home/jvaught2/edge-detection-filter-critique-sec09-fullproto/datasets/HRF/manual1/10_dr.tif",
+    "image_path": "/home/j-vaught/edge-detection-filter-critique-sec09-followup/datasets/HRF/images/10_dr.JPG",
+    "label_path": "/home/j-vaught/edge-detection-filter-critique-sec09-followup/datasets/HRF/manual1/10_dr.tif",
     "fov_path": null,
     "selection_score": 0.0,
     "vessel_pixels": 714889,
@@ -56,12 +56,14 @@
       11
     ],
     "wvf_primary_selection_metric": "orientation_mae_deg_mean",
-    "fft_backend": "vkfft"
+    "fft_backend": "vkfft",
+    "save_all_cells": true
   },
   "asset_rendering": {
     "asset_dir_name": "assets_w400",
     "asset_max_width_px": 400,
-    "rendered_preview_width_px": 400
+    "rendered_preview_width_px": 400,
+    "all_cell_assets_saved": true
   },
   "method_order": [
     "sobel",
@@ -219,6 +221,10 @@
                   "orientation_mae_deg_mean": 20.60084511207733,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r2_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r2_d1_orientation.png"
               }
             },
             {
@@ -245,6 +251,10 @@
                   "orientation_mae_deg_mean": 24.628322956492443,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r2_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r2_d3_orientation.png"
               }
             },
             {
@@ -271,6 +281,10 @@
                   "orientation_mae_deg_mean": 20.142722315458613,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r3_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r3_d1_orientation.png"
               }
             },
             {
@@ -297,6 +311,10 @@
                   "orientation_mae_deg_mean": 19.894250326350672,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r3_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r3_d3_orientation.png"
               }
             },
             {
@@ -323,6 +341,10 @@
                   "orientation_mae_deg_mean": 22.643428559622063,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r3_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r3_d5_orientation.png"
               }
             },
             {
@@ -349,6 +371,10 @@
                   "orientation_mae_deg_mean": 23.634123605748872,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r5_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r5_d1_orientation.png"
               }
             },
             {
@@ -375,6 +401,10 @@
                   "orientation_mae_deg_mean": 19.997281801092313,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r5_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r5_d3_orientation.png"
               }
             },
             {
@@ -401,6 +431,10 @@
                   "orientation_mae_deg_mean": 19.60577666671089,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r5_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r5_d5_orientation.png"
               }
             },
             {
@@ -427,6 +461,10 @@
                   "orientation_mae_deg_mean": 20.34210133719879,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r5_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r5_d7_orientation.png"
               }
             },
             {
@@ -453,6 +491,10 @@
                   "orientation_mae_deg_mean": 22.7926573294863,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r5_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r5_d9_orientation.png"
               }
             },
             {
@@ -479,6 +521,10 @@
                   "orientation_mae_deg_mean": 28.43258396124572,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r7_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r7_d1_orientation.png"
               }
             },
             {
@@ -505,6 +551,10 @@
                   "orientation_mae_deg_mean": 21.707177973204537,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r7_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r7_d3_orientation.png"
               }
             },
             {
@@ -531,6 +581,10 @@
                   "orientation_mae_deg_mean": 20.016865608416417,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r7_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r7_d5_orientation.png"
               }
             },
             {
@@ -557,6 +611,10 @@
                   "orientation_mae_deg_mean": 19.635184529519805,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r7_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r7_d7_orientation.png"
               }
             },
             {
@@ -583,6 +641,10 @@
                   "orientation_mae_deg_mean": 19.917063237363905,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r7_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r7_d9_orientation.png"
               }
             },
             {
@@ -609,6 +671,10 @@
                   "orientation_mae_deg_mean": 20.864992890423387,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r7_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r7_d11_orientation.png"
               }
             },
             {
@@ -635,6 +701,10 @@
                   "orientation_mae_deg_mean": 35.118360636937666,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r9_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r9_d1_orientation.png"
               }
             },
             {
@@ -661,6 +731,10 @@
                   "orientation_mae_deg_mean": 24.57675563364303,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r9_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r9_d3_orientation.png"
               }
             },
             {
@@ -687,6 +761,10 @@
                   "orientation_mae_deg_mean": 21.470226129929753,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r9_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r9_d5_orientation.png"
               }
             },
             {
@@ -713,6 +791,10 @@
                   "orientation_mae_deg_mean": 20.21162021875111,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r9_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r9_d7_orientation.png"
               }
             },
             {
@@ -739,6 +821,10 @@
                   "orientation_mae_deg_mean": 19.687028990365743,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r9_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r9_d9_orientation.png"
               }
             },
             {
@@ -765,6 +851,10 @@
                   "orientation_mae_deg_mean": 19.731108057014147,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r9_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r9_d11_orientation.png"
               }
             },
             {
@@ -791,6 +881,10 @@
                   "orientation_mae_deg_mean": 39.73093769766453,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r11_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r11_d1_orientation.png"
               }
             },
             {
@@ -817,6 +911,10 @@
                   "orientation_mae_deg_mean": 27.885704479576333,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r11_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r11_d3_orientation.png"
               }
             },
             {
@@ -843,6 +941,10 @@
                   "orientation_mae_deg_mean": 23.363053913052678,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r11_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r11_d5_orientation.png"
               }
             },
             {
@@ -869,6 +971,10 @@
                   "orientation_mae_deg_mean": 21.30864407788222,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r11_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r11_d7_orientation.png"
               }
             },
             {
@@ -895,6 +1001,10 @@
                   "orientation_mae_deg_mean": 20.295974341929593,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r11_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r11_d9_orientation.png"
               }
             },
             {
@@ -921,6 +1031,10 @@
                   "orientation_mae_deg_mean": 19.85338875634609,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r11_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r11_d11_orientation.png"
               }
             },
             {
@@ -947,6 +1061,10 @@
                   "orientation_mae_deg_mean": 41.96331025849585,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r13_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r13_d1_orientation.png"
               }
             },
             {
@@ -973,6 +1091,10 @@
                   "orientation_mae_deg_mean": 31.59659901341688,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r13_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r13_d3_orientation.png"
               }
             },
             {
@@ -999,6 +1121,10 @@
                   "orientation_mae_deg_mean": 25.554355762362363,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r13_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r13_d5_orientation.png"
               }
             },
             {
@@ -1025,6 +1151,10 @@
                   "orientation_mae_deg_mean": 22.95848983382994,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r13_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r13_d7_orientation.png"
               }
             },
             {
@@ -1051,6 +1181,10 @@
                   "orientation_mae_deg_mean": 21.345369795877417,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r13_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r13_d9_orientation.png"
               }
             },
             {
@@ -1077,6 +1211,10 @@
                   "orientation_mae_deg_mean": 20.4933450201511,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r13_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r13_d11_orientation.png"
               }
             },
             {
@@ -1103,6 +1241,10 @@
                   "orientation_mae_deg_mean": 42.79534425199619,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r15_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r15_d1_orientation.png"
               }
             },
             {
@@ -1129,6 +1271,10 @@
                   "orientation_mae_deg_mean": 35.17821755642063,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r15_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r15_d3_orientation.png"
               }
             },
             {
@@ -1155,6 +1301,10 @@
                   "orientation_mae_deg_mean": 27.886380906092022,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r15_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r15_d5_orientation.png"
               }
             },
             {
@@ -1181,6 +1331,10 @@
                   "orientation_mae_deg_mean": 24.467660715687693,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r15_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r15_d7_orientation.png"
               }
             },
             {
@@ -1207,6 +1361,10 @@
                   "orientation_mae_deg_mean": 22.567873607734487,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r15_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r15_d9_orientation.png"
               }
             },
             {
@@ -1233,6 +1391,10 @@
                   "orientation_mae_deg_mean": 21.27227834426045,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r15_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r15_d11_orientation.png"
               }
             },
             {
@@ -1259,6 +1421,10 @@
                   "orientation_mae_deg_mean": 43.32303130430077,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r18_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r18_d1_orientation.png"
               }
             },
             {
@@ -1285,6 +1451,10 @@
                   "orientation_mae_deg_mean": 39.14631963754976,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r18_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r18_d3_orientation.png"
               }
             },
             {
@@ -1311,6 +1481,10 @@
                   "orientation_mae_deg_mean": 31.451777914835574,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r18_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r18_d5_orientation.png"
               }
             },
             {
@@ -1337,6 +1511,10 @@
                   "orientation_mae_deg_mean": 26.879319513459254,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r18_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r18_d7_orientation.png"
               }
             },
             {
@@ -1363,6 +1541,10 @@
                   "orientation_mae_deg_mean": 24.355774571906068,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r18_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r18_d9_orientation.png"
               }
             },
             {
@@ -1389,6 +1571,10 @@
                   "orientation_mae_deg_mean": 22.851915426736777,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r18_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r18_d11_orientation.png"
               }
             },
             {
@@ -1415,6 +1601,10 @@
                   "orientation_mae_deg_mean": 43.736785036307225,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r21_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r21_d1_orientation.png"
               }
             },
             {
@@ -1441,6 +1631,10 @@
                   "orientation_mae_deg_mean": 41.12709453539106,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r21_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r21_d3_orientation.png"
               }
             },
             {
@@ -1467,6 +1661,10 @@
                   "orientation_mae_deg_mean": 35.56546444923234,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r21_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r21_d5_orientation.png"
               }
             },
             {
@@ -1493,6 +1691,10 @@
                   "orientation_mae_deg_mean": 29.674776713410896,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r21_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r21_d7_orientation.png"
               }
             },
             {
@@ -1519,6 +1721,10 @@
                   "orientation_mae_deg_mean": 26.305028136981118,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r21_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r21_d9_orientation.png"
               }
             },
             {
@@ -1545,6 +1751,10 @@
                   "orientation_mae_deg_mean": 24.360759162241564,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r21_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r21_d11_orientation.png"
               }
             },
             {
@@ -1571,6 +1781,10 @@
                   "orientation_mae_deg_mean": 44.26303045464687,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r25_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r25_d1_orientation.png"
               }
             },
             {
@@ -1597,6 +1811,10 @@
                   "orientation_mae_deg_mean": 42.25535200017775,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r25_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r25_d3_orientation.png"
               }
             },
             {
@@ -1623,6 +1841,10 @@
                   "orientation_mae_deg_mean": 39.38202645913713,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r25_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r25_d5_orientation.png"
               }
             },
             {
@@ -1649,6 +1871,10 @@
                   "orientation_mae_deg_mean": 34.0632013396244,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r25_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r25_d7_orientation.png"
               }
             },
             {
@@ -1675,6 +1901,10 @@
                   "orientation_mae_deg_mean": 29.491356155503333,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r25_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r25_d9_orientation.png"
               }
             },
             {
@@ -1701,6 +1931,10 @@
                   "orientation_mae_deg_mean": 26.569566421752807,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r25_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r25_d11_orientation.png"
               }
             },
             {
@@ -1727,6 +1961,10 @@
                   "orientation_mae_deg_mean": 44.2696738320628,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r30_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r30_d1_orientation.png"
               }
             },
             {
@@ -1753,6 +1991,10 @@
                   "orientation_mae_deg_mean": 43.168776294243536,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r30_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r30_d3_orientation.png"
               }
             },
             {
@@ -1779,6 +2021,10 @@
                   "orientation_mae_deg_mean": 41.403031323807745,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r30_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r30_d5_orientation.png"
               }
             },
             {
@@ -1805,6 +2051,10 @@
                   "orientation_mae_deg_mean": 38.52264078600217,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r30_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r30_d7_orientation.png"
               }
             },
             {
@@ -1831,6 +2081,10 @@
                   "orientation_mae_deg_mean": 34.047403705813906,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r30_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r30_d9_orientation.png"
               }
             },
             {
@@ -1857,6 +2111,10 @@
                   "orientation_mae_deg_mean": 29.968139875494458,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r30_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom1_r30_d11_orientation.png"
               }
             }
           ]
@@ -1913,7 +2171,18 @@
         }
       },
       "primary_metric_key": "orientation_mae_deg_mean",
-      "conditioning_gate": "Cells are included only when rank_deficient_count == 0 under the scaled-epsilon SVD cutoff."
+      "conditioning_gate": "Cells are included only when rank_deficient_count == 0 under the scaled-epsilon SVD cutoff.",
+      "ground_truth_asset_path": "data/sec09_real_image_zoom_stack/assets_w400/zoom1_ground_truth.png",
+      "static_assets": {
+        "input_path": "data/sec09_real_image_zoom_stack/assets_w400/zoom1_input.png",
+        "ground_truth_path": "data/sec09_real_image_zoom_stack/assets_w400/zoom1_ground_truth.png"
+      },
+      "baseline_reference_assets": {
+        "method": "farid_simoncelli",
+        "label": "Farid-Simoncelli",
+        "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/farid_simoncelli_zoom1_baseline_magnitude.png",
+        "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/farid_simoncelli_zoom1_baseline_orientation.png"
+      }
     },
     "zoom2_x4": {
       "label": "Zoom 2 x4",
@@ -2058,6 +2327,10 @@
                   "orientation_mae_deg_mean": 17.615668600683712,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r2_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r2_d1_orientation.png"
               }
             },
             {
@@ -2084,6 +2357,10 @@
                   "orientation_mae_deg_mean": 22.139337191545096,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r2_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r2_d3_orientation.png"
               }
             },
             {
@@ -2110,6 +2387,10 @@
                   "orientation_mae_deg_mean": 17.643727299504175,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r3_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r3_d1_orientation.png"
               }
             },
             {
@@ -2136,6 +2417,10 @@
                   "orientation_mae_deg_mean": 17.42211589246837,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r3_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r3_d3_orientation.png"
               }
             },
             {
@@ -2162,6 +2447,10 @@
                   "orientation_mae_deg_mean": 20.880344172233645,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r3_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r3_d5_orientation.png"
               }
             },
             {
@@ -2188,6 +2477,10 @@
                   "orientation_mae_deg_mean": 20.932495644574555,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r5_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r5_d1_orientation.png"
               }
             },
             {
@@ -2214,6 +2507,10 @@
                   "orientation_mae_deg_mean": 17.453218890074925,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r5_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r5_d3_orientation.png"
               }
             },
             {
@@ -2240,6 +2537,10 @@
                   "orientation_mae_deg_mean": 17.01125542922623,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r5_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r5_d5_orientation.png"
               }
             },
             {
@@ -2266,6 +2567,10 @@
                   "orientation_mae_deg_mean": 18.180415119265877,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r5_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r5_d7_orientation.png"
               }
             },
             {
@@ -2292,6 +2597,10 @@
                   "orientation_mae_deg_mean": 21.021042835440625,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r5_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r5_d9_orientation.png"
               }
             },
             {
@@ -2318,6 +2627,10 @@
                   "orientation_mae_deg_mean": 24.536649284706865,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r7_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r7_d1_orientation.png"
               }
             },
             {
@@ -2344,6 +2657,10 @@
                   "orientation_mae_deg_mean": 19.034631727019892,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r7_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r7_d3_orientation.png"
               }
             },
             {
@@ -2370,6 +2687,10 @@
                   "orientation_mae_deg_mean": 17.270261597927178,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r7_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r7_d5_orientation.png"
               }
             },
             {
@@ -2396,6 +2717,10 @@
                   "orientation_mae_deg_mean": 17.013700458501585,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r7_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r7_d7_orientation.png"
               }
             },
             {
@@ -2422,6 +2747,10 @@
                   "orientation_mae_deg_mean": 17.56213776131482,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r7_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r7_d9_orientation.png"
               }
             },
             {
@@ -2448,6 +2777,10 @@
                   "orientation_mae_deg_mean": 19.00771264814363,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r7_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r7_d11_orientation.png"
               }
             },
             {
@@ -2474,6 +2807,10 @@
                   "orientation_mae_deg_mean": 29.403855245256235,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r9_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r9_d1_orientation.png"
               }
             },
             {
@@ -2500,6 +2837,10 @@
                   "orientation_mae_deg_mean": 21.742637991905763,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r9_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r9_d3_orientation.png"
               }
             },
             {
@@ -2526,6 +2867,10 @@
                   "orientation_mae_deg_mean": 18.74996677653343,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r9_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r9_d5_orientation.png"
               }
             },
             {
@@ -2552,6 +2897,10 @@
                   "orientation_mae_deg_mean": 17.33746384930245,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r9_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r9_d7_orientation.png"
               }
             },
             {
@@ -2578,6 +2927,10 @@
                   "orientation_mae_deg_mean": 16.99633080576941,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r9_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r9_d9_orientation.png"
               }
             },
             {
@@ -2604,6 +2957,10 @@
                   "orientation_mae_deg_mean": 17.185657260481022,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r9_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r9_d11_orientation.png"
               }
             },
             {
@@ -2630,6 +2987,10 @@
                   "orientation_mae_deg_mean": 33.43660773763044,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r11_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r11_d1_orientation.png"
               }
             },
             {
@@ -2656,6 +3017,10 @@
                   "orientation_mae_deg_mean": 24.605624403403507,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r11_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r11_d3_orientation.png"
               }
             },
             {
@@ -2682,6 +3047,10 @@
                   "orientation_mae_deg_mean": 20.51648112463768,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r11_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r11_d5_orientation.png"
               }
             },
             {
@@ -2708,6 +3077,10 @@
                   "orientation_mae_deg_mean": 18.517613570712303,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r11_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r11_d7_orientation.png"
               }
             },
             {
@@ -2734,6 +3107,10 @@
                   "orientation_mae_deg_mean": 17.365190606853933,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r11_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r11_d9_orientation.png"
               }
             },
             {
@@ -2760,6 +3137,10 @@
                   "orientation_mae_deg_mean": 17.01451404430721,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r11_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r11_d11_orientation.png"
               }
             },
             {
@@ -2786,6 +3167,10 @@
                   "orientation_mae_deg_mean": 36.25193355709907,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r13_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r13_d1_orientation.png"
               }
             },
             {
@@ -2812,6 +3197,10 @@
                   "orientation_mae_deg_mean": 27.66206320470277,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r13_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r13_d3_orientation.png"
               }
             },
             {
@@ -2838,6 +3227,10 @@
                   "orientation_mae_deg_mean": 22.69678660369701,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r13_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r13_d5_orientation.png"
               }
             },
             {
@@ -2864,6 +3257,10 @@
                   "orientation_mae_deg_mean": 19.976777471824676,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r13_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r13_d7_orientation.png"
               }
             },
             {
@@ -2890,6 +3287,10 @@
                   "orientation_mae_deg_mean": 18.41908340605579,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r13_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r13_d9_orientation.png"
               }
             },
             {
@@ -2916,6 +3317,10 @@
                   "orientation_mae_deg_mean": 17.498585778244934,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r13_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r13_d11_orientation.png"
               }
             },
             {
@@ -2942,6 +3347,10 @@
                   "orientation_mae_deg_mean": 38.7436281083274,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r15_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r15_d1_orientation.png"
               }
             },
             {
@@ -2968,6 +3377,10 @@
                   "orientation_mae_deg_mean": 30.641317882058683,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r15_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r15_d3_orientation.png"
               }
             },
             {
@@ -2994,6 +3407,10 @@
                   "orientation_mae_deg_mean": 24.92391658304592,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r15_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r15_d5_orientation.png"
               }
             },
             {
@@ -3020,6 +3437,10 @@
                   "orientation_mae_deg_mean": 21.68434403751343,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r15_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r15_d7_orientation.png"
               }
             },
             {
@@ -3046,6 +3467,10 @@
                   "orientation_mae_deg_mean": 19.65189097281685,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r15_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r15_d9_orientation.png"
               }
             },
             {
@@ -3072,6 +3497,10 @@
                   "orientation_mae_deg_mean": 18.385996661033502,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r15_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r15_d11_orientation.png"
               }
             },
             {
@@ -3098,6 +3527,10 @@
                   "orientation_mae_deg_mean": 40.86592832492699,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r18_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r18_d1_orientation.png"
               }
             },
             {
@@ -3124,6 +3557,10 @@
                   "orientation_mae_deg_mean": 34.20565995099644,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r18_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r18_d3_orientation.png"
               }
             },
             {
@@ -3150,6 +3587,10 @@
                   "orientation_mae_deg_mean": 28.167597605131192,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r18_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r18_d5_orientation.png"
               }
             },
             {
@@ -3176,6 +3617,10 @@
                   "orientation_mae_deg_mean": 24.13620451701916,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r18_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r18_d7_orientation.png"
               }
             },
             {
@@ -3202,6 +3647,10 @@
                   "orientation_mae_deg_mean": 21.619782116332207,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r18_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r18_d9_orientation.png"
               }
             },
             {
@@ -3228,6 +3677,10 @@
                   "orientation_mae_deg_mean": 19.928377436491612,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r18_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r18_d11_orientation.png"
               }
             },
             {
@@ -3254,6 +3707,10 @@
                   "orientation_mae_deg_mean": 41.62767853410599,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r21_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r21_d1_orientation.png"
               }
             },
             {
@@ -3280,6 +3737,10 @@
                   "orientation_mae_deg_mean": 36.79119649325317,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r21_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r21_d3_orientation.png"
               }
             },
             {
@@ -3306,6 +3767,10 @@
                   "orientation_mae_deg_mean": 31.222153761716815,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r21_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r21_d5_orientation.png"
               }
             },
             {
@@ -3332,6 +3797,10 @@
                   "orientation_mae_deg_mean": 26.753368129788555,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r21_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r21_d7_orientation.png"
               }
             },
             {
@@ -3358,6 +3827,10 @@
                   "orientation_mae_deg_mean": 23.730247208240918,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r21_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r21_d9_orientation.png"
               }
             },
             {
@@ -3384,6 +3857,10 @@
                   "orientation_mae_deg_mean": 21.640188009170153,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r21_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r21_d11_orientation.png"
               }
             },
             {
@@ -3410,6 +3887,10 @@
                   "orientation_mae_deg_mean": 41.973260865146656,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r25_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r25_d1_orientation.png"
               }
             },
             {
@@ -3436,6 +3917,10 @@
                   "orientation_mae_deg_mean": 39.341337157396204,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r25_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r25_d3_orientation.png"
               }
             },
             {
@@ -3462,6 +3947,10 @@
                   "orientation_mae_deg_mean": 34.75595462561847,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r25_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r25_d5_orientation.png"
               }
             },
             {
@@ -3488,6 +3977,10 @@
                   "orientation_mae_deg_mean": 30.265057949576484,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r25_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r25_d7_orientation.png"
               }
             },
             {
@@ -3514,6 +4007,10 @@
                   "orientation_mae_deg_mean": 26.56425620955406,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r25_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r25_d9_orientation.png"
               }
             },
             {
@@ -3540,6 +4037,10 @@
                   "orientation_mae_deg_mean": 24.23256366652887,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r25_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r25_d11_orientation.png"
               }
             },
             {
@@ -3566,6 +4067,10 @@
                   "orientation_mae_deg_mean": 42.357783064692555,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r30_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r30_d1_orientation.png"
               }
             },
             {
@@ -3592,6 +4097,10 @@
                   "orientation_mae_deg_mean": 41.0394636556864,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r30_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r30_d3_orientation.png"
               }
             },
             {
@@ -3618,6 +4127,10 @@
                   "orientation_mae_deg_mean": 37.77531389253332,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r30_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r30_d5_orientation.png"
               }
             },
             {
@@ -3644,6 +4157,10 @@
                   "orientation_mae_deg_mean": 33.89463307300682,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r30_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r30_d7_orientation.png"
               }
             },
             {
@@ -3670,6 +4187,10 @@
                   "orientation_mae_deg_mean": 30.33631524400203,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r30_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r30_d9_orientation.png"
               }
             },
             {
@@ -3696,6 +4217,10 @@
                   "orientation_mae_deg_mean": 27.00665829922491,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r30_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom2_r30_d11_orientation.png"
               }
             }
           ]
@@ -3752,7 +4277,18 @@
         }
       },
       "primary_metric_key": "orientation_mae_deg_mean",
-      "conditioning_gate": "Cells are included only when rank_deficient_count == 0 under the scaled-epsilon SVD cutoff."
+      "conditioning_gate": "Cells are included only when rank_deficient_count == 0 under the scaled-epsilon SVD cutoff.",
+      "ground_truth_asset_path": "data/sec09_real_image_zoom_stack/assets_w400/zoom2_ground_truth.png",
+      "static_assets": {
+        "input_path": "data/sec09_real_image_zoom_stack/assets_w400/zoom2_input.png",
+        "ground_truth_path": "data/sec09_real_image_zoom_stack/assets_w400/zoom2_ground_truth.png"
+      },
+      "baseline_reference_assets": {
+        "method": "farid_simoncelli",
+        "label": "Farid-Simoncelli",
+        "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/farid_simoncelli_zoom2_baseline_magnitude.png",
+        "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/farid_simoncelli_zoom2_baseline_orientation.png"
+      }
     },
     "zoom3_x2": {
       "label": "Zoom 3 x2",
@@ -3897,6 +4433,10 @@
                   "orientation_mae_deg_mean": 14.920854455388417,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r2_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r2_d1_orientation.png"
               }
             },
             {
@@ -3923,6 +4463,10 @@
                   "orientation_mae_deg_mean": 23.038975076961965,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r2_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r2_d3_orientation.png"
               }
             },
             {
@@ -3949,6 +4493,10 @@
                   "orientation_mae_deg_mean": 13.63070482895434,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r3_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r3_d1_orientation.png"
               }
             },
             {
@@ -3975,6 +4523,10 @@
                   "orientation_mae_deg_mean": 16.521777241732977,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r3_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r3_d3_orientation.png"
               }
             },
             {
@@ -4001,6 +4553,10 @@
                   "orientation_mae_deg_mean": 22.0885709460173,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r3_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r3_d5_orientation.png"
               }
             },
             {
@@ -4027,6 +4583,10 @@
                   "orientation_mae_deg_mean": 15.017921025427734,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r5_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r5_d1_orientation.png"
               }
             },
             {
@@ -4053,6 +4613,10 @@
                   "orientation_mae_deg_mean": 13.470815846875787,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r5_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r5_d3_orientation.png"
               }
             },
             {
@@ -4079,6 +4643,10 @@
                   "orientation_mae_deg_mean": 15.380668945181894,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r5_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r5_d5_orientation.png"
               }
             },
             {
@@ -4105,6 +4673,10 @@
                   "orientation_mae_deg_mean": 18.87334073644512,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r5_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r5_d7_orientation.png"
               }
             },
             {
@@ -4131,6 +4703,10 @@
                   "orientation_mae_deg_mean": 22.60162868056304,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r5_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r5_d9_orientation.png"
               }
             },
             {
@@ -4157,6 +4733,10 @@
                   "orientation_mae_deg_mean": 17.895343772671954,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r7_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r7_d1_orientation.png"
               }
             },
             {
@@ -4183,6 +4763,10 @@
                   "orientation_mae_deg_mean": 13.846846735138952,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r7_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r7_d3_orientation.png"
               }
             },
             {
@@ -4209,6 +4793,10 @@
                   "orientation_mae_deg_mean": 13.627165141967964,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r7_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r7_d5_orientation.png"
               }
             },
             {
@@ -4235,6 +4823,10 @@
                   "orientation_mae_deg_mean": 15.223101652665825,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r7_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r7_d7_orientation.png"
               }
             },
             {
@@ -4261,6 +4853,10 @@
                   "orientation_mae_deg_mean": 17.360277992132268,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r7_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r7_d9_orientation.png"
               }
             },
             {
@@ -4287,6 +4883,10 @@
                   "orientation_mae_deg_mean": 20.04398140676948,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r7_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r7_d11_orientation.png"
               }
             },
             {
@@ -4313,6 +4913,10 @@
                   "orientation_mae_deg_mean": 21.727558222136167,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r9_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r9_d1_orientation.png"
               }
             },
             {
@@ -4339,6 +4943,10 @@
                   "orientation_mae_deg_mean": 15.652100600114613,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r9_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r9_d3_orientation.png"
               }
             },
             {
@@ -4365,6 +4973,10 @@
                   "orientation_mae_deg_mean": 13.628788977421777,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r9_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r9_d5_orientation.png"
               }
             },
             {
@@ -4391,6 +5003,10 @@
                   "orientation_mae_deg_mean": 13.703414103342062,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r9_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r9_d7_orientation.png"
               }
             },
             {
@@ -4417,6 +5033,10 @@
                   "orientation_mae_deg_mean": 14.814714342644434,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r9_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r9_d9_orientation.png"
               }
             },
             {
@@ -4443,6 +5063,10 @@
                   "orientation_mae_deg_mean": 16.531799716278957,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r9_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r9_d11_orientation.png"
               }
             },
             {
@@ -4469,6 +5093,10 @@
                   "orientation_mae_deg_mean": 25.202691213972866,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r11_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r11_d1_orientation.png"
               }
             },
             {
@@ -4495,6 +5123,10 @@
                   "orientation_mae_deg_mean": 17.757558574452062,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r11_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r11_d3_orientation.png"
               }
             },
             {
@@ -4521,6 +5153,10 @@
                   "orientation_mae_deg_mean": 14.634644266851181,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r11_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r11_d5_orientation.png"
               }
             },
             {
@@ -4547,6 +5183,10 @@
                   "orientation_mae_deg_mean": 13.498902621317216,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r11_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r11_d7_orientation.png"
               }
             },
             {
@@ -4573,6 +5213,10 @@
                   "orientation_mae_deg_mean": 13.793582588036415,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r11_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r11_d9_orientation.png"
               }
             },
             {
@@ -4599,6 +5243,10 @@
                   "orientation_mae_deg_mean": 14.776277483221673,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r11_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r11_d11_orientation.png"
               }
             },
             {
@@ -4625,6 +5273,10 @@
                   "orientation_mae_deg_mean": 28.3095781138763,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r13_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r13_d1_orientation.png"
               }
             },
             {
@@ -4651,6 +5303,10 @@
                   "orientation_mae_deg_mean": 20.21557674651969,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r13_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r13_d3_orientation.png"
               }
             },
             {
@@ -4677,6 +5333,10 @@
                   "orientation_mae_deg_mean": 16.22446061466246,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r13_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r13_d5_orientation.png"
               }
             },
             {
@@ -4703,6 +5363,10 @@
                   "orientation_mae_deg_mean": 14.227336670935252,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r13_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r13_d7_orientation.png"
               }
             },
             {
@@ -4729,6 +5393,10 @@
                   "orientation_mae_deg_mean": 13.490547581873072,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r13_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r13_d9_orientation.png"
               }
             },
             {
@@ -4755,6 +5423,10 @@
                   "orientation_mae_deg_mean": 13.831469663455053,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r13_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r13_d11_orientation.png"
               }
             },
             {
@@ -4781,6 +5453,10 @@
                   "orientation_mae_deg_mean": 31.521737016814683,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r15_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r15_d1_orientation.png"
               }
             },
             {
@@ -4807,6 +5483,10 @@
                   "orientation_mae_deg_mean": 22.371958998077854,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r15_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r15_d3_orientation.png"
               }
             },
             {
@@ -4833,6 +5513,10 @@
                   "orientation_mae_deg_mean": 17.87672353726706,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r15_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r15_d5_orientation.png"
               }
             },
             {
@@ -4859,6 +5543,10 @@
                   "orientation_mae_deg_mean": 15.36804180777547,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r15_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r15_d7_orientation.png"
               }
             },
             {
@@ -4885,6 +5573,10 @@
                   "orientation_mae_deg_mean": 14.016139120194474,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r15_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r15_d9_orientation.png"
               }
             },
             {
@@ -4911,6 +5603,10 @@
                   "orientation_mae_deg_mean": 13.54713146249796,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r15_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r15_d11_orientation.png"
               }
             },
             {
@@ -4937,6 +5633,10 @@
                   "orientation_mae_deg_mean": 35.64013809083012,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r18_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r18_d1_orientation.png"
               }
             },
             {
@@ -4963,6 +5663,10 @@
                   "orientation_mae_deg_mean": 25.91545276401289,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r18_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r18_d3_orientation.png"
               }
             },
             {
@@ -4989,6 +5693,10 @@
                   "orientation_mae_deg_mean": 20.31350362543779,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r18_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r18_d5_orientation.png"
               }
             },
             {
@@ -5015,6 +5723,10 @@
                   "orientation_mae_deg_mean": 17.284466117324683,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r18_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r18_d7_orientation.png"
               }
             },
             {
@@ -5041,6 +5753,10 @@
                   "orientation_mae_deg_mean": 15.270435025320042,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r18_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r18_d9_orientation.png"
               }
             },
             {
@@ -5067,6 +5783,10 @@
                   "orientation_mae_deg_mean": 14.112186167098638,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r18_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r18_d11_orientation.png"
               }
             },
             {
@@ -5093,6 +5813,10 @@
                   "orientation_mae_deg_mean": 39.10197306073762,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r21_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r21_d1_orientation.png"
               }
             },
             {
@@ -5119,6 +5843,10 @@
                   "orientation_mae_deg_mean": 29.250535747260773,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r21_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r21_d3_orientation.png"
               }
             },
             {
@@ -5145,6 +5873,10 @@
                   "orientation_mae_deg_mean": 22.99026239969615,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r21_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r21_d5_orientation.png"
               }
             },
             {
@@ -5171,6 +5903,10 @@
                   "orientation_mae_deg_mean": 19.23935782899619,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r21_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r21_d7_orientation.png"
               }
             },
             {
@@ -5197,6 +5933,10 @@
                   "orientation_mae_deg_mean": 16.934269574633717,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r21_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r21_d9_orientation.png"
               }
             },
             {
@@ -5223,6 +5963,10 @@
                   "orientation_mae_deg_mean": 15.214669809087201,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r21_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r21_d11_orientation.png"
               }
             },
             {
@@ -5249,6 +5993,10 @@
                   "orientation_mae_deg_mean": 42.50696709316779,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r25_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r25_d1_orientation.png"
               }
             },
             {
@@ -5275,6 +6023,10 @@
                   "orientation_mae_deg_mean": 33.148599228791944,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r25_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r25_d3_orientation.png"
               }
             },
             {
@@ -5301,6 +6053,10 @@
                   "orientation_mae_deg_mean": 26.943536535719396,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r25_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r25_d5_orientation.png"
               }
             },
             {
@@ -5327,6 +6083,10 @@
                   "orientation_mae_deg_mean": 22.007352104077622,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r25_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r25_d7_orientation.png"
               }
             },
             {
@@ -5353,6 +6113,10 @@
                   "orientation_mae_deg_mean": 19.11381210625779,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r25_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r25_d9_orientation.png"
               }
             },
             {
@@ -5379,6 +6143,10 @@
                   "orientation_mae_deg_mean": 17.242107063501667,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r25_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r25_d11_orientation.png"
               }
             },
             {
@@ -5405,6 +6173,10 @@
                   "orientation_mae_deg_mean": 44.289489852028545,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r30_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r30_d1_orientation.png"
               }
             },
             {
@@ -5431,6 +6203,10 @@
                   "orientation_mae_deg_mean": 37.23139459454115,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r30_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r30_d3_orientation.png"
               }
             },
             {
@@ -5457,6 +6233,10 @@
                   "orientation_mae_deg_mean": 31.50142534851534,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r30_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r30_d5_orientation.png"
               }
             },
             {
@@ -5483,6 +6263,10 @@
                   "orientation_mae_deg_mean": 26.194987581002014,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r30_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r30_d7_orientation.png"
               }
             },
             {
@@ -5509,6 +6293,10 @@
                   "orientation_mae_deg_mean": 21.953685136193698,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r30_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r30_d9_orientation.png"
               }
             },
             {
@@ -5535,6 +6323,10 @@
                   "orientation_mae_deg_mean": 19.45904586817813,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r30_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom3_r30_d11_orientation.png"
               }
             }
           ]
@@ -5591,7 +6383,18 @@
         }
       },
       "primary_metric_key": "orientation_mae_deg_mean",
-      "conditioning_gate": "Cells are included only when rank_deficient_count == 0 under the scaled-epsilon SVD cutoff."
+      "conditioning_gate": "Cells are included only when rank_deficient_count == 0 under the scaled-epsilon SVD cutoff.",
+      "ground_truth_asset_path": "data/sec09_real_image_zoom_stack/assets_w400/zoom3_ground_truth.png",
+      "static_assets": {
+        "input_path": "data/sec09_real_image_zoom_stack/assets_w400/zoom3_input.png",
+        "ground_truth_path": "data/sec09_real_image_zoom_stack/assets_w400/zoom3_ground_truth.png"
+      },
+      "baseline_reference_assets": {
+        "method": "farid_simoncelli",
+        "label": "Farid-Simoncelli",
+        "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/farid_simoncelli_zoom3_baseline_magnitude.png",
+        "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/farid_simoncelli_zoom3_baseline_orientation.png"
+      }
     },
     "zoom4_full": {
       "label": "Zoom 4 full",
@@ -5736,6 +6539,10 @@
                   "orientation_mae_deg_mean": 21.642774300931606,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r2_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r2_d1_orientation.png"
               }
             },
             {
@@ -5762,6 +6569,10 @@
                   "orientation_mae_deg_mean": 32.54679542142803,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r2_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r2_d3_orientation.png"
               }
             },
             {
@@ -5788,6 +6599,10 @@
                   "orientation_mae_deg_mean": 18.00094258270157,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r3_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r3_d1_orientation.png"
               }
             },
             {
@@ -5814,6 +6629,10 @@
                   "orientation_mae_deg_mean": 25.056030167836706,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r3_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r3_d3_orientation.png"
               }
             },
             {
@@ -5840,6 +6659,10 @@
                   "orientation_mae_deg_mean": 31.72232924299556,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r3_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r3_d5_orientation.png"
               }
             },
             {
@@ -5866,6 +6689,10 @@
                   "orientation_mae_deg_mean": 15.994513679277695,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r5_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r5_d1_orientation.png"
               }
             },
             {
@@ -5892,6 +6719,10 @@
                   "orientation_mae_deg_mean": 18.873190250190177,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r5_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r5_d3_orientation.png"
               }
             },
             {
@@ -5918,6 +6749,10 @@
                   "orientation_mae_deg_mean": 23.51059038839442,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r5_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r5_d5_orientation.png"
               }
             },
             {
@@ -5944,6 +6779,10 @@
                   "orientation_mae_deg_mean": 28.295112643324778,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r5_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r5_d7_orientation.png"
               }
             },
             {
@@ -5970,6 +6809,10 @@
                   "orientation_mae_deg_mean": 32.33005432783098,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r5_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r5_d9_orientation.png"
               }
             },
             {
@@ -5996,6 +6839,10 @@
                   "orientation_mae_deg_mean": 17.27858449285014,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r7_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r7_d1_orientation.png"
               }
             },
             {
@@ -6022,6 +6869,10 @@
                   "orientation_mae_deg_mean": 16.47708793440851,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r7_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r7_d3_orientation.png"
               }
             },
             {
@@ -6048,6 +6899,10 @@
                   "orientation_mae_deg_mean": 19.49734686811765,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r7_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r7_d5_orientation.png"
               }
             },
             {
@@ -6074,6 +6929,10 @@
                   "orientation_mae_deg_mean": 23.232944824795545,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r7_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r7_d7_orientation.png"
               }
             },
             {
@@ -6100,6 +6959,10 @@
                   "orientation_mae_deg_mean": 26.693702961577127,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r7_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r7_d9_orientation.png"
               }
             },
             {
@@ -6126,6 +6989,10 @@
                   "orientation_mae_deg_mean": 29.67180742380216,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r7_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r7_d11_orientation.png"
               }
             },
             {
@@ -6152,6 +7019,10 @@
                   "orientation_mae_deg_mean": 19.0024167201325,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r9_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r9_d1_orientation.png"
               }
             },
             {
@@ -6178,6 +7049,10 @@
                   "orientation_mae_deg_mean": 16.040220608117057,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r9_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r9_d3_orientation.png"
               }
             },
             {
@@ -6204,6 +7079,10 @@
                   "orientation_mae_deg_mean": 17.11710179680739,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r9_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r9_d5_orientation.png"
               }
             },
             {
@@ -6230,6 +7109,10 @@
                   "orientation_mae_deg_mean": 19.788285390245825,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r9_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r9_d7_orientation.png"
               }
             },
             {
@@ -6256,6 +7139,10 @@
                   "orientation_mae_deg_mean": 22.523319504323023,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r9_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r9_d9_orientation.png"
               }
             },
             {
@@ -6282,6 +7169,10 @@
                   "orientation_mae_deg_mean": 25.34764982262407,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r9_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r9_d11_orientation.png"
               }
             },
             {
@@ -6308,6 +7199,10 @@
                   "orientation_mae_deg_mean": 20.74000975149112,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r11_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r11_d1_orientation.png"
               }
             },
             {
@@ -6334,6 +7229,10 @@
                   "orientation_mae_deg_mean": 16.900670396050135,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r11_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r11_d3_orientation.png"
               }
             },
             {
@@ -6360,6 +7259,10 @@
                   "orientation_mae_deg_mean": 16.21488083337107,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r11_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r11_d5_orientation.png"
               }
             },
             {
@@ -6386,6 +7289,10 @@
                   "orientation_mae_deg_mean": 17.7846320075088,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r11_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r11_d7_orientation.png"
               }
             },
             {
@@ -6412,6 +7319,10 @@
                   "orientation_mae_deg_mean": 20.08013598783318,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r11_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r11_d9_orientation.png"
               }
             },
             {
@@ -6438,6 +7349,10 @@
                   "orientation_mae_deg_mean": 22.500958954133804,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r11_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r11_d11_orientation.png"
               }
             },
             {
@@ -6464,6 +7379,10 @@
                   "orientation_mae_deg_mean": 23.300937841205524,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r13_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r13_d1_orientation.png"
               }
             },
             {
@@ -6490,6 +7409,10 @@
                   "orientation_mae_deg_mean": 17.96657246667308,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r13_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r13_d3_orientation.png"
               }
             },
             {
@@ -6516,6 +7439,10 @@
                   "orientation_mae_deg_mean": 16.22715499241896,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r13_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r13_d5_orientation.png"
               }
             },
             {
@@ -6542,6 +7469,10 @@
                   "orientation_mae_deg_mean": 16.585682085328937,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r13_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r13_d7_orientation.png"
               }
             },
             {
@@ -6568,6 +7499,10 @@
                   "orientation_mae_deg_mean": 18.059518134763987,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r13_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r13_d9_orientation.png"
               }
             },
             {
@@ -6594,6 +7529,10 @@
                   "orientation_mae_deg_mean": 20.132215910028876,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r13_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r13_d11_orientation.png"
               }
             },
             {
@@ -6620,6 +7559,10 @@
                   "orientation_mae_deg_mean": 26.25805366140454,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r15_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r15_d1_orientation.png"
               }
             },
             {
@@ -6646,6 +7589,10 @@
                   "orientation_mae_deg_mean": 18.732244010941713,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r15_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r15_d3_orientation.png"
               }
             },
             {
@@ -6672,6 +7619,10 @@
                   "orientation_mae_deg_mean": 16.880400094174238,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r15_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r15_d5_orientation.png"
               }
             },
             {
@@ -6698,6 +7649,10 @@
                   "orientation_mae_deg_mean": 16.259131848738356,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r15_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r15_d7_orientation.png"
               }
             },
             {
@@ -6724,6 +7679,10 @@
                   "orientation_mae_deg_mean": 17.00494699857248,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r15_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r15_d9_orientation.png"
               }
             },
             {
@@ -6750,6 +7709,10 @@
                   "orientation_mae_deg_mean": 18.463965191088267,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r15_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r15_d11_orientation.png"
               }
             },
             {
@@ -6776,6 +7739,10 @@
                   "orientation_mae_deg_mean": 30.834301575846016,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r18_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r18_d1_orientation.png"
               }
             },
             {
@@ -6802,6 +7769,10 @@
                   "orientation_mae_deg_mean": 20.503951039178315,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r18_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r18_d3_orientation.png"
               }
             },
             {
@@ -6828,6 +7799,10 @@
                   "orientation_mae_deg_mean": 18.138980603191715,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r18_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r18_d5_orientation.png"
               }
             },
             {
@@ -6854,6 +7829,10 @@
                   "orientation_mae_deg_mean": 16.72459984760124,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r18_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r18_d7_orientation.png"
               }
             },
             {
@@ -6880,6 +7859,10 @@
                   "orientation_mae_deg_mean": 16.310293949896746,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r18_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r18_d9_orientation.png"
               }
             },
             {
@@ -6906,6 +7889,10 @@
                   "orientation_mae_deg_mean": 17.107118080394315,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r18_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r18_d11_orientation.png"
               }
             },
             {
@@ -6932,6 +7919,10 @@
                   "orientation_mae_deg_mean": 34.92506876365433,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r21_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r21_d1_orientation.png"
               }
             },
             {
@@ -6958,6 +7949,10 @@
                   "orientation_mae_deg_mean": 22.645593985677202,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r21_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r21_d3_orientation.png"
               }
             },
             {
@@ -6984,6 +7979,10 @@
                   "orientation_mae_deg_mean": 18.85663066294594,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r21_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r21_d5_orientation.png"
               }
             },
             {
@@ -7010,6 +8009,10 @@
                   "orientation_mae_deg_mean": 17.752785856619695,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r21_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r21_d7_orientation.png"
               }
             },
             {
@@ -7036,6 +8039,10 @@
                   "orientation_mae_deg_mean": 16.68721113384087,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r21_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r21_d9_orientation.png"
               }
             },
             {
@@ -7062,6 +8069,10 @@
                   "orientation_mae_deg_mean": 16.390592960742158,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r21_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r21_d11_orientation.png"
               }
             },
             {
@@ -7088,6 +8099,10 @@
                   "orientation_mae_deg_mean": 38.80993487682704,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r25_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r25_d1_orientation.png"
               }
             },
             {
@@ -7114,6 +8129,10 @@
                   "orientation_mae_deg_mean": 27.029034264375767,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r25_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r25_d3_orientation.png"
               }
             },
             {
@@ -7140,6 +8159,10 @@
                   "orientation_mae_deg_mean": 20.43636413408521,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r25_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r25_d5_orientation.png"
               }
             },
             {
@@ -7166,6 +8189,10 @@
                   "orientation_mae_deg_mean": 18.648947500603327,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r25_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r25_d7_orientation.png"
               }
             },
             {
@@ -7192,6 +8219,10 @@
                   "orientation_mae_deg_mean": 17.905637572011617,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r25_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r25_d9_orientation.png"
               }
             },
             {
@@ -7218,6 +8249,10 @@
                   "orientation_mae_deg_mean": 16.88209977309024,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r25_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r25_d11_orientation.png"
               }
             },
             {
@@ -7244,6 +8279,10 @@
                   "orientation_mae_deg_mean": 42.19025891371126,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r30_d1_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r30_d1_orientation.png"
               }
             },
             {
@@ -7270,6 +8309,10 @@
                   "orientation_mae_deg_mean": 32.248172461708585,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r30_d3_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r30_d3_orientation.png"
               }
             },
             {
@@ -7296,6 +8339,10 @@
                   "orientation_mae_deg_mean": 23.342862420990663,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r30_d5_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r30_d5_orientation.png"
               }
             },
             {
@@ -7322,6 +8369,10 @@
                   "orientation_mae_deg_mean": 19.732832381584647,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r30_d7_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r30_d7_orientation.png"
               }
             },
             {
@@ -7348,6 +8399,10 @@
                   "orientation_mae_deg_mean": 18.702235549560875,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r30_d9_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r30_d9_orientation.png"
               }
             },
             {
@@ -7374,6 +8429,10 @@
                   "orientation_mae_deg_mean": 18.26636770815582,
                   "noise_draws": 100
                 }
+              },
+              "clean_assets": {
+                "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r30_d11_magnitude.png",
+                "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/wvf_zoom4_r30_d11_orientation.png"
               }
             }
           ]
@@ -7430,7 +8489,18 @@
         }
       },
       "primary_metric_key": "orientation_mae_deg_mean",
-      "conditioning_gate": "Cells are included only when rank_deficient_count == 0 under the scaled-epsilon SVD cutoff."
+      "conditioning_gate": "Cells are included only when rank_deficient_count == 0 under the scaled-epsilon SVD cutoff.",
+      "ground_truth_asset_path": "data/sec09_real_image_zoom_stack/assets_w400/zoom4_ground_truth.png",
+      "static_assets": {
+        "input_path": "data/sec09_real_image_zoom_stack/assets_w400/zoom4_input.png",
+        "ground_truth_path": "data/sec09_real_image_zoom_stack/assets_w400/zoom4_ground_truth.png"
+      },
+      "baseline_reference_assets": {
+        "method": "farid_simoncelli",
+        "label": "Farid-Simoncelli",
+        "magnitude_path": "data/sec09_real_image_zoom_stack/assets_w400/farid_simoncelli_zoom4_baseline_magnitude.png",
+        "orientation_path": "data/sec09_real_image_zoom_stack/assets_w400/farid_simoncelli_zoom4_baseline_orientation.png"
+      }
     }
   },
   "partial_request": null
