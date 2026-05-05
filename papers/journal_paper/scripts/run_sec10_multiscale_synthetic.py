@@ -513,36 +513,56 @@ def _make_composite_stimulus(
     )
 
 
-def _combine_linear_responses(
-    weights: np.ndarray,
-    responses_by_scale: list[list[tuple[np.ndarray, np.ndarray]]],
-) -> list[tuple[np.ndarray, np.ndarray]]:
-    combined: list[tuple[np.ndarray, np.ndarray]] = []
-    case_count = len(responses_by_scale[0]) if responses_by_scale else 0
-    for case_index in range(case_count):
-        gx = np.zeros_like(np.asarray(responses_by_scale[0][case_index][0], dtype=np.float64))
-        gy = np.zeros_like(np.asarray(responses_by_scale[0][case_index][1], dtype=np.float64))
-        for weight, scale_responses in zip(weights, responses_by_scale, strict=True):
-            gx += float(weight) * np.asarray(scale_responses[case_index][0], dtype=np.float64)
-            gy += float(weight) * np.asarray(scale_responses[case_index][1], dtype=np.float64)
-        combined.append((gx, gy))
-    return combined
+def _zero_response_buffers(
+    cases: tuple[StepCase | CurvedCase | GradientFieldCase, ...],
+) -> dict[str, list[np.ndarray]]:
+    return {
+        "gx": [np.zeros_like(np.asarray(case.true_gx, dtype=np.float64)) for case in cases],
+        "gy": [np.zeros_like(np.asarray(case.true_gy, dtype=np.float64)) for case in cases],
+    }
 
 
-def _combine_l3_responses(
-    responses_by_scale: list[list[tuple[np.ndarray, np.ndarray]]],
+def _l3_response_buffers(
+    cases: tuple[StepCase | CurvedCase | GradientFieldCase, ...],
+) -> dict[str, list[np.ndarray]]:
+    return {
+        "mag": [np.full_like(np.asarray(case.true_gx, dtype=np.float64), -np.inf, dtype=np.float64) for case in cases],
+        "gx": [np.zeros_like(np.asarray(case.true_gx, dtype=np.float64)) for case in cases],
+        "gy": [np.zeros_like(np.asarray(case.true_gy, dtype=np.float64)) for case in cases],
+    }
+
+
+def _accumulate_linear_buffers(
+    buffers: dict[str, list[np.ndarray]],
+    outputs: list[tuple[np.ndarray, np.ndarray]],
+    weight: float,
+) -> None:
+    for index, (gx, gy) in enumerate(outputs):
+        buffers["gx"][index] += float(weight) * np.asarray(gx, dtype=np.float64)
+        buffers["gy"][index] += float(weight) * np.asarray(gy, dtype=np.float64)
+
+
+def _update_l3_buffers(
+    buffers: dict[str, list[np.ndarray]],
+    outputs: list[tuple[np.ndarray, np.ndarray]],
+) -> None:
+    for index, (gx, gy) in enumerate(outputs):
+        gx_arr = np.asarray(gx, dtype=np.float64)
+        gy_arr = np.asarray(gy, dtype=np.float64)
+        mag_arr = np.sqrt(gx_arr**2 + gy_arr**2)
+        selector = mag_arr > buffers["mag"][index]
+        buffers["mag"][index][selector] = mag_arr[selector]
+        buffers["gx"][index][selector] = gx_arr[selector]
+        buffers["gy"][index][selector] = gy_arr[selector]
+
+
+def _buffers_to_outputs(
+    buffers: dict[str, list[np.ndarray]],
 ) -> list[tuple[np.ndarray, np.ndarray]]:
-    combined: list[tuple[np.ndarray, np.ndarray]] = []
-    case_count = len(responses_by_scale[0]) if responses_by_scale else 0
-    for case_index in range(case_count):
-        gx_stack = np.stack([np.asarray(scale_responses[case_index][0], dtype=np.float64) for scale_responses in responses_by_scale], axis=0)
-        gy_stack = np.stack([np.asarray(scale_responses[case_index][1], dtype=np.float64) for scale_responses in responses_by_scale], axis=0)
-        mag_stack = np.sqrt(gx_stack**2 + gy_stack**2)
-        selector = np.argmax(mag_stack, axis=0, keepdims=True)
-        gx = np.take_along_axis(gx_stack, selector, axis=0)[0]
-        gy = np.take_along_axis(gy_stack, selector, axis=0)[0]
-        combined.append((gx, gy))
-    return combined
+    return [
+        (np.asarray(gx, dtype=np.float64), np.asarray(gy, dtype=np.float64))
+        for gx, gy in zip(buffers["gx"], buffers["gy"], strict=True)
+    ]
 
 
 def _mean_step_rmse(
@@ -595,6 +615,13 @@ def _evaluate_stimulus(
     baseline_arc_draws: dict[tuple[int, int], list[float]] = {record.key: [] for record in baseline_scales}
     strategy_step_draws: dict[str, list[float]] = {key: [] for key in ("l2_variance_inverse", "l2_equal", "l2_fwhm", "l3_max")}
     strategy_arc_draws: dict[str, list[float]] = {key: [] for key in ("l2_variance_inverse", "l2_equal", "l2_fwhm", "l3_max")}
+    active_weight_lookup = {
+        strategy_key: {
+            (int(row["radius"]), int(row["degree"])): float(row["weight"])
+            for row in weight_rows
+        }
+        for strategy_key, weight_rows in linear_weight_map.items()
+    }
 
     clean_step_cases = list(stimulus.step_cases)
     clean_arc_cases = list(stimulus.arc_cases)
@@ -608,34 +635,37 @@ def _evaluate_stimulus(
             _clone_case(case, add_awgn(np.asarray(case.image, dtype=np.float64), float(snr_db), rng))
             for case in all_clean_cases
         ]
-        scale_outputs: dict[tuple[int, int], tuple[list[tuple[np.ndarray, np.ndarray]], list[tuple[np.ndarray, np.ndarray]]]] = {}
+        linear_step_buffers = {key: _zero_response_buffers(stimulus.step_cases) for key in linear_weight_map}
+        linear_arc_buffers = {key: _zero_response_buffers(stimulus.arc_cases) for key in linear_weight_map}
+        l3_step_buffers = _l3_response_buffers(stimulus.step_cases)
+        l3_arc_buffers = _l3_response_buffers(stimulus.arc_cases)
         for record in baseline_scales:
             outputs = apply_cases_batched(
                 noisy_cases,
                 record.kernel,
                 fft_backend,
                 device_index,
-                batch_cases=int(max(batch_cases, len(noisy_cases))),
+                batch_cases=int(batch_cases),
             )
             step_outputs, arc_outputs = _split_outputs(outputs, step_count)
-            scale_outputs[record.key] = (step_outputs, arc_outputs)
             baseline_step_draws[record.key].append(_mean_step_rmse(stimulus.step_cases, step_outputs))
             baseline_arc_draws[record.key].append(_mean_arc_orientation_mae(stimulus.arc_cases, arc_outputs))
+            if record.key in active_weight_lookup["l2_variance_inverse"]:
+                for strategy_key, weights_by_key in active_weight_lookup.items():
+                    weight = float(weights_by_key[record.key])
+                    _accumulate_linear_buffers(linear_step_buffers[strategy_key], step_outputs, weight)
+                    _accumulate_linear_buffers(linear_arc_buffers[strategy_key], arc_outputs, weight)
+                _update_l3_buffers(l3_step_buffers, step_outputs)
+                _update_l3_buffers(l3_arc_buffers, arc_outputs)
 
-        active_step_outputs = [scale_outputs[record.key][0] for record in active_scales]
-        active_arc_outputs = [scale_outputs[record.key][1] for record in active_scales]
-
-        for strategy_key, weight_rows in linear_weight_map.items():
-            weights = np.asarray([float(row["weight"]) for row in weight_rows], dtype=np.float64)
-            step_combined = _combine_linear_responses(weights, active_step_outputs)
-            arc_combined = _combine_linear_responses(weights, active_arc_outputs)
+        for strategy_key in linear_weight_map:
+            step_combined = _buffers_to_outputs(linear_step_buffers[strategy_key])
+            arc_combined = _buffers_to_outputs(linear_arc_buffers[strategy_key])
             strategy_step_draws[strategy_key].append(_mean_step_rmse(stimulus.step_cases, step_combined))
             strategy_arc_draws[strategy_key].append(_mean_arc_orientation_mae(stimulus.arc_cases, arc_combined))
 
-        l3_step = _combine_l3_responses(active_step_outputs)
-        l3_arc = _combine_l3_responses(active_arc_outputs)
-        strategy_step_draws["l3_max"].append(_mean_step_rmse(stimulus.step_cases, l3_step))
-        strategy_arc_draws["l3_max"].append(_mean_arc_orientation_mae(stimulus.arc_cases, l3_arc))
+        strategy_step_draws["l3_max"].append(_mean_step_rmse(stimulus.step_cases, _buffers_to_outputs(l3_step_buffers)))
+        strategy_arc_draws["l3_max"].append(_mean_arc_orientation_mae(stimulus.arc_cases, _buffers_to_outputs(l3_arc_buffers)))
 
     baseline_rows = []
     for record in baseline_scales:
