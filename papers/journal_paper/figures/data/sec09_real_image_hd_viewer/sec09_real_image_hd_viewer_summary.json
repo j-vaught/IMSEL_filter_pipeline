@@ -1,0 +1,3895 @@
+{
+  "title": "Section 9 HD WVF tuning viewer",
+  "subtitle": "Full-image manual tuning on one HRF diabetic-retinopathy frame",
+  "scenario": "hd_tuning_viewer",
+  "dataset": {
+    "name": "HRF",
+    "data_root": "/home/j-vaught/edge-detection-filter-critique-sec09-followup/datasets/HRF",
+    "image_shape_px": [
+      3504,
+      2336
+    ]
+  },
+  "selected_image": {
+    "image_id": "diabetic_retinopathy:10_dr",
+    "condition_class": "diabetic_retinopathy",
+    "image_path": "/home/j-vaught/edge-detection-filter-critique-sec09-followup/datasets/HRF/images/10_dr.JPG",
+    "label_path": "/home/j-vaught/edge-detection-filter-critique-sec09-followup/datasets/HRF/manual1/10_dr.tif",
+    "fov_path": null
+  },
+  "config": {
+    "radii": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30
+    ],
+    "degrees": [
+      1,
+      3,
+      5,
+      7,
+      9,
+      11
+    ],
+    "normalize_coords": true,
+    "fft_backend": "vkfft",
+    "asset_max_width_px": 1500
+  },
+  "asset_rendering": {
+    "asset_dir_name": "assets_w1500",
+    "asset_max_width_px": 1500,
+    "rendered_preview_width_px": 1500,
+    "preview_shape_px": [
+      1500,
+      1000
+    ]
+  },
+  "static_assets": {
+    "input_path": "data/sec09_real_image_hd_viewer/assets_w1500/10_dr_input.png",
+    "ground_truth_path": "data/sec09_real_image_hd_viewer/assets_w1500/10_dr_vessel_mask.png"
+  },
+  "crop_preset_order": [
+    "full_image",
+    "top_left_quadrant",
+    "top_right_quadrant",
+    "vessel_junction_crop",
+    "optic_disc_crop",
+    "peripheral_crop"
+  ],
+  "crop_presets": {
+    "full_image": {
+      "label": "Full image",
+      "rect_xywh": [
+        0,
+        0,
+        1500,
+        1000
+      ]
+    },
+    "top_left_quadrant": {
+      "label": "Top-left quadrant",
+      "rect_xywh": [
+        0,
+        0,
+        750,
+        500
+      ]
+    },
+    "top_right_quadrant": {
+      "label": "Top-right quadrant",
+      "rect_xywh": [
+        750,
+        0,
+        750,
+        500
+      ]
+    },
+    "vessel_junction_crop": {
+      "label": "Vessel-junction crop",
+      "rect_xywh": [
+        542,
+        284,
+        420,
+        420
+      ]
+    },
+    "optic_disc_crop": {
+      "label": "Optic-disc crop",
+      "rect_xywh": [
+        261,
+        312,
+        420,
+        420
+      ]
+    },
+    "peripheral_crop": {
+      "label": "Peripheral crop",
+      "rect_xywh": [
+        333,
+        580,
+        420,
+        420
+      ]
+    }
+  },
+  "baseline_reference": {
+    "method": "farid_simoncelli",
+    "label": "Farid-Simoncelli",
+    "config": {
+      "window": "7tap"
+    },
+    "metrics": {
+      "gradient_vector_rmse_mean": 0.39849733530366915,
+      "orientation_mae_deg_mean": 13.03706069009648
+    },
+    "assets": {
+      "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/farid_simoncelli_10_dr_magnitude.png",
+      "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/farid_simoncelli_10_dr_orientation.png"
+    }
+  },
+  "wvf_grid": {
+    "conditioning_gate": "Cells are included only when rank_deficient_count == 0 under the scaled-epsilon SVD cutoff.",
+    "default_cell": {
+      "radius": 8,
+      "degree": 3
+    },
+    "feasible_cells": [
+      {
+        "radius": 2,
+        "degree": 1,
+        "config": {
+          "r": 2,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 12,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 1.8516401995451028,
+        "sigma_min": 1.8708286933869707,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.40108809821403973,
+          "orientation_mae_deg_mean": 13.549407607072858
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r2_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r2_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 2,
+        "degree": 3,
+        "config": {
+          "r": 2,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 12,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 62.104341464101616,
+        "sigma_min": 0.056966343283836915,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4225374216857169,
+          "orientation_mae_deg_mean": 18.576495267585976
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r2_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r2_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 3,
+        "degree": 1,
+        "config": {
+          "r": 3,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 28,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 1.9250668437592438,
+        "sigma_min": 2.748737083745107,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3960144774042239,
+          "orientation_mae_deg_mean": 12.354227591890062
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r3_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r3_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 3,
+        "degree": 3,
+        "config": {
+          "r": 3,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 28,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 47.28636424940101,
+        "sigma_min": 0.1139440541886064,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.40565369905551507,
+          "orientation_mae_deg_mean": 15.34843978245486
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r3_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r3_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 3,
+        "degree": 5,
+        "config": {
+          "r": 3,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 28,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4530.493606585531,
+        "sigma_min": 0.0011893903054109901,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4216300704340414,
+          "orientation_mae_deg_mean": 19.54497860848631
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r3_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r3_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 4,
+        "degree": 1,
+        "config": {
+          "r": 4,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 48,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.0,
+        "sigma_min": 3.464101615137754,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39488878853850296,
+          "orientation_mae_deg_mean": 11.92626427522021
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r4_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r4_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 4,
+        "degree": 3,
+        "config": {
+          "r": 4,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 48,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 53.58651235366162,
+        "sigma_min": 0.13131384468165777,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3996706054653411,
+          "orientation_mae_deg_mean": 13.642228226113716
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r4_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r4_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 4,
+        "degree": 5,
+        "config": {
+          "r": 4,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 48,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4267.084615657243,
+        "sigma_min": 0.0016491713945894276,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4101277437303916,
+          "orientation_mae_deg_mean": 16.68021098686896
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r4_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r4_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 4,
+        "degree": 7,
+        "config": {
+          "r": 4,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 48,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 1164459.102329656,
+        "sigma_min": 6.043281802810456e-06,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4244746344170473,
+          "orientation_mae_deg_mean": 20.17332531913802
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r4_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r4_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 5,
+        "degree": 1,
+        "config": {
+          "r": 5,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 80,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 1.9499439399175795,
+        "sigma_min": 4.586937976471886,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3962155584407163,
+          "orientation_mae_deg_mean": 11.87954779351992
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r5_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r5_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 5,
+        "degree": 3,
+        "config": {
+          "r": 5,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 80,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 52.92060884905058,
+        "sigma_min": 0.1719424677736676,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39588344492051947,
+          "orientation_mae_deg_mean": 12.645247216625243
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r5_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r5_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 5,
+        "degree": 5,
+        "config": {
+          "r": 5,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 80,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4077.062833283977,
+        "sigma_min": 0.002232080065963319,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4021910420836473,
+          "orientation_mae_deg_mean": 14.652790415684192
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r5_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r5_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 5,
+        "degree": 7,
+        "config": {
+          "r": 5,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 80,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 805848.9473834226,
+        "sigma_min": 1.129285154935201e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.41153849988082103,
+          "orientation_mae_deg_mean": 17.301957566822004
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r5_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r5_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 5,
+        "degree": 9,
+        "config": {
+          "r": 5,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 80,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 457874811.1320513,
+        "sigma_min": 1.987515433054004e-08,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4231195525438295,
+          "orientation_mae_deg_mean": 20.04898736092891
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r5_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r5_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 6,
+        "degree": 1,
+        "config": {
+          "r": 6,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 112,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 1.9901525743407733,
+        "sigma_min": 5.317685377847938,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3984179634842112,
+          "orientation_mae_deg_mean": 12.114669260254269
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r6_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r6_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 6,
+        "degree": 3,
+        "config": {
+          "r": 6,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 112,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 55.52832564599841,
+        "sigma_min": 0.1936312301804071,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3945095692520468,
+          "orientation_mae_deg_mean": 12.149605605965219
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r6_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r6_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 6,
+        "degree": 5,
+        "config": {
+          "r": 6,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 112,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4399.657402706403,
+        "sigma_min": 0.0024440449932981835,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39875333257283957,
+          "orientation_mae_deg_mean": 13.612099213867957
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r6_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r6_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 6,
+        "degree": 7,
+        "config": {
+          "r": 6,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 112,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 767375.891957842,
+        "sigma_min": 1.4012639949942645e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.40532930899023517,
+          "orientation_mae_deg_mean": 15.682638055197806
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r6_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r6_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 6,
+        "degree": 9,
+        "config": {
+          "r": 6,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 112,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 309087719.1104687,
+        "sigma_min": 3.478935401264881e-08,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4134622222607896,
+          "orientation_mae_deg_mean": 17.81366864386212
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r6_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r6_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 6,
+        "degree": 11,
+        "config": {
+          "r": 6,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 112,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 320722624671.6358,
+        "sigma_min": 3.352729509527315e-11,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.422792814419038,
+          "orientation_mae_deg_mean": 20.038546174414698
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r6_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r6_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 7,
+        "degree": 1,
+        "config": {
+          "r": 7,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 148,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.025292560286324,
+        "sigma_min": 6.006798869036753,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.40103528852389453,
+          "orientation_mae_deg_mean": 12.495061681214288
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r7_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r7_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 7,
+        "degree": 3,
+        "config": {
+          "r": 7,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 148,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 57.48418019563867,
+        "sigma_min": 0.21478361186664371,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39417468880122825,
+          "orientation_mae_deg_mean": 11.88639907793096
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r7_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r7_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 7,
+        "degree": 5,
+        "config": {
+          "r": 7,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 148,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4657.465080698756,
+        "sigma_min": 0.0026511268799703828,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.396595138651214,
+          "orientation_mae_deg_mean": 12.923458006543123
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r7_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r7_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 7,
+        "degree": 7,
+        "config": {
+          "r": 7,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 148,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 785537.2781246429,
+        "sigma_min": 1.5718581866256503e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4014756041342651,
+          "orientation_mae_deg_mean": 14.50338949908766
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r7_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r7_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 7,
+        "degree": 9,
+        "config": {
+          "r": 7,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 148,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 268946043.69488364,
+        "sigma_min": 4.5910814846454265e-08,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.40773603690995297,
+          "orientation_mae_deg_mean": 16.41134607053362
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r7_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r7_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 7,
+        "degree": 11,
+        "config": {
+          "r": 7,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 148,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 190793747326.5896,
+        "sigma_min": 6.47166492024843e-11,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.41532488374040427,
+          "orientation_mae_deg_mean": 18.22526949771515
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r7_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r7_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 8,
+        "degree": 1,
+        "config": {
+          "r": 8,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 196,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.0141800035436974,
+        "sigma_min": 6.950719387228922,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4045711989988905,
+          "orientation_mae_deg_mean": 13.04328745743074
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r8_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r8_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 8,
+        "degree": 3,
+        "config": {
+          "r": 8,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 196,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 57.52241047543839,
+        "sigma_min": 0.24708823923549636,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39464390919083914,
+          "orientation_mae_deg_mean": 11.802810088458171
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r8_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r8_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 8,
+        "degree": 5,
+        "config": {
+          "r": 8,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 196,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4785.684225533968,
+        "sigma_min": 0.002970157209564993,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39505623367733295,
+          "orientation_mae_deg_mean": 12.43606314882055
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r8_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r8_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 8,
+        "degree": 7,
+        "config": {
+          "r": 8,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 196,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 802620.0377696871,
+        "sigma_min": 1.7709794756882026e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3985866508448889,
+          "orientation_mae_deg_mean": 13.643342193878755
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r8_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r8_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 8,
+        "degree": 9,
+        "config": {
+          "r": 8,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 196,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 260344525.9686269,
+        "sigma_min": 5.459779146377741e-08,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4034017467946481,
+          "orientation_mae_deg_mean": 15.219979414367808
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r8_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r8_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 8,
+        "degree": 11,
+        "config": {
+          "r": 8,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 196,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 155547946276.5015,
+        "sigma_min": 9.138170241286329e-11,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.40947318878678424,
+          "orientation_mae_deg_mean": 16.940929405526585
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r8_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r8_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 9,
+        "degree": 1,
+        "config": {
+          "r": 9,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 252,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.000980536412292,
+        "sigma_min": 7.933364456832817,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4085295767154921,
+          "orientation_mae_deg_mean": 13.715622957782195
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r9_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r9_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 9,
+        "degree": 3,
+        "config": {
+          "r": 9,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 252,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 56.31583710271512,
+        "sigma_min": 0.2862891353745297,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39583122332692705,
+          "orientation_mae_deg_mean": 11.887875557437493
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r9_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r9_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 9,
+        "degree": 5,
+        "config": {
+          "r": 9,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 252,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4698.555369906764,
+        "sigma_min": 0.0034316807883692318,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3943659031284642,
+          "orientation_mae_deg_mean": 12.083599665728721
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r9_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r9_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 9,
+        "degree": 7,
+        "config": {
+          "r": 9,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 252,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 782704.5839356713,
+        "sigma_min": 2.0600293507198336e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39660780187256883,
+          "orientation_mae_deg_mean": 13.013456754971653
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r9_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r9_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 9,
+        "degree": 9,
+        "config": {
+          "r": 9,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 252,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 234765381.82436222,
+        "sigma_min": 6.868109784450838e-08,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.40017023300967675,
+          "orientation_mae_deg_mean": 14.24322499703094
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r9_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r9_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 9,
+        "degree": 11,
+        "config": {
+          "r": 9,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 252,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 126970742133.33995,
+        "sigma_min": 1.2698944566812004e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4047533584389154,
+          "orientation_mae_deg_mean": 15.701422409504712
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r9_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r9_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 10,
+        "degree": 1,
+        "config": {
+          "r": 10,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 316,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 1.9867158126440334,
+        "sigma_min": 8.947625383307015,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4128790884208711,
+          "orientation_mae_deg_mean": 14.503733055527427
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r10_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r10_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 10,
+        "degree": 3,
+        "config": {
+          "r": 10,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 316,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 56.117050570180396,
+        "sigma_min": 0.3218685206955781,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39722246136296496,
+          "orientation_mae_deg_mean": 12.029098725724596
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r10_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r10_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 10,
+        "degree": 5,
+        "config": {
+          "r": 10,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 316,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4804.605412567965,
+        "sigma_min": 0.0037597223510493533,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3942875751216619,
+          "orientation_mae_deg_mean": 11.922070101657914
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r10_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r10_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 10,
+        "degree": 7,
+        "config": {
+          "r": 10,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 316,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 815278.6209360452,
+        "sigma_min": 2.2156824150908173e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.395396193029436,
+          "orientation_mae_deg_mean": 12.580358392570021
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r10_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r10_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 10,
+        "degree": 9,
+        "config": {
+          "r": 10,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 316,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 240515251.66475233,
+        "sigma_min": 7.510536198712088e-08,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39817232115948215,
+          "orientation_mae_deg_mean": 13.606865514930123
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r10_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r10_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 10,
+        "degree": 11,
+        "config": {
+          "r": 10,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 316,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 121703370594.08305,
+        "sigma_min": 1.4842633323569914e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4018363498410333,
+          "orientation_mae_deg_mean": 14.839226378449498
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r10_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r10_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 11,
+        "degree": 1,
+        "config": {
+          "r": 11,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 376,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.0054734156636242,
+        "sigma_min": 9.668898763860604,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4165538817599343,
+          "orientation_mae_deg_mean": 15.331310533119716
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r11_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r11_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 11,
+        "degree": 3,
+        "config": {
+          "r": 11,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 376,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 57.05399479671896,
+        "sigma_min": 0.3451304977517802,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39875577797929534,
+          "orientation_mae_deg_mean": 12.245603786847102
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r11_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r11_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 11,
+        "degree": 5,
+        "config": {
+          "r": 11,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 376,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4896.046879581431,
+        "sigma_min": 0.004022160248716881,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39459812134007,
+          "orientation_mae_deg_mean": 11.867158034095663
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r11_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r11_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 11,
+        "degree": 7,
+        "config": {
+          "r": 11,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 376,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 839665.5862454277,
+        "sigma_min": 2.3453012530146483e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3948042250748726,
+          "orientation_mae_deg_mean": 12.305368034691137
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r11_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r11_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 11,
+        "degree": 9,
+        "config": {
+          "r": 11,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 376,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 244623596.90817976,
+        "sigma_min": 8.050199476079748e-08,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39686991577545283,
+          "orientation_mae_deg_mean": 13.137617249701863
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r11_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r11_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 11,
+        "degree": 11,
+        "config": {
+          "r": 11,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 376,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 118694673757.2404,
+        "sigma_min": 1.6591045657993395e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39984345465666105,
+          "orientation_mae_deg_mean": 14.184288931975939
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r11_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r11_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 12,
+        "degree": 1,
+        "config": {
+          "r": 12,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 440,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.0233835913938667,
+        "sigma_min": 10.366881026722659,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4201243540206997,
+          "orientation_mae_deg_mean": 16.257173575631207
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r12_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r12_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 12,
+        "degree": 3,
+        "config": {
+          "r": 12,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 440,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 57.90863441076746,
+        "sigma_min": 0.36764324296564926,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.40058571611152033,
+          "orientation_mae_deg_mean": 12.550525143126025
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r12_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r12_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 12,
+        "degree": 5,
+        "config": {
+          "r": 12,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 440,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4972.839122953791,
+        "sigma_min": 0.004281512592459166,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39517431818117105,
+          "orientation_mae_deg_mean": 11.87108944703622
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r12_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r12_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 12,
+        "degree": 7,
+        "config": {
+          "r": 12,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 440,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 860294.1249410508,
+        "sigma_min": 2.4748832793599788e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39452906612001754,
+          "orientation_mae_deg_mean": 12.096419699469187
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r12_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r12_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 12,
+        "degree": 9,
+        "config": {
+          "r": 12,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 440,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 249559149.93931693,
+        "sigma_min": 8.531554726704314e-08,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39593335022465187,
+          "orientation_mae_deg_mean": 12.780469528098205
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r12_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r12_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 12,
+        "degree": 11,
+        "config": {
+          "r": 12,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 440,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 117598385161.5097,
+        "sigma_min": 1.810507467711372e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39834827257857747,
+          "orientation_mae_deg_mean": 13.688507961733082
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r12_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r12_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 13,
+        "degree": 1,
+        "config": {
+          "r": 13,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 528,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.001166520950742,
+        "sigma_min": 11.482428046635166,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4244473073463261,
+          "orientation_mae_deg_mean": 17.387516978187538
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r13_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r13_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 13,
+        "degree": 3,
+        "config": {
+          "r": 13,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 528,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 56.41747070065505,
+        "sigma_min": 0.41365327028778487,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.40307764868344464,
+          "orientation_mae_deg_mean": 12.956296239438116
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r13_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r13_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 13,
+        "degree": 5,
+        "config": {
+          "r": 13,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 528,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4812.991981963607,
+        "sigma_min": 0.004849208419116905,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39601896627155464,
+          "orientation_mae_deg_mean": 11.942999507971114
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r13_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r13_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 13,
+        "degree": 7,
+        "config": {
+          "r": 13,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 528,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 834394.5060399345,
+        "sigma_min": 2.7971425907557317e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3944907597144528,
+          "orientation_mae_deg_mean": 11.955526427011884
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r13_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r13_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 13,
+        "degree": 9,
+        "config": {
+          "r": 13,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 528,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 240269952.3613335,
+        "sigma_min": 9.713742345053492e-08,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39511796973570024,
+          "orientation_mae_deg_mean": 12.451422853773552
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r13_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r13_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 13,
+        "degree": 11,
+        "config": {
+          "r": 13,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 528,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 109197645786.9576,
+        "sigma_min": 2.1373358314425045e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3969131037274935,
+          "orientation_mae_deg_mean": 13.174808549851807
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r13_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r13_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 14,
+        "degree": 1,
+        "config": {
+          "r": 14,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 612,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.002606125497884,
+        "sigma_min": 12.35321985622884,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4280064025695433,
+          "orientation_mae_deg_mean": 18.50470716350346
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r14_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r14_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 14,
+        "degree": 3,
+        "config": {
+          "r": 14,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 612,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 56.470396354533335,
+        "sigma_min": 0.4449064855994885,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.40560317090300785,
+          "orientation_mae_deg_mean": 13.379878938391437
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r14_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r14_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 14,
+        "degree": 5,
+        "config": {
+          "r": 14,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 612,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4834.2335036369905,
+        "sigma_min": 0.005197533713650752,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3968811407635241,
+          "orientation_mae_deg_mean": 12.067393181300226
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r14_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r14_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 14,
+        "degree": 7,
+        "config": {
+          "r": 14,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 612,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 848296.5309758848,
+        "sigma_min": 2.9619471132827313e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39471816596052034,
+          "orientation_mae_deg_mean": 11.91037299603355
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r14_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r14_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 14,
+        "degree": 9,
+        "config": {
+          "r": 14,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 612,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 246309620.72690243,
+        "sigma_min": 1.020102038190945e-07,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39475102075705726,
+          "orientation_mae_deg_mean": 12.254792196367035
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r14_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r14_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 14,
+        "degree": 11,
+        "config": {
+          "r": 14,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 612,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 110896240172.53488,
+        "sigma_min": 2.2657300710884193e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3960819534696504,
+          "orientation_mae_deg_mean": 12.84078669017186
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r14_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r14_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 15,
+        "degree": 1,
+        "config": {
+          "r": 15,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 708,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 1.9952212000039546,
+        "sigma_min": 13.335999733386652,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.43147270703459095,
+          "orientation_mae_deg_mean": 19.781022878876023
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r15_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r15_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 15,
+        "degree": 3,
+        "config": {
+          "r": 15,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 708,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 56.39722904761618,
+        "sigma_min": 0.47926110777281955,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4085222881829742,
+          "orientation_mae_deg_mean": 13.837792423111962
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r15_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r15_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 15,
+        "degree": 5,
+        "config": {
+          "r": 15,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 708,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4885.421943951452,
+        "sigma_min": 0.005533061959437169,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3979730036663493,
+          "orientation_mae_deg_mean": 12.227838743071972
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r15_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r15_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 15,
+        "degree": 7,
+        "config": {
+          "r": 15,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 708,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 865536.1349130324,
+        "sigma_min": 3.1230753775451464e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3951557770221939,
+          "orientation_mae_deg_mean": 11.90928548051801
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r15_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r15_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 15,
+        "degree": 9,
+        "config": {
+          "r": 15,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 708,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 253200461.44704133,
+        "sigma_min": 1.0675867556017883e-07,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39462261433369344,
+          "orientation_mae_deg_mean": 12.091438026048317
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r15_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r15_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 15,
+        "degree": 11,
+        "config": {
+          "r": 15,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 708,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 113361504939.0736,
+        "sigma_min": 2.3845260284645007e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3954503743945083,
+          "orientation_mae_deg_mean": 12.576439193756118
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r15_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r15_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 16,
+        "degree": 1,
+        "config": {
+          "r": 16,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 796,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.0078188542288107,
+        "sigma_min": 14.051801485930545,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4342836813148214,
+          "orientation_mae_deg_mean": 21.01692743109445
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r16_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r16_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 16,
+        "degree": 3,
+        "config": {
+          "r": 16,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 796,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 57.02229691817992,
+        "sigma_min": 0.5024081284623785,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4113442189725734,
+          "orientation_mae_deg_mean": 14.335694705321567
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r16_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r16_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 16,
+        "degree": 5,
+        "config": {
+          "r": 16,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 796,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4932.930173795399,
+        "sigma_min": 0.005808060811674578,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3991943322656079,
+          "orientation_mae_deg_mean": 12.43674840120248
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r16_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r16_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 16,
+        "degree": 7,
+        "config": {
+          "r": 16,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 796,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 876159.9238555377,
+        "sigma_min": 3.270037921536077e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.395595350297791,
+          "orientation_mae_deg_mean": 11.935642595462632
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r16_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r16_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 16,
+        "degree": 9,
+        "config": {
+          "r": 16,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 796,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 257637568.18328625,
+        "sigma_min": 1.1120568311225398e-07,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3946956972408789,
+          "orientation_mae_deg_mean": 12.019477400045243
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r16_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r16_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 16,
+        "degree": 11,
+        "config": {
+          "r": 16,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 796,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 114900563668.70491,
+        "sigma_min": 2.4935266503837203e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3950647779204315,
+          "orientation_mae_deg_mean": 12.403506112813258
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r16_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r16_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 17,
+        "degree": 1,
+        "config": {
+          "r": 17,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 900,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.006226573731913,
+        "sigma_min": 14.953445634106542,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.43737374305758275,
+          "orientation_mae_deg_mean": 22.402170332245547
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r17_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r17_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 17,
+        "degree": 3,
+        "config": {
+          "r": 17,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 900,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 56.78308380544113,
+        "sigma_min": 0.5364981632154878,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.41458507209840245,
+          "orientation_mae_deg_mean": 14.965092386975579
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r17_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r17_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 17,
+        "degree": 5,
+        "config": {
+          "r": 17,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 900,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4901.117656155022,
+        "sigma_min": 0.006216229806816318,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4007895752823637,
+          "orientation_mae_deg_mean": 12.702639508431213
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r17_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r17_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 17,
+        "degree": 7,
+        "config": {
+          "r": 17,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 900,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 873268.2513775462,
+        "sigma_min": 3.488787917932123e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39612831668163967,
+          "orientation_mae_deg_mean": 12.01993805819657
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r17_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r17_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 17,
+        "degree": 9,
+        "config": {
+          "r": 17,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 900,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 257921123.7597748,
+        "sigma_min": 1.1812323396799606e-07,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39487417118367024,
+          "orientation_mae_deg_mean": 11.976178415895037
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r17_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r17_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 17,
+        "degree": 11,
+        "config": {
+          "r": 17,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 900,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 114629047595.6016,
+        "sigma_min": 2.657832188804983e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3948147464178423,
+          "orientation_mae_deg_mean": 12.222886108830602
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r17_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r17_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 18,
+        "degree": 1,
+        "config": {
+          "r": 18,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1008,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.0076618721970663,
+        "sigma_min": 15.813925727458699,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.44021480792252204,
+          "orientation_mae_deg_mean": 23.656055178830794
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r18_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r18_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 18,
+        "degree": 3,
+        "config": {
+          "r": 18,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1008,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 57.02562117817373,
+        "sigma_min": 0.5653367786464939,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.41751203909763557,
+          "orientation_mae_deg_mean": 15.5895565094322
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r18_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r18_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 18,
+        "degree": 5,
+        "config": {
+          "r": 18,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1008,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4945.402628989063,
+        "sigma_min": 0.0065194435731087555,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4024596180796714,
+          "orientation_mae_deg_mean": 12.995550222039816
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r18_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r18_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 18,
+        "degree": 7,
+        "config": {
+          "r": 18,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1008,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 884624.2255276812,
+        "sigma_min": 3.644629690704418e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39676629572087846,
+          "orientation_mae_deg_mean": 12.133253071774414
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r18_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r18_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 18,
+        "degree": 9,
+        "config": {
+          "r": 18,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1008,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 262716885.155148,
+        "sigma_min": 1.2272251613288456e-07,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39513662287445667,
+          "orientation_mae_deg_mean": 11.957572989887888
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r18_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r18_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 18,
+        "degree": 11,
+        "config": {
+          "r": 18,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1008,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 116755965107.671,
+        "sigma_min": 2.761424407489743e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3947937131722594,
+          "orientation_mae_deg_mean": 12.118422566959552
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r18_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r18_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 19,
+        "degree": 1,
+        "config": {
+          "r": 19,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1128,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.003525932602792,
+        "sigma_min": 16.7633024863631,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4430543576382671,
+          "orientation_mae_deg_mean": 24.932514456426933
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r19_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r19_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 19,
+        "degree": 3,
+        "config": {
+          "r": 19,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1128,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 56.43132194560226,
+        "sigma_min": 0.6044162009900877,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4205487753831708,
+          "orientation_mae_deg_mean": 16.31996401719478
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r19_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r19_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 19,
+        "degree": 5,
+        "config": {
+          "r": 19,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1128,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4837.640003448506,
+        "sigma_min": 0.007051114043699804,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4045006169484391,
+          "orientation_mae_deg_mean": 13.31685115856468
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r19_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r19_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 19,
+        "degree": 7,
+        "config": {
+          "r": 19,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1128,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 860724.6807515682,
+        "sigma_min": 3.963027448270037e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39758237921253214,
+          "orientation_mae_deg_mean": 12.267290492769872
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r19_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r19_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 19,
+        "degree": 9,
+        "config": {
+          "r": 19,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1128,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 256233657.1820333,
+        "sigma_min": 1.3312363305242947e-07,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3954418800434171,
+          "orientation_mae_deg_mean": 11.960520510687934
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r19_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r19_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 19,
+        "degree": 11,
+        "config": {
+          "r": 19,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1128,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 113860855387.09877,
+        "sigma_min": 2.995828130608663e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39485212601115377,
+          "orientation_mae_deg_mean": 12.058489439591172
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r19_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r19_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 20,
+        "degree": 1,
+        "config": {
+          "r": 20,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1256,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 1.9987591175814121,
+        "sigma_min": 17.731046218427153,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.44590110329554217,
+          "orientation_mae_deg_mean": 26.221755925916526
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r20_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r20_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 20,
+        "degree": 3,
+        "config": {
+          "r": 20,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1256,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 56.40914776127633,
+        "sigma_min": 0.6381325289877596,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.42321037451808097,
+          "orientation_mae_deg_mean": 16.996169332834125
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r20_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r20_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 20,
+        "degree": 5,
+        "config": {
+          "r": 20,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1256,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4873.259318817453,
+        "sigma_min": 0.00738715821265665,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4066368306672915,
+          "orientation_mae_deg_mean": 13.6684061517559
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r20_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r20_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 20,
+        "degree": 7,
+        "config": {
+          "r": 20,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1256,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 871351.1957930692,
+        "sigma_min": 4.131461839161797e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3986434016615824,
+          "orientation_mae_deg_mean": 12.435019424372502
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r20_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r20_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 20,
+        "degree": 9,
+        "config": {
+          "r": 20,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1256,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 260460271.46986097,
+        "sigma_min": 1.3821509875070408e-07,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3958732933896841,
+          "orientation_mae_deg_mean": 12.027696008354765
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r20_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r20_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 20,
+        "degree": 11,
+        "config": {
+          "r": 20,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1256,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 116147923564.69551,
+        "sigma_min": 3.0994563688252767e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3949679646577374,
+          "orientation_mae_deg_mean": 12.01688395110139
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r20_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r20_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 21,
+        "degree": 1,
+        "config": {
+          "r": 21,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1372,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.008308631245346,
+        "sigma_min": 18.44363848196756,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4482279212818451,
+          "orientation_mae_deg_mean": 27.302590218428143
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r21_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r21_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 21,
+        "degree": 3,
+        "config": {
+          "r": 21,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1372,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 56.8906308618205,
+        "sigma_min": 0.6611116820536346,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4255522677885321,
+          "orientation_mae_deg_mean": 17.648596866104192
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r21_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r21_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 21,
+        "degree": 5,
+        "config": {
+          "r": 21,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1372,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4909.286242211053,
+        "sigma_min": 0.007661814152573649,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4087575416318428,
+          "orientation_mae_deg_mean": 14.037838684928404
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r21_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r21_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 21,
+        "degree": 7,
+        "config": {
+          "r": 21,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1372,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 877833.5727458842,
+        "sigma_min": 4.28487178759196e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39963904814158047,
+          "orientation_mae_deg_mean": 12.612419055625834
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r21_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r21_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 21,
+        "degree": 9,
+        "config": {
+          "r": 21,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1372,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 263023238.81599197,
+        "sigma_min": 1.430065391645545e-07,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39628825469396944,
+          "orientation_mae_deg_mean": 12.108042032494325
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r21_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r21_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 21,
+        "degree": 11,
+        "config": {
+          "r": 21,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1372,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 117615339172.15498,
+        "sigma_min": 3.198055914107562e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3951590618092389,
+          "orientation_mae_deg_mean": 11.9999953106955
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r21_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r21_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 22,
+        "degree": 1,
+        "config": {
+          "r": 22,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1516,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.001495384438072,
+        "sigma_min": 19.453377195168986,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.45090529919991634,
+          "orientation_mae_deg_mean": 28.52407232701039
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r22_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r22_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 22,
+        "degree": 3,
+        "config": {
+          "r": 22,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1516,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 56.4163897934551,
+        "sigma_min": 0.7009277263315331,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.42796813477939066,
+          "orientation_mae_deg_mean": 18.40664632415181
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r22_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r22_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 22,
+        "degree": 5,
+        "config": {
+          "r": 22,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1516,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4861.236532444229,
+        "sigma_min": 0.008135184920180092,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.411351035608237,
+          "orientation_mae_deg_mean": 14.47942564606825
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r22_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r22_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 22,
+        "degree": 7,
+        "config": {
+          "r": 22,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1516,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 871892.7267393827,
+        "sigma_min": 4.5357716272262795e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4009797523528914,
+          "orientation_mae_deg_mean": 12.83919126661221
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r22_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r22_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 22,
+        "degree": 9,
+        "config": {
+          "r": 22,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1516,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 262840298.8048929,
+        "sigma_min": 1.5046042445455895e-07,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3968598837757889,
+          "orientation_mae_deg_mean": 12.205253548362423
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r22_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r22_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 22,
+        "degree": 11,
+        "config": {
+          "r": 22,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1516,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 118091893751.2393,
+        "sigma_min": 3.348838067179606e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39542178823726404,
+          "orientation_mae_deg_mean": 11.995586974928075
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r22_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r22_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 23,
+        "degree": 1,
+        "config": {
+          "r": 23,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1652,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.0047450196399716,
+        "sigma_min": 20.274300455976427,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4531594584835728,
+          "orientation_mae_deg_mean": 29.567617853318573
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r23_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r23_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 23,
+        "degree": 3,
+        "config": {
+          "r": 23,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1652,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 56.676573182935755,
+        "sigma_min": 0.7282610185132108,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4301118142409871,
+          "orientation_mae_deg_mean": 19.12894972990828
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r23_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r23_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 23,
+        "degree": 5,
+        "config": {
+          "r": 23,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1652,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4894.462970357032,
+        "sigma_min": 0.00843374935323475,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4137144356709844,
+          "orientation_mae_deg_mean": 14.91422256381095
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r23_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r23_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 23,
+        "degree": 7,
+        "config": {
+          "r": 23,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1652,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 878924.4281485145,
+        "sigma_min": 4.6964992049527934e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4023101958215243,
+          "orientation_mae_deg_mean": 13.0838452482692
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r23_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r23_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 23,
+        "degree": 9,
+        "config": {
+          "r": 23,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1652,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 265489521.06138006,
+        "sigma_min": 1.55481386300227e-07,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39747179007688377,
+          "orientation_mae_deg_mean": 12.303179687060934
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r23_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r23_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 23,
+        "degree": 11,
+        "config": {
+          "r": 23,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1652,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 119642983967.9191,
+        "sigma_min": 3.4501545693540843e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3957145872899985,
+          "orientation_mae_deg_mean": 12.032481833119872
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r23_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r23_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 24,
+        "degree": 1,
+        "config": {
+          "r": 24,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1792,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.0086589609321646,
+        "sigma_min": 21.07476769346066,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4552813337866817,
+          "orientation_mae_deg_mean": 30.552358598449196
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r24_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r24_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 24,
+        "degree": 3,
+        "config": {
+          "r": 24,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1792,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 56.87622318183388,
+        "sigma_min": 0.755739664234328,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.43225080881686456,
+          "orientation_mae_deg_mean": 19.881996707095567
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r24_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r24_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 24,
+        "degree": 5,
+        "config": {
+          "r": 24,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1792,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4912.29273606207,
+        "sigma_min": 0.008750905257404688,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.41599589471184817,
+          "orientation_mae_deg_mean": 15.368164635055784
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r24_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r24_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 24,
+        "degree": 7,
+        "config": {
+          "r": 24,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1792,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 883209.0034129483,
+        "sigma_min": 4.867139378637409e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4038228265364269,
+          "orientation_mae_deg_mean": 13.321200158016355
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r24_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r24_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 24,
+        "degree": 9,
+        "config": {
+          "r": 24,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1792,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 267406304.64519978,
+        "sigma_min": 1.6075542145667949e-07,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3981846890079907,
+          "orientation_mae_deg_mean": 12.422119467676449
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r24_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r24_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 24,
+        "degree": 11,
+        "config": {
+          "r": 24,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1792,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 120896387100.5308,
+        "sigma_min": 3.5556904746597024e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.396042248880148,
+          "orientation_mae_deg_mean": 12.092495876825016
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r24_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r24_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 25,
+        "degree": 1,
+        "config": {
+          "r": 25,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1960,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.0006533812653884,
+        "sigma_min": 22.12871437747797,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4575352144656125,
+          "orientation_mae_deg_mean": 31.624516166822602
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r25_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r25_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 25,
+        "degree": 3,
+        "config": {
+          "r": 25,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1960,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 56.38103302257015,
+        "sigma_min": 0.7975083353530553,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.43457360323671745,
+          "orientation_mae_deg_mean": 20.734031090873412
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r25_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r25_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 25,
+        "degree": 5,
+        "config": {
+          "r": 25,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1960,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4852.546236554276,
+        "sigma_min": 0.009266898635020728,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.41834902407402635,
+          "orientation_mae_deg_mean": 15.918704074880448
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r25_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r25_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 25,
+        "degree": 7,
+        "config": {
+          "r": 25,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1960,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 867160.7740354043,
+        "sigma_min": 5.1856657878298096e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4056494294381094,
+          "orientation_mae_deg_mean": 13.60686485937311
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r25_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r25_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 25,
+        "degree": 9,
+        "config": {
+          "r": 25,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1960,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 261095941.35855827,
+        "sigma_min": 1.7222810647196256e-07,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3991321913834624,
+          "orientation_mae_deg_mean": 12.591534874546616
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r25_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r25_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 25,
+        "degree": 11,
+        "config": {
+          "r": 25,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 1960,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 117823575691.6982,
+        "sigma_min": 3.816558725510507e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3964856454229713,
+          "orientation_mae_deg_mean": 12.181950428051053
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r25_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r25_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 26,
+        "degree": 1,
+        "config": {
+          "r": 26,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2120,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.0007316729443394,
+        "sigma_min": 23.013309758387713,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4593751836395721,
+          "orientation_mae_deg_mean": 32.559856310121745
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r26_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r26_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 26,
+        "degree": 3,
+        "config": {
+          "r": 26,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2120,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 56.20142450944237,
+        "sigma_min": 0.832069846787771,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.43678319428611845,
+          "orientation_mae_deg_mean": 21.602706363973503
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r26_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r26_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 26,
+        "degree": 5,
+        "config": {
+          "r": 26,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2120,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4813.013971411881,
+        "sigma_min": 0.009716847207048162,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.42045296196491205,
+          "orientation_mae_deg_mean": 16.421326809732356
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r26_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r26_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 26,
+        "degree": 7,
+        "config": {
+          "r": 26,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2120,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 859953.8740039214,
+        "sigma_min": 5.438352956717576e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4074188441325193,
+          "orientation_mae_deg_mean": 13.929717279001313
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r26_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r26_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 26,
+        "degree": 9,
+        "config": {
+          "r": 26,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2120,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 260137596.07859257,
+        "sigma_min": 1.797791924017778e-07,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4000838840551158,
+          "orientation_mae_deg_mean": 12.752645238851757
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r26_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r26_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 26,
+        "degree": 11,
+        "config": {
+          "r": 26,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2120,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 118052826856.16489,
+        "sigma_min": 3.9615592596805107e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3968741866420084,
+          "orientation_mae_deg_mean": 12.252291405957935
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r26_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r26_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 27,
+        "degree": 1,
+        "config": {
+          "r": 27,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2288,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.000009592671199,
+        "sigma_min": 23.91640677508956,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.46105943119475645,
+          "orientation_mae_deg_mean": 33.43043266533984
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r27_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r27_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 27,
+        "degree": 3,
+        "config": {
+          "r": 27,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2288,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 56.24223111986885,
+        "sigma_min": 0.8638022690584863,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4388559641076842,
+          "orientation_mae_deg_mean": 22.41861429361526
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r27_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r27_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 27,
+        "degree": 5,
+        "config": {
+          "r": 27,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2288,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4831.38010644805,
+        "sigma_min": 0.010056373614000856,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4223292470947499,
+          "orientation_mae_deg_mean": 16.928208592642566
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r27_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r27_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 27,
+        "degree": 7,
+        "config": {
+          "r": 27,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2288,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 865412.148126189,
+        "sigma_min": 5.6142231668754044e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.40934316731489095,
+          "orientation_mae_deg_mean": 14.267788875251503
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r27_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r27_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 27,
+        "degree": 9,
+        "config": {
+          "r": 27,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2288,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 262272622.93430215,
+        "sigma_min": 1.8525063260028472e-07,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.40119455085077144,
+          "orientation_mae_deg_mean": 12.960640130038295
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r27_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r27_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 27,
+        "degree": 11,
+        "config": {
+          "r": 27,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2288,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 119308928660.0844,
+        "sigma_min": 4.0722995217516405e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3974472642451423,
+          "orientation_mae_deg_mean": 12.344315956195272
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r27_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r27_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 28,
+        "degree": 1,
+        "config": {
+          "r": 28,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2452,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.003663870370726,
+        "sigma_min": 24.71356316037072,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.46253872378367067,
+          "orientation_mae_deg_mean": 34.21046411339909
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r28_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r28_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 28,
+        "degree": 3,
+        "config": {
+          "r": 28,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2452,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 56.48790409220901,
+        "sigma_min": 0.8902352869891499,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4407616335918403,
+          "orientation_mae_deg_mean": 23.189488730311155
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r28_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r28_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 28,
+        "degree": 5,
+        "config": {
+          "r": 28,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2452,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4858.630878955607,
+        "sigma_min": 0.010350978160328098,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.42408737075340625,
+          "orientation_mae_deg_mean": 17.407562042168156
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r28_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r28_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 28,
+        "degree": 7,
+        "config": {
+          "r": 28,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2452,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 870772.1024120472,
+        "sigma_min": 5.775516679861335e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.41118690244352984,
+          "orientation_mae_deg_mean": 14.573983034636028
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r28_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r28_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 28,
+        "degree": 9,
+        "config": {
+          "r": 28,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2452,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 264058575.30732584,
+        "sigma_min": 1.904561817887749e-07,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4023107288457865,
+          "orientation_mae_deg_mean": 13.16185908210888
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r28_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r28_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 28,
+        "degree": 11,
+        "config": {
+          "r": 28,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2452,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 120312084117.30585,
+        "sigma_min": 4.180094492634905e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3980321394725175,
+          "orientation_mae_deg_mean": 12.442213332209906
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r28_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r28_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 29,
+        "degree": 1,
+        "config": {
+          "r": 29,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2628,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.0045454624721017,
+        "sigma_min": 25.573888660366887,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.46402846778051365,
+          "orientation_mae_deg_mean": 35.00360977575625
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r29_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r29_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 29,
+        "degree": 3,
+        "config": {
+          "r": 29,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2628,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 56.58897081560616,
+        "sigma_min": 0.9199605897282572,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.44261259274022924,
+          "orientation_mae_deg_mean": 23.95935137789592
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r29_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r29_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 29,
+        "degree": 5,
+        "config": {
+          "r": 29,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2628,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4877.050937343125,
+        "sigma_min": 0.010675266497498772,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4258567515760953,
+          "orientation_mae_deg_mean": 17.90696280702258
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r29_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r29_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 29,
+        "degree": 7,
+        "config": {
+          "r": 29,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2628,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 875460.5372703156,
+        "sigma_min": 5.9470212958028997e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4131980309252015,
+          "orientation_mae_deg_mean": 14.920785784860062
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r29_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r29_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 29,
+        "degree": 9,
+        "config": {
+          "r": 29,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2628,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 265806045.42273527,
+        "sigma_min": 1.958714840679021e-07,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.40362748732576387,
+          "orientation_mae_deg_mean": 13.362238399819484
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r29_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r29_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 29,
+        "degree": 11,
+        "config": {
+          "r": 29,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2628,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 121317612195.8841,
+        "sigma_min": 4.291530607040628e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.3987153794228629,
+          "orientation_mae_deg_mean": 12.567679172329141
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r29_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r29_d11_orientation.png"
+        }
+      },
+      {
+        "radius": 30,
+        "degree": 1,
+        "config": {
+          "r": 30,
+          "d": 1,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2820,
+        "coefficient_count": 3,
+        "kappa_design_matrix": 2.0018654909609235,
+        "sigma_min": 26.527093068534043,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4655159212208484,
+          "orientation_mae_deg_mean": 35.79660772999532
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r30_d1_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r30_d1_orientation.png"
+        }
+      },
+      {
+        "radius": 30,
+        "degree": 3,
+        "config": {
+          "r": 30,
+          "d": 3,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2820,
+        "coefficient_count": 10,
+        "kappa_design_matrix": 56.47498568369255,
+        "sigma_min": 0.9549760042545224,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.44445638088096906,
+          "orientation_mae_deg_mean": 24.753275360994692
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r30_d3_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r30_d3_orientation.png"
+        }
+      },
+      {
+        "radius": 30,
+        "degree": 5,
+        "config": {
+          "r": 30,
+          "d": 5,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2820,
+        "coefficient_count": 21,
+        "kappa_design_matrix": 4872.204444949082,
+        "sigma_min": 0.011070282895546145,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4276467687445127,
+          "orientation_mae_deg_mean": 18.451625734888278
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r30_d5_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r30_d5_orientation.png"
+        }
+      },
+      {
+        "radius": 30,
+        "degree": 7,
+        "config": {
+          "r": 30,
+          "d": 7,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2820,
+        "coefficient_count": 36,
+        "kappa_design_matrix": 875649.6172634462,
+        "sigma_min": 6.159619897393666e-05,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.4150402450931374,
+          "orientation_mae_deg_mean": 15.30688840624214
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r30_d7_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r30_d7_orientation.png"
+        }
+      },
+      {
+        "radius": 30,
+        "degree": 9,
+        "config": {
+          "r": 30,
+          "d": 9,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2820,
+        "coefficient_count": 55,
+        "kappa_design_matrix": 266307029.54520586,
+        "sigma_min": 2.0253572784824296e-07,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.40502038289305203,
+          "orientation_mae_deg_mean": 13.584786903188176
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r30_d9_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r30_d9_orientation.png"
+        }
+      },
+      {
+        "radius": 30,
+        "degree": 11,
+        "config": {
+          "r": 30,
+          "d": 11,
+          "normalize_coords": true
+        },
+        "support_cardinality": 2820,
+        "coefficient_count": 78,
+        "kappa_design_matrix": 121794769896.44144,
+        "sigma_min": 4.428489672085552e-10,
+        "rank_deficient_count": 0,
+        "metrics": {
+          "gradient_vector_rmse_mean": 0.39949951302002434,
+          "orientation_mae_deg_mean": 12.706591546587433
+        },
+        "assets": {
+          "magnitude_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r30_d11_magnitude.png",
+          "orientation_path": "data/sec09_real_image_hd_viewer/assets_w1500/wvf_10_dr_r30_d11_orientation.png"
+        }
+      }
+    ],
+    "skipped_cells": [
+      {
+        "radius": 2,
+        "degree": 5,
+        "normalize_coords": true,
+        "support_cardinality": 12,
+        "coefficient_count": 21,
+        "sigma_max": 3.5381439564254475,
+        "sigma_min": 0.010684809201787247,
+        "kappa_design_matrix": 331.1377760338128,
+        "rank_deficient_count": 9,
+        "status": "rank_deficient"
+      },
+      {
+        "radius": 2,
+        "degree": 7,
+        "normalize_coords": true,
+        "support_cardinality": 12,
+        "coefficient_count": 36,
+        "sigma_max": 3.53814420615698,
+        "sigma_min": 0.010694046141434438,
+        "kappa_design_matrix": 330.8517804545767,
+        "rank_deficient_count": 24,
+        "status": "rank_deficient"
+      },
+      {
+        "radius": 2,
+        "degree": 9,
+        "normalize_coords": true,
+        "support_cardinality": 12,
+        "coefficient_count": 55,
+        "sigma_max": 3.538144206231074,
+        "sigma_min": 0.010694049389013062,
+        "kappa_design_matrix": 330.8516799881363,
+        "rank_deficient_count": 43,
+        "status": "rank_deficient"
+      },
+      {
+        "radius": 2,
+        "degree": 11,
+        "normalize_coords": true,
+        "support_cardinality": 12,
+        "coefficient_count": 78,
+        "sigma_max": 3.5381442062310833,
+        "sigma_min": 0.01069404938942369,
+        "kappa_design_matrix": 330.85167997543317,
+        "rank_deficient_count": 66,
+        "status": "rank_deficient"
+      },
+      {
+        "radius": 3,
+        "degree": 7,
+        "normalize_coords": true,
+        "support_cardinality": 28,
+        "coefficient_count": 36,
+        "sigma_max": 5.38852593406976,
+        "sigma_min": 3.4455162040297685e-05,
+        "kappa_design_matrix": 156392.41306621945,
+        "rank_deficient_count": 8,
+        "status": "rank_deficient"
+      },
+      {
+        "radius": 3,
+        "degree": 9,
+        "normalize_coords": true,
+        "support_cardinality": 28,
+        "coefficient_count": 55,
+        "sigma_max": 5.3885259345474505,
+        "sigma_min": 3.447426420560141e-05,
+        "kappa_design_matrix": 156305.7561551065,
+        "rank_deficient_count": 27,
+        "status": "rank_deficient"
+      },
+      {
+        "radius": 3,
+        "degree": 11,
+        "normalize_coords": true,
+        "support_cardinality": 28,
+        "coefficient_count": 78,
+        "sigma_max": 5.388525934547593,
+        "sigma_min": 3.447427078516186e-05,
+        "kappa_design_matrix": 156305.72632349568,
+        "rank_deficient_count": 50,
+        "status": "rank_deficient"
+      },
+      {
+        "radius": 4,
+        "degree": 9,
+        "normalize_coords": true,
+        "support_cardinality": 48,
+        "coefficient_count": 55,
+        "sigma_max": 7.0371545035165575,
+        "sigma_min": 1.0264106708939862e-20,
+        "kappa_design_matrix": 6.856080809630823e+20,
+        "rank_deficient_count": 8,
+        "status": "rank_deficient"
+      },
+      {
+        "radius": 4,
+        "degree": 11,
+        "normalize_coords": true,
+        "support_cardinality": 48,
+        "coefficient_count": 78,
+        "sigma_max": 7.037154503516623,
+        "sigma_min": 2.7599680265650992e-08,
+        "kappa_design_matrix": 254972319.8161346,
+        "rank_deficient_count": 30,
+        "status": "rank_deficient"
+      },
+      {
+        "radius": 5,
+        "degree": 11,
+        "normalize_coords": true,
+        "support_cardinality": 80,
+        "coefficient_count": 78,
+        "sigma_max": 9.100332535316822,
+        "sigma_min": 2.3638502179987723e-24,
+        "kappa_design_matrix": 3.8497923709485845e+24,
+        "rank_deficient_count": 8,
+        "status": "rank_deficient"
+      }
+    ]
+  }
+}
