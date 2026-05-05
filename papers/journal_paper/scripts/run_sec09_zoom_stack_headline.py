@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import sys
 from pathlib import Path
 
@@ -77,10 +78,10 @@ ZOOM_SPECS = (
 
 
 def _zoom_number_from_slug(slug: str) -> int:
-    digits = "".join(ch for ch in str(slug) if ch.isdigit())
-    if not digits:
+    match = re.match(r"^zoom(\d+)", str(slug))
+    if match is None:
         raise ValueError(f"could not parse zoom number from slug {slug!r}")
-    return int(digits)
+    return int(match.group(1))
 
 
 def _resize_rgb(rgb: np.ndarray, width: int, height: int) -> np.ndarray:
