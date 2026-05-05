@@ -288,16 +288,18 @@ def _evaluate_metrics(
     seed_offset: int,
 ) -> dict[str, object]:
     draw_count = 1 if math.isinf(float(snr_db)) else int(noise_draws)
-    rmse_values = []
-    angle_values = []
     clean = np.asarray(green_image, dtype=np.float64)
+    noisy_images: list[np.ndarray] = []
     for draw_index in range(draw_count):
         if math.isinf(float(snr_db)):
-            noisy = clean.astype(np.float32)
+            noisy_images.append(clean.astype(np.float32))
         else:
             rng = np.random.default_rng(880000 + int(seed_offset) + 10000 * draw_index + 1000 * int(round(float(snr_db) * 10.0)))
-            noisy = _add_awgn(clean, float(snr_db), rng)
-        gx, gy = apply_images_batched([np.asarray(noisy, dtype=np.float32)], kernel, fft_backend, device_index)[0]
+            noisy_images.append(_add_awgn(clean, float(snr_db), rng))
+    responses = apply_images_batched(noisy_images, kernel, fft_backend, device_index)
+    rmse_values = []
+    angle_values = []
+    for gx, gy in responses:
         rmse_values.append(
             _vector_rmse(
                 gx=np.asarray(gx, dtype=np.float64),
