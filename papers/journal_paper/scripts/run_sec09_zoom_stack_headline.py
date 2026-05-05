@@ -365,11 +365,16 @@ def _merge_partial_summaries(
     if not partials:
         raise RuntimeError("no shard summaries were provided for merge")
     first = partials[0]
+    selected_ref = first["selected_image"]
     zoom_order = [str(spec["slug"]) for spec in ZOOM_SPECS]
     merged_zooms: dict[str, object] = {}
     for payload in partials:
-        if payload["selected_image"] != first["selected_image"]:
-            raise RuntimeError("zoom-stack shard merge failed because selected images differ")
+        selected = payload["selected_image"]
+        if (
+            str(selected.get("image_id")) != str(selected_ref.get("image_id"))
+            or str(selected.get("condition_class")) != str(selected_ref.get("condition_class"))
+        ):
+            raise RuntimeError("zoom-stack shard merge failed because selected image identities differ")
         if payload["config"] != first["config"]:
             raise RuntimeError("zoom-stack shard merge failed because configs differ")
         for zoom_key, zoom_payload in payload.get("zooms", {}).items():
