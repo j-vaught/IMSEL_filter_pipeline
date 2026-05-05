@@ -45,3 +45,7 @@ export WVF_CUDA_HOST_CXX=/home/jvaught2/toolchains/gcc12/g++-12-wrapper
 
 That wrapper is the known-good configuration for the HRF full-protocol rerun on
 the `2080`.
+
+## Zoom-Stack Viewer
+
+Run `make viewer` to open the Streamlit zoom-stack inspector backed by `papers/journal_paper/figures/data/sec09_real_image_zoom_stack/sec09_real_image_zoom_stack_summary.json`.

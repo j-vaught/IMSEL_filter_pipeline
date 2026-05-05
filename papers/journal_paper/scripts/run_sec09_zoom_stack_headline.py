@@ -76,6 +76,13 @@ ZOOM_SPECS = (
 )
 
 
+def _zoom_number_from_slug(slug: str) -> int:
+    digits = "".join(ch for ch in str(slug) if ch.isdigit())
+    if not digits:
+        raise ValueError(f"could not parse zoom number from slug {slug!r}")
+    return int(digits)
+
+
 def _resize_rgb(rgb: np.ndarray, width: int, height: int) -> np.ndarray:
     image = Image.fromarray(np.asarray(rgb, dtype=np.uint8), mode="RGB")
     return np.asarray(image.resize((int(width), int(height)), resample=Image.Resampling.BICUBIC), dtype=np.uint8)
@@ -271,6 +278,36 @@ def _save_method_assets_for_image(
     }
 
 
+def _save_wvf_cell_assets(
+    *,
+    zoom_slug: str,
+    radius: int,
+    degree: int,
+    green_image: np.ndarray,
+    kernel,
+    assets_dir: Path,
+    fft_backend: str,
+    device_index: int | None,
+    asset_max_width_px: int | None,
+) -> dict[str, str]:
+    zoom_number = _zoom_number_from_slug(zoom_slug)
+    gx, gy = apply_images_batched([np.asarray(green_image, dtype=np.float32)], kernel, fft_backend, device_index)[0]
+    magnitude = np.hypot(np.asarray(gx, dtype=np.float64), np.asarray(gy, dtype=np.float64))
+    mag_norm, _ = _normalize_magnitude(magnitude)
+    mag_path = assets_dir / f"wvf_zoom{zoom_number}_r{int(radius)}_d{int(degree)}_magnitude.png"
+    ori_path = assets_dir / f"wvf_zoom{zoom_number}_r{int(radius)}_d{int(degree)}_orientation.png"
+    _write_gray_asset(mag_path, mag_norm, max_width_px=asset_max_width_px)
+    _write_rgb_asset(
+        ori_path,
+        _orientation_rgb(np.asarray(gx, dtype=np.float64), np.asarray(gy, dtype=np.float64)),
+        max_width_px=asset_max_width_px,
+    )
+    return {
+        "magnitude_path": str(mag_path.relative_to(ROOT / "papers" / "journal_paper" / "figures")),
+        "orientation_path": str(ori_path.relative_to(ROOT / "papers" / "journal_paper" / "figures")),
+    }
+
+
 def _evaluate_metrics(
     *,
     kernel,
@@ -396,6 +433,97 @@ def _merge_partial_summaries(
     return outputs
 
 
+def _refresh_all_cell_assets_from_summary(
+    *,
+    dataset_root: Path,
+    output_dir: Path,
+    summary_json: Path,
+    image_stem: str,
+    fft_backend: str,
+    device_index: int | None,
+    asset_max_width_px: int | None,
+    zoom_filter: set[str],
+    compile_plots: bool,
+    auto_download: bool,
+) -> dict[str, Path]:
+    payload = json.loads(summary_json.read_text())
+    data_root = _ensure_hrf_root(dataset_root, auto_download=bool(auto_download))
+    selection = _select_hrf_image(data_root, image_stem=image_stem)
+    rgb, green = _load_drive_input(Path(selection["image_path"]))
+    vessel_mask = _load_vessel_mask(Path(selection["label_path"]))
+    spec_map = {str(spec["slug"]): dict(spec) for spec in ZOOM_SPECS}
+    assets_dir_name = "assets" if asset_max_width_px is None else f"assets_w{int(asset_max_width_px)}"
+    assets_dir = output_dir / assets_dir_name
+    assets_dir.mkdir(parents=True, exist_ok=True)
+    baseline_kernel = build_farid_simoncelli()
+
+    zoom_keys = [key for key in payload.get("zoom_order", []) if (not zoom_filter or key in zoom_filter)]
+    for zoom_key in zoom_keys:
+        if zoom_key not in spec_map:
+            continue
+        zoom_number = _zoom_number_from_slug(zoom_key)
+        zoom_view = _prepare_zoom_view(rgb, green, vessel_mask, spec_map[zoom_key])
+        zoom_payload = payload["zooms"][zoom_key]
+        input_path = assets_dir / f"zoom{zoom_number}_input.png"
+        ground_truth_path = assets_dir / f"zoom{zoom_number}_ground_truth.png"
+        _write_rgb_asset(input_path, np.asarray(zoom_view["rgb"], dtype=np.uint8), max_width_px=asset_max_width_px)
+        _write_gray_asset(ground_truth_path, np.asarray(zoom_view["vessel_mask"], dtype=np.float64), max_width_px=asset_max_width_px)
+        zoom_payload["ground_truth_asset_path"] = str(ground_truth_path.relative_to(ROOT / "papers" / "journal_paper" / "figures"))
+        zoom_payload["static_assets"] = {
+            "input_path": str(input_path.relative_to(ROOT / "papers" / "journal_paper" / "figures")),
+            "ground_truth_path": str(ground_truth_path.relative_to(ROOT / "papers" / "journal_paper" / "figures")),
+        }
+        baseline_assets = _save_method_assets_for_image(
+            method_name=f"farid_simoncelli_zoom{zoom_number}",
+            image_key="baseline",
+            green_image=np.asarray(zoom_view["green"], dtype=np.float32),
+            kernel=baseline_kernel,
+            assets_dir=assets_dir,
+            fft_backend=fft_backend,
+            device_index=device_index,
+            asset_max_width_px=asset_max_width_px,
+        )
+        zoom_payload["baseline_reference_assets"] = {
+            "method": "farid_simoncelli",
+            "label": "Farid-Simoncelli",
+            **baseline_assets,
+        }
+        for cell in zoom_payload["methods"]["wvf"]["cells"]:
+            radius = int(cell["radius"])
+            degree = int(cell["degree"])
+            kernel = build_wvf(radius=radius, degree=degree, normalize_coords=True)
+            cell["clean_assets"] = _save_wvf_cell_assets(
+                zoom_slug=zoom_key,
+                radius=radius,
+                degree=degree,
+                green_image=np.asarray(zoom_view["green"], dtype=np.float32),
+                kernel=kernel,
+                assets_dir=assets_dir,
+                fft_backend=fft_backend,
+                device_index=device_index,
+                asset_max_width_px=asset_max_width_px,
+            )
+
+    payload["selected_image"] = selection
+    payload["asset_rendering"] = {
+        "asset_dir_name": str(assets_dir_name),
+        "asset_max_width_px": None if asset_max_width_px is None else int(asset_max_width_px),
+        "rendered_preview_width_px": None if asset_max_width_px is None else int(asset_max_width_px),
+        "all_cell_assets_saved": True,
+    }
+    payload.setdefault("config", {})["save_all_cells"] = True
+    with summary_json.open("w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2)
+        handle.write("\n")
+    outputs: dict[str, Path] = {"summary_json": summary_json}
+    if compile_plots:
+        figure_src = ROOT / "papers" / "journal_paper" / "figures" / "cetz_src" / "fig_sec09_zoom_stack_headline.typ"
+        figure_pdf = ROOT / "papers" / "journal_paper" / "figures" / "fig_sec09_zoom_stack_headline.pdf"
+        compile_plot(figure_src, figure_pdf)
+        outputs["figure_pdf"] = figure_pdf
+    return outputs
+
+
 def run_experiment(
     *,
     dataset_root: Path,
@@ -407,9 +535,28 @@ def run_experiment(
     noise_draws: int,
     asset_max_width_px: int | None,
     zoom_filter: set[str],
+    save_all_cells: bool,
     compile_plots: bool,
     auto_download: bool,
 ) -> dict[str, Path]:
+    if save_all_cells and summary_json.exists():
+        print(
+            f"zoom-stack asset refresh from existing summary path={summary_json} "
+            f"asset_max_width_px={asset_max_width_px}",
+            flush=True,
+        )
+        return _refresh_all_cell_assets_from_summary(
+            dataset_root=dataset_root,
+            output_dir=output_dir,
+            summary_json=summary_json,
+            image_stem=image_stem,
+            fft_backend=fft_backend,
+            device_index=device_index,
+            asset_max_width_px=asset_max_width_px,
+            zoom_filter=zoom_filter,
+            compile_plots=compile_plots,
+            auto_download=auto_download,
+        )
     data_root = _ensure_hrf_root(dataset_root, auto_download=bool(auto_download))
     selection = _select_hrf_image(data_root, image_stem=image_stem)
     print(
@@ -525,6 +672,18 @@ def run_experiment(
                     "snr_metrics": snr_metrics,
                 }
             )
+            if save_all_cells:
+                wvf_cells[-1]["clean_assets"] = _save_wvf_cell_assets(
+                    zoom_slug=zoom_key,
+                    radius=radius,
+                    degree=degree,
+                    green_image=np.asarray(zoom_view["green"], dtype=np.float32),
+                    kernel=kernel,
+                    assets_dir=assets_dir,
+                    fft_backend=fft_backend,
+                    device_index=device_index,
+                    asset_max_width_px=asset_max_width_px,
+                )
             if (cell_index + 1) % 10 == 0 or (cell_index + 1) == total_cells:
                 print(
                     f"zoom={zoom_key} wvf_progress {cell_index + 1}/{total_cells} "
@@ -589,12 +748,34 @@ def run_experiment(
             "crop_shape_px": list(zoom_view["crop_shape_px"]),
             "input_asset_path": str(input_path.relative_to(ROOT / "papers" / "journal_paper" / "figures")),
             "vessel_mask_asset_path": str(mask_path.relative_to(ROOT / "papers" / "journal_paper" / "figures")),
+            "ground_truth_asset_path": str(mask_path.relative_to(ROOT / "papers" / "journal_paper" / "figures")),
             "methods": methods_payload,
             "best_baseline_by_snr": best_baseline_by_snr,
             "delta_small_stencil_minus_best_wvf": deltas,
             "primary_metric_key": PRIMARY_METRIC_KEY,
             "conditioning_gate": "Cells are included only when rank_deficient_count == 0 under the scaled-epsilon SVD cutoff.",
         }
+        if save_all_cells:
+            zoom_number = _zoom_number_from_slug(zoom_key)
+            baseline_assets = _save_method_assets_for_image(
+                method_name=f"farid_simoncelli_zoom{zoom_number}",
+                image_key="baseline",
+                green_image=np.asarray(zoom_view["green"], dtype=np.float32),
+                kernel=baseline_specs["farid_simoncelli"],
+                assets_dir=assets_dir,
+                fft_backend=fft_backend,
+                device_index=device_index,
+                asset_max_width_px=asset_max_width_px,
+            )
+            zoom_payloads[zoom_key]["baseline_reference_assets"] = {
+                "method": "farid_simoncelli",
+                "label": "Farid-Simoncelli",
+                **baseline_assets,
+            }
+            zoom_payloads[zoom_key]["static_assets"] = {
+                "input_path": str(input_path.relative_to(ROOT / "papers" / "journal_paper" / "figures")),
+                "ground_truth_path": str(mask_path.relative_to(ROOT / "papers" / "journal_paper" / "figures")),
+            }
         print(
             f"zoom={zoom_key} complete clean_best={best_wvf_by_snr['inf']['label']} "
             f"snr10_best={best_wvf_by_snr['10']['label']}",
@@ -626,6 +807,7 @@ def run_experiment(
             "asset_dir_name": str(assets_dir_name),
             "asset_max_width_px": None if asset_max_width_px is None else int(asset_max_width_px),
             "rendered_preview_width_px": None if asset_max_width_px is None else int(asset_max_width_px),
+            "all_cell_assets_saved": bool(save_all_cells),
         },
         "method_order": list(WVF_METHOD_ORDER),
         "zoom_order": [str(spec["slug"]) for spec in selected_zooms],
@@ -634,6 +816,7 @@ def run_experiment(
             "zoom_filter": sorted(zoom_filter),
         } if zoom_filter else None,
     }
+    payload["config"]["save_all_cells"] = bool(save_all_cells)
 
     summary_json.parent.mkdir(parents=True, exist_ok=True)
     with summary_json.open("w", encoding="utf-8") as handle:
@@ -669,6 +852,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--noise-draws", type=int, default=NOISE_DRAWS)
     parser.add_argument("--asset-max-width-px", type=int, default=DEFAULT_ASSET_MAX_WIDTH_PX)
     parser.add_argument("--zoom-filter", type=str, default="")
+    parser.add_argument("--save-all-cells", action="store_true")
     parser.add_argument("--merge-shard-jsons", type=Path, nargs="+", default=None)
     parser.add_argument("--compile-plots", action="store_true")
     parser.add_argument("--auto-download", action="store_true")
@@ -694,6 +878,7 @@ def main(argv: list[str] | None = None) -> int:
         noise_draws=int(args.noise_draws),
         asset_max_width_px=args.asset_max_width_px,
         zoom_filter=_parse_zoom_filter(str(args.zoom_filter)),
+        save_all_cells=bool(args.save_all_cells),
         compile_plots=bool(args.compile_plots),
         auto_download=bool(args.auto_download),
     )
