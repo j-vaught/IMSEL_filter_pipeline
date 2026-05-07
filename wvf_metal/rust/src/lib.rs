@@ -95,7 +95,7 @@ const KERNEL_WEIGHT_PRECISION_F32: u8 = 0;
 fn selected_gpu_device_index() -> Result<Option<usize>, String> {
     let raw_index = std::env::var("WVF_GPU_DEVICE_INDEX")
         .ok()
-        .or_else(|| std::env::var("WVF_METAL_DEVICE_INDEX").ok());
+        .or_else(|| std::env::var("FAST_WVF_DEVICE_INDEX").ok());
     match raw_index.as_deref().map(str::trim) {
         None | Some("") => Ok(None),
         Some(value) => value
@@ -106,7 +106,7 @@ fn selected_gpu_device_index() -> Result<Option<usize>, String> {
 }
 
 fn selected_fft_backend() -> Result<FftBackendMode, String> {
-    match std::env::var("WVF_METAL_FFT_BACKEND")
+    match std::env::var("FAST_WVF_FFT_BACKEND")
         .ok()
         .as_deref()
         .map(str::trim)
@@ -115,7 +115,7 @@ fn selected_fft_backend() -> Result<FftBackendMode, String> {
         Some("cpu") => Ok(FftBackendMode::Cpu),
         Some("vkfft") | Some("metal") | Some("gpu") => Ok(FftBackendMode::Vkfft),
         Some(other) => Err(format!(
-            "WVF_METAL_FFT_BACKEND must be auto, cpu, or vkfft, got {other}"
+            "FAST_WVF_FFT_BACKEND must be auto, cpu, or vkfft, got {other}"
         )),
     }
 }
@@ -977,7 +977,7 @@ unsafe fn validate_supplied_dense_gradients(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wvf_metal_gradients(
+pub unsafe extern "C" fn fast_wvf_gradients(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -1037,7 +1037,7 @@ pub unsafe extern "C" fn wvf_metal_gradients(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wvf_metal_fft_gradients_with_kernel(
+pub unsafe extern "C" fn fast_wvf_fft_gradients_with_kernel(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -1109,7 +1109,7 @@ pub unsafe extern "C" fn wvf_metal_fft_gradients_with_kernel(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wvf_metal_magnitude_angle(
+pub unsafe extern "C" fn fast_wvf_magnitude_angle(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -1173,7 +1173,7 @@ pub unsafe extern "C" fn wvf_metal_magnitude_angle(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wvf_metal_magnitude(
+pub unsafe extern "C" fn fast_wvf_magnitude(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -1243,7 +1243,7 @@ pub unsafe extern "C" fn wvf_metal_magnitude(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wvf_metal_magnitude_orientation(
+pub unsafe extern "C" fn fast_wvf_magnitude_orientation(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -1316,7 +1316,7 @@ pub unsafe extern "C" fn wvf_metal_magnitude_orientation(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wvf_metal_convolve_direct(
+pub unsafe extern "C" fn fast_wvf_convolve_direct(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -1355,7 +1355,7 @@ pub unsafe extern "C" fn wvf_metal_convolve_direct(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wvf_metal_convolve_antipodal(
+pub unsafe extern "C" fn fast_wvf_convolve_antipodal(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -1394,7 +1394,7 @@ pub unsafe extern "C" fn wvf_metal_convolve_antipodal(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn wvf_metal_convolve_split(
+pub unsafe extern "C" fn fast_wvf_convolve_split(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
