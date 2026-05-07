@@ -25,7 +25,7 @@ edgecritic-pipeline-full-dump = "pipeline.full_image_dump:main"
 edgecritic-pipeline-fusion-dump = "pipeline.fusion_image_dump:main"
 edgecritic-pipeline-synthetic-eval = "pipeline.synthetic_eval:main"
 edgecritic-pipeline-verify = "pipeline.verify:main"
-wvf-metal = "wvf.cli:main"
+wvf = "wvf.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
