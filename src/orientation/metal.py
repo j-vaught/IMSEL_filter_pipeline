@@ -19,7 +19,7 @@ from wvf.metal import (
 def _load_recovery_library() -> ctypes.CDLL:
     try:
         lib = _load_wvf_library()
-        lib.edgecritic_metal_recover_two_peaks.argtypes = [
+        lib.metal_full_pipeline_recover_two_peaks.argtypes = [
             ctypes.POINTER(ctypes.c_double),
             ctypes.POINTER(ctypes.c_float),
             ctypes.c_uint,
@@ -36,7 +36,7 @@ def _load_recovery_library() -> ctypes.CDLL:
             ctypes.POINTER(ctypes.c_char),
             ctypes.c_size_t,
         ]
-        lib.edgecritic_metal_recover_two_peaks.restype = ctypes.c_int
+        lib.metal_full_pipeline_recover_two_peaks.restype = ctypes.c_int
     except AttributeError as exc:
         raise MetalBackendError("Rust/Metal recovery symbols are not available") from exc
     except OSError as exc:
@@ -120,7 +120,7 @@ def recover_two_peaks_metal(
         )
 
     error_buffer = ctypes.create_string_buffer(4096)
-    status = _load_recovery_library().edgecritic_metal_recover_two_peaks(
+    status = _load_recovery_library().metal_full_pipeline_recover_two_peaks(
         angles.ctypes.data_as(ctypes.POINTER(ctypes.c_double)),
         response.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
         _as_uint32(n_rows, "row count"),
