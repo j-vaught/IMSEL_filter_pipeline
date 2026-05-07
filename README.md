@@ -1,27 +1,26 @@
 # Edge Detection Filter Critique
 
-This repository contains the research code and paper assets for the Wide View
-Filter work.
+This repository contains the research code for the Wide View Filter work.
 
 If you only need the WVF library, start here:
 
-- standalone package: [wvf_metal/README.md](wvf_metal/README.md)
+- standalone native package: [fast_wvf/README.md](fast_wvf/README.md)
 - pure Python reference path: `src/wvf/`
 
 ## Repository Layout
 
 ```text
-wvf_metal/   standalone WVF package with CPU FFT and GPU FFT backends
+fast_wvf/    standalone WVF package with CPU FFT and GPU FFT backends
 src/wvf/     pure Python WVF reference implementation
-papers/      paper sources, scripts, data, and figures
 ```
 
 ## Installed Commands
 
 ```text
-wvf-metal
-wvf-metal-doctor
-wvf-metal-regression
+fast-wvf
+fast-wvf-doctor
+fast-wvf-regression
+wvf
 edgecritic-nms
 edgecritic-pipeline-full-dump
 edgecritic-pipeline-fusion-dump
