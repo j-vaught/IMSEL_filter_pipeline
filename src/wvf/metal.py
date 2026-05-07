@@ -27,11 +27,11 @@ def _repo_root() -> Path:
 
 
 def _crate_manifest() -> Path:
-    return _repo_root() / "metal" / "edgecritic_metal" / "Cargo.toml"
+    return _repo_root() / "metal_full_pipeline" / "Cargo.toml"
 
 
 def _target_dir() -> Path:
-    return _repo_root() / "build" / "edgecritic_metal_target"
+    return _repo_root() / "build" / "metal_full_pipeline_target"
 
 
 def _library_path() -> Path:
@@ -45,7 +45,7 @@ def _library_path() -> Path:
         raise MetalBackendError(f"Rust/Metal manifest not found at {manifest}")
 
     target_dir = _target_dir()
-    dylib = target_dir / "release" / "libedgecritic_metal.dylib"
+    dylib = target_dir / "release" / "libmetal_full_pipeline.dylib"
     if dylib.exists() and not _needs_rebuild(dylib):
         return dylib
 
@@ -80,7 +80,7 @@ def _needs_rebuild(dylib: Path) -> bool:
 @lru_cache(maxsize=1)
 def _load_library() -> ctypes.CDLL:
     lib = ctypes.CDLL(str(_library_path()))
-    lib.edgecritic_metal_wvf_convolve_pair.argtypes = [
+    lib.metal_full_pipeline_wvf_convolve_pair.argtypes = [
         ctypes.POINTER(ctypes.c_float),
         ctypes.c_uint,
         ctypes.c_uint,
@@ -94,8 +94,8 @@ def _load_library() -> ctypes.CDLL:
         ctypes.POINTER(ctypes.c_char),
         ctypes.c_size_t,
     ]
-    lib.edgecritic_metal_wvf_convolve_pair.restype = ctypes.c_int
-    lib.edgecritic_metal_wvf_convolve_antipodal.argtypes = [
+    lib.metal_full_pipeline_wvf_convolve_pair.restype = ctypes.c_int
+    lib.metal_full_pipeline_wvf_convolve_antipodal.argtypes = [
         ctypes.POINTER(ctypes.c_float),
         ctypes.c_uint,
         ctypes.c_uint,
@@ -109,8 +109,8 @@ def _load_library() -> ctypes.CDLL:
         ctypes.POINTER(ctypes.c_char),
         ctypes.c_size_t,
     ]
-    lib.edgecritic_metal_wvf_convolve_antipodal.restype = ctypes.c_int
-    lib.edgecritic_metal_wvf_convolve_antipodal_split.argtypes = [
+    lib.metal_full_pipeline_wvf_convolve_antipodal.restype = ctypes.c_int
+    lib.metal_full_pipeline_wvf_convolve_antipodal_split.argtypes = [
         ctypes.POINTER(ctypes.c_float),
         ctypes.c_uint,
         ctypes.c_uint,
@@ -125,7 +125,7 @@ def _load_library() -> ctypes.CDLL:
         ctypes.POINTER(ctypes.c_char),
         ctypes.c_size_t,
     ]
-    lib.edgecritic_metal_wvf_convolve_antipodal_split.restype = ctypes.c_int
+    lib.metal_full_pipeline_wvf_convolve_antipodal_split.restype = ctypes.c_int
     return lib
 
 
@@ -181,7 +181,7 @@ def _wvf_radius_gradients_direct_metal(
     error_buffer = ctypes.create_string_buffer(4096)
 
     h, w = img.shape
-    status = _load_library().edgecritic_metal_wvf_convolve_pair(
+    status = _load_library().metal_full_pipeline_wvf_convolve_pair(
         img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
         ctypes.c_uint(w),
         ctypes.c_uint(h),
@@ -226,7 +226,7 @@ def wvf_antipodal_gradients_metal(
     error_buffer = ctypes.create_string_buffer(4096)
 
     h, w = img.shape
-    status = _load_library().edgecritic_metal_wvf_convolve_antipodal(
+    status = _load_library().metal_full_pipeline_wvf_convolve_antipodal(
         img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
         ctypes.c_uint(w),
         ctypes.c_uint(h),
@@ -271,7 +271,7 @@ def wvf_antipodal_split_gradients_metal(
     error_buffer = ctypes.create_string_buffer(4096)
 
     h, w = img.shape
-    status = _load_library().edgecritic_metal_wvf_convolve_antipodal_split(
+    status = _load_library().metal_full_pipeline_wvf_convolve_antipodal_split(
         img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
         ctypes.c_uint(w),
         ctypes.c_uint(h),
