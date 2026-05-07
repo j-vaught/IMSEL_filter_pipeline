@@ -394,7 +394,7 @@ uint64_t hash_bytes(const void* data, size_t byte_count, uint64_t seed = 1469598
 int selected_device_index(std::string* error_out) {
     const char* raw_value = std::getenv("WVF_GPU_DEVICE_INDEX");
     if (!raw_value || std::strlen(raw_value) == 0) {
-        raw_value = std::getenv("WVF_METAL_DEVICE_INDEX");
+        raw_value = std::getenv("FAST_WVF_DEVICE_INDEX");
     }
     if (!raw_value || std::strlen(raw_value) == 0) {
         return 0;
