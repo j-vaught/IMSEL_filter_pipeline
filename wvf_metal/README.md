@@ -1,6 +1,6 @@
-# WVF Metal
+# Fast WVF
 
-`wvf_metal` is the standalone Wide View Filter package from this repository.
+`fast_wvf` is the standalone Wide View Filter package from this repository.
 It gives you one public API for three practical cases:
 
 1. Fast GPU FFT execution on Linux with CUDA/VkFFT.
@@ -16,14 +16,14 @@ If you are sending WVF to a colleague, this is the directory to send.
 | --- | --- | --- |
 | Linux | supported | CPU FFT and CUDA/VkFFT GPU FFT |
 | macOS | supported | CPU FFT and Metal spatial variants |
-| Windows | not supported natively | use WSL2 for `wvf_metal`, or use the pure Python fallback from the full repository |
+| Windows | not supported natively | use WSL2 for `fast_wvf`, or use the pure Python fallback from the full repository |
 
 ## What You Install
 
-- Standalone package: `wvf_metal/`
+- Standalone package: `fast_wvf/`
 - Pure Python reference implementation in the full repository: `src/wvf/`
 
-`wvf_metal` is the production path. The pure Python code is slower but easier to
+`fast_wvf` is the production path. The pure Python code is slower but easier to
 inspect and does not require the native extension.
 
 ## Requirements
@@ -67,7 +67,7 @@ addition to `numpy`.
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install ./wvf_metal
+python -m pip install ./fast_wvf
 ```
 
 This is the standard install flow on Linux and macOS.
@@ -75,13 +75,13 @@ This is the standard install flow on Linux and macOS.
 If you want CLI image-file support:
 
 ```bash
-python -m pip install './wvf_metal[image]'
+python -m pip install './fast_wvf[image]'
 ```
 
 ### Option 2. Install Directly From GitHub
 
 ```bash
-python -m pip install "git+https://github.com/j-vaught/edge-detection-filter-critique.git#subdirectory=wvf_metal"
+python -m pip install "git+https://github.com/j-vaught/edge-detection-filter-critique.git#subdirectory=fast_wvf"
 ```
 
 ### Linux Notes
@@ -108,7 +108,7 @@ export WVF_CUDA_HOST_CXX=/path/to/g++
 
 ### Windows Notes
 
-The native `wvf_metal` extension is not supported on Windows.
+The native `fast_wvf` extension is not supported on Windows.
 
 If someone needs Windows, the practical options are:
 
@@ -119,17 +119,17 @@ If someone needs Windows, the practical options are:
 python -m pip install .
 ```
 
-That fallback is slower, but it does not require the native `wvf_metal`
+That fallback is slower, but it does not require the native `fast_wvf`
 extension.
 
 ### Sanity Check
 
 ```bash
-wvf-metal-doctor
+fast-wvf-doctor
 ```
 
 The first real call builds the native library and caches it under
-`wvf_metal/build/target`.
+`fast_wvf/build/target`.
 
 Useful preflight checks:
 
@@ -166,7 +166,7 @@ For larger radii and higher polynomial degrees, use `normalize_coords=True`.
 
 ```python
 import numpy as np
-from wvf_metal import components
+from fast_wvf import components
 
 image = np.random.default_rng(0).random((1024, 1024), dtype=np.float32)
 result = components(
@@ -185,7 +185,7 @@ print(result.gx.shape, result.magnitude.dtype)
 
 ```python
 import numpy as np
-from wvf_metal import backend_info, components
+from fast_wvf import backend_info, components
 
 image = np.random.default_rng(0).random((1024, 1024), dtype=np.float32)
 info = backend_info()
@@ -203,7 +203,7 @@ result = components(
 
 ### 3. Pure Python Reference Fallback
 
-This path lives in the full repository, not in the standalone `wvf_metal`
+This path lives in the full repository, not in the standalone `fast_wvf`
 package.
 
 ```bash
@@ -226,9 +226,9 @@ gx, gy = wvf_radius_gradients_cpu(
 ## CLI Usage
 
 ```bash
-wvf-metal input.npy output.npz --radius 15 --degree 11 --normalize-coords
-wvf-metal input.npy output.npz --radius 15 --degree 11 --variant fft --fft-backend cpu
-wvf-metal input.npy output.npz --radius 15 --degree 11 --variant fft --fft-backend vkfft
+fast-wvf input.npy output.npz --radius 15 --degree 11 --normalize-coords
+fast-wvf input.npy output.npz --radius 15 --degree 11 --variant fft --fft-backend cpu
+fast-wvf input.npy output.npz --radius 15 --degree 11 --variant fft --fft-backend vkfft
 ```
 
 The output archive contains the requested arrays plus metadata such as
@@ -238,7 +238,7 @@ The output archive contains the requested arrays plus metadata such as
 
 A minimal notebook lives at:
 
-- `wvf_metal/examples/wvf_quickstart.ipynb`
+- `fast_wvf/examples/wvf_quickstart.ipynb`
 
 It shows:
 
@@ -280,6 +280,6 @@ without changing your Python code beyond the backend selector.
 
 This package was checked in three modes:
 
-- `wvf_metal` with `fft_backend="cpu"`
-- `wvf_metal` with `fft_backend="vkfft"`
+- `fast_wvf` with `fft_backend="cpu"`
+- `fast_wvf` with `fft_backend="vkfft"`
 - full-repository pure Python reference via `wvf_radius_gradients_cpu`
