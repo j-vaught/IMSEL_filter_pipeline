@@ -3241,7 +3241,7 @@ unsafe fn run_cgmm_fuse_two_pass(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn edgecritic_metal_wvf_convolve_pair(
+pub unsafe extern "C" fn metal_full_pipeline_wvf_convolve_pair(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -3267,7 +3267,7 @@ pub unsafe extern "C" fn edgecritic_metal_wvf_convolve_pair(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn edgecritic_metal_wvf_convolve_antipodal(
+pub unsafe extern "C" fn metal_full_pipeline_wvf_convolve_antipodal(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -3293,7 +3293,7 @@ pub unsafe extern "C" fn edgecritic_metal_wvf_convolve_antipodal(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn edgecritic_metal_wvf_convolve_antipodal_split(
+pub unsafe extern "C" fn metal_full_pipeline_wvf_convolve_antipodal_split(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -3320,7 +3320,7 @@ pub unsafe extern "C" fn edgecritic_metal_wvf_convolve_antipodal_split(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn edgecritic_metal_lf_response(
+pub unsafe extern "C" fn metal_full_pipeline_lf_response(
     g_x: *const c_float,
     g_y: *const c_float,
     width: c_uint,
@@ -3344,7 +3344,7 @@ pub unsafe extern "C" fn edgecritic_metal_lf_response(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn edgecritic_metal_lf_response_batch(
+pub unsafe extern "C" fn metal_full_pipeline_lf_response_batch(
     g_x: *const c_float,
     g_y: *const c_float,
     width: c_uint,
@@ -3372,7 +3372,7 @@ pub unsafe extern "C" fn edgecritic_metal_lf_response_batch(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn edgecritic_metal_lf_orientation_stack(
+pub unsafe extern "C" fn metal_full_pipeline_lf_orientation_stack(
     g_x: *const c_float,
     g_y: *const c_float,
     width: c_uint,
@@ -3403,7 +3403,7 @@ pub unsafe extern "C" fn edgecritic_metal_lf_orientation_stack(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn edgecritic_metal_lf_orientation_stack_box(
+pub unsafe extern "C" fn metal_full_pipeline_lf_orientation_stack_box(
     g_x: *const c_float,
     g_y: *const c_float,
     width: c_uint,
@@ -3436,7 +3436,7 @@ pub unsafe extern "C" fn edgecritic_metal_lf_orientation_stack_box(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn edgecritic_metal_lf_orientation_length_stack_box(
+pub unsafe extern "C" fn metal_full_pipeline_lf_orientation_length_stack_box(
     g_x: *const c_float,
     g_y: *const c_float,
     width: c_uint,
@@ -3473,7 +3473,7 @@ pub unsafe extern "C" fn edgecritic_metal_lf_orientation_length_stack_box(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn edgecritic_metal_lf_orientation_stack_scanline(
+pub unsafe extern "C" fn metal_full_pipeline_lf_orientation_stack_scanline(
     g_x: *const c_float,
     g_y: *const c_float,
     width: c_uint,
@@ -3494,7 +3494,7 @@ pub unsafe extern "C" fn edgecritic_metal_lf_orientation_stack_scanline(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn edgecritic_metal_cgmm_fuse_two_pass(
+pub unsafe extern "C" fn metal_full_pipeline_cgmm_fuse_two_pass(
     phi_p: *const c_float,
     w_p: *const c_float,
     phi_s: *const c_float,
@@ -4569,7 +4569,7 @@ unsafe fn run_wvf_lf_recover(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn edgecritic_metal_recover_two_peaks(
+pub unsafe extern "C" fn metal_full_pipeline_recover_two_peaks(
     angles: *const c_double,
     response: *const c_float,
     n_rows: c_uint,
@@ -4610,7 +4610,7 @@ pub unsafe extern "C" fn edgecritic_metal_recover_two_peaks(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn edgecritic_metal_wvf_lf_recover(
+pub unsafe extern "C" fn metal_full_pipeline_wvf_lf_recover(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -4669,7 +4669,7 @@ pub unsafe extern "C" fn edgecritic_metal_wvf_lf_recover(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn edgecritic_metal_wvf_lf_recover_antipodal(
+pub unsafe extern "C" fn metal_full_pipeline_wvf_lf_recover_antipodal(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
@@ -4728,7 +4728,7 @@ pub unsafe extern "C" fn edgecritic_metal_wvf_lf_recover_antipodal(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn edgecritic_metal_wvf_lf_recover_antipodal_split(
+pub unsafe extern "C" fn metal_full_pipeline_wvf_lf_recover_antipodal_split(
     image: *const c_float,
     width: c_uint,
     height: c_uint,
