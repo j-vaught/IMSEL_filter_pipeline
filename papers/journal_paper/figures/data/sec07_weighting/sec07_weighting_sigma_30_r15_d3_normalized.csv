@@ -1,2 +1,0 @@
-sigma_label,sigma_w_px,localisation_offset,fwhm,white_noise_gain,condition_number,anisotropy_ratio,support_cardinality,rank_deficient_count,sigma_min
-sigma_w = 30 px,30.0,0.03944453903367971,11.295103103900829,0.0002247770892483027,56.5422919312794,1.0251594933333026,708,0,0.4631109749893487
