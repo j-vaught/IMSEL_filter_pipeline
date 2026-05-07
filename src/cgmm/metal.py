@@ -40,7 +40,7 @@ class CGMMResult(TypedDict):
 def _load_cgmm_library() -> ctypes.CDLL:
     try:
         lib = _load_wvf_library()
-        lib.edgecritic_metal_cgmm_fuse_two_pass.argtypes = [
+        lib.metal_full_pipeline_cgmm_fuse_two_pass.argtypes = [
             ctypes.POINTER(ctypes.c_float),
             ctypes.POINTER(ctypes.c_float),
             ctypes.POINTER(ctypes.c_float),
@@ -66,7 +66,7 @@ def _load_cgmm_library() -> ctypes.CDLL:
             ctypes.POINTER(ctypes.c_char),
             ctypes.c_size_t,
         ]
-        lib.edgecritic_metal_cgmm_fuse_two_pass.restype = ctypes.c_int
+        lib.metal_full_pipeline_cgmm_fuse_two_pass.restype = ctypes.c_int
     except AttributeError as exc:
         raise MetalBackendError("Rust/Metal c-GMM symbols are not available") from exc
     except OSError as exc:
@@ -183,7 +183,7 @@ def cgmm_fuse_two_pass_metal(
     keep_secondary_mask = np.empty(p_count, dtype=np.uint8)
 
     error_buffer = ctypes.create_string_buffer(4096)
-    status = _load_cgmm_library().edgecritic_metal_cgmm_fuse_two_pass(
+    status = _load_cgmm_library().metal_full_pipeline_cgmm_fuse_two_pass(
         phi_p_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
         w_p_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
         phi_s_arr.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
