@@ -48,7 +48,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "edgecritic_metal"
+name = "metal_full_pipeline"
 version = "0.1.0"
 dependencies = [
  "metal",
