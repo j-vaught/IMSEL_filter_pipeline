@@ -1,4 +1,4 @@
-"""Standalone WVF Metal command line interface."""
+"""Pure Python WVF reference command line interface."""
 
 from __future__ import annotations
 
