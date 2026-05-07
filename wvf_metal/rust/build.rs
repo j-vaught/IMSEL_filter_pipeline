@@ -80,13 +80,13 @@ fn main() {
                 println!("cargo:rustc-link-arg=-Wl,-rpath,{}", cuda.lib_dir.display());
             } else {
                 println!(
-                    "cargo:warning=No supported CUDA host C++ compiler found. Building wvf_metal without VkFFT GPU support on Linux. Set WVF_CUDA_HOST_CXX to a compatible compiler to enable it."
+                    "cargo:warning=No supported CUDA host C++ compiler found. Building fast_wvf without VkFFT GPU support on Linux. Set WVF_CUDA_HOST_CXX to a compatible compiler to enable it."
                 );
                 println!("cargo:rerun-if-env-changed=PATH");
             }
         } else {
             println!(
-                "cargo:warning=CUDA toolkit not found. Building wvf_metal without VkFFT GPU support on Linux."
+                "cargo:warning=CUDA toolkit not found. Building fast_wvf without VkFFT GPU support on Linux."
             );
         }
     }
