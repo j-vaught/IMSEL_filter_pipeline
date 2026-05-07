@@ -46,13 +46,13 @@ def _load_pipeline_library() -> ctypes.CDLL:
             ctypes.POINTER(ctypes.c_char),
             ctypes.c_size_t,
         ]
-        lib.edgecritic_metal_wvf_lf_recover.argtypes = recover_argtypes
-        lib.edgecritic_metal_wvf_lf_recover.restype = ctypes.c_int
-        lib.edgecritic_metal_wvf_lf_recover_antipodal.argtypes = recover_argtypes
-        lib.edgecritic_metal_wvf_lf_recover_antipodal.restype = ctypes.c_int
+        lib.metal_full_pipeline_wvf_lf_recover.argtypes = recover_argtypes
+        lib.metal_full_pipeline_wvf_lf_recover.restype = ctypes.c_int
+        lib.metal_full_pipeline_wvf_lf_recover_antipodal.argtypes = recover_argtypes
+        lib.metal_full_pipeline_wvf_lf_recover_antipodal.restype = ctypes.c_int
         split_argtypes = recover_argtypes[:8] + [ctypes.c_uint] + recover_argtypes[8:]
-        lib.edgecritic_metal_wvf_lf_recover_antipodal_split.argtypes = split_argtypes
-        lib.edgecritic_metal_wvf_lf_recover_antipodal_split.restype = ctypes.c_int
+        lib.metal_full_pipeline_wvf_lf_recover_antipodal_split.argtypes = split_argtypes
+        lib.metal_full_pipeline_wvf_lf_recover_antipodal_split.restype = ctypes.c_int
     except AttributeError as exc:
         raise MetalBackendError("Rust/Metal fused pipeline symbols are not available") from exc
     except OSError as exc:
@@ -120,15 +120,15 @@ def wvf_lf_recover_metal(
     variant_name = str(wvf_variant).lower()
     if variant_name in {"direct", "baseline", "pair"}:
         kernels = build_wvf_radius_kernels(radius=radius_value, order=degree_value)
-        recover = _load_pipeline_library().edgecritic_metal_wvf_lf_recover
+        recover = _load_pipeline_library().metal_full_pipeline_wvf_lf_recover
         n_offsets = kernels.support_size
     elif variant_name in {"antipodal"}:
         kernels = build_wvf_antipodal_kernels(radius=radius_value, order=degree_value)
-        recover = _load_pipeline_library().edgecritic_metal_wvf_lf_recover_antipodal
+        recover = _load_pipeline_library().metal_full_pipeline_wvf_lf_recover_antipodal
         n_offsets = kernels.pair_count
     elif variant_name in {"split", "optimized", "auto"}:
         kernels = build_wvf_antipodal_kernels(radius=radius_value, order=degree_value)
-        recover = _load_pipeline_library().edgecritic_metal_wvf_lf_recover_antipodal_split
+        recover = _load_pipeline_library().metal_full_pipeline_wvf_lf_recover_antipodal_split
         n_offsets = kernels.pair_count
     else:
         raise ValueError("wvf_variant must be 'split', 'antipodal', or 'direct'")
