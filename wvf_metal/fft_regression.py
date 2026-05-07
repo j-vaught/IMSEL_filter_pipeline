@@ -104,7 +104,7 @@ def main(argv: list[str] | None = None) -> int:
     package_root = Path(__file__).resolve().parent
     repo_root = package_root.parent
 
-    current = load_package(package_root, "wvf_metal_current")
+    current = load_package(package_root, "fast_wvf_current")
     correctness = run_correctness(current)
     ok = check_correctness(correctness)
 
@@ -117,7 +117,7 @@ def main(argv: list[str] | None = None) -> int:
             args.baseline_worktree,
         )
         try:
-            baseline = load_package(baseline_root, "wvf_metal_baseline")
+            baseline = load_package(baseline_root, "fast_wvf_baseline")
             performance_results = run_performance(current, baseline, args.warm_runs)
             ok = check_performance(performance_results) and ok
         finally:
@@ -159,19 +159,19 @@ def ensure_baseline_package_root(
 ) -> tuple[Path, Path | None]:
     created_path: Path | None = None
     if worktree_path is None:
-        worktree_path = Path(tempfile.mkdtemp(prefix="wvf_metal_baseline."))
+        worktree_path = Path(tempfile.mkdtemp(prefix="fast_wvf_baseline."))
         subprocess.run(
             ["git", "-C", str(repo_root), "worktree", "add", str(worktree_path), revision],
             check=True,
         )
         created_path = worktree_path
-    elif not (worktree_path / "wvf_metal" / "__init__.py").exists():
+    elif not (worktree_path / "fast_wvf" / "__init__.py").exists():
         subprocess.run(
             ["git", "-C", str(repo_root), "worktree", "add", str(worktree_path), revision],
             check=True,
         )
         created_path = worktree_path
-    return worktree_path / "wvf_metal", created_path
+    return worktree_path / "fast_wvf", created_path
 
 
 def run_correctness(module: ModuleType) -> list[CorrectnessCase]:
