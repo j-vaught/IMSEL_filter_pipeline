@@ -3,7 +3,7 @@ requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "wvf-metal"
+name = "fast-wvf"
 version = "0.4.0"
 description = "Standalone native WVF gradients with macOS Metal, VkFFT, CUDA, and Rust CPU FFT backends"
 readme = "README.md"
@@ -40,17 +40,17 @@ image = ["imageio>=2.31"]
 all = ["imageio>=2.31"]
 
 [project.scripts]
-wvf-metal = "wvf_metal.cli:main"
-wvf-metal-doctor = "wvf_metal.cli:doctor_main"
-wvf-metal-regression = "wvf_metal.fft_regression:main"
+fast-wvf = "fast_wvf.cli:main"
+fast-wvf-doctor = "fast_wvf.cli:doctor_main"
+fast-wvf-regression = "fast_wvf.fft_regression:main"
 
 [tool.setuptools]
-packages = ["wvf_metal"]
-package-dir = {"wvf_metal" = "."}
+packages = ["fast_wvf"]
+package-dir = {"fast_wvf" = "."}
 include-package-data = false
 
 [tool.setuptools.package-data]
-wvf_metal = [
+fast_wvf = [
     "Cargo.toml",
     "Cargo.lock",
     "README.md",
