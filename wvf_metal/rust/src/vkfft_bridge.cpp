@@ -464,7 +464,7 @@ bool initialize_runtime_pipelines(MetalRuntime* runtime, std::string* error_out)
 }
 
 int selected_device_index(std::string* error_out) {
-    const char* value = std::getenv("WVF_METAL_DEVICE_INDEX");
+    const char* value = std::getenv("FAST_WVF_DEVICE_INDEX");
     if (!value || !value[0]) {
         return -1;
     }
@@ -475,7 +475,7 @@ int selected_device_index(std::string* error_out) {
     if (errno != 0 || end == value || (end && *end != '\0') || parsed < 0 ||
         parsed > std::numeric_limits<int>::max()) {
         if (error_out) {
-            *error_out = "WVF_METAL_DEVICE_INDEX must be a non-negative integer";
+            *error_out = "FAST_WVF_DEVICE_INDEX must be a non-negative integer";
         }
         return -2;
     }
@@ -499,7 +499,7 @@ MTL::Device* create_selected_device(int device_index, std::string* error_out) {
     if (device_index >= count) {
         if (error_out) {
             *error_out =
-                "WVF_METAL_DEVICE_INDEX " + std::to_string(device_index) +
+                "FAST_WVF_DEVICE_INDEX " + std::to_string(device_index) +
                 " is out of range for " + std::to_string(count) + " Metal device(s)";
         }
         devices->release();
