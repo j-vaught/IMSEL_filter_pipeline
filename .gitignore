@@ -9,7 +9,7 @@ venv/
 dist/
 build/
 target/
-metal/edgecritic_metal/target/
+metal_full_pipeline/target/
 *.swp
 *.swo
 .DS_Store
