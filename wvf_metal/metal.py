@@ -76,9 +76,9 @@ def _stored_build_fingerprint(path: Path) -> dict[str, object] | None:
 
 def _user_cache_dir() -> Path:
     if platform.system() == "Darwin":
-        return Path.home() / "Library" / "Caches" / "wvf_metal"
+        return Path.home() / "Library" / "Caches" / "fast_wvf"
     base = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
-    return base / "wvf_metal"
+    return base / "fast_wvf"
 
 
 def _auto_fft_cache_path() -> Path:
@@ -296,7 +296,7 @@ def _library_path() -> Path:
 
     target_dir = _target_dir()
     suffix = ".dylib" if system == "Darwin" else ".so"
-    library = target_dir / "release" / f"libwvf_metal_backend{suffix}"
+    library = target_dir / "release" / f"libfast_wvf_backend{suffix}"
     fingerprint = _build_fingerprint()
     if (
         library.exists()
@@ -357,8 +357,8 @@ def _load_library() -> ctypes.CDLL:
         ctypes.POINTER(ctypes.c_char),
         ctypes.c_size_t,
     ]
-    lib.wvf_metal_gradients.argtypes = gradient_args
-    lib.wvf_metal_gradients.restype = ctypes.c_int
+    lib.fast_wvf_gradients.argtypes = gradient_args
+    lib.fast_wvf_gradients.restype = ctypes.c_int
 
     gradient_with_kernel_args = [
         ctypes.POINTER(ctypes.c_float),
@@ -373,8 +373,8 @@ def _load_library() -> ctypes.CDLL:
         ctypes.POINTER(ctypes.c_char),
         ctypes.c_size_t,
     ]
-    lib.wvf_metal_fft_gradients_with_kernel.argtypes = gradient_with_kernel_args
-    lib.wvf_metal_fft_gradients_with_kernel.restype = ctypes.c_int
+    lib.fast_wvf_fft_gradients_with_kernel.argtypes = gradient_with_kernel_args
+    lib.fast_wvf_fft_gradients_with_kernel.restype = ctypes.c_int
 
     magnitude_angle_args = gradient_args[:9] + [
         ctypes.POINTER(ctypes.c_float),
@@ -382,16 +382,16 @@ def _load_library() -> ctypes.CDLL:
         ctypes.POINTER(ctypes.c_char),
         ctypes.c_size_t,
     ]
-    lib.wvf_metal_magnitude_angle.argtypes = magnitude_angle_args
-    lib.wvf_metal_magnitude_angle.restype = ctypes.c_int
+    lib.fast_wvf_magnitude_angle.argtypes = magnitude_angle_args
+    lib.fast_wvf_magnitude_angle.restype = ctypes.c_int
 
     magnitude_args = gradient_args[:7] + [
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_char),
         ctypes.c_size_t,
     ]
-    lib.wvf_metal_magnitude.argtypes = magnitude_args
-    lib.wvf_metal_magnitude.restype = ctypes.c_int
+    lib.fast_wvf_magnitude.argtypes = magnitude_args
+    lib.fast_wvf_magnitude.restype = ctypes.c_int
 
     magnitude_orientation_args = gradient_args[:7] + [
         ctypes.POINTER(ctypes.c_float),
@@ -399,8 +399,8 @@ def _load_library() -> ctypes.CDLL:
         ctypes.POINTER(ctypes.c_char),
         ctypes.c_size_t,
     ]
-    lib.wvf_metal_magnitude_orientation.argtypes = magnitude_orientation_args
-    lib.wvf_metal_magnitude_orientation.restype = ctypes.c_int
+    lib.fast_wvf_magnitude_orientation.argtypes = magnitude_orientation_args
+    lib.fast_wvf_magnitude_orientation.restype = ctypes.c_int
     return lib
 
 
@@ -425,7 +425,7 @@ def backend_info() -> dict[str, object]:
 
     cuda_runtime_dir = _linux_cuda_runtime_lib_dir()
     return {
-        "package": "wvf-metal",
+        "package": "fast-wvf",
         "system": platform.system(),
         "machine": platform.machine(),
         "python": platform.python_version(),
@@ -539,16 +539,16 @@ def _run_native_gradients(
     error_buffer = ctypes.create_string_buffer(4096)
     h, w = img.shape
 
-    with _temporary_env_var("WVF_METAL_FFT_BACKEND", fft_backend):
+    with _temporary_env_var("FAST_WVF_FFT_BACKEND", fft_backend):
         with _temporary_env_var(
             "WVF_GPU_DEVICE_INDEX",
             None if device_index is None else str(device_index),
         ):
             with _temporary_env_var(
-                "WVF_METAL_DEVICE_INDEX",
+                "FAST_WVF_DEVICE_INDEX",
                 None if device_index is None else str(device_index),
             ):
-                status = _load_library().wvf_metal_gradients(
+                status = _load_library().fast_wvf_gradients(
                     img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
                     _checked_uint(w, "image width"),
                     _checked_uint(h, "image height"),
@@ -579,16 +579,16 @@ def _run_native_fft_gradients_with_kernel(
     h, w = img.shape
     kernel_width = int(kernel_x.shape[0])
 
-    with _temporary_env_var("WVF_METAL_FFT_BACKEND", fft_backend):
+    with _temporary_env_var("FAST_WVF_FFT_BACKEND", fft_backend):
         with _temporary_env_var(
             "WVF_GPU_DEVICE_INDEX",
             None if device_index is None else str(device_index),
         ):
             with _temporary_env_var(
-                "WVF_METAL_DEVICE_INDEX",
+                "FAST_WVF_DEVICE_INDEX",
                 None if device_index is None else str(device_index),
             ):
-                status = _load_library().wvf_metal_fft_gradients_with_kernel(
+                status = _load_library().fast_wvf_fft_gradients_with_kernel(
                     img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
                     _checked_uint(w, "image width"),
                     _checked_uint(h, "image height"),
@@ -618,16 +618,16 @@ def _run_native_magnitude(
     error_buffer = ctypes.create_string_buffer(4096)
     h, w = img.shape
 
-    with _temporary_env_var("WVF_METAL_FFT_BACKEND", fft_backend):
+    with _temporary_env_var("FAST_WVF_FFT_BACKEND", fft_backend):
         with _temporary_env_var(
             "WVF_GPU_DEVICE_INDEX",
             None if device_index is None else str(device_index),
         ):
             with _temporary_env_var(
-                "WVF_METAL_DEVICE_INDEX",
+                "FAST_WVF_DEVICE_INDEX",
                 None if device_index is None else str(device_index),
             ):
-                status = _load_library().wvf_metal_magnitude(
+                status = _load_library().fast_wvf_magnitude(
                     img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
                     _checked_uint(w, "image width"),
                     _checked_uint(h, "image height"),
@@ -657,16 +657,16 @@ def _run_native_magnitude_orientation(
     error_buffer = ctypes.create_string_buffer(4096)
     h, w = img.shape
 
-    with _temporary_env_var("WVF_METAL_FFT_BACKEND", fft_backend):
+    with _temporary_env_var("FAST_WVF_FFT_BACKEND", fft_backend):
         with _temporary_env_var(
             "WVF_GPU_DEVICE_INDEX",
             None if device_index is None else str(device_index),
         ):
             with _temporary_env_var(
-                "WVF_METAL_DEVICE_INDEX",
+                "FAST_WVF_DEVICE_INDEX",
                 None if device_index is None else str(device_index),
             ):
-                status = _load_library().wvf_metal_magnitude_orientation(
+                status = _load_library().fast_wvf_magnitude_orientation(
                     img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
                     _checked_uint(w, "image width"),
                     _checked_uint(h, "image height"),
@@ -699,16 +699,16 @@ def _run_native_magnitude_angle(
     error_buffer = ctypes.create_string_buffer(4096)
     h, w = img.shape
 
-    with _temporary_env_var("WVF_METAL_FFT_BACKEND", fft_backend):
+    with _temporary_env_var("FAST_WVF_FFT_BACKEND", fft_backend):
         with _temporary_env_var(
             "WVF_GPU_DEVICE_INDEX",
             None if device_index is None else str(device_index),
         ):
             with _temporary_env_var(
-                "WVF_METAL_DEVICE_INDEX",
+                "FAST_WVF_DEVICE_INDEX",
                 None if device_index is None else str(device_index),
             ):
-                status = _load_library().wvf_metal_magnitude_angle(
+                status = _load_library().fast_wvf_magnitude_angle(
                     img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
                     _checked_uint(w, "image width"),
                     _checked_uint(h, "image height"),
@@ -853,7 +853,7 @@ def wvf_gradients_metal(
 
     if platform.system() not in {"Darwin", "Linux"}:
         raise MetalBackendError(
-            "wvf_metal requires macOS or Linux for the native extension."
+            "fast_wvf requires macOS or Linux for the native extension."
         )
     if _variant_is_fft(variant) and chosen_fft_backend == "auto":
         return _run_auto_fft(
@@ -907,7 +907,7 @@ def fft_gradients_with_kernel(
         )
     if platform.system() not in {"Darwin", "Linux"}:
         raise MetalBackendError(
-            "wvf_metal requires macOS or Linux for the native extension."
+            "fast_wvf requires macOS or Linux for the native extension."
         )
     return _run_native_fft_gradients_with_kernel(
         img,
@@ -935,7 +935,7 @@ def wvf_magnitude_metal(
 
     if platform.system() not in {"Darwin", "Linux"}:
         raise MetalBackendError(
-            "wvf_metal requires macOS or Linux for the native extension."
+            "fast_wvf requires macOS or Linux for the native extension."
         )
     if _variant_is_fft(variant) and chosen_fft_backend == "auto":
         return _run_auto_fft(
@@ -975,7 +975,7 @@ def wvf_magnitude_orientation_metal(
 
     if platform.system() not in {"Darwin", "Linux"}:
         raise MetalBackendError(
-            "wvf_metal requires macOS or Linux for the native extension."
+            "fast_wvf requires macOS or Linux for the native extension."
         )
     if _variant_is_fft(variant) and chosen_fft_backend == "auto":
         return _run_auto_fft(
@@ -1015,7 +1015,7 @@ def wvf_magnitude_angle_metal(
 
     if platform.system() not in {"Darwin", "Linux"}:
         raise MetalBackendError(
-            "wvf_metal requires macOS or Linux for the native extension."
+            "fast_wvf requires macOS or Linux for the native extension."
         )
     if _variant_is_fft(variant) and chosen_fft_backend == "auto":
         return _run_auto_fft(
