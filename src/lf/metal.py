@@ -24,7 +24,7 @@ _MAX_BOX_PASSES = 32
 def _load_lf_library() -> ctypes.CDLL:
     try:
         lib = _load_wvf_library()
-        lib.edgecritic_metal_lf_response.argtypes = [
+        lib.metal_full_pipeline_lf_response.argtypes = [
             ctypes.POINTER(ctypes.c_float),
             ctypes.POINTER(ctypes.c_float),
             ctypes.c_uint,
@@ -38,8 +38,8 @@ def _load_lf_library() -> ctypes.CDLL:
             ctypes.POINTER(ctypes.c_char),
             ctypes.c_size_t,
         ]
-        lib.edgecritic_metal_lf_response.restype = ctypes.c_int
-        lib.edgecritic_metal_lf_response_batch.argtypes = [
+        lib.metal_full_pipeline_lf_response.restype = ctypes.c_int
+        lib.metal_full_pipeline_lf_response_batch.argtypes = [
             ctypes.POINTER(ctypes.c_float),
             ctypes.POINTER(ctypes.c_float),
             ctypes.c_uint,
@@ -55,8 +55,8 @@ def _load_lf_library() -> ctypes.CDLL:
             ctypes.POINTER(ctypes.c_char),
             ctypes.c_size_t,
         ]
-        lib.edgecritic_metal_lf_response_batch.restype = ctypes.c_int
-        lib.edgecritic_metal_lf_orientation_stack.argtypes = [
+        lib.metal_full_pipeline_lf_response_batch.restype = ctypes.c_int
+        lib.metal_full_pipeline_lf_orientation_stack.argtypes = [
             ctypes.POINTER(ctypes.c_float),
             ctypes.POINTER(ctypes.c_float),
             ctypes.c_uint,
@@ -68,8 +68,8 @@ def _load_lf_library() -> ctypes.CDLL:
             ctypes.POINTER(ctypes.c_char),
             ctypes.c_size_t,
         ]
-        lib.edgecritic_metal_lf_orientation_stack.restype = ctypes.c_int
-        lib.edgecritic_metal_lf_orientation_stack_box.argtypes = [
+        lib.metal_full_pipeline_lf_orientation_stack.restype = ctypes.c_int
+        lib.metal_full_pipeline_lf_orientation_stack_box.argtypes = [
             ctypes.POINTER(ctypes.c_float),
             ctypes.POINTER(ctypes.c_float),
             ctypes.c_uint,
@@ -82,8 +82,8 @@ def _load_lf_library() -> ctypes.CDLL:
             ctypes.POINTER(ctypes.c_char),
             ctypes.c_size_t,
         ]
-        lib.edgecritic_metal_lf_orientation_stack_box.restype = ctypes.c_int
-        lib.edgecritic_metal_lf_orientation_length_stack_box.argtypes = [
+        lib.metal_full_pipeline_lf_orientation_stack_box.restype = ctypes.c_int
+        lib.metal_full_pipeline_lf_orientation_length_stack_box.argtypes = [
             ctypes.POINTER(ctypes.c_float),
             ctypes.POINTER(ctypes.c_float),
             ctypes.c_uint,
@@ -98,8 +98,8 @@ def _load_lf_library() -> ctypes.CDLL:
             ctypes.POINTER(ctypes.c_char),
             ctypes.c_size_t,
         ]
-        lib.edgecritic_metal_lf_orientation_length_stack_box.restype = ctypes.c_int
-        lib.edgecritic_metal_lf_orientation_stack_scanline.argtypes = [
+        lib.metal_full_pipeline_lf_orientation_length_stack_box.restype = ctypes.c_int
+        lib.metal_full_pipeline_lf_orientation_stack_scanline.argtypes = [
             ctypes.POINTER(ctypes.c_float),
             ctypes.POINTER(ctypes.c_float),
             ctypes.c_uint,
@@ -110,7 +110,7 @@ def _load_lf_library() -> ctypes.CDLL:
             ctypes.POINTER(ctypes.c_char),
             ctypes.c_size_t,
         ]
-        lib.edgecritic_metal_lf_orientation_stack_scanline.restype = ctypes.c_int
+        lib.metal_full_pipeline_lf_orientation_stack_scanline.restype = ctypes.c_int
     except AttributeError as exc:
         raise MetalBackendError("Rust/Metal LF symbols are not available") from exc
     except OSError as exc:
@@ -177,7 +177,7 @@ def lf_response(
     h, w = gx.shape
     out = np.empty(x.size, dtype=np.float32)
     error_buffer = ctypes.create_string_buffer(4096)
-    status = _load_lf_library().edgecritic_metal_lf_response(
+    status = _load_lf_library().metal_full_pipeline_lf_response(
         gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
         gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
         _as_uint32(w, "image width"),
@@ -223,7 +223,7 @@ def lf_response_batch(
     h, w = gx.shape
     out = np.empty(shape, dtype=np.float32)
     error_buffer = ctypes.create_string_buffer(4096)
-    status = _load_lf_library().edgecritic_metal_lf_response_batch(
+    status = _load_lf_library().metal_full_pipeline_lf_response_batch(
         gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
         gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
         _as_uint32(w, "image width"),
@@ -332,7 +332,7 @@ def lf_length_stack(
         out_chunk = out_arr[theta_start : theta_start + theta_count]
         if not out_chunk.flags.c_contiguous:
             raise ValueError("orientation chunks must be C-contiguous")
-        status = lib.edgecritic_metal_lf_orientation_length_stack_box(
+        status = lib.metal_full_pipeline_lf_orientation_length_stack_box(
             gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
             gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
             _as_uint32(w, "image width"),
@@ -412,7 +412,7 @@ def lf_stack(
             raise ValueError("out must be C-contiguous")
     error_buffer = ctypes.create_string_buffer(4096)
     if method_name == "exact":
-        status = _load_lf_library().edgecritic_metal_lf_orientation_stack(
+        status = _load_lf_library().metal_full_pipeline_lf_orientation_stack(
             gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
             gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
             _as_uint32(w, "image width"),
@@ -425,7 +425,7 @@ def lf_stack(
             ctypes.c_size_t(len(error_buffer)),
         )
     elif method_name == "box":
-        status = _load_lf_library().edgecritic_metal_lf_orientation_stack_box(
+        status = _load_lf_library().metal_full_pipeline_lf_orientation_stack_box(
             gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
             gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
             _as_uint32(w, "image width"),
@@ -439,7 +439,7 @@ def lf_stack(
             ctypes.c_size_t(len(error_buffer)),
         )
     else:
-        status = _load_lf_library().edgecritic_metal_lf_orientation_stack_scanline(
+        status = _load_lf_library().metal_full_pipeline_lf_orientation_stack_scanline(
             gx.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
             gy.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
             _as_uint32(w, "image width"),
