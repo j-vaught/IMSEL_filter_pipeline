@@ -3,9 +3,9 @@ requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "edgecritic"
+name = "imsel-filter-pipeline"
 version = "0.1.0"
-description = "Wide View Filter and Line Filter for edge detection research"
+description = "WVF, LF, and c-GMM filter pipeline for edge and orientation detection"
 requires-python = ">=3.10"
 dependencies = [
     "numpy>=1.24",
@@ -20,11 +20,11 @@ viewer = [
 ]
 
 [project.scripts]
-edgecritic-nms = "nms.cli:main"
-edgecritic-pipeline-full-dump = "pipeline.full_image_dump:main"
-edgecritic-pipeline-fusion-dump = "pipeline.fusion_image_dump:main"
-edgecritic-pipeline-synthetic-eval = "pipeline.synthetic_eval:main"
-edgecritic-pipeline-verify = "pipeline.verify:main"
+imsel-nms = "nms.cli:main"
+imsel-pipeline-full-dump = "pipeline.full_image_dump:main"
+imsel-pipeline-fusion-dump = "pipeline.fusion_image_dump:main"
+imsel-pipeline-synthetic-eval = "pipeline.synthetic_eval:main"
+imsel-pipeline-verify = "pipeline.verify:main"
 wvf = "wvf.cli:main"
 
 [tool.setuptools.packages.find]

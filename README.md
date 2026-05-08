@@ -144,11 +144,11 @@ fast-wvf                              fast WVF CLI (CPU FFT or CUDA/VkFFT)
 fast-wvf-doctor                       environment diagnosis for fast_wvf
 fast-wvf-regression                   regression check against the reference
 wvf                                   pure Python WVF CLI
-edgecritic-nms                        run the NMS pipeline on an image
-edgecritic-pipeline-full-dump         full-image c-GMM K=3 fusion dump
-edgecritic-pipeline-fusion-dump       fused front-end dump (WVF + LF + recovery)
-edgecritic-pipeline-synthetic-eval    synthetic-image evaluation harness
-edgecritic-pipeline-verify            cross-backend verification
+imsel-nms                             run the NMS pipeline on an image
+imsel-pipeline-full-dump              full-image c-GMM K=3 fusion dump
+imsel-pipeline-fusion-dump            fused front-end dump (WVF + LF + recovery)
+imsel-pipeline-synthetic-eval         synthetic-image evaluation harness
+imsel-pipeline-verify                 cross-backend verification
 ```
 
 ## License

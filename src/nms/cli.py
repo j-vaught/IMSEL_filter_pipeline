@@ -24,7 +24,7 @@ def _to_uint8(image: np.ndarray) -> np.ndarray:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run the edgecritic NMS edge detector.")
+    parser = argparse.ArgumentParser(description="Run the IMSEL NMS edge detector.")
     parser.add_argument("input", help="Input image path.")
     parser.add_argument("output", help="Output edge-map path.")
     parser.add_argument("--half-widths", default="3,7,11", help="Comma-separated LF half-widths.")
