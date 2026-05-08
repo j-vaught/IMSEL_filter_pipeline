@@ -81,7 +81,7 @@ python -m pip install './fast_wvf[image]'
 ### Option 2. Install Directly From GitHub
 
 ```bash
-python -m pip install "git+https://github.com/j-vaught/edge-detection-filter-critique.git#subdirectory=fast_wvf"
+python -m pip install "git+https://github.com/j-vaught/IMSEL_filter_pipeline.git#subdirectory=fast_wvf"
 ```
 
 ### Linux Notes
