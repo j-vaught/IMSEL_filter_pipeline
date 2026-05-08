@@ -22,6 +22,5 @@ datasets/BSDS500/
 datasets/UDED/
 datasets/BIPED/
 ~/
-papers/anisotropic-lf-proposal/uofsc-beamer-template/
 slurm/
 lf_response_stack*.npy
